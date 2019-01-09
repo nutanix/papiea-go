@@ -1,14 +1,12 @@
 import "jest"
-import { load } from "js-yaml";
-import { readFileSync, writeFileSync, unlinkSync } from "fs";
-import { resolve } from "path";
-import { plural } from "pluralize";
+import { writeFileSync, unlinkSync } from "fs";
 import { validate } from "swagger-parser";
 import axios from "axios"
-import { Version, Entity } from "../src/core";
-import { Provider, SpecOnlyEnitityKind } from "../src/papiea";
+import { Version } from "../src/core";
+import { Provider } from "../src/papiea";
 import { Provider_DB } from "../src/databases/provider_db_interface";
 import ApiDocsGenerator from "../src/api_docs/api_docs_generator";
+import { getProviderWithSpecOnlyEnitityKindNoOperations } from "./test_data_factory";
 
 declare var process: {
     env: {
@@ -27,23 +25,7 @@ class Provider_DB_Mock implements Provider_DB {
     provider: Provider;
 
     constructor() {
-        const locationDataDescription = load(readFileSync(resolve(__dirname, "./location_kind_test_data.yml"), "utf-8"));
-        const name = Object.keys(locationDataDescription)[0];
-        const spec_only_kind: SpecOnlyEnitityKind = {
-            name,
-            name_plural: plural(name),
-            kind_structure: locationDataDescription,
-            validator_fn: {} as (entity: Entity) => boolean,
-            intentful_signatures: new Map(),
-            dependency_tree: new Map(),
-            procedures: new Map(),
-            differ: undefined,
-            semantic_validator_fn: undefined
-        };
-        const providerPrefix = "test_provider";
-        const providerVersion = "1";
-        const provider: Provider = { prefix: providerPrefix, version: providerVersion, kinds: [spec_only_kind] };
-        this.provider = provider;
+        this.provider = getProviderWithSpecOnlyEnitityKindNoOperations();
     }
 
     async register_provider(provider: Provider): Promise<void> {
