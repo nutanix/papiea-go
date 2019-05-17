@@ -498,20 +498,24 @@ export default class ApiDocsGenerator {
                     "delete": this.deleteKindEntity(provider, kind),
                     "put": this.putKindEntity(provider, kind)
                 };
-                Object.values(kind.procedures).forEach(procedure => {
-                    paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/{uuid}/procedure/${ procedure.name }`] = {
-                        "post": this.callProcedure(provider, kind, procedure)
-                    };
-                    Object.assign(schemas, procedure.argument);
-                    Object.assign(schemas, procedure.result);
-                });
-                Object.values(provider.procedures).forEach(procedure => {
-                    paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure.name }`] = {
-                        "post": this.callProviderProcedure(provider, procedure)
-                    };
-                    Object.assign(schemas, procedure.argument);
-                    Object.assign(schemas, procedure.result);
-                });
+                if (kind.procedures) {
+                    Object.values(kind.procedures).forEach(procedure => {
+                        paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/{uuid}/procedure/${ procedure.name }`] = {
+                            "post": this.callProcedure(provider, kind, procedure)
+                        };
+                        Object.assign(schemas, procedure.argument);
+                        Object.assign(schemas, procedure.result);
+                    });
+                }
+                if (provider.procedures) {
+                    Object.values(provider.procedures).forEach(procedure => {
+                        paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure.name }`] = {
+                            "post": this.callProviderProcedure(provider, procedure)
+                        };
+                        Object.assign(schemas, procedure.argument);
+                        Object.assign(schemas, procedure.result);
+                    });
+                }
                 Object.assign(schemas, kind.kind_structure);
             });
         });

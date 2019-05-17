@@ -26,7 +26,8 @@ class Provider_DB_Mock implements Provider_DB {
 
     constructor() {
         this.provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();
-
+        // @ts-ignore
+        this.provider.procedures = undefined;   // can read such value from db
     }
 
     async save_provider(provider: Provider): Promise<void> {
