@@ -21,14 +21,14 @@ export class ProviderSdk implements ProviderImpl {
     private readonly server_manager: Provider_Server_Manager;
 
 
-    constructor(papiea_url: string, papiea_port: number, server_manager: Provider_Server_Manager) {
+    constructor(papiea_url: string, papiea_port: number, server_manager?: Provider_Server_Manager) {
         this._version = null;
         this._prefix = null;
         this._kind = [];
         this._provider = null;
         this.papiea_url = papiea_url;
         this.papiea_port = papiea_port;
-        this.server_manager = server_manager;
+        this.server_manager = server_manager || new Provider_Server_Manager();
         this._procedures = {};
         this.meta_ext = {};
         this.get_prefix = this.get_prefix.bind(this);

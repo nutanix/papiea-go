@@ -1,9 +1,11 @@
 {
   "name": "papiea-core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
-  "main": "main.js",
+  "main": "build/provider_sdk/typescript_sdk.js",
+  "files": ["build/", "src/"],
   "scripts": {
+    "build": "tsc",
     "start": "ts-node src/main.ts",
     "test": "jest --runInBand --coverage",
     "test-ci": "jest --runInBand --coverage --ci --reporters=default --reporters=jest-junit",
