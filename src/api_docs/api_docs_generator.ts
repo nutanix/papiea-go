@@ -343,7 +343,7 @@ export default class ApiDocsGenerator {
         return {
             "description": `Calls a procedure ${ procedure.name }`,
             "operationId": `call${ provider.prefix }${ procedure.name }`,
-            "tags": [`${ provider.prefix }/${ provider.version }/procedures`],
+            "tags": [`${ provider.prefix }/${ provider.version }/procedure`],
             "requestBody": {
                 "description": `${ procedure.name } input`,
                 "required": true,
@@ -352,7 +352,7 @@ export default class ApiDocsGenerator {
                         "schema": {
                             "properties": {
                                 "input": {
-                                    "$ref": `#/components/schemas/${ Object.keys(procedure.argument)[0] }`
+                                    "$ref": Object.keys(procedure.argument)[0] ? `#/components/schemas/${ Object.keys(procedure.argument)[0] }` : undefined
                                 }
                             }
                         }
@@ -365,7 +365,7 @@ export default class ApiDocsGenerator {
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": `#/components/schemas/${ Object.keys(procedure.result)[0] }`
+                                "$ref": Object.keys(procedure.result)[0] ? `#/components/schemas/${ Object.keys(procedure.result)[0] }` : undefined
                             }
                         }
                     }
