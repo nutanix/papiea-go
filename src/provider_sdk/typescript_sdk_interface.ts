@@ -9,7 +9,7 @@ export enum Provider_Power {On, Off, Suspended};
 
 export interface Provider {
     new_kind(entity_yaml:core.Data_Description):Kind_Builder;
-    version(version: core.Version):void;
+    version(version: core.Version):Provider;
     power(state: Provider_Power): Provider_Power;
 }
 // provider_sdk_ts_provider_interface ends here

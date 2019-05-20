@@ -1,9 +1,12 @@
 {
   "name": "papiea-core",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "build/provider_sdk/typescript_sdk.js",
-  "files": ["build/", "src/"],
+  "files": [
+    "build/",
+    "src/"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "ts-node src/main.ts",

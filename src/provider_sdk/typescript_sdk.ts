@@ -115,23 +115,26 @@ export class ProviderSdk implements ProviderImpl {
         }
     }
 
-    version(version: Version): void {
+    version(version: Version): ProviderSdk {
         this._version = version;
+        return this
     }
 
-    prefix(prefix: string) {
+    prefix(prefix: string): ProviderSdk{
         this._prefix = prefix;
+        return this
     }
 
-    metadata_extension(ext: Data_Description) {
+    metadata_extension(ext: Data_Description): ProviderSdk {
         this.meta_ext = ext;
+        return this
     }
 
     provider_procedure(name: string, rbac: any,
                        strategy: Procedural_Execution_Strategy,
                        input_desc: any,
                        output_desc: any,
-                       handler: (ctx: ProceduralCtx_Interface, input: any) => Promise<any>): void {
+                       handler: (ctx: ProceduralCtx_Interface, input: any) => Promise<any>): ProviderSdk {
         const callback_url = this.server_manager.callback_url(name);
         const procedural_signature: Procedural_Signature = {
             name,
@@ -151,6 +154,7 @@ export class ProviderSdk implements ProviderImpl {
                 throw new Error("Unable to execute handler");
             }
         });
+        return this
     }
 
 
@@ -186,7 +190,7 @@ export class ProviderSdk implements ProviderImpl {
         throw new Error(`Malformed provider description. Missing: ${ missing_field }`)
     }
 
-    static create_sdk(papiea_host: string, papiea_port: number, public_host?: string, public_port?: number): ProviderSdk {
+    static create_provider(papiea_host: string, papiea_port: number, public_host?: string, public_port?: number): ProviderSdk {
         const server_manager = new Provider_Server_Manager(public_host, public_port);
         return new ProviderSdk(papiea_host, papiea_port, server_manager)
     }
@@ -265,7 +269,7 @@ export class Kind_Builder {
                      strategy: Procedural_Execution_Strategy,
                      input_desc: any,
                      output_desc: any,
-                     handler: (ctx: ProceduralCtx_Interface, entity: Entity, input: any) => Promise<any>): void {
+                     handler: (ctx: ProceduralCtx_Interface, entity: Entity, input: any) => Promise<any>): Kind_Builder {
         const callback_url = this.server_manager.callback_url(name, this.kind.name);
         const procedural_signature: Procedural_Signature = {
             name,
@@ -289,13 +293,14 @@ export class Kind_Builder {
                 throw new Error("Unable to execute handler");
             }
         });
+        return this
     }
 
     kind_procedure(name: string, rbac: any,
                    strategy: Procedural_Execution_Strategy,
                    input_desc: any,
                    output_desc: any,
-                   handler: (ctx: ProceduralCtx_Interface, input: any) => Promise<any>): void {
+                   handler: (ctx: ProceduralCtx_Interface, input: any) => Promise<any>): Kind_Builder {
         const callback_url = this.server_manager.callback_url(name, this.kind.name);
         const procedural_signature: Procedural_Signature = {
             name,
@@ -315,5 +320,6 @@ export class Kind_Builder {
                 throw new Error("Unable to execute handler");
             }
         });
+    return this   
     }
 }
