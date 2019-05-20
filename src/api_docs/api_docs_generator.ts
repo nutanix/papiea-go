@@ -352,7 +352,8 @@ export default class ApiDocsGenerator {
                         "schema": {
                             "properties": {
                                 "input": {
-                                    "$ref": Object.keys(procedure.argument)[0] ? `#/components/schemas/${ Object.keys(procedure.argument)[0] }` : undefined
+                                    // Shlomi.v TODO: Input and output shapes should be optional. A procedure may have the sig void->void
+                                    "$ref": `#/components/schemas/${ Object.keys(procedure.argument)[0] }`
                                 }
                             }
                         }
@@ -365,7 +366,8 @@ export default class ApiDocsGenerator {
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": Object.keys(procedure.result)[0] ? `#/components/schemas/${ Object.keys(procedure.result)[0] }` : undefined
+                                // Shlomi.v TODO: Input and output shapes should be optional. A procedure may have the sig void->void
+                                "$ref": `#/components/schemas/${ Object.keys(procedure.result)[0] }`
                             }
                         }
                     }
