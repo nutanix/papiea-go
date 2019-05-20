@@ -136,10 +136,12 @@ export class ProviderSdk implements ProviderImpl {
                        output_desc: any,
                        handler: (ctx: ProceduralCtx_Interface, input: any) => Promise<any>): ProviderSdk {
         const callback_url = this.server_manager.callback_url(name);
+        const input_shape = `Procedure '${name}' input`
+        const output_shape = `Procedure '${name}' output`
         const procedural_signature: Procedural_Signature = {
             name,
-            argument: input_desc,
-            result: output_desc,
+            argument: {[input_shape]: input_desc},
+            result: {[output_shape]: output_desc},
             execution_strategy: strategy,
             procedure_callback: callback_url
         };
@@ -272,10 +274,12 @@ export class Kind_Builder {
                      output_desc: any,
                      handler: (ctx: ProceduralCtx_Interface, entity: Entity, input: any) => Promise<any>): Kind_Builder {
         const callback_url = this.server_manager.callback_url(name, this.kind.name);
+        const input_shape = `Procedure '${name}' input`
+        const output_shape = `Procedure '${name}' output`
         const procedural_signature: Procedural_Signature = {
             name,
-            argument: input_desc,
-            result: output_desc,
+            argument: {[input_shape]: input_desc},
+            result: {[output_shape]: output_desc},
             execution_strategy: strategy,
             procedure_callback: callback_url
         };
@@ -303,10 +307,12 @@ export class Kind_Builder {
                    output_desc: any,
                    handler: (ctx: ProceduralCtx_Interface, input: any) => Promise<any>): Kind_Builder {
         const callback_url = this.server_manager.callback_url(name, this.kind.name);
+        const input_shape = `Procedure '${name}' input`
+        const output_shape = `Procedure '${name}' output`
         const procedural_signature: Procedural_Signature = {
             name,
-            argument: input_desc,
-            result: output_desc,
+            argument: {[input_shape]: input_desc},
+            result: {[output_shape]: output_desc},
             execution_strategy: strategy,
             procedure_callback: callback_url
         };

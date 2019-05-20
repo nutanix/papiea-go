@@ -36,7 +36,7 @@ describe("Entity API tests", () => {
     const locationDataDescription = getLocationDataDescription();
     const kind_name = Object.keys(locationDataDescription)[0];
     beforeAll(async () => {
-        const sdk = ProviderSdk.create_sdk(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
         sdk.new_kind(locationDataDescription);
         sdk.version(providerVersion);
         sdk.prefix(providerPrefix);
@@ -483,7 +483,7 @@ describe("Entity API with metadata extension tests", () => {
     let entity_spec: Spec;
 
     beforeAll(async () => {
-        const sdk = ProviderSdk.create_sdk(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
         sdk.new_kind(locationDataDescription);
         sdk.version(providerVersion);
         sdk.prefix(providerPrefix);

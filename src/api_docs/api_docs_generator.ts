@@ -82,7 +82,7 @@ export default class ApiDocsGenerator {
         return {
             "description": `Returns all entities' specs of kind ${ kind.name }`,
             "operationId": `find${ provider.prefix }${ kind.name }`,
-            "tags": [`${ provider.prefix }/${ kind.name }`],
+            "tags": [`${ provider.prefix }/${ provider.version }/${ kind.name }`],
             "parameters": [
                 {
                     "name": "offset",
@@ -122,7 +122,7 @@ export default class ApiDocsGenerator {
         return {
             "description": `Returns all entities' specs of kind ${ kind.name }`,
             "operationId": `find${ provider.prefix }${ kind.name }Filter`,
-            "tags": [`${ provider.prefix }/${ kind.name }`],
+            "tags": [`${ provider.prefix }/${ provider.version }/${ kind.name }`],
             "requestBody": {
                 "description": `${ kind.name } to add`,
                 "required": false,
@@ -146,7 +146,7 @@ export default class ApiDocsGenerator {
         return {
             "description": `Creates a new ${ kind.name }`,
             "operationId": `add${ provider.prefix }${ kind.name }`,
-            "tags": [`${ provider.prefix }/${ kind.name }`],
+            "tags": [`${ provider.prefix }/${ provider.version }/${ kind.name }`],
             "requestBody": {
                 "description": `${ kind.name } to add`,
                 "required": true,
@@ -173,7 +173,7 @@ export default class ApiDocsGenerator {
         return {
             "description": `Returns an entity of kind ${ kind.name } by uuid`,
             "operationId": `find${ provider.prefix }${ kind.name }ByUuid`,
-            "tags": [`${ provider.prefix }/${ kind.name }`],
+            "tags": [`${ provider.prefix }/${ provider.version }/${ kind.name }`],
             "parameters": [
                 {
                     "name": "uuid",
@@ -194,7 +194,7 @@ export default class ApiDocsGenerator {
         return {
             "description": `Deletes an entity of kind ${ kind.name } by uuid`,
             "operationId": `delete${ provider.prefix }${ kind.name }`,
-            "tags": [`${ provider.prefix }/${ kind.name }`],
+            "tags": [`${ provider.prefix }/${ provider.version }/${ kind.name }`],
             "parameters": [
                 {
                     "name": "uuid",
@@ -220,7 +220,7 @@ export default class ApiDocsGenerator {
         return {
             "description": `Replaces an entity of kind ${ kind.name } by uuid`,
             "operationId": `replace${ provider.prefix }${ kind.name }`,
-            "tags": [`${ provider.prefix }/${ kind.name }`],
+            "tags": [`${ provider.prefix }/${ provider.version }/${ kind.name }`],
             "parameters": [
                 {
                     "name": "uuid",
@@ -263,7 +263,7 @@ export default class ApiDocsGenerator {
         return {
             "description": `Updates an entity of kind ${ kind.name } by uuid`,
             "operationId": `update${ provider.prefix }${ kind.name }`,
-            "tags": [`${ provider.prefix }/${ kind.name }`],
+            "tags": [`${ provider.prefix }/${ provider.version }/${ kind.name }`],
             "parameters": [
                 {
                     "name": "uuid",
@@ -295,7 +295,7 @@ export default class ApiDocsGenerator {
         return {
             "description": `Calls a procedure ${ procedure.name }`,
             "operationId": `call${ provider.prefix }${ procedure.name }`,
-            "tags": [`${ provider.prefix }/${ provider.version }/${ kind.name }/${ procedure.name }`],
+            "tags": [`${ provider.prefix }/${ provider.version }/${ kind.name }/procedure`],
             "parameters": [
                 {
                     "name": "uuid",
@@ -343,7 +343,7 @@ export default class ApiDocsGenerator {
         return {
             "description": `Calls a procedure ${ procedure.name }`,
             "operationId": `call${ provider.prefix }${ procedure.name }`,
-            "tags": [`${ provider.prefix }/${ provider.version }/${ procedure.name }`],
+            "tags": [`${ provider.prefix }/${ provider.version }/procedures`],
             "requestBody": {
                 "description": `${ procedure.name } input`,
                 "required": true,
