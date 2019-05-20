@@ -91,7 +91,7 @@ export class ProviderSdk implements ProviderImpl {
                 throw new Error("Unimplemented")
             }
         } else {
-            throw new Error("Malformed yaml");
+            throw new Error(`Entity not a papiea entity. Please make sure you have 'x-papiea-entity' property for '${name}'`);
         }
     }
 
@@ -248,6 +248,8 @@ class Provider_Server_Manager {
     }
 }
 
+
+
 export class Kind_Builder {
 
     kind: Kind;
@@ -255,7 +257,6 @@ export class Kind_Builder {
     get_prefix: () => string;
     get_version: () => string;
     private server_manager: Provider_Server_Manager;
-
 
     constructor(kind: Kind, entity_url: string, get_prefix: () => string, get_version: () => string, server_manager: Provider_Server_Manager) {
         this.server_manager = server_manager;
