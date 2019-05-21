@@ -1,6 +1,6 @@
 import { UserAuthInfo, UnauthorizedError } from "./authn";
 import { Provider_API } from "../provider/provider_api_interface";
-import { Provider } from "papiea-core/build/core";
+import { Provider } from "papiea-core";
 
 export class PermissionDeniedError extends Error {
     constructor() {

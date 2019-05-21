@@ -1,5 +1,4 @@
-import { Metadata } from "papiea-core/build/core";
-import { Spec, uuid4 } from "papiea-core/build/core";
+import { Spec, uuid4, Metadata } from "papiea-core";
 
 export class ConflictingEntityError extends Error {
 

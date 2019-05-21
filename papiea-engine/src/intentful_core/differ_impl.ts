@@ -1,4 +1,4 @@
-import { SFS, Entity_Reference, Spec, Status, Provider_Callback_URL, Kind_Compiler, Kind, Differ, Diff } from "papiea-core/build/core";
+import { SFS, Entity_Reference, Spec, Status, Provider_Callback_URL, Kind_Compiler, Kind, Differ, Diff } from "papiea-core";
 
 
 export class Compiler implements Kind_Compiler {

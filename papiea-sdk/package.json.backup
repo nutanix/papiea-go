@@ -1,6 +1,6 @@
 {
   "name": "papiea-sdk",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "main": "build/provider_sdk/typescript_sdk.js",
   "files": [
     "build",
@@ -16,7 +16,7 @@
     "axios": "^0.18.0",
     "express": "^4.17.0",
     "express-async-handler": "^1.1.4",
-    "papiea-core": "^1.0.6",
+    "papiea-core": "file:../papiea-core",
     "pluralize": "^7.0.0",
     "wait-port": "^0.2.2"
   },

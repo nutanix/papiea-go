@@ -6,7 +6,7 @@ import { plural } from "pluralize"
 import { loadYaml } from "./test_data_factory";
 import axios from "axios"
 import { readFileSync } from "fs";
-import { Procedural_Signature, Procedural_Execution_Strategy } from "papiea-core/build/core";
+import { Procedural_Signature, Procedural_Execution_Strategy } from "papiea-core";
 
 
 const procedure_callback = "http://127.0.0.1:9000/moveX";

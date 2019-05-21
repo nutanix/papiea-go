@@ -3,7 +3,7 @@ import { asyncHandler, UnauthorizedError, UserAuthInfo, UserAuthInfoRequest } fr
 import { Signature } from "./crypto";
 import { Provider_DB } from "../databases/provider_db_interface";
 import { extract_property } from "./user_data_evaluator";
-import { Provider } from "papiea-core/build/core";
+import { Provider } from "papiea-core";
 
 const simpleOauthModule = require("simple-oauth2"),
     queryString = require("query-string"),

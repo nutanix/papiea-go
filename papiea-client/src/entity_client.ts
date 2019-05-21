@@ -1,5 +1,5 @@
-import { Metadata, Spec, Status, Entity_Reference } from "papiea-core/build/core";
 import axios from "axios";
+import { Metadata, Spec, Status, Entity_Reference } from "papiea-core";
 
 interface FullEntity {
     metadata: Metadata,

@@ -1,5 +1,5 @@
 // [[file:~/work/papiea-js/Papiea-design.org::*/src/databases/status_db_interface.ts][/src/databases/status_db_interface.ts:1]]
-import { Entity_Reference, Status, Metadata } from "papiea-core/build/core";
+import { Entity_Reference, Status, Metadata } from "papiea-core";
 
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Interface-548][status-db-interface]]
 

@@ -1,5 +1,5 @@
 import { UserAuthInfo } from "../auth/authn";
-import { Provider, Version, Entity_Reference, Status } from "papiea-core/build/core";
+import { Provider, Version, Entity_Reference, Status } from "papiea-core";
 
 
 

@@ -1,4 +1,4 @@
-import { Metadata, Spec, Entity_Reference } from "papiea-core/build/core";
+import { Metadata, Spec, Entity_Reference } from "papiea-core";
 
 
 // [[file:~/work/papiea-js/Papiea-design.org::*/src/databases/spec_db_interface.ts][/src/databases/spec_db_interface.ts:1]]

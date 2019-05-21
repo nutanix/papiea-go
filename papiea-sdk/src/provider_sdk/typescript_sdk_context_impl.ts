@@ -1,5 +1,5 @@
 import { ProceduralCtx_Interface } from "./typescript_sdk_interface";
-import { Entity, Metadata, Status } from "papiea-core/build/core";
+import { Entity, Metadata, Status } from "papiea-core";
 
 
 export class ProceduralCtx implements ProceduralCtx_Interface {

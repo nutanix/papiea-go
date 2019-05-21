@@ -5,7 +5,7 @@ import { Validator } from "../validator";
 import { Authorizer } from "../auth/authz";
 import { UserAuthInfo } from "../auth/authn";
 import { EventEmitter } from "events";
-import { Entity_Reference, Version, Status, Provider } from "papiea-core/build/core";
+import { Entity_Reference, Version, Status, Provider } from "papiea-core";
 
 export class Provider_API_Impl implements Provider_API {
     providerDb: Provider_DB;

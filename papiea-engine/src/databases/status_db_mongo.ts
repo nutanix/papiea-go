@@ -2,7 +2,7 @@ import { Status_DB } from "./status_db_interface";
 import { Db, Collection } from "mongodb";
 import { datestringToFilter } from "./utils/date";
 import { encode } from "mongo-dot-notation-tool"
-import { Entity_Reference, Status, Metadata, Entity } from "papiea-core/build/core";
+import { Entity_Reference, Status, Metadata, Entity } from "papiea-core";
 
 export class Status_DB_Mongo implements Status_DB {
     collection: Collection;

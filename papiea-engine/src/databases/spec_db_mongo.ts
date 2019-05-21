@@ -3,7 +3,7 @@ import { Collection, Db } from "mongodb";
 import { ConflictingEntityError, EntityNotFoundError } from "./utils/errors";
 import { datestringToFilter } from "./utils/date";
 import { encode } from "mongo-dot-notation-tool";
-import { Entity_Reference, Metadata, Spec, Entity } from "papiea-core/build/core";
+import { Entity_Reference, Metadata, Spec, Entity } from "papiea-core";
 
 export class Spec_DB_Mongo implements Spec_DB {
     collection: Collection;

@@ -4,7 +4,7 @@ import { newEnforcer } from "casbin/lib/casbin";
 import { Adapter } from "casbin/lib/persist/adapter";
 import { Model } from "casbin/lib/model";
 import { Helper } from "casbin/lib/persist/helper";
-import { Provider } from "papiea-core/build/core";
+import { Provider } from "papiea-core";
 
 export class CasbinAuthorizer extends Authorizer {
     private pathToModel: string;

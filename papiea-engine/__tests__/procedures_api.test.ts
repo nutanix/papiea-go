@@ -2,7 +2,7 @@ import "jest"
 import * as http from "http"
 import axios from "axios"
 import { ProviderBuilder } from "./test_data_factory"
-import { Provider } from "papiea-core/build/core"
+import { Provider } from "papiea-core"
 
 declare var process: {
     env: {

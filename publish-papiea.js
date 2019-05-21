@@ -27,7 +27,7 @@ function modify_and_publish(subsystem, change) {
     console.log("  Publishing...")
     child_process.execSync(`cd ${subsystem}; npm publish`,{stdio:[0,1,2]})
     console.log("  Restoring from backup...")
-    fs.copyFileSync(`${subsystem}/package.json`, `${subsystem}/package.json.backup`);
+    fs.copyFileSync(`${subsystem}/package.json.backup`, `${subsystem}/package.json`);
 }
 
 // Publish papiea-core

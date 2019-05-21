@@ -6,7 +6,7 @@ import * as asyncHandler from "express-async-handler";
 import { Express, RequestHandler } from "express";
 import { Server } from "http";
 import { ProceduralCtx } from "./typescript_sdk_context_impl";
-import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity } from "papiea-core/build/core";
+import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity } from "papiea-core";
 
 export class ProviderSdk implements ProviderImpl {
     private _version: Version | null;

@@ -1,6 +1,6 @@
 // [[file:~/work/papiea-js/Papiea-design.org::*Typescript:%20/src/provider_sdk/typescript_sdk_interface][Typescript: /src/provider_sdk/typescript_sdk_interface:1]]
 import { Kind_Builder } from "./typescript_sdk";
-import { Data_Description, Version, Metadata, Status, Entity } from "papiea-core/build/core";
+import { Data_Description, Version, Metadata, Status, Entity } from "papiea-core";
 
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Providers-SDK-518][provider_sdk_ts_provider_interface]]
 // Api for the provider-sdk

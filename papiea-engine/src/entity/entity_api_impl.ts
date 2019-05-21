@@ -8,7 +8,7 @@ import { Authorizer, ReadAction, CreateAction, DeleteAction, UpdateAction, CallP
 import { UserAuthInfo } from "../auth/authn";
 import { Provider_API } from "../provider/provider_api_interface";
 import uuid = require("uuid");
-import { Version, Spec, Metadata, uuid4, Entity_Reference, Status, Data_Description, Provider, Kind, Procedural_Signature } from "papiea-core/build/core";
+import { Version, Spec, Metadata, uuid4, Entity_Reference, Status, Data_Description, Provider, Kind, Procedural_Signature } from "papiea-core";
 
 export class ProcedureInvocationError extends Error {
     errors: string[];

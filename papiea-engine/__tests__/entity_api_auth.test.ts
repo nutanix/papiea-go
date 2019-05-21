@@ -5,7 +5,7 @@ const url = require("url");
 const queryString = require("query-string");
 import { ProviderBuilder } from "./test_data_factory";
 import uuid = require("uuid");
-import { Metadata, Spec, Provider } from "papiea-core/build/core";
+import { Metadata, Spec, Provider } from "papiea-core";
 
 
 declare var process: {

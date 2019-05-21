@@ -4,8 +4,7 @@ import { validate } from "swagger-parser";
 import axios from "axios"
 import { ProviderBuilder } from "./test_data_factory";
 import { Provider_DB } from "../src/databases/provider_db_interface";
-import { Version } from "papiea-core/src/core";
-import { Provider } from "papiea-core/build/core";
+import { Provider, Version } from "papiea-core";
 import ApiDocsGenerator from "../src/api_docs/api_docs_generator";
 declare var process: {
     env: {

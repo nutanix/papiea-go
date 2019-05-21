@@ -5,7 +5,7 @@ import { Status_DB } from "../src/databases/status_db_interface";
 import { Provider_DB } from "../src/databases/provider_db_interface";
 import { v4 as uuid4 } from 'uuid';
 import { ConflictingEntityError } from "../src/databases/utils/errors";
-import { Metadata, Spec, Entity_Reference, Status, Kind, Provider } from "papiea-core/build/core";
+import { Metadata, Spec, Entity_Reference, Status, Kind, Provider } from "papiea-core";
 
 declare var process: {
     env: {

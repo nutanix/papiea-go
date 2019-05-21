@@ -1,4 +1,3 @@
-import { Metadata, Spec, Status } from 'papiea-core/build/core'
 import { kind_client, objectify } from './entity_client'
 import axios from 'axios'
 

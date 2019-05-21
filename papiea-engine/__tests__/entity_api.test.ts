@@ -1,7 +1,7 @@
 import "jest"
 import axios from "axios"
 import { ProviderSdk } from "papiea-sdk";
-import { Metadata, Spec } from "papiea-core/src/core";
+import { Metadata, Spec } from "papiea-core";
 import { getLocationDataDescription, getMetadataDescription, ProviderBuilder } from "./test_data_factory";
 import { stringify } from "querystring"
 import uuid = require("uuid");
