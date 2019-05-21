@@ -1,6 +1,6 @@
 FROM nutanix-docker.jfrog.io/papiea:base
 
-COPY . /code
+COPY papiea-engine /code
 WORKDIR /code
 RUN cd /code \
     # Use cached node_modules

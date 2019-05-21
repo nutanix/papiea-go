@@ -3,7 +3,7 @@ services:
         server:
                 build:
                         dockerfile: .circleci/Dockerfile
-                        context: .
+                        context: papiea-engine
                 environment:
                         - JEST_JUNIT_OUTPUT=reports/junit/results.xml
                 depends_on:
