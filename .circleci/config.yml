@@ -11,7 +11,7 @@ jobs:
 
       - run:
           name: Login to dockerhub
-          command: ./docker-login.py
+          command: ./papiea-engine/docker-login.py
 
       - run:
           name: Start service
@@ -38,7 +38,7 @@ jobs:
             docker cp project_server_1:/code/reports . || echo .
             docker cp project_server_1:/code/coverage . || echo .
 
-      - run: ./publish-images.py
+      - run: ./papiea-engine/publish-images.py
 
       - run: docker-compose down
 

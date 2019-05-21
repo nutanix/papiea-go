@@ -1,0 +1,23 @@
+{
+  "name": "papiea-sdk",
+  "version": "1.0.2",
+  "main": "index.js",
+  "scripts": {
+    "clean": "rm -rf build",
+    "build": "tsc"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "express": "^4.17.0",
+    "express-async-handler": "^1.1.4",
+    "papiea-core": "file:.../papiea-core",
+    "pluralize": "^7.0.0",
+    "wait-port": "^0.2.2"
+  },
+  "description": "",
+  "devDependencies": {
+    "@types/express": "^4.16.1"
+  }
+}

@@ -1,4 +1,0 @@
-MoveInput:
-  type: number
-  title: Input value to move functions
-  description: The amount to move in a particular direction
