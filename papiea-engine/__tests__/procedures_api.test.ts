@@ -1,8 +1,8 @@
 import "jest"
 import * as http from "http"
 import axios from "axios"
-import { Provider } from "../src/papiea"
 import { ProviderBuilder } from "./test_data_factory"
+import { Provider } from "papiea-core/build/core"
 
 declare var process: {
     env: {
@@ -27,13 +27,13 @@ describe("Procedures tests", () => {
     const hostname = '127.0.0.1';
     const port = 9001;
     const provider: Provider = new ProviderBuilder()
-                                .withVersion("0.1.0")
-                                .withKinds()
-                                .withCallback(`http://${hostname}:${port}`)
-                                .withEntityProcedures()
-                                .withKindProcedures()
-                                .withProviderProcedures()
-                                .build();
+        .withVersion("0.1.0")
+        .withKinds()
+        .withCallback(`http://${hostname}:${port}`)
+        .withEntityProcedures()
+        .withKindProcedures()
+        .withProviderProcedures()
+        .build();
     const kind_name = provider.kinds[0].name;
 
     beforeAll(async () => {
@@ -174,10 +174,10 @@ describe("Procedures tests", () => {
             }
         });
         server.listen(port, hostname, () => {
-            console.log(`Server running at http://${ hostname }:${ port }/`);
+            console.log(`Server running at http://${hostname}:${port}/`);
         });
         try {
-            const res: any = await entityApi.post(`/${ provider.prefix }/${provider.version}/procedure/computeSum`, {
+            const res: any = await entityApi.post(`/${provider.prefix}/${provider.version}/procedure/computeSum`, {
                 input: {
                     "a": 5,
                     "b": 5
@@ -185,7 +185,7 @@ describe("Procedures tests", () => {
             });
             expect(res.data).toBe(10);
             done();
-        } catch(e) {
+        } catch (e) {
             console.log(e.response.data);
             done.fail()
         }
@@ -210,10 +210,10 @@ describe("Procedures tests", () => {
             }
         });
         server.listen(port, hostname, () => {
-            console.log(`Server running at http://${ hostname }:${ port }/`);
+            console.log(`Server running at http://${hostname}:${port}/`);
         });
         try {
-            const res: any = await entityApi.post(`/${ provider.prefix }/${provider.version}/procedure/computeSum`, { input: {"a": 10, "b": "Totally not a number"} });
+            const res: any = await entityApi.post(`/${provider.prefix}/${provider.version}/procedure/computeSum`, { input: { "a": 10, "b": "Totally not a number" } });
         } catch (e) {
             expect(e.response.status).toBe(400);
             server.close();
@@ -270,7 +270,7 @@ describe("Procedures tests", () => {
         });
         try {
             const res: any = await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/computeGeolocation`, { input: ["String expected got array"] });
-        } catch(e) {
+        } catch (e) {
             expect(e.response.status).toBe(400);
             server.close();
             done();

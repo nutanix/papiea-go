@@ -1,7 +1,11 @@
 {
   "name": "papiea-sdk",
   "version": "1.0.2",
-  "main": "index.js",
+  "main": "build/provider_sdk/typescript_sdk.js",
+  "files": [
+    "build",
+    "src"
+  ],
   "scripts": {
     "clean": "rm -rf build",
     "build": "tsc"

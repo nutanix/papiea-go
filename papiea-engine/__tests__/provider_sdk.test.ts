@@ -1,12 +1,12 @@
 import "jest"
 import { load } from "js-yaml";
-import { readFileSync } from "fs";
 import { resolve } from "path";
-import { Kind_Builder, ProviderSdk } from "../src/provider_sdk/typescript_sdk";
+import { Kind_Builder, ProviderSdk } from "papiea-sdk";
 import { plural } from "pluralize"
 import { loadYaml } from "./test_data_factory";
 import axios from "axios"
-import { Procedural_Execution_Strategy, Procedural_Signature } from "../src/papiea";
+import { readFileSync } from "fs";
+import { Procedural_Signature, Procedural_Execution_Strategy } from "papiea-core/build/core";
 
 
 const procedure_callback = "http://127.0.0.1:9000/moveX";

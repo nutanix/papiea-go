@@ -1,4 +1,3 @@
-import * as papiea from "../papiea";
 import { Provider_DB } from "../databases/provider_db_interface";
 import { Provider, Kind, Procedural_Signature } from "papiea-core/build/core";
 

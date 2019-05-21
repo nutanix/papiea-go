@@ -1,7 +1,7 @@
 import "jest"
 import axios from "axios"
-import { Provider } from "../src/papiea";
 import { loadYaml, ProviderBuilder } from "./test_data_factory";
+import { Provider } from "papiea-core/build/core";
 
 declare var process: {
     env: {

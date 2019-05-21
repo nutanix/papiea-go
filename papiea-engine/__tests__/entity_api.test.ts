@@ -1,11 +1,10 @@
 import "jest"
 import axios from "axios"
-import { ProviderSdk } from "../src/provider_sdk/typescript_sdk";
-import { Metadata, Spec } from "../../papiea-core/src/core";
-import { getLocationDataDescription, getMetadataDescription } from "./test_data_factory";
+import { ProviderSdk } from "papiea-sdk";
+import { Metadata, Spec } from "papiea-core/src/core";
+import { getLocationDataDescription, getMetadataDescription, ProviderBuilder } from "./test_data_factory";
 import { stringify } from "querystring"
 import uuid = require("uuid");
-
 
 declare var process: {
     env: {

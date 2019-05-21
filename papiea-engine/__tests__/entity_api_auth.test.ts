@@ -3,10 +3,9 @@ import axios from "axios";
 import * as http from "http";
 const url = require("url");
 const queryString = require("query-string");
-import { Provider } from "../src/papiea";
 import { ProviderBuilder } from "./test_data_factory";
 import uuid = require("uuid");
-import { Metadata, Spec } from "papiea-core/build/core";
+import { Metadata, Spec, Provider } from "papiea-core/build/core";
 
 
 declare var process: {

@@ -2,8 +2,7 @@ import { load } from "js-yaml";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import { plural } from "pluralize";
-import { Data_Description, Version } from "../../papiea-core/src/core";
-import { SpecOnlyEntityKind, Kind, Procedural_Signature, Provider, Procedural_Execution_Strategy } from "../src/papiea";
+import { Data_Description, Version, SpecOnlyEntityKind, Kind, Procedural_Signature, Provider, Procedural_Execution_Strategy } from "papiea-core/src/core";
 
 function randomString(len: number) {
     const charSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
