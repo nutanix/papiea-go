@@ -3,7 +3,7 @@ services:
         server:
                 build:
                         dockerfile: Dockerfile
-                        context: papiea-engine
+                        context: .
                 environment:
                         - JEST_JUNIT_OUTPUT=reports/junit/results.xml
                 depends_on:
