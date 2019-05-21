@@ -12,12 +12,13 @@
     "axios": "^0.18.0",
     "express": "^4.17.0",
     "express-async-handler": "^1.1.4",
-    "papiea-core": "file:.../papiea-core",
+    "papiea-core": "file:../papiea-core",
     "pluralize": "^7.0.0",
     "wait-port": "^0.2.2"
   },
   "description": "",
   "devDependencies": {
-    "@types/express": "^4.16.1"
+    "@types/express": "^4.16.1",
+    "typescript": "^3.4.5"
   }
 }

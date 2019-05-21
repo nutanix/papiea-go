@@ -1,7 +1,7 @@
 {
   "name": "papiea-core",
   "version": "1.0.2",
-  "description": "",
+  "description": "Core 'header' files for papiea",
   "main": "main.js",
   "scripts": {
     "clean": "rm -rf build",
