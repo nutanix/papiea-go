@@ -5,7 +5,6 @@ oauth:
   authorize_uri: /oauth2/authorize    # relative to auth_host
   revoke_uri: /oauth2/revoke          # relative to auth_host
   token_uri: /oauth2/token            # relative to auth_host
-  redirect_uri: /procedure/redirect   # a provider static procedure
   user_info:
     access_token: ^token.access_token.$JWT.content  # how to get the access_token from the token
     id_token: ^token.id_token.$JWT.content # how to get the access_token from the token
