@@ -9,7 +9,8 @@
     "build-all": "npm --prefix papiea-core run build &&  npm --prefix papiea-engine run build && npm --prefix papiea-sdk run build && npm --prefix papiea-client run build",
     "patch-all": "npm --prefix papiea-core version patch &&  npm --prefix papiea-engine version patch && npm --prefix papiea-sdk version patch && npm --prefix papiea-client version patch",
     "install-all": "npm --prefix papiea-core install &&  npm --prefix papiea-engine install && npm --prefix papiea-sdk install && npm --prefix papiea-client install",
-    "publish-all": "(cd papiea-core ; npm publish) &&  (cd papiea-engine ; npm publish) && (cd papiea-sdk ; npm publish) && (cd papiea-client; npm publish)"
+    "build-all!": "npm run clean-all && npm run build-all",
+    "publish-all": "npm run build-all! && node publish-papiea.js"
   },
   "repository": {
     "type": "git",

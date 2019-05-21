@@ -1,4 +1,4 @@
-import { ProceduralCtx_Interface, Provider as ProviderImpl, Provider_Power } from "./typescript_sdk_interface";
+import { ProceduralCtx_Interface, Provider as ProviderImpl, Provider_Power, IntentfulCtx_Interface } from "./typescript_sdk_interface";
 import axios from "axios"
 import { plural } from "pluralize"
 import * as express from "express";
@@ -7,7 +7,6 @@ import { Express, RequestHandler } from "express";
 import { Server } from "http";
 import { ProceduralCtx } from "./typescript_sdk_context_impl";
 import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity } from "papiea-core/build/core";
-
 
 export class ProviderSdk implements ProviderImpl {
     private _version: Version | null;
@@ -324,3 +323,4 @@ export class Kind_Builder {
     return this   
     }
 }
+export {Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, ProceduralCtx_Interface, Provider_Power, IntentfulCtx_Interface}
