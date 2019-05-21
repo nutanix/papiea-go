@@ -17,6 +17,7 @@ jobs:
           name: Start service
           command: |
             cp .circleci/docker-compose.yml .
+            cp .circleci/Dockerfile .
             docker-compose build
             docker-compose up -d
 
