@@ -26,7 +26,7 @@ jobs:
           command: |
             for i in `seq 1 10`;
             do
-              docker-compose logs --tail=5 server | grep 'app listening on port' && echo Success && exit 0
+              docker-compose logs --tail=5 papiea-engine | grep 'app listening on port' && echo Success && exit 0
               sleep 15
               docker-compose logs --tail=5
             done
@@ -35,9 +35,9 @@ jobs:
       - run:
           name: Run unit tests
           command: |
-            docker-compose exec server npm run test-ci
-            docker cp project_server_1:/code/reports . || echo .
-            docker cp project_server_1:/code/coverage . || echo .
+            docker-compose exec papiea-engine npm run test-ci
+            docker cp papiea-engine:/code/papiea-engine/reports . || echo .
+            docker cp papiea-engine:/code/papiea-engine/coverage . || echo .
 
       - run: ./papiea-engine/publish-images.py
 

@@ -1,11 +1,11 @@
 version: '3.5'
 services:
-        server:
-                container_name: papieajs_server_1
-                build: .
+        papiea-engine:
+                container_name: papiea-engine
+                build: ..
                 image: nutanix-docker.jfrog.io/papiea:base
                 volumes:
-                        - ./:/code
+                        - ../:/code
                 depends_on:
                         - mongo
                 ports:
@@ -14,7 +14,3 @@ services:
                         - HOT_RELOAD=${HOT_RELOAD:-false}
         mongo:
                 image: mongo:4.1
-
-networks:
-  default:
-          name: papieajs_default
