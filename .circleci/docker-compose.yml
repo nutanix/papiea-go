@@ -1,6 +1,7 @@
 version: '3'
 services:
         papiea-engine:
+                container_name: papiea-engine
                 build:
                         dockerfile: Dockerfile
                         context: .
