@@ -24,7 +24,7 @@ declare var process: {
         TOKEN_EXPIRES_SECONDS: string,
         MONGO_HOST: string,
         MONGO_PORT: string
-        OAUTH2_REDIRECT_URI: string,
+        PAPIEA_PUBLIC_ADDR: string,
         DEBUG_LEVEL: string
     },
     title: string;
@@ -35,7 +35,8 @@ const tokenSecret = process.env.TOKEN_SECRET || "secret";
 const debugLevel = process.env.DEBUG_LEVEL || "common";
 const tokenExpiresSeconds = parseInt(process.env.TOKEN_EXPIRES_SECONDS || (60 * 60 * 24 * 7).toString());
 const pathToDefaultModel: string = resolve(__dirname, "./auth/default_provider_model.txt");
-const oauth2RedirectUri: string = process.env.OAUTH2_REDIRECT_URI || "http://localhost:3000/provider/auth/callback";
+const publicAddr: string = process.env.PAPIEA_PUBLIC_ADDR || "http://localhost:3000";
+const oauth2RedirectUri: string = publicAddr + "/provider/auth/callback";
 const mongoHost = process.env.MONGO_HOST || 'mongo'
 const mongoPort = process.env.MONGO_PORT || '27017'
 
