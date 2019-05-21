@@ -20,3 +20,6 @@ coverage
 # clj
 papiea-lib-clj/papiea-lib-clj.js
 papiea-lib-clj/target
+
+# backups
+package.json.backup
