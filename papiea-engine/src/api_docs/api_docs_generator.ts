@@ -511,7 +511,7 @@ export default class ApiDocsGenerator {
                 }
                 if (kind.entity_procedures) {
                     Object.values(kind.entity_procedures).forEach(procedure => {
-                        paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/procedure/${ procedure.name }`] = {
+                        paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/{uuid}/procedure/${ procedure.name }`] = {
                             "post": this.callProcedure(provider, kind, procedure)
                         };
                         Object.assign(schemas, procedure.argument);
