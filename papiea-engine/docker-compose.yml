@@ -2,7 +2,7 @@ version: '3.5'
 services:
         papiea-engine:
                 container_name: papiea-engine
-                build: ..
+                build: .
                 image: nutanix-docker.jfrog.io/papiea:base
                 volumes:
                         - ../:/code

@@ -207,10 +207,16 @@ export class Entity_API_Impl implements Entity_API {
             return data;
         } catch (err) {
             if (err instanceof ValidationError) {
+                console.error(`Cannot invoke procedure '${procedure_name}':`, err)
+                // SHLOMI: TODO: This should bubble up to the provider!
                 throw new ProcedureInvocationError(err.errors, 500);
-            } else {
+            } else if (err.response){
+                console.error(`Cannot invoke procedure '${procedure_name}':`, err.response.data)
                 throw new ProcedureInvocationError([err.response.data], err.response.status)
-            }
+           } else {
+                console.error(`Cannot invoke procedure '${procedure_name}':`, err)
+                throw new ProcedureInvocationError([err], 500)
+           }
         }
     }
 

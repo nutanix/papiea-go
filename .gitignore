@@ -23,3 +23,5 @@ papiea-lib-clj/target
 
 # backups
 package.json.backup
+
+pom.properties

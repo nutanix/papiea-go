@@ -291,7 +291,8 @@ export class Kind_Builder {
                 }, req.body.input);
                 res.json(result.spec);
             } catch (e) {
-                throw new Error("Unable to execute handler");
+                console.error("Unable to execute handler", e)
+                throw new Error(`Unable to execute handler '${e.message}'`);
             }
         });
         return this
@@ -318,7 +319,8 @@ export class Kind_Builder {
                 const result = await handler(new ProceduralCtx(this.entity_url, prefix, version), req.body.input);
                 res.json(result);
             } catch (e) {
-                throw new Error("Unable to execute handler");
+                console.error("Unable to execute handler", e)
+                throw new Error(`Unable to execute handler '${e.message}'`);
             }
         });
     return this   

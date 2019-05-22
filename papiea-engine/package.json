@@ -1,6 +1,6 @@
 {
   "name": "papiea-engine",
-  "version": "1.0.7",
+  "version": "1.0.10",
   "description": "",
   "main": "build/main.js",
   "files": [
@@ -10,6 +10,7 @@
   "scripts": {
     "clean": "rm -rf build",
     "build": "tsc",
+    "build!": "npm run clean && npm run build",
     "start": "ts-node src/main.ts",
     "test": "jest --runInBand --coverage",
     "test-ci": "jest --runInBand --coverage --ci --reporters=default --reporters=jest-junit",
