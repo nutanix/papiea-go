@@ -79,7 +79,8 @@ export class ProviderSdk implements ProviderImpl {
                     kind_structure: entity_description,
                     intentful_signatures: new Map(),
                     dependency_tree: new Map(),
-                    procedures: {},
+                    kind_procedures: {},
+                    entity_procedures: {},
                     differ: undefined,
                 };
                 const kind_builder = new Kind_Builder(spec_only_kind, this.entity_url, this.get_prefix, this.get_version, this.server_manager);
