@@ -123,7 +123,7 @@ export class Entity_API_Impl implements Entity_API {
         const kind: Kind = await this.get_kind(user, prefix, kind_name, version);
         const entity_data: [Metadata, Spec] = await this.get_entity_spec(user, kind_name, entity_uuid);
         await this.authorizer.checkPermission(user, { "metadata": entity_data[0] }, CallProcedureByNameAction(procedure_name));
-        const procedure: Procedural_Signature | undefined = kind.procedures[procedure_name];
+        const procedure: Procedural_Signature | undefined = kind.entity_procedures[procedure_name];
         if (procedure === undefined) {
             throw new Error(`Procedure ${procedure_name} not found for kind ${kind.name}`);
         }
@@ -188,7 +188,7 @@ export class Entity_API_Impl implements Entity_API {
     async call_kind_procedure(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, procedure_name: string, input: any): Promise<any> {
         const kind: Kind = await this.get_kind(user, prefix, kind_name, version);
         await this.authorizer.checkPermission(user, { kind: kind }, CallProcedureByNameAction(procedure_name));
-        const procedure: Procedural_Signature | undefined = kind.procedures[procedure_name];
+        const procedure: Procedural_Signature | undefined = kind.kind_procedures[procedure_name];
         if (procedure === undefined) {
             throw new Error(`Procedure ${procedure_name} not found for kind ${kind.name}`);
         }

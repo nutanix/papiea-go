@@ -160,7 +160,7 @@ export class ProviderBuilder {
                 procedure_callback: this._callback
             };
             if (this._kinds.length >= 1) {
-                this._kinds[0].procedures[geolocationComputeProceduralSignature.name] = geolocationComputeProceduralSignature
+                this._kinds[0].kind_procedures[geolocationComputeProceduralSignature.name] = geolocationComputeProceduralSignature
             } else {
                 throw new Error(formatErrorMsg("Kind Procedures", "Kinds"))
             }
@@ -182,7 +182,7 @@ export class ProviderBuilder {
                 procedure_callback: this._callback
             };
             if (this._kinds.length >= 1) {
-                this._kinds[0].procedures[proceduralSignatureForKind.name] = proceduralSignatureForKind
+                this._kinds[0].entity_procedures[proceduralSignatureForKind.name] = proceduralSignatureForKind
             } else {
                 throw new Error(formatErrorMsg("Entity Procedures", "Kinds"))
             }

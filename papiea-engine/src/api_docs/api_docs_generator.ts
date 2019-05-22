@@ -500,9 +500,18 @@ export default class ApiDocsGenerator {
                     "delete": this.deleteKindEntity(provider, kind),
                     "put": this.putKindEntity(provider, kind)
                 };
-                if (kind.procedures) {
-                    Object.values(kind.procedures).forEach(procedure => {
-                        paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/{uuid}/procedure/${ procedure.name }`] = {
+                if (kind.kind_procedures) {
+                    Object.values(kind.kind_procedures).forEach(procedure => {
+                        paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/procedure/${ procedure.name }`] = {
+                            "post": this.callProcedure(provider, kind, procedure)
+                        };
+                        Object.assign(schemas, procedure.argument);
+                        Object.assign(schemas, procedure.result);
+                    });
+                }
+                if (kind.entity_procedures) {
+                    Object.values(kind.entity_procedures).forEach(procedure => {
+                        paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/procedure/${ procedure.name }`] = {
                             "post": this.callProcedure(provider, kind, procedure)
                         };
                         Object.assign(schemas, procedure.argument);

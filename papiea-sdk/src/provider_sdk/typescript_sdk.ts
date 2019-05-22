@@ -278,7 +278,7 @@ export class Kind_Builder {
             execution_strategy: strategy,
             procedure_callback: callback_url
         };
-        this.kind.procedures[name] = procedural_signature;
+        this.kind.entity_procedures[name] = procedural_signature;
         const prefix = this.get_prefix();
         const version = this.get_version();
         this.server_manager.register_handler(`/${this.kind.name}/${name}`, async (req, res) => {
@@ -309,7 +309,7 @@ export class Kind_Builder {
             execution_strategy: strategy,
             procedure_callback: callback_url
         };
-        this.kind.procedures[name] = procedural_signature;
+        this.kind.kind_procedures[name] = procedural_signature;
         const prefix = this.get_prefix();
         const version = this.get_version();
         this.server_manager.register_handler(`/${this.kind.name}/${name}`, async (req, res) => {

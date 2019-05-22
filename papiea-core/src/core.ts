@@ -110,7 +110,8 @@ export interface Kind {
     differ?: Differ;
 
     //// Procedural behavior
-    procedures: { [key: string]: Procedural_Signature; };
+    entity_procedures: { [key: string]: Procedural_Signature; }
+    kind_procedures: { [key: string]: Procedural_Signature; };
 }
 
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Intentful-Execution-821][Diff-interface]]
