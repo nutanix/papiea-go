@@ -500,6 +500,7 @@ export default class ApiDocsGenerator {
                     "delete": this.deleteKindEntity(provider, kind),
                     "put": this.putKindEntity(provider, kind)
                 };
+                console.log("Generating swagger for procedures", kind.kind_procedures, kind.entity_procedures, provider.procedures)
                 if (kind.kind_procedures) {
                     Object.values(kind.kind_procedures).forEach(procedure => {
                         paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/procedure/${ procedure.name }`] = {
