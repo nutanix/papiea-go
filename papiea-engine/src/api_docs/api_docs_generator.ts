@@ -291,7 +291,43 @@ export default class ApiDocsGenerator {
         };
     }
 
-    callProcedure(provider: Provider, kind: Kind, procedure: Procedural_Signature) {
+    callKindProcedure(provider: Provider, kind: Kind, procedure: Procedural_Signature) {
+        return {
+            "description": `Calls a procedure ${ procedure.name }`,
+            "operationId": `call${ provider.prefix }${ procedure.name }`,
+            "tags": [`${ provider.prefix }/${ provider.version }/${ kind.name }/procedure`],
+            "requestBody": {
+                "description": `${ procedure.name } input`,
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "input": {
+                                    "$ref": `#/components/schemas/${ Object.keys(procedure.argument)[0] }`
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": `${ procedure.name } response`,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": `#/components/schemas/${ Object.keys(procedure.result)[0] }`
+                            }
+                        }
+                    }
+                },
+                "default": this.getDefaultResponse()
+            }
+        };
+    }
+
+    callEntityProcedure(provider: Provider, kind: Kind, procedure: Procedural_Signature) {
         return {
             "description": `Calls a procedure ${ procedure.name }`,
             "operationId": `call${ provider.prefix }${ procedure.name }`,
@@ -503,7 +539,7 @@ export default class ApiDocsGenerator {
                 if (kind.kind_procedures) {
                     Object.values(kind.kind_procedures).forEach(procedure => {
                         paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/procedure/${ procedure.name }`] = {
-                            "post": this.callProcedure(provider, kind, procedure)
+                            "post": this.callKindProcedure(provider, kind, procedure)
                         };
                         Object.assign(schemas, procedure.argument);
                         Object.assign(schemas, procedure.result);
@@ -512,7 +548,7 @@ export default class ApiDocsGenerator {
                 if (kind.entity_procedures) {
                     Object.values(kind.entity_procedures).forEach(procedure => {
                         paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/{uuid}/procedure/${ procedure.name }`] = {
-                            "post": this.callProcedure(provider, kind, procedure)
+                            "post": this.callEntityProcedure(provider, kind, procedure)
                         };
                         Object.assign(schemas, procedure.argument);
                         Object.assign(schemas, procedure.result);
