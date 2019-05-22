@@ -1,1 +1,0 @@
-{:output-wrapper false, :externs ["closure-js/externs"], :libs ["closure-js/libs"], :target :nodejs, :output-to "papiea-lib-clj.js", :optimizations :simple, :output-dir "target/cljsbuild-compiler-0"}

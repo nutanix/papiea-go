@@ -18,10 +18,8 @@ reports
 coverage
 
 # clj
-papiea-lib-clj/papiea-lib-clj.js
-papiea-lib-clj/target
+papiea-engine/papiea-lib-clj/papiea-lib-clj.js
+papiea-engine/papiea-lib-clj/target/
 
 # backups
 package.json.backup
-
-pom.properties
