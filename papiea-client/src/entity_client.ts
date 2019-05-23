@@ -15,14 +15,14 @@ interface EntitySpec {
 type Entity = EntitySpec | FullEntity
 
 async function create_entity(provider: string, kind: string, version: string, request_spec: Spec, papiea_url: string): Promise<EntitySpec> {
-    const { data: { metadata, spec } } = await axios.post(`${papiea_url}/${provider}/${version}/${kind}`, {
+    const { data: { metadata, spec } } = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}`, {
         spec: request_spec
     });
     return { metadata, spec };
 }
 
 async function update_entity(provider: string, kind: string, version: string, request_spec: Spec, request_metadata: Metadata, papiea_url: string): Promise<EntitySpec> {
-    const { data: { metadata, spec } } = await axios.put(`${papiea_url}/${provider}/${version}/${kind}/${request_metadata.uuid}`, {
+    const { data: { metadata, spec } } = await axios.put(`${papiea_url}/services/${provider}/${version}/${kind}/${request_metadata.uuid}`, {
         spec: request_spec,
         metadata: {
             spec_version: request_metadata.spec_version
@@ -32,16 +32,16 @@ async function update_entity(provider: string, kind: string, version: string, re
 }
 
 async function get_entity(provider: string, kind: string, version: string, entity_reference: Entity_Reference, papiea_url: string): Promise<FullEntity> {
-    const { data: { metadata, spec, status } } = await axios.get(`${papiea_url}/${provider}/${version}/${kind}/${entity_reference.uuid}`);
+    const { data: { metadata, spec, status } } = await axios.get(`${papiea_url}/services/${provider}/${version}/${kind}/${entity_reference.uuid}`);
     return { metadata, spec, status }
 }
 
 async function delete_entity(provider: string, kind: string, version: string, entity_reference: Entity_Reference, papiea_url: string): Promise<void> {
-    await axios.delete(`${papiea_url}/${provider}/${version}/${kind}/${entity_reference.uuid}`);
+    await axios.delete(`${papiea_url}/services/${provider}/${version}/${kind}/${entity_reference.uuid}`);
 }
 
 async function invoker_procedure(provider: string, kind: string, version: string, procedure_name: string, input: any, entity_reference: Entity_Reference, papiea_url: string): Promise<any> {
-    const res = await axios.post(`${papiea_url}/${provider}/${version}/${kind}/${entity_reference.uuid}/procedure/${procedure_name}`, input);
+    const res = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}/${entity_reference.uuid}/procedure/${procedure_name}`, input);
     return res.data;
 }
 
