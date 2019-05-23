@@ -47,7 +47,7 @@ export interface Intentful_Handler {
 
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Providers-SDK-518][provider_sdk_ts_intentful_ctx_interface]]
 export interface IntentfulCtx_Interface {
-    update_status(entity_reference: Entity_Reference, status: Status):boolean;
+    update_status(entity_reference: Entity_Reference, status: Status):Promise<boolean>
     update_progress(message:string, done_percent:number):boolean;
 
     url_for(entity: Entity): string;

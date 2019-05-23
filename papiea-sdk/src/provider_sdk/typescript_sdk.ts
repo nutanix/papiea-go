@@ -19,7 +19,6 @@ export class ProviderSdk implements ProviderImpl {
     private meta_ext: { [key: string]: string };
     private readonly server_manager: Provider_Server_Manager;
 
-
     constructor(papiea_url: string, papiea_port: number, server_manager?: Provider_Server_Manager) {
         this._version = null;
         this._prefix = null;
@@ -40,6 +39,10 @@ export class ProviderSdk implements ProviderImpl {
         } else {
             throw Error("Provider not created")
         }
+    }
+
+    get provider_url(): string {
+        return `http://${ this.papiea_url }:${ this.papiea_port }/provider`
     }
 
     get entity_url(): string {
@@ -83,7 +86,7 @@ export class ProviderSdk implements ProviderImpl {
                     entity_procedures: {},
                     differ: undefined,
                 };
-                const kind_builder = new Kind_Builder(spec_only_kind, this.entity_url, this.get_prefix, this.get_version, this.server_manager);
+                const kind_builder = new Kind_Builder(spec_only_kind, this.entity_url, this.provider_url, this.get_prefix, this.get_version, this.server_manager);
                 this._kind.push(spec_only_kind);
                 return kind_builder;
             } else {
@@ -98,7 +101,7 @@ export class ProviderSdk implements ProviderImpl {
     add_kind(kind: Kind): Kind_Builder | null {
         if (this._kind.indexOf(kind) === -1) {
             this._kind.push(kind);
-            const kind_builder = new Kind_Builder(kind, this.entity_url, this.get_prefix, this.get_version, this.server_manager);
+            const kind_builder = new Kind_Builder(kind, this.entity_url, this.provider_url, this.get_prefix, this.get_version, this.server_manager);
             return kind_builder;
         } else {
             return null;
@@ -148,7 +151,7 @@ export class ProviderSdk implements ProviderImpl {
         const version = this.get_version();
         this.server_manager.register_handler("/" + name, async (req, res) => {
             try {
-                const result = await handler(new ProceduralCtx(this.entity_url, prefix, version), req.body.input);
+                const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version), req.body.input);
                 res.json(result);
             } catch (e) {
                 throw new Error("Unable to execute handler");
@@ -168,7 +171,7 @@ export class ProviderSdk implements ProviderImpl {
                 extension_structure: this.meta_ext
             };
             try {
-                await axios.post(`http://${ this.papiea_url }:${ this.papiea_port }/provider/`, this._provider);
+                await axios.post(this.provider_url, this._provider);
                 this.server_manager.startServer();
             } catch (err) {
                 throw err;
@@ -257,13 +260,15 @@ export class Kind_Builder {
     get_prefix: () => string;
     get_version: () => string;
     private server_manager: Provider_Server_Manager;
+    provider_url: string;
 
-    constructor(kind: Kind, entity_url: string, get_prefix: () => string, get_version: () => string, server_manager: Provider_Server_Manager) {
+    constructor(kind: Kind, entity_url: string, provider_url:string, get_prefix: () => string, get_version: () => string, server_manager: Provider_Server_Manager) {
         this.server_manager = server_manager;
         this.kind = kind;
         this.entity_url = entity_url;
         this.get_prefix = get_prefix;
         this.get_version = get_version;
+        this.provider_url = provider_url
     }
 
     entity_procedure(name: string, rbac: any,
@@ -284,7 +289,7 @@ export class Kind_Builder {
         const version = this.get_version();
         this.server_manager.register_handler(`/${this.kind.name}/${name}`, async (req, res) => {
             try {
-                const result = await handler(new ProceduralCtx(this.entity_url, prefix, version), {
+                const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version), {
                     metadata: req.body.metadata,
                     spec: req.body.spec,
                     status: req.body.status
@@ -316,7 +321,7 @@ export class Kind_Builder {
         const version = this.get_version();
         this.server_manager.register_handler(`/${this.kind.name}/${name}`, async (req, res) => {
             try {
-                const result = await handler(new ProceduralCtx(this.entity_url, prefix, version), req.body.input);
+                const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version), req.body.input);
                 res.json(result);
             } catch (e) {
                 console.error("Unable to execute handler", e)
