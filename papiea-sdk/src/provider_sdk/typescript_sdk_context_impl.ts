@@ -1,6 +1,5 @@
 import { ProceduralCtx_Interface } from "./typescript_sdk_interface";
-import { Entity, Metadata, Status } from "papiea-core";
-
+import { Entity, Metadata, Status, Entity_Reference } from "papiea-core";
 
 export class ProceduralCtx implements ProceduralCtx_Interface {
 
@@ -19,7 +18,7 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
         return `${this.base_url}/${this.provider_prefix}/${this.provider_version}/${entity.metadata.kind}/${entity.metadata.uuid}`
     }
 
-    update_status(metadata: Metadata, status: Status): boolean {
+    update_status(entity_reference: Entity_Reference, status: Status): boolean {
         throw new Error("Unimplemented")
     }
 
