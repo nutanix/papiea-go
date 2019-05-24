@@ -459,4 +459,52 @@ describe("Provider Sdk tests", () => {
         sdk.server.close();
         done();
     });
+
+    test("Provider with provider level procedures should be fail validation if wrong type is returned", async (done) => {
+        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        sdk.version(provider_version);
+        sdk.prefix("location_provider");
+        const proceduralSignature: Procedural_Signature = {
+            name: "moveX",
+            argument: loadYaml("./procedure_move_input.yml"),
+            result: loadYaml("./location_kind_test_data.yml"),
+            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
+            procedure_callback: procedure_callback
+        };
+        location.entity_procedure(proceduralSignature.name, {}, proceduralSignature.execution_strategy, proceduralSignature.argument, proceduralSignature.result, async (ctx, entity, input) => {
+            entity.spec.x += input;
+            const res = await axios.put(ctx.url_for(entity), {
+                spec: entity.spec,
+                metadata: entity.metadata
+            });
+            return res.data;
+        });
+        const proceduralSignatureForProvider: Procedural_Signature = {
+            name: "computeSum",
+            argument: loadYaml("./procedure_sum_input.yml"),
+            result: loadYaml("./procedure_sum_output.yml"),
+            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
+            procedure_callback: procedure_callback
+        };
+        sdk.provider_procedure(proceduralSignatureForProvider.name,
+            {},
+            proceduralSignatureForProvider.execution_strategy,
+            proceduralSignatureForProvider.argument,
+            proceduralSignatureForProvider.result,
+            async (ctx, input) => {
+                return "Totally not a number should fail provider-level validation";
+            }
+        );
+        await sdk.register();
+        try {
+            const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSum`, { input: {"a": 5, "b": 5} });
+            done.fail();
+        } catch (e) {
+            console.log(e);
+            done();
+        }
+        sdk.server.close();
+        done();
+    });
 });
