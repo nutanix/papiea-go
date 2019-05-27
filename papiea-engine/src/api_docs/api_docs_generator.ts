@@ -291,7 +291,7 @@ export default class ApiDocsGenerator {
         };
     }
 
-    processUnvalidatedProcedure(proc_def: any, sig: Procedural_Signature) {
+    processEmptyValidation(proc_def: any, sig: Procedural_Signature) {
         if (!sig.argument) {
             proc_def.requestBody.content["application/json"].schema.properties.input.$ref = `#/components/schemas/AnyValue`
         }
@@ -335,7 +335,7 @@ export default class ApiDocsGenerator {
                 "default": this.getDefaultResponse()
             }
         };
-        return this.processUnvalidatedProcedure(procedural_def, procedure)
+        return this.processEmptyValidation(procedural_def, procedure)
     }
 
     callEntityProcedure(provider: Provider, kind: Kind, procedure: Procedural_Signature) {
@@ -384,7 +384,7 @@ export default class ApiDocsGenerator {
                 "default": this.getDefaultResponse()
             }
         };
-        return this.processUnvalidatedProcedure(procedural_def, procedure)
+        return this.processEmptyValidation(procedural_def, procedure)
     }
 
     callProviderProcedure(provider: Provider, procedure: Procedural_Signature) {
@@ -423,7 +423,7 @@ export default class ApiDocsGenerator {
                 "default": this.getDefaultResponse()
             }
         };
-        return this.processUnvalidatedProcedure(procedural_def, procedure)
+        return this.processEmptyValidation(procedural_def, procedure)
     }
 
     async getApiDocs(): Promise<any> {
