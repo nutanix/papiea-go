@@ -139,6 +139,8 @@ export class ProviderBuilder {
                 procedure_callback: this._callback
             };
             this._procedures[proceduralSignatureForProvider.name] = proceduralSignatureForProvider;
+        } else {
+            this._procedures = value;
         }
         return this;
     }
@@ -165,6 +167,12 @@ export class ProviderBuilder {
             } else {
                 throw new Error(formatErrorMsg("Kind Procedures", "Kinds"))
             }
+        } else {
+            if (this._kinds.length >= 1) {
+                this._kinds[0].kind_procedures = value
+            } else {
+                throw new Error(formatErrorMsg("Kind Procedures", "Kinds"))
+            }
         }
         return this;
     }
@@ -184,6 +192,12 @@ export class ProviderBuilder {
             };
             if (this._kinds.length >= 1) {
                 this._kinds[0].entity_procedures[proceduralSignatureForKind.name] = proceduralSignatureForKind
+            } else {
+                throw new Error(formatErrorMsg("Entity Procedures", "Kinds"))
+            }
+        } else {
+            if (this._kinds.length >= 1) {
+                this._kinds[0].entity_procedures = value
             } else {
                 throw new Error(formatErrorMsg("Entity Procedures", "Kinds"))
             }

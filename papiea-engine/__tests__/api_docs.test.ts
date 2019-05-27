@@ -2,9 +2,9 @@ import "jest"
 import { writeFileSync, unlinkSync } from "fs";
 import { validate } from "swagger-parser";
 import axios from "axios"
-import { ProviderBuilder } from "./test_data_factory";
+import { loadYaml, ProviderBuilder } from "./test_data_factory";
 import { Provider_DB } from "../src/databases/provider_db_interface";
-import { Provider, Version } from "papiea-core";
+import { Provider, Version, Procedural_Signature, Procedural_Execution_Strategy } from "papiea-core";
 import ApiDocsGenerator from "../src/api_docs/api_docs_generator";
 declare var process: {
     env: {
@@ -15,6 +15,12 @@ const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 
 const api = axios.create({
     baseURL: `http://127.0.0.1:${serverPort}/`,
+    timeout: 1000,
+    headers: { 'Content-Type': 'application/json' }
+});
+
+const providerApi = axios.create({
+    baseURL: `http://127.0.0.1:${serverPort}/provider`,
     timeout: 1000,
     headers: { 'Content-Type': 'application/json' }
 });
@@ -123,4 +129,47 @@ describe("API Docs Tests", () => {
     test("API Docs should be accessible by the url", done => {
         api.get("/api-docs/api-docs.json").then(() => done()).catch(done.fail);
     });
+
+    test("Provider with procedures that contain no validation scheme should be {}", async done => {
+        const procedure_id = "computeSumNoValidation";
+        const proceduralSignatureForProvider: Procedural_Signature = {
+            name: "computeSumWithNoValidation",
+            argument: loadYaml("./procedure_sum_input.yml"),
+            result: loadYaml("./procedure_sum_output.yml"),
+            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
+            procedure_callback: "127.0.0.1:9010"
+        };
+        const provider: Provider = new ProviderBuilder("provider_no_validation_scheme")
+                            .withVersion("0.1.0")
+                            .withKinds()
+                            .withCallback(`http://127.0.0.1:9010`)
+                            .withProviderProcedures({ [procedure_id]: proceduralSignatureForProvider })
+                            .build();
+        console.dir(provider);
+        try {
+            await providerApi.post('/', provider);
+            const apiDoc = await apiDocsGenerator.getApiDocs();
+            console.dir(apiDoc.paths);
+            expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
+                .post
+                .requestBody
+                .content["application/json"]
+                .schema
+                .properties
+                .input['$ref']).toEqual(`#/components/schemas/AnyValue`);
+
+            expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
+                .post
+                .responses["200"]
+                .content["application/json"]
+                .schema
+                .properties
+                .input['$ref']).toEqual(`#/components/schemas/AnyValue`);
+
+            done();
+            providerApi.delete(`${provider.prefix}/${provider.version}`)
+        } catch (e) {
+            done.fail(e);
+        }
+    })
 });
