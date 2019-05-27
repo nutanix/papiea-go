@@ -18,7 +18,8 @@
     "express-async-handler": "^1.1.4",
     "papiea-core": "file:../papiea-core",
     "pluralize": "^7.0.0",
-    "wait-port": "^0.2.2"
+    "wait-port": "^0.2.2",
+    "swagger-model-validator": "^3.0.6"
   },
   "description": "",
   "devDependencies": {
