@@ -526,7 +526,39 @@ describe("Provider Sdk tests", () => {
             {},
             {},
             async (ctx, input) => {
-                return input.a + input.b;
+            }
+        );
+        await sdk.register();
+        try {
+            const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSum`, { input: {"a": 5, "b": 5} });
+            done.fail();
+        } catch (e) {
+            console.log(e);
+            done();
+        }
+        sdk.server.close();
+        done();
+    });
+
+    test("Provider with provider level procedures should return error if the return type is not void", async (done) => {
+        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        sdk.version(provider_version);
+        sdk.prefix("location_provider_no_validation_scheme");
+        const proceduralSignatureForProvider: Procedural_Signature = {
+            name: "computeSumWithNoValidation",
+            argument: loadYaml("./procedure_sum_input.yml"),
+            result: loadYaml("./procedure_sum_output.yml"),
+            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
+            procedure_callback: procedure_callback
+        };
+        sdk.provider_procedure(proceduralSignatureForProvider.name,
+            {},
+            proceduralSignatureForProvider.execution_strategy,
+            {},
+            {},
+            async (ctx, input) => {
+                return "Totally not a void type"
             }
         );
         await sdk.register();

@@ -1,4 +1,9 @@
-import { ProceduralCtx_Interface, Provider as ProviderImpl, Provider_Power, IntentfulCtx_Interface } from "./typescript_sdk_interface";
+import {
+    ProceduralCtx_Interface,
+    Provider as ProviderImpl,
+    Provider_Power,
+    IntentfulCtx_Interface,
+} from "./typescript_sdk_interface";
 import axios from "axios"
 import { plural } from "pluralize"
 import * as express from "express";
@@ -8,6 +13,7 @@ import { Server } from "http";
 import { ProceduralCtx } from "./typescript_sdk_context_impl";
 import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity } from "papiea-core";
 import { ValidationError, Validator } from "./typescript_sdk_validation";
+import { Maybe } from "./typescript_sdk_utils";
 
 export class ProviderSdk implements ProviderImpl {
     private readonly _kind: Kind[];
@@ -155,7 +161,7 @@ export class ProviderSdk implements ProviderImpl {
         this.server_manager.register_handler("/" + name, async (req, res) => {
             try {
                 const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version), req.body.input);
-                this.validator.validate(result, Object.values(output_desc)[0], Validator.build_schemas(input_desc, output_desc));
+                this.validator.validate(result, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc));
                 res.json(result);
             } catch (e) {
                 if (e instanceof ValidationError) {
@@ -303,7 +309,7 @@ export class Kind_Builder {
                     spec: req.body.spec,
                     status: req.body.status
                 }, req.body.input);
-                this.validator.validate(result.spec, Object.values(output_desc)[0], Validator.build_schemas(input_desc, output_desc));
+                this.validator.validate(result.spec, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc));
                 res.json(result.spec);
             } catch (e) {
                 if (e instanceof ValidationError) {
@@ -334,7 +340,7 @@ export class Kind_Builder {
         this.server_manager.register_handler(`/${this.kind.name}/${name}`, async (req, res) => {
             try {
                 const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version), req.body.input);
-                this.validator.validate(result, Object.values(output_desc)[0], Validator.build_schemas(input_desc, output_desc));
+                this.validator.validate(result, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc));
                 res.json(result);
             } catch (e) {
                 if (e instanceof ValidationError) {
@@ -343,7 +349,7 @@ export class Kind_Builder {
                 throw new Error(`Unable to execute handler '${e.message}'`);
             }
         });
-    return this   
+        return this
     }
 }
 export {Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, ProceduralCtx_Interface, Provider_Power, IntentfulCtx_Interface}

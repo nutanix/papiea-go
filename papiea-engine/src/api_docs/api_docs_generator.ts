@@ -489,7 +489,10 @@ export default class ApiDocsGenerator {
                             }
                         }
                     },
-                    "AnyValue": {}
+                    "Nothing": {
+                        "type": "object",
+                        "description": "Representation of a 'void' type"
+                    }
                     /*"PatchRequest": {
                         "type": "array",
                         "items": {

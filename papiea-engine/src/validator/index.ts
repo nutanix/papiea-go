@@ -1,3 +1,5 @@
+import { Maybe } from "../utils/utils";
+
 const SwaggerModelValidator = require('swagger-model-validator');
 
 export class ValidationError extends Error {
@@ -18,10 +20,21 @@ export class Validator {
         this.validator = new SwaggerModelValidator();
     }
 
-    validate(data: any, model: any, models: any): any {
-        const res = this.validator.validate(data, model, models);
-        if (!res.valid) {
-            throw new ValidationError(res.errors);
-        }
+    validate(data: any, model: Maybe<any>, models: any) {
+        console.dir(model);
+        model.mapOrElse((val) => {
+            const res = this.validator.validate(data, val, models);
+            if (!res.valid) {
+                throw new ValidationError(res.errors);
+            }
+            return Maybe.fromValue(res)
+        }, () => {
+            if (data !== undefined && data !== null) {
+                throw new ValidationError([{
+                    name: "Error",
+                    message: "Function was expecting output of type void"
+                }])
+            }
+        })
     }
 }

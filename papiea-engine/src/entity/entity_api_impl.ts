@@ -9,6 +9,7 @@ import { UserAuthInfo } from "../auth/authn";
 import { Provider_API } from "../provider/provider_api_interface";
 import uuid = require("uuid");
 import { Version, Spec, Metadata, uuid4, Entity_Reference, Status, Data_Description, Provider, Kind, Procedural_Signature } from "papiea-core";
+import { isEmpty, Maybe } from "../utils/utils";
 
 export class ProcedureInvocationError extends Error {
     errors: string[];
@@ -130,7 +131,9 @@ export class Entity_API_Impl implements Entity_API {
         const schemas: any = {};
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
-        this.validator.validate(input, Object.values(procedure.argument)[0], schemas);
+        console.log("Unvalid")
+        this.validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas);
+        console.log("Valid")
         try {
             const { data } = await axios.post(procedure.procedure_callback,
                 {
@@ -140,7 +143,7 @@ export class Entity_API_Impl implements Entity_API {
                 }, {
                     headers: user ? user.headers : undefined
                 });
-            this.validator.validate(data, Object.values(procedure.result)[0], schemas);
+            this.validator.validate(data, Maybe.fromValue(Object.values(procedure.result)[0]), schemas);
             return data;
         } catch (err) {
             if (err instanceof ValidationError) {
@@ -166,7 +169,7 @@ export class Entity_API_Impl implements Entity_API {
         const schemas: any = {};
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
-        this.validator.validate(input, Object.values(procedure.argument)[0], schemas);
+        this.validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas);
         try {
             const { data } = await axios.post(procedure.procedure_callback,
                 {
@@ -174,7 +177,7 @@ export class Entity_API_Impl implements Entity_API {
                 }, {
                     headers: user ? user.headers : undefined
                 });
-            this.validator.validate(data, Object.values(procedure.result)[0], schemas);
+            this.validator.validate(data, Maybe.fromValue(Object.values(procedure.result)[0]), schemas);
             return data;
         } catch (err) {
             if (err instanceof ValidationError) {
@@ -195,7 +198,7 @@ export class Entity_API_Impl implements Entity_API {
         const schemas: any = {};
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
-        this.validator.validate(input, Object.values(procedure.argument)[0], schemas);
+        this.validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas);
         try {
             const { data } = await axios.post(procedure.procedure_callback,
                 {
@@ -203,7 +206,7 @@ export class Entity_API_Impl implements Entity_API {
                 }, {
                     headers: user ? user.headers : undefined
                 });
-            this.validator.validate(data, Object.values(procedure.result)[0], schemas);
+            this.validator.validate(data, Maybe.fromValue(Object.values(procedure.result)[0]), schemas);
             return data;
         } catch (err) {
             if (err instanceof ValidationError) {
@@ -222,18 +225,17 @@ export class Entity_API_Impl implements Entity_API {
 
     private validate_spec(spec: Spec, kind: Kind) {
         const schemas: any = Object.assign({}, kind.kind_structure);
-        this.validator.validate(spec, Object.values(kind.kind_structure)[0], schemas);
+        this.validator.validate(spec, Maybe.fromValue(Object.values(kind.kind_structure)[0]), schemas);
     }
 
     private validate_metadata_extension(extension_structure: Data_Description, metadata: Metadata | undefined) {
         if (metadata === undefined) {
             return
         }
-        // Check extension structure is an empty object
-        if (Object.entries(extension_structure).length === 0 && extension_structure.constructor === Object) {
+        if (isEmpty(extension_structure)) {
             return
         }
         const schemas: any = Object.assign({}, extension_structure);
-        this.validator.validate(metadata.extension, Object.values(extension_structure)[0], schemas);
+        this.validator.validate(metadata.extension, Maybe.fromValue(Object.values(extension_structure)[0]), schemas);
     }
 }

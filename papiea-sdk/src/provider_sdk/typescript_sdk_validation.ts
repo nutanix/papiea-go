@@ -1,4 +1,5 @@
 import { Data_Description } from "papiea-core";
+import { Maybe } from "./typescript_sdk_utils";
 
 const SwaggerModelValidator = require('swagger-model-validator');
 
@@ -29,11 +30,21 @@ export class Validator {
         this.validator = new SwaggerModelValidator();
     }
 
-    validate(data: any, model: any, models: any): any {
-        const res = this.validator.validate(data, model, models);
-        if (!res.valid) {
-            throw new ValidationError(res.errors);
-        }
+    validate(data: any, model: Maybe<any>, models: any) {
+        model.mapOrElse((val) => {
+            const res = this.validator.validate(data, val, models);
+            if (!res.valid) {
+                throw new ValidationError(res.errors);
+            }
+            return Maybe.fromValue(res)
+        }, () => {
+            if (data !== undefined && data !== null) {
+                throw new ValidationError([{
+                    name: "Error",
+                    message: "Function was expecting output of type void"
+                }])
+            }
+        })
     }
 
     static build_schemas(argument: Data_Description, result: Data_Description) {

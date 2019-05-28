@@ -6,6 +6,7 @@ import { Authorizer } from "../auth/authz";
 import { UserAuthInfo } from "../auth/authn";
 import { EventEmitter } from "events";
 import { Entity_Reference, Version, Status, Provider } from "papiea-core";
+import { Maybe } from "../utils/utils";
 
 export class Provider_API_Impl implements Provider_API {
     providerDb: Provider_DB;
@@ -72,7 +73,7 @@ export class Provider_API_Impl implements Provider_API {
             throw new Error("Kind not found");
         }
         const schemas: any = Object.assign({}, kind.kind_structure);
-        this.validator.validate(status, Object.values(kind.kind_structure)[0], schemas);
+        this.validator.validate(status, Maybe.fromValue(Object.values(kind.kind_structure)[0]), schemas);
     }
 
     async update_auth(user: UserAuthInfo, provider_prefix: string, provider_version: string, auth: any): Promise<void> {
