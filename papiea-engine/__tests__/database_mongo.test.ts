@@ -3,6 +3,7 @@ import { MongoConnection } from "../src/databases/mongo";
 import { Spec_DB } from "../src/databases/spec_db_interface";
 import { Status_DB } from "../src/databases/status_db_interface";
 import { Provider_DB } from "../src/databases/provider_db_interface";
+import { S2S_Key_DB, S2S_Key } from "../src/databases/s2skey_db_interface";
 import { v4 as uuid4 } from 'uuid';
 import { ConflictingEntityError } from "../src/databases/utils/errors";
 import { Metadata, Spec, Entity_Reference, Status, Kind, Provider } from "papiea-core";
@@ -256,5 +257,87 @@ describe("MongoDb tests", () => {
         const version: string = "0.1.0";
         await providerDb.delete_provider(prefix_string, version);
         done();
+    });
+    test("Create and get s2s key", async (done) => {
+        const s2skeyDb: S2S_Key_DB = await connection.get_s2skey_db();
+        const s2skey: S2S_Key = {
+            name: uuid4(),
+            user_id: uuid4(),
+            provider_prefix: "test_provider",
+            key: uuid4(),
+            created_at: new Date(),
+            deleted_at: undefined,
+            extension: {}
+        };
+        await s2skeyDb.create_key(s2skey);
+        const res: S2S_Key = await s2skeyDb.get_key(s2skey.key);
+        expect(res.name).toEqual(s2skey.name);
+        expect(res.user_id).toEqual(s2skey.user_id);
+        expect(res.provider_prefix).toEqual(s2skey.provider_prefix);
+        expect(res.key).toEqual(s2skey.key);
+        expect(res.deleted_at).toBeFalsy();
+        done();
+    });
+    test("Duplicate s2s key shoud thtrow an error", async (done) => {
+        const s2skeyDb: S2S_Key_DB = await connection.get_s2skey_db();
+        const s2skey: S2S_Key = {
+            name: uuid4(),
+            user_id: uuid4(),
+            provider_prefix: "test_provider",
+            key: uuid4(),
+            created_at: new Date(),
+            deleted_at: undefined,
+            extension: {}
+        };
+        await s2skeyDb.create_key(s2skey);
+        try {
+            await s2skeyDb.create_key(s2skey);
+            done.fail("Inserted duplicate key");
+        } catch(e) {
+            done();
+        }
+    });
+    test("List s2s keys", async (done) => {
+        const s2skeyDb: S2S_Key_DB = await connection.get_s2skey_db();
+        const s2skey: S2S_Key = {
+            name: uuid4(),
+            user_id: uuid4(),
+            provider_prefix: "test_provider",
+            key: uuid4(),
+            created_at: new Date(),
+            deleted_at: undefined,
+            extension: {}
+        };
+        await s2skeyDb.create_key(s2skey);
+        const res: S2S_Key = (await s2skeyDb.list_keys({
+            user_id: s2skey.user_id,
+            provider_prefix: s2skey.provider_prefix
+        }))[0];
+        expect(res.name).toEqual(s2skey.name);
+        expect(res.user_id).toEqual(s2skey.user_id);
+        expect(res.provider_prefix).toEqual(s2skey.provider_prefix);
+        expect(res.key).toEqual(s2skey.key);
+        expect(res.deleted_at).toBeFalsy();
+        done();
+    });
+    test("Inactivate s2s key", async (done) => {
+        const s2skeyDb: S2S_Key_DB = await connection.get_s2skey_db();
+        const s2skey: S2S_Key = {
+            name: uuid4(),
+            user_id: uuid4(),
+            provider_prefix: "test_provider",
+            key: uuid4(),
+            created_at: new Date(),
+            deleted_at: undefined,
+            extension: {}
+        };
+        await s2skeyDb.create_key(s2skey);
+        await s2skeyDb.inactivate_key(s2skey.key);
+        try {
+            await s2skeyDb.get_key(s2skey.key);
+            done.fail("Key is still active");
+        } catch(e) {
+            done();
+        }
     });
 });

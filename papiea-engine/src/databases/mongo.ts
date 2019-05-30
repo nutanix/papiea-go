@@ -2,6 +2,7 @@ import { MongoClient, Db } from "mongodb";
 import { Spec_DB_Mongo } from "./spec_db_mongo";
 import { Status_DB_Mongo } from "./status_db_mongo";
 import { Provider_DB_Mongo } from "./provider_db_mongo";
+import { S2S_Key_DB_Mongo } from "./s2skey_db_mongo";
 
 export class MongoConnection {
     url: string;
@@ -11,6 +12,7 @@ export class MongoConnection {
     specDb: Spec_DB_Mongo | undefined;
     providerDb: Provider_DB_Mongo | undefined;
     statusDb: Status_DB_Mongo | undefined;
+    s2skeyDb: S2S_Key_DB_Mongo | undefined;
 
     constructor(url: string, dbName: string) {
         this.url = url;
@@ -24,6 +26,7 @@ export class MongoConnection {
         this.specDb = undefined;
         this.providerDb = undefined;
         this.statusDb = undefined;
+        this.s2skeyDb = undefined;
     }
 
     async connect(): Promise<void> {
@@ -63,5 +66,15 @@ export class MongoConnection {
         this.statusDb = new Status_DB_Mongo(this.db);
         await this.statusDb.init();
         return this.statusDb;
+    }
+
+    async get_s2skey_db(): Promise<S2S_Key_DB_Mongo> {
+        if (this.s2skeyDb !== undefined)
+            return this.s2skeyDb;
+        if (this.db === undefined)
+            throw new Error("Not connected");
+        this.s2skeyDb = new S2S_Key_DB_Mongo(this.db);
+        await this.s2skeyDb.init();
+        return this.s2skeyDb;
     }
 }
