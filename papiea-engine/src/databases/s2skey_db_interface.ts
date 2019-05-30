@@ -1,19 +1,4 @@
-
-export type Key = string;
-
-export interface S2S_Key {
-    name: string;
-    user_id: string;
-    provider_prefix: string;
-    key: Key;
-
-    // Additional fields
-    created_at: Date;
-    deleted_at?: Date;
-    extension: {
-        [key: string]: any;
-    }
-}
+import { S2S_Key, Key } from "papiea-core";
 
 export interface S2S_Key_DB {
 

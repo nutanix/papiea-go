@@ -1,23 +1,27 @@
 import { Provider_API, Provider_Power } from "./provider_api_interface";
 import { Provider_DB } from "../databases/provider_db_interface";
 import { Status_DB } from "../databases/status_db_interface";
+import { S2S_Key_DB } from "../databases/s2skey_db_interface";
 import { Validator } from "../validator";
 import { Authorizer } from "../auth/authz";
 import { UserAuthInfo } from "../auth/authn";
+import { createHash } from "../auth/crypto";
 import { EventEmitter } from "events";
-import { Entity_Reference, Version, Status, Provider } from "papiea-core";
+import { Entity_Reference, Version, Status, Provider, S2S_Key, Key } from "papiea-core";
 import { Maybe } from "../utils/utils";
 
 export class Provider_API_Impl implements Provider_API {
-    providerDb: Provider_DB;
-    statusDb: Status_DB;
+    private providerDb: Provider_DB;
+    private statusDb: Status_DB;
+    private s2skeyDb: S2S_Key_DB;
     private validator: Validator;
     private authorizer: Authorizer;
     private eventEmitter: EventEmitter;
 
-    constructor(providerDb: Provider_DB, statusDb: Status_DB, validator: Validator, authorizer: Authorizer) {
+    constructor(providerDb: Provider_DB, statusDb: Status_DB, s2skeyDb: S2S_Key_DB, validator: Validator, authorizer: Authorizer) {
         this.providerDb = providerDb;
         this.statusDb = statusDb;
+        this.s2skeyDb = s2skeyDb;
         this.validator = validator;
         this.authorizer = authorizer;
         this.eventEmitter = new EventEmitter();
@@ -90,5 +94,32 @@ export class Provider_API_Impl implements Provider_API {
 
     on_auth_change(callbackfn: (provider: Provider) => void): void {
         this.eventEmitter.on('authChange', callbackfn);
+    }
+
+    async create_key(user: UserAuthInfo, name: string, owner: string, provider_prefix: string): Promise<S2S_Key> {
+        const s2skey: S2S_Key = {
+            name: name,
+            owner: owner,
+            provider_prefix: provider_prefix,
+            key: "",
+            created_at: new Date(),
+            deleted_at: undefined,
+            extension: user
+        };
+        s2skey.key = createHash(s2skey);
+        await this.s2skeyDb.create_key(s2skey);
+        return this.s2skeyDb.get_key(s2skey.key);
+    }
+
+    async get_key(user: UserAuthInfo, key: Key): Promise<S2S_Key> {
+        return this.s2skeyDb.get_key(key);
+    }
+
+    async list_keys(user: UserAuthInfo, fields_map: any): Promise<S2S_Key[]> {
+        return this.s2skeyDb.list_keys(fields_map);
+    }
+
+    async inactivate_key(user: UserAuthInfo, key: Key): Promise<void> {
+        await this.s2skeyDb.inactivate_key(key);
     }
 }

@@ -1,4 +1,5 @@
-import { S2S_Key_DB, S2S_Key, Key } from "./s2skey_db_interface";
+import { S2S_Key_DB } from "./s2skey_db_interface";
+import { S2S_Key, Key } from "papiea-core";
 import { Collection, Db } from "mongodb";
 import { datestringToFilter } from "./utils/date";
 
@@ -16,7 +17,7 @@ export class S2S_Key_DB_Mongo implements S2S_Key_DB {
                 { name: "key", unique: true },
             );
             await this.collection.createIndex(
-                { "user_id": 1, "provider_prefix": 1 },
+                { "owner": 1, "provider_prefix": 1 },
                 { name: "user_provider_keys", unique: false },
             );
         } catch (err) {

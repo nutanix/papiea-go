@@ -49,8 +49,9 @@ async function setUpApplication(): Promise<express.Express> {
     const providerDb = await mongoConnection.get_provider_db();
     const specDb = await mongoConnection.get_spec_db();
     const statusDb = await mongoConnection.get_status_db();
+    const s2skeyDb = await mongoConnection.get_s2skey_db();
     const validator = new Validator();
-    const providerApi = new Provider_API_Impl(providerDb, statusDb, validator, new NoAuthAuthorizer());
+    const providerApi = new Provider_API_Impl(providerDb, statusDb, s2skeyDb, validator, new NoAuthAuthorizer());
     app.use(createOAuth2Router(oauth2RedirectUri, new JWTHMAC(tokenSecret, tokenExpiresSeconds), providerDb));
     const entityApiAuthorizer: Authorizer = new PerProviderAuthorizer(providerApi, new ProviderCasbinAuthorizerFactory(pathToDefaultModel));
     app.use('/provider', createProviderAPIRouter(providerApi));

@@ -9,9 +9,6 @@ const simpleOauthModule = require("simple-oauth2"),
     queryString = require("query-string"),
     url = require("url");
 
-// !!!!!!!!!!!! TODO(adolgarev): below is provider specific function !!!!!!!!!!!!
-// See https://github.com/nutanix/papiea-js/pull/94
-
 function convertToSimpleOauth2(description: any) {
     const oauth = description.oauth;
 

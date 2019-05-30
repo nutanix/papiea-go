@@ -3,10 +3,10 @@ import { MongoConnection } from "../src/databases/mongo";
 import { Spec_DB } from "../src/databases/spec_db_interface";
 import { Status_DB } from "../src/databases/status_db_interface";
 import { Provider_DB } from "../src/databases/provider_db_interface";
-import { S2S_Key_DB, S2S_Key } from "../src/databases/s2skey_db_interface";
+import { S2S_Key_DB } from "../src/databases/s2skey_db_interface";
 import { v4 as uuid4 } from 'uuid';
 import { ConflictingEntityError } from "../src/databases/utils/errors";
-import { Metadata, Spec, Entity_Reference, Status, Kind, Provider } from "papiea-core";
+import { Metadata, Spec, Entity_Reference, Status, Kind, Provider, S2S_Key } from "papiea-core";
 
 declare var process: {
     env: {
@@ -262,7 +262,7 @@ describe("MongoDb tests", () => {
         const s2skeyDb: S2S_Key_DB = await connection.get_s2skey_db();
         const s2skey: S2S_Key = {
             name: uuid4(),
-            user_id: uuid4(),
+            owner: uuid4(),
             provider_prefix: "test_provider",
             key: uuid4(),
             created_at: new Date(),
@@ -272,7 +272,7 @@ describe("MongoDb tests", () => {
         await s2skeyDb.create_key(s2skey);
         const res: S2S_Key = await s2skeyDb.get_key(s2skey.key);
         expect(res.name).toEqual(s2skey.name);
-        expect(res.user_id).toEqual(s2skey.user_id);
+        expect(res.owner).toEqual(s2skey.owner);
         expect(res.provider_prefix).toEqual(s2skey.provider_prefix);
         expect(res.key).toEqual(s2skey.key);
         expect(res.deleted_at).toBeFalsy();
@@ -282,7 +282,7 @@ describe("MongoDb tests", () => {
         const s2skeyDb: S2S_Key_DB = await connection.get_s2skey_db();
         const s2skey: S2S_Key = {
             name: uuid4(),
-            user_id: uuid4(),
+            owner: uuid4(),
             provider_prefix: "test_provider",
             key: uuid4(),
             created_at: new Date(),
@@ -301,7 +301,7 @@ describe("MongoDb tests", () => {
         const s2skeyDb: S2S_Key_DB = await connection.get_s2skey_db();
         const s2skey: S2S_Key = {
             name: uuid4(),
-            user_id: uuid4(),
+            owner: uuid4(),
             provider_prefix: "test_provider",
             key: uuid4(),
             created_at: new Date(),
@@ -310,11 +310,11 @@ describe("MongoDb tests", () => {
         };
         await s2skeyDb.create_key(s2skey);
         const res: S2S_Key = (await s2skeyDb.list_keys({
-            user_id: s2skey.user_id,
+            owner: s2skey.owner,
             provider_prefix: s2skey.provider_prefix
         }))[0];
         expect(res.name).toEqual(s2skey.name);
-        expect(res.user_id).toEqual(s2skey.user_id);
+        expect(res.owner).toEqual(s2skey.owner);
         expect(res.provider_prefix).toEqual(s2skey.provider_prefix);
         expect(res.key).toEqual(s2skey.key);
         expect(res.deleted_at).toBeFalsy();
@@ -324,7 +324,7 @@ describe("MongoDb tests", () => {
         const s2skeyDb: S2S_Key_DB = await connection.get_s2skey_db();
         const s2skey: S2S_Key = {
             name: uuid4(),
-            user_id: uuid4(),
+            owner: uuid4(),
             provider_prefix: "test_provider",
             key: uuid4(),
             created_at: new Date(),

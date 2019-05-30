@@ -182,3 +182,19 @@ export interface Provider {
 export type Partial<T> = {
     [P in keyof T]?: T[P];
 };
+
+export type Key = string;
+
+export interface S2S_Key {
+    name: string;
+    owner: string;
+    provider_prefix: string;
+    key: Key;
+
+    // Additional fields
+    created_at: Date;
+    deleted_at?: Date;
+    extension: {
+        [key: string]: any;
+    }
+}
