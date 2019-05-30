@@ -21,6 +21,14 @@ async function create_entity(provider: string, kind: string, version: string, re
     return { metadata, spec };
 }
 
+async function create_entity_with_meta(provider: string, kind: string, version: string, meta: Partial<Metadata>, request_spec: Spec, papiea_url: string): Promise<EntitySpec> {
+    const { data: { metadata, spec } } = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}`, {
+        spec: request_spec,
+        metadata: meta
+    });
+    return { metadata, spec };
+}
+
 async function update_entity(provider: string, kind: string, version: string, request_spec: Spec, request_metadata: Metadata, papiea_url: string): Promise<EntitySpec> {
     const { data: { metadata, spec } } = await axios.put(`${papiea_url}/services/${provider}/${version}/${kind}/${request_metadata.uuid}`, {
         spec: request_spec,
@@ -49,6 +57,7 @@ async function invoker_procedure(provider: string, kind: string, version: string
 export interface EntityCRUD {
     get(entity_reference: Entity_Reference): Promise<FullEntity>
     create(spec: Spec): Promise<EntitySpec>
+    create_with_meta(metadata: Partial<Metadata>, spec: Spec): Promise<EntitySpec>
     update(metadata: Metadata, spec: Spec): Promise<EntitySpec>
     delete(entity_reference: Entity_Reference): Promise<void>
     invoke_procedure(procedure_name: string, entity_reference: Entity_Reference, input: any): Promise<any>
@@ -58,6 +67,7 @@ export function kind_client(papiea_url: string, provider: string, kind: string, 
     const crudder: EntityCRUD = {
         get: (entity_reference: Entity_Reference) => get_entity(provider, kind, version, entity_reference, papiea_url),
         create: (spec: Spec) => create_entity(provider, kind, version, spec, papiea_url),
+        create_with_meta: (meta: Partial<Metadata>, spec: Spec) => create_entity_with_meta(provider,kind, version, meta, spec, papiea_url),
         update: (metadata: Metadata, spec: Spec) => update_entity(provider, kind, version, spec, metadata, papiea_url),
         delete: (entity_reference: Entity_Reference) => delete_entity(provider, kind, version, entity_reference, papiea_url),
         invoke_procedure: (proc_name: string, entity_reference: Entity_Reference, input: any) => invoker_procedure(provider, kind, version, proc_name, input, entity_reference, papiea_url)
@@ -101,12 +111,14 @@ export class ImmutableEntityObject implements EntityObjectCRUD {
 
 interface ImmutableEntityObjectBuilder {
     create(spec: Spec): Promise<ImmutableEntityObject>
+    create_with_meta(meta: Metadata, spec:Spec): Promise<ImmutableEntityObject>
     get(entity_reference: Entity_Reference): Promise<ImmutableEntityObject>
 }
 
 export function objectify(c: EntityCRUD): ImmutableEntityObjectBuilder {
     return {
         create: async (spec: Spec) => new ImmutableEntityObject(await c.create(spec), c).refresh(),
+        create_with_meta: async (meta:Partial<Metadata>, spec:Spec) => new ImmutableEntityObject(await c.create_with_meta(meta, spec), c).refresh(),
         get: async (entity_reference: Entity_Reference) => new ImmutableEntityObject(await c.get(entity_reference), c)
     }
 }

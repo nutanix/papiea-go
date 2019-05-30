@@ -313,7 +313,7 @@ export class Kind_Builder {
                 res.json(result.spec);
             } catch (e) {
                 if (e instanceof ValidationError) {
-                    return res.status(422).json(e.mapErr(errors => `Entity procedure ${name} didn't return correct value`))
+                    return res.status(422).json(e.mapErr(errors => `Entity procedure '${name}' didn't return correct value`))
                 }
                 throw new Error(`Unable to execute handler '${e.message}'`);
             }

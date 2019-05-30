@@ -177,3 +177,8 @@ export interface Provider {
     policy?: string;
     oauth2?: any;
 }
+
+// Add support for partial types where relevant
+export type Partial<T> = {
+    [P in keyof T]?: T[P];
+};
