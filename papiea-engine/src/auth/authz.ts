@@ -164,6 +164,13 @@ export class AdminAuthorizer extends Authorizer {
         if (user.is_admin) {
             return;
         }
+        if (action === ReadS2SKeyAction || action === CreateS2SKeyAction || action === InactivateS2SKeyAction) {
+            if (object.owner !== user.owner || object.provider_prefix !== user.provider_prefix) {
+                throw new PermissionDeniedError();
+            } else {
+                return;
+            }
+        }
         throw new PermissionDeniedError();
     }
 }
