@@ -53,6 +53,11 @@ async function invoker_procedure(provider: string, kind: string, version: string
     return res.data;
 }
 
+async function filter_entity(provider: string, kind: string, version: string, filter: any, papiea_url: string): Promise<FullEntity[]> {
+    const res = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}/filter/`, filter);
+    return res.data;
+}
+
 // map based crud
 export interface EntityCRUD {
     get(entity_reference: Entity_Reference): Promise<FullEntity>
@@ -60,6 +65,7 @@ export interface EntityCRUD {
     create_with_meta(metadata: Partial<Metadata>, spec: Spec): Promise<EntitySpec>
     update(metadata: Metadata, spec: Spec): Promise<EntitySpec>
     delete(entity_reference: Entity_Reference): Promise<void>
+    filter(filter:any): Promise<FullEntity[]>
     invoke_procedure(procedure_name: string, entity_reference: Entity_Reference, input: any): Promise<any>
 }
 
@@ -70,6 +76,7 @@ export function kind_client(papiea_url: string, provider: string, kind: string, 
         create_with_meta: (meta: Partial<Metadata>, spec: Spec) => create_entity_with_meta(provider,kind, version, meta, spec, papiea_url),
         update: (metadata: Metadata, spec: Spec) => update_entity(provider, kind, version, spec, metadata, papiea_url),
         delete: (entity_reference: Entity_Reference) => delete_entity(provider, kind, version, entity_reference, papiea_url),
+        filter: (filter:any)=>filter_entity(provider, kind, version, filter, papiea_url),
         invoke_procedure: (proc_name: string, entity_reference: Entity_Reference, input: any) => invoker_procedure(provider, kind, version, proc_name, input, entity_reference, papiea_url)
     }
     return crudder
@@ -112,6 +119,7 @@ export class ImmutableEntityObject implements EntityObjectCRUD {
 interface ImmutableEntityObjectBuilder {
     create(spec: Spec): Promise<ImmutableEntityObject>
     create_with_meta(meta: Metadata, spec:Spec): Promise<ImmutableEntityObject>
+    filter(filter:any): Promise<ImmutableEntityObject[]>
     get(entity_reference: Entity_Reference): Promise<ImmutableEntityObject>
 }
 
@@ -119,6 +127,7 @@ export function objectify(c: EntityCRUD): ImmutableEntityObjectBuilder {
     return {
         create: async (spec: Spec) => new ImmutableEntityObject(await c.create(spec), c).refresh(),
         create_with_meta: async (meta:Partial<Metadata>, spec:Spec) => new ImmutableEntityObject(await c.create_with_meta(meta, spec), c).refresh(),
+        filter: async (filter:any) => (await c.filter(filter)).map(e=>new ImmutableEntityObject(e, c)),
         get: async (entity_reference: Entity_Reference) => new ImmutableEntityObject(await c.get(entity_reference), c)
     }
 }
