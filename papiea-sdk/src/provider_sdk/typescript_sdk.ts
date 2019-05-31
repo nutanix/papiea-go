@@ -23,17 +23,17 @@ export class ProviderSdk implements ProviderImpl {
     private _version: Version | null;
     private _prefix: string | null;
     private meta_ext: { [key: string]: string };
-    _provider: Provider | null;
-    papiea_url: string;
-    papiea_port: number;
+    private _provider: Provider | null;
+    private papiea_url: string;
+    private s2skey: string;
 
-    constructor(papiea_url: string, papiea_port: number, server_manager?: Provider_Server_Manager, validator?: Validator) {
+    constructor(papiea_url: string, s2skey: string, server_manager?: Provider_Server_Manager, validator?: Validator) {
         this._version = null;
         this._prefix = null;
         this._kind = [];
         this._provider = null;
         this.papiea_url = papiea_url;
-        this.papiea_port = papiea_port;
+        this.s2skey = s2skey;
         this.server_manager = server_manager || new Provider_Server_Manager();
         this._procedures = {};
         this.meta_ext = {};
@@ -51,11 +51,11 @@ export class ProviderSdk implements ProviderImpl {
     }
 
     get provider_url(): string {
-        return `http://${ this.papiea_url }:${ this.papiea_port }/provider`
+        return `${ this.papiea_url }/provider`
     }
 
     get entity_url(): string {
-        return `http://${ this.papiea_url }:${ this.papiea_port }/services`
+        return `${ this.papiea_url }/services`
     }
 
     private get_prefix(): string {
@@ -184,7 +184,15 @@ export class ProviderSdk implements ProviderImpl {
                 extension_structure: this.meta_ext
             };
             try {
-                await axios.post(this.provider_url, this._provider);
+                const providerApi = axios.create({
+                    baseURL: this.provider_url,
+                    timeout: 1000,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${this.s2skey}`
+                    }
+                });
+                await providerApi.post('/', this._provider);
                 this.server_manager.startServer();
             } catch (err) {
                 throw err;
@@ -206,9 +214,9 @@ export class ProviderSdk implements ProviderImpl {
         throw new Error(`Malformed provider description. Missing: ${ missing_field }`)
     }
 
-    static create_provider(papiea_host: string, papiea_port: number, public_host?: string, public_port?: number, validator?: Validator): ProviderSdk {
+    static create_provider(papiea_url: string, s2skey: string, public_host?: string, public_port?: number, validator?: Validator): ProviderSdk {
         const server_manager = new Provider_Server_Manager(public_host, public_port);
-        return new ProviderSdk(papiea_host, papiea_port, server_manager, validator)
+        return new ProviderSdk(papiea_url, s2skey, server_manager, validator)
     }
 }
 

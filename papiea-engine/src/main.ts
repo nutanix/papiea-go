@@ -11,7 +11,7 @@ import { EntityNotFoundError } from "./databases/utils/errors";
 import { UnauthorizedError, createAuthnRouter } from "./auth/authn";
 import { createOAuth2Router } from "./auth/oauth2";
 import { JWTHMAC } from "./auth/crypto";
-import { Authorizer, NoAuthAuthorizer, PerProviderAuthorizer, PermissionDeniedError } from "./auth/authz";
+import { Authorizer, AdminAuthorizer, PerProviderAuthorizer, PermissionDeniedError } from "./auth/authz";
 import { ProviderCasbinAuthorizerFactory } from "./auth/casbin";
 import { resolve } from "path";
 import morgan = require("morgan");
@@ -53,7 +53,7 @@ async function setUpApplication(): Promise<express.Express> {
     const statusDb = await mongoConnection.get_status_db();
     const s2skeyDb = await mongoConnection.get_s2skey_db();
     const validator = new Validator();
-    const providerApi = new Provider_API_Impl(providerDb, statusDb, s2skeyDb, validator, new NoAuthAuthorizer());
+    const providerApi = new Provider_API_Impl(providerDb, statusDb, s2skeyDb, validator, new AdminAuthorizer());
     const signature = new JWTHMAC(tokenSecret, tokenExpiresSeconds);
     app.use(createAuthnRouter(adminKey, signature, s2skeyDb));
     app.use(createOAuth2Router(oauth2RedirectUri, signature, providerDb));

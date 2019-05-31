@@ -8,13 +8,15 @@ import axios from "axios"
 import { readFileSync } from "fs";
 import { Procedural_Signature, Procedural_Execution_Strategy } from "papiea-core";
 
+declare var process: {
+    env: {
+        ADMIN_S2S_KEY: string
+    }
+};
+const adminKey = process.env.ADMIN_S2S_KEY || '';
+const papieaUrl = 'http://127.0.0.1:3000';
 
 const procedure_callback = "http://127.0.0.1:9000/moveX";
-
-const papiea_config = {
-    host: "127.0.0.1",
-    port: 3000
-};
 
 const server_config = {
     host: "127.0.0.1",
@@ -47,7 +49,7 @@ describe("Provider Sdk tests", () => {
         done();
     });
     test("Wrong yaml description causes error", (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
             sdk.new_kind({});
         } catch (err) {
@@ -56,13 +58,13 @@ describe("Provider Sdk tests", () => {
         }
     });
     test("Provider can create a new kind", (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location_manager = sdk.new_kind(location_yaml);
         expect(location_manager.kind.name).toBe("Location");
         done();
     });
     test("Provider with no x-papiea-entity should fail", (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const malformed_yaml = JSON.parse(JSON.stringify(location_yaml));
         malformed_yaml.Location["x-papiea-entity"] = "fail";
         try {
@@ -73,7 +75,7 @@ describe("Provider Sdk tests", () => {
         }
     });
     test("Provider without version should fail to register", async (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
             sdk.new_kind(location_yaml);
             sdk.prefix("test_provider");
@@ -84,7 +86,7 @@ describe("Provider Sdk tests", () => {
         }
     });
     test("Provider without kind should fail to register", async (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
             sdk.prefix("test_provider");
             sdk.version(provider_version);
@@ -95,7 +97,7 @@ describe("Provider Sdk tests", () => {
         }
     });
     test("Provider without prefix should fail to register", async (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
             sdk.new_kind(location_yaml);
             sdk.version(provider_version);
@@ -106,7 +108,7 @@ describe("Provider Sdk tests", () => {
         }
     });
     test("Add multiple kinds shouldn't fail", (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const geo_location_yaml = JSON.parse(JSON.stringify(location_yaml));
         sdk.new_kind(location_yaml);
         sdk.new_kind(geo_location_yaml);
@@ -114,21 +116,21 @@ describe("Provider Sdk tests", () => {
     });
     let location_kind_manager: Kind_Builder;
     test("Duplicate delete on kind should return false", (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         location_kind_manager = sdk.new_kind(location_yaml);
         expect(sdk.remove_kind(location_kind_manager.kind)).toBeTruthy();
         expect(sdk.remove_kind(location_kind_manager.kind)).toBeFalsy();
         done();
     });
     test("Duplicate add on kind should return false", (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         expect(sdk.add_kind(location_kind_manager.kind)).not.toBeNull();
         expect(sdk.add_kind(location_kind_manager.kind)).toBeNull();
         done();
     });
     test("Provider should be created on papiea", async (done) => {
         jest.setTimeout(10000);
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -140,7 +142,7 @@ describe("Provider Sdk tests", () => {
         done();
     });
     test("Provider with procedures should be created on papiea", async (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -168,7 +170,7 @@ describe("Provider Sdk tests", () => {
         done();
     });
     test("Entity should be allowed to be modified using procedures defined using provider SDK", async (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -208,7 +210,7 @@ describe("Provider Sdk tests", () => {
         done();
     });
     test("Malformed handler registered on sdk should fail", async (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -243,7 +245,7 @@ describe("Provider Sdk tests", () => {
 
     test("Registering Provider procedures without prefix already set should fail", async (done) => {
         expect.assertions(1);
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         const proceduralSignature: Procedural_Signature = {
@@ -269,7 +271,7 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Provider with kind level procedures should be created on papiea", async (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -318,7 +320,7 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Provider with kind level procedures should be executed", async (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -369,7 +371,7 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Provider with provider level procedures should be created on papiea", async (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -414,7 +416,7 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Provider with provider level procedures should be executed", async (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -461,7 +463,7 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Provider with provider level procedures should fail validation if wrong type is returned", async (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -509,7 +511,7 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Provider with provider level procedures should be allowed to be created without validation scheme", async (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider_no_validation_scheme");
@@ -541,7 +543,7 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Provider with provider level procedures should return error if the return type is not void", async (done) => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider_no_validation_scheme");

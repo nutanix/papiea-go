@@ -66,15 +66,19 @@ export function createAuthnRouter(adminKey: string, signature: Signature, s2skey
             }
         }
 
-        if (userInfo.provider_prefix !== req.params.prefix && !userInfo.is_admin) {
-            throw new UnauthorizedError();
+        const urlParts = req.originalUrl.split('/');
+        if (urlParts.length > 1) {
+            const providerPrefix = urlParts[2];
+            if (userInfo.provider_prefix !== providerPrefix && !userInfo.is_admin) {
+                throw new UnauthorizedError();
+            }
         }
         req.user = userInfo;
         next();
     }
 
     router.use('/services/:prefix', asyncHandler(injectUserInfo));
-    router.use('/provider/:prefix', asyncHandler(injectUserInfo));
+    router.use('/provider/', asyncHandler(injectUserInfo));
 
     router.use('/provider/:prefix/:version/auth/user_info', asyncHandler(async (req, res) => {
         res.json(req.user);

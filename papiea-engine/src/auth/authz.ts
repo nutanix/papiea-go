@@ -24,9 +24,20 @@ export class Action {
 const ReadAction = new Action('read'),
     UpdateAction = new Action('write'),
     CreateAction = new Action('create'),
-    DeleteAction = new Action('delete');
+    DeleteAction = new Action('delete'),
+    RegisterProviderAction = new Action('register_provider'),
+    UnregisterProviderAction = new Action('unregister_provider'),
+    ReadProviderAction = new Action('read_provider'),
+    UpdateStatusAction = new Action('update_status'),
+    UpdateAuthAction = new Action('update_auth'),
+    CreateS2SKeyAction = new Action('create_key'),
+    ReadS2SKeyAction = new Action('read_key'),
+    InactivateS2SKeyAction = new Action('inactivate_key');
 
-export { ReadAction, UpdateAction, CreateAction, DeleteAction };
+export { ReadAction, UpdateAction, CreateAction, DeleteAction,
+    RegisterProviderAction, UnregisterProviderAction,
+    ReadProviderAction, UpdateStatusAction, UpdateAuthAction, CreateS2SKeyAction,
+    ReadS2SKeyAction, InactivateS2SKeyAction };
 
 export function CallProcedureByNameAction(procedureName: string) {
     return new Action('call' + procedureName);
@@ -47,10 +58,14 @@ export abstract class Authorizer {
 
     abstract checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void>;
 
-    async filter(user: UserAuthInfo, objectList: any[], transformfn: (object: any) => any, action: Action): Promise<any[]> {
+    async filter(user: UserAuthInfo, objectList: any[], action: Action, transformfn?: (object: any) => any): Promise<any[]> {
         return filterAsync(objectList, async (object) => {
             try {
-                await this.checkPermission(user, transformfn(object), action);
+                if (transformfn) {
+                    await this.checkPermission(user, transformfn(object), action);
+                } else {
+                    await this.checkPermission(user, object, action);
+                }
                 return true;
             } catch (e) {
                 return false;
@@ -131,6 +146,24 @@ export class PerProviderAuthorizer extends Authorizer {
         if (!user) {
             throw new UnauthorizedError();
         }
+        if (user.is_admin) {
+            return;
+        }
         return authorizer.checkPermission(user, object, action);
+    }
+}
+
+export class AdminAuthorizer extends Authorizer {
+    async checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void> {
+        if (action === ReadProviderAction) {
+            return;
+        }
+        if (!user) {
+            throw new UnauthorizedError();
+        }
+        if (user.is_admin) {
+            return;
+        }
+        throw new PermissionDeniedError();
     }
 }

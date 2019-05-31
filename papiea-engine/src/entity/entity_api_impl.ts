@@ -90,14 +90,14 @@ export class Entity_API_Impl implements Entity_API {
     async filter_entity_spec(user: UserAuthInfo, kind_name: string, fields: any): Promise<[Metadata, Spec][]> {
         fields.metadata.kind = kind_name;
         const res = await this.spec_db.list_specs(fields);
-        const filteredRes = await this.authorizer.filter(user, res, x => { return { "metadata": x[0] } }, ReadAction);
+        const filteredRes = await this.authorizer.filter(user, res, ReadAction, x => { return { "metadata": x[0] } });
         return filteredRes;
     }
 
     async filter_entity_status(user: UserAuthInfo, kind_name: string, fields: any): Promise<[Metadata, Status][]> {
         fields.metadata.kind = kind_name;
         const res = await this.status_db.list_status(fields);
-        const filteredRes = await this.authorizer.filter(user, res, x => { return { "metadata": x[0] } }, ReadAction);
+        const filteredRes = await this.authorizer.filter(user, res, ReadAction, x => { return { "metadata": x[0] } });
         return filteredRes;
     }
 

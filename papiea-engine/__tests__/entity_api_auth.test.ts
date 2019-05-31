@@ -10,10 +10,12 @@ import { Metadata, Spec, Provider } from "papiea-core";
 
 declare var process: {
     env: {
-        SERVER_PORT: string
+        SERVER_PORT: string,
+        ADMIN_S2S_KEY: string
     }
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
+const adminKey = process.env.ADMIN_S2S_KEY || '';
 
 const entityApi = axios.create({
     baseURL: `http://127.0.0.1:${serverPort}/services`,
@@ -24,7 +26,10 @@ const entityApi = axios.create({
 const providerApi = axios.create({
     baseURL: `http://127.0.0.1:${serverPort}/provider`,
     timeout: 1000,
-    headers: { 'Content-Type': 'application/json' }
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminKey}`
+    }
 });
 
 export function base64UrlEncode(...parts: any[]): string {

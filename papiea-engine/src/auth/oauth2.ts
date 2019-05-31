@@ -80,6 +80,7 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
             const userInfo = getUserInfoFromToken(token, provider);
             userInfo.provider_prefix = state.provider_prefix;
             userInfo.provider_version = state.provider_version;
+            delete userInfo.is_admin;
             const newSignedToken = await signature.sign(userInfo);
             if (state.redirect_uri) {
                 const client_url = new url.URL(state.redirect_uri);
