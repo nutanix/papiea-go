@@ -43,8 +43,13 @@ export function CallProcedureByNameAction(procedureName: string) {
     return new Action('call' + procedureName);
 }
 
-function mapAsync<T, U>(array: T[], callbackfn: (value: T, index: number, array: T[]) => Promise<U>): Promise<U[]> {
-    return Promise.all(array.map(callbackfn));
+async function mapAsync<T, U>(array: T[], callbackfn: (value: T, index: number, array: T[]) => Promise<U>): Promise<U[]> {
+    const res: U[] = [];
+    for (let i: number = 0; i < array.length; i++) {
+        const ret: U = await callbackfn(array[i], i, array);
+        res.push(ret);
+    }
+    return res;
 }
 
 async function filterAsync<T>(array: T[], callbackfn: (value: T, index: number, array: T[]) => Promise<boolean>): Promise<T[]> {
