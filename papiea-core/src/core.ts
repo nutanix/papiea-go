@@ -46,6 +46,11 @@ export interface Entity {
 }
 // entity-struct ends here
 
+export interface EntitySpec {
+    metadata: Metadata,
+    spec: Spec
+}
+
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Interfaces-559][SFS-interfaces]]
 // Intentful signature
 export type SFS = string;

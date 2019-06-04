@@ -1,18 +1,5 @@
 import axios from "axios";
-import { Metadata, Spec, Status, Entity_Reference } from "papiea-core";
-
-interface FullEntity {
-    metadata: Metadata,
-    spec: Spec,
-    status: Status,
-}
-
-interface EntitySpec {
-    metadata: Metadata,
-    spec: Spec
-}
-
-type Entity = EntitySpec | FullEntity
+import { Metadata, Spec, Entity_Reference, Entity, EntitySpec } from "papiea-core";
 
 async function create_entity(provider: string, kind: string, version: string, request_spec: Spec, papiea_url: string): Promise<EntitySpec> {
     const { data: { metadata, spec } } = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}`, {
@@ -39,7 +26,7 @@ async function update_entity(provider: string, kind: string, version: string, re
     return { metadata, spec }
 }
 
-async function get_entity(provider: string, kind: string, version: string, entity_reference: Entity_Reference, papiea_url: string): Promise<FullEntity> {
+async function get_entity(provider: string, kind: string, version: string, entity_reference: Entity_Reference, papiea_url: string): Promise<Entity> {
     const { data: { metadata, spec, status } } = await axios.get(`${papiea_url}/services/${provider}/${version}/${kind}/${entity_reference.uuid}`);
     return { metadata, spec, status }
 }
@@ -53,19 +40,19 @@ async function invoker_procedure(provider: string, kind: string, version: string
     return res.data;
 }
 
-async function filter_entity(provider: string, kind: string, version: string, filter: any, papiea_url: string): Promise<FullEntity[]> {
+async function filter_entity(provider: string, kind: string, version: string, filter: any, papiea_url: string): Promise<Entity[]> {
     const res = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}/filter/`, filter);
     return res.data;
 }
 
 // map based crud
 export interface EntityCRUD {
-    get(entity_reference: Entity_Reference): Promise<FullEntity>
+    get(entity_reference: Entity_Reference): Promise<Entity>
     create(spec: Spec): Promise<EntitySpec>
     create_with_meta(metadata: Partial<Metadata>, spec: Spec): Promise<EntitySpec>
     update(metadata: Metadata, spec: Spec): Promise<EntitySpec>
     delete(entity_reference: Entity_Reference): Promise<void>
-    filter(filter:any): Promise<FullEntity[]>
+    filter(filter:any): Promise<Entity[]>
     invoke_procedure(procedure_name: string, entity_reference: Entity_Reference, input: any): Promise<any>
 }
 
@@ -90,10 +77,10 @@ interface EntityObjectCRUD {
 }
 
 export class ImmutableEntityObject implements EntityObjectCRUD {
-    readonly entity: Entity
+    readonly entity: Entity|EntitySpec
     readonly crud: EntityCRUD
 
-    constructor(e: Entity, c: EntityCRUD) {
+    constructor(e: Entity|EntitySpec, c: EntityCRUD) {
         this.entity = e
         this.crud = c
     }
