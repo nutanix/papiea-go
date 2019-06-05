@@ -321,8 +321,8 @@ export class Kind_Builder {
                     spec: req.body.spec,
                     status: req.body.status
                 }, req.body.input);
-                this.validator.validate(result.spec, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc));
-                res.json(result.spec);
+                this.validator.validate(result, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc));
+                res.json(result);
             } catch (e) {
                 if (e instanceof ValidationError) {
                     return res.status(422).json(e.mapErr(errors => `Entity procedure '${name}' didn't return correct value`))
