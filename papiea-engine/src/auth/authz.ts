@@ -21,7 +21,7 @@ export class Action {
     }
 }
 
-const ReadAction = new Action('read'),
+export const ReadAction = new Action('read'),
     UpdateAction = new Action('write'),
     CreateAction = new Action('create'),
     DeleteAction = new Action('delete'),
@@ -33,11 +33,6 @@ const ReadAction = new Action('read'),
     CreateS2SKeyAction = new Action('create_key'),
     ReadS2SKeyAction = new Action('read_key'),
     InactivateS2SKeyAction = new Action('inactivate_key');
-
-export { ReadAction, UpdateAction, CreateAction, DeleteAction,
-    RegisterProviderAction, UnregisterProviderAction,
-    ReadProviderAction, UpdateStatusAction, UpdateAuthAction, CreateS2SKeyAction,
-    ReadS2SKeyAction, InactivateS2SKeyAction };
 
 export function CallProcedureByNameAction(procedureName: string) {
     return new Action('call' + procedureName);
