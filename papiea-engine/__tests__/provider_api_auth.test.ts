@@ -64,7 +64,7 @@ describe("Provider API auth tests", () => {
         }
     });
 
-    test("Admin should create s2s key for provider-admin with key provied", async done => {
+    test("Admin should create s2s key for provider-admin with key provided", async done => {
         try {
             const key = uuid();
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
@@ -154,8 +154,8 @@ describe("Provider API auth tests", () => {
                     y: 11
                 }
             }, {
-                headers: { 'Authorization': `Bearer ${s2skey.key}` }
-            });
+                    headers: { 'Authorization': `Bearer ${s2skey.key}` }
+                });
             const newStatus = Object.assign({}, spec, { y: 12 })
             await providerApi.post('/update_status', {
                 context: "some context",
@@ -165,8 +165,8 @@ describe("Provider API auth tests", () => {
                 },
                 status: newStatus
             }, {
-                headers: { 'Authorization': `Bearer ${s2skey.key}` }
-            });
+                    headers: { 'Authorization': `Bearer ${s2skey.key}` }
+                });
             await providerApi.delete(`/${provider.prefix}/${provider.version}`, {
                 headers: { 'Authorization': `Bearer ${s2skey.key}` }
             });
@@ -201,8 +201,8 @@ describe("Provider API auth tests", () => {
                     y: 11
                 }
             }, {
-                headers: { 'Authorization': `Bearer ${s2skey.key}` }
-            });
+                    headers: { 'Authorization': `Bearer ${s2skey.key}` }
+                });
             const newStatus = Object.assign({}, spec, { y: 12 })
             const data: any = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
@@ -220,8 +220,8 @@ describe("Provider API auth tests", () => {
                 },
                 status: newStatus
             }, {
-                headers: { 'Authorization': `Bearer ${data.s2skey.key}` }
-            });
+                    headers: { 'Authorization': `Bearer ${data.s2skey.key}` }
+                });
             done.fail("Provider-admin should not update status for provider with another prefix");
         } catch (e) {
             done();
