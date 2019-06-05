@@ -192,10 +192,8 @@ describe("Provider Sdk tests", () => {
         await sdk.register();
         const kind_name = sdk.provider.kinds[0].name;
         const { data: { metadata, spec } } = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }`, {
-            spec: {
-                x: 10,
-                y: 11
-            }
+            x: 10,
+            y: 11
         });
         try {
             const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { input: 5 });
@@ -229,10 +227,8 @@ describe("Provider Sdk tests", () => {
         await sdk.register();
         const kind_name = sdk.provider.kinds[0].name;
         const { data: { metadata, spec } } = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }`, {
-            spec: {
-                x: 10,
-                y: 11
-            }
+            x: 10,
+            y: 11
         });
         try {
             const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { input: 5 });
