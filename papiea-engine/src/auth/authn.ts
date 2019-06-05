@@ -69,7 +69,11 @@ export function createAuthnRouter(adminKey: string, signature: Signature, s2skey
         const urlParts = req.originalUrl.split('/');
         if (urlParts.length > 1) {
             const providerPrefix = urlParts[2];
-            if (userInfo.provider_prefix !== providerPrefix && !userInfo.is_admin) {
+            if (providerPrefix
+                // TODO: probably need to change /provider/update_status to /provider/:prefix/:version/update_status
+                && providerPrefix !== "update_status"
+                && userInfo.provider_prefix !== providerPrefix
+                && !userInfo.is_admin) {
                 throw new UnauthorizedError();
             }
         }

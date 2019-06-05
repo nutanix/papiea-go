@@ -149,6 +149,14 @@ export class PerProviderAuthorizer extends Authorizer {
         if (user.is_admin) {
             return;
         }
+        if (user.is_provider_admin) {
+            const providerPrefix = await this.getProviderPrefixByObject(user, object);
+            if (user.provider_prefix === providerPrefix) {
+                return;
+            } else {
+                throw new PermissionDeniedError();
+            }
+        }
         return authorizer.checkPermission(user, object, action);
     }
 }
@@ -164,12 +172,31 @@ export class AdminAuthorizer extends Authorizer {
         if (user.is_admin) {
             return;
         }
-        if (action === ReadS2SKeyAction || action === CreateS2SKeyAction || action === InactivateS2SKeyAction) {
+        if (action === CreateS2SKeyAction) {
+            if (object.owner !== user.owner || object.provider_prefix !== user.provider_prefix) {
+                throw new PermissionDeniedError();
+            }
+            if (user.is_provider_admin) {
+                return;
+            }
+            // object.extension contains UserInfo which will be used when s2s key is passed
+            // check who can talk on behalf of whom
+            if (object.extension.is_admin || object.extension.is_provider_admin
+                || (object.extension.provider_prefix !== user.provider_prefix)
+                || (object.extension.owner && object.extension.owner !== user.owner)) {
+                throw new PermissionDeniedError();
+            }
+            return;
+        }
+        if (action === ReadS2SKeyAction || action === InactivateS2SKeyAction) {
             if (object.owner !== user.owner || object.provider_prefix !== user.provider_prefix) {
                 throw new PermissionDeniedError();
             } else {
                 return;
             }
+        }
+        if (user.is_provider_admin && object.prefix === user.provider_prefix) {
+            return;
         }
         throw new PermissionDeniedError();
     }

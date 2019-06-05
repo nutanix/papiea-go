@@ -3,9 +3,11 @@ import { Provider_DB } from "../databases/provider_db_interface";
 import { Status_DB } from "../databases/status_db_interface";
 import { S2S_Key_DB } from "../databases/s2skey_db_interface";
 import { Validator } from "../validator";
-import { Authorizer, RegisterProviderAction, UnregisterProviderAction,
+import {
+    Authorizer, RegisterProviderAction, UnregisterProviderAction,
     ReadProviderAction, UpdateStatusAction, UpdateAuthAction, CreateS2SKeyAction,
-    ReadS2SKeyAction, InactivateS2SKeyAction } from "../auth/authz";
+    ReadS2SKeyAction, InactivateS2SKeyAction
+} from "../auth/authz";
 import { UserAuthInfo } from "../auth/authn";
 import { createHash } from "../auth/crypto";
 import { EventEmitter } from "events";
@@ -35,19 +37,20 @@ export class Provider_API_Impl implements Provider_API {
     }
 
     async unregister_provider(user: UserAuthInfo, provider_prefix: string, version: Version): Promise<void> {
-        await this.authorizer.checkPermission(user, { provider_prefix, version }, UnregisterProviderAction);
+        await this.authorizer.checkPermission(user, { prefix: provider_prefix }, UnregisterProviderAction);
         return this.providerDb.delete_provider(provider_prefix, version);
     }
 
     async replace_status(user: UserAuthInfo, context: any, entity_ref: Entity_Reference, status: Status): Promise<void> {
         const provider: Provider = await this.get_latest_provider_by_kind(user, entity_ref.kind);
-        await this.authorizer.checkPermission(user, entity_ref, UpdateStatusAction);
+        await this.authorizer.checkPermission(user, provider, UpdateStatusAction);
         await this.validate_status(provider, entity_ref, status);
         return this.statusDb.replace_status(entity_ref, status);
     }
 
     async update_status(user: UserAuthInfo, context: any, entity_ref: Entity_Reference, status: Status): Promise<void> {
-        await this.authorizer.checkPermission(user, entity_ref, UpdateStatusAction);
+        const provider: Provider = await this.get_latest_provider_by_kind(user, entity_ref.kind);
+        await this.authorizer.checkPermission(user, provider, UpdateStatusAction);
         return this.statusDb.update_status(entity_ref, status);
     }
 
@@ -62,7 +65,7 @@ export class Provider_API_Impl implements Provider_API {
     }
 
     async get_provider(user: UserAuthInfo, provider_prefix: string, provider_version: Version): Promise<Provider> {
-        await this.authorizer.checkPermission(user, { provider_prefix }, ReadProviderAction);
+        await this.authorizer.checkPermission(user, { prefix: provider_prefix }, ReadProviderAction);
         return this.providerDb.get_provider(provider_prefix, provider_version);
     }
 
@@ -72,7 +75,7 @@ export class Provider_API_Impl implements Provider_API {
     }
 
     async get_latest_provider(user: UserAuthInfo, provider_prefix: string): Promise<Provider> {
-        await this.authorizer.checkPermission(user, { provider_prefix }, ReadProviderAction);
+        await this.authorizer.checkPermission(user, { prefix: provider_prefix }, ReadProviderAction);
         return this.providerDb.get_latest_provider(provider_prefix);
     }
 
@@ -108,7 +111,7 @@ export class Provider_API_Impl implements Provider_API {
         this.eventEmitter.on('authChange', callbackfn);
     }
 
-    async create_key(user: UserAuthInfo, name: string, owner: string, provider_prefix: string): Promise<S2S_Key> {
+    async create_key(user: UserAuthInfo, name: string, owner: string, provider_prefix: string, extension?: any, key?: string): Promise<S2S_Key> {
         const s2skey: S2S_Key = {
             name: name,
             owner: owner,
@@ -116,9 +119,9 @@ export class Provider_API_Impl implements Provider_API {
             key: "",
             created_at: new Date(),
             deleted_at: undefined,
-            extension: user
+            extension: extension ? extension : user
         };
-        s2skey.key = createHash(s2skey);
+        s2skey.key = key ? key : createHash(s2skey);
         await this.authorizer.checkPermission(user, s2skey, CreateS2SKeyAction);
         await this.s2skeyDb.create_key(s2skey);
         return this.s2skeyDb.get_key(s2skey.key);
