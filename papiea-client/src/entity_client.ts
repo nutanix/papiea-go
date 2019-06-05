@@ -35,14 +35,36 @@ async function delete_entity(provider: string, kind: string, version: string, en
     await axios.delete(`${papiea_url}/services/${provider}/${version}/${kind}/${entity_reference.uuid}`);
 }
 
-async function invoker_procedure(provider: string, kind: string, version: string, procedure_name: string, input: any, entity_reference: Entity_Reference, papiea_url: string): Promise<any> {
+async function invoke_entity_procedure(provider: string, kind: string, version: string, procedure_name: string, input: any, entity_reference: Entity_Reference, papiea_url: string): Promise<any> {
     const res = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}/${entity_reference.uuid}/procedure/${procedure_name}`, {input});
+    return res.data;
+}
+
+async function invoke_kind_procedure(provider: string, kind: string, version: string, procedure_name: string, input: any, papiea_url: string): Promise<any> {
+    const res = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}/procedure/${procedure_name}`, {input});
+    return res.data;
+}
+
+export async function invoke_provider_procedure(provider: string, version: string, procedure_name: string, input: any, papiea_url: string): Promise<any> {
+    const res = await axios.post(`${papiea_url}/services/${provider}/${version}/procedure/${procedure_name}`, {input});
     return res.data;
 }
 
 async function filter_entity(provider: string, kind: string, version: string, filter: any, papiea_url: string): Promise<Entity[]> {
     const res = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}/filter/`, filter);
     return res.data;
+}
+
+export interface ProviderClient {
+    get_kind(kind: string): EntityCRUD
+    invoke_procedure(procedure_name: string, input: any): Promise<any>
+}
+
+export function provider_client(papiea_url: string, provider: string, version: string) : ProviderClient {
+    return <ProviderClient> {
+        get_kind: (kind: string)=> kind_client(papiea_url, provider, kind, version),
+        invoke_procedure: (proc_name: string, input: any)=> invoke_provider_procedure(provider, version, proc_name, input, papiea_url)
+    }
 }
 
 // map based crud
@@ -54,6 +76,7 @@ export interface EntityCRUD {
     delete(entity_reference: Entity_Reference): Promise<void>
     filter(filter:any): Promise<Entity[]>
     invoke_procedure(procedure_name: string, entity_reference: Entity_Reference, input: any): Promise<any>
+    invoke_kind_procedure(procedure_name: string, input: any): Promise<any>
 }
 
 export function kind_client(papiea_url: string, provider: string, kind: string, version: string): EntityCRUD {
@@ -64,7 +87,8 @@ export function kind_client(papiea_url: string, provider: string, kind: string, 
         update: (metadata: Metadata, spec: Spec) => update_entity(provider, kind, version, spec, metadata, papiea_url),
         delete: (entity_reference: Entity_Reference) => delete_entity(provider, kind, version, entity_reference, papiea_url),
         filter: (filter:any)=>filter_entity(provider, kind, version, filter, papiea_url),
-        invoke_procedure: (proc_name: string, entity_reference: Entity_Reference, input: any) => invoker_procedure(provider, kind, version, proc_name, input, entity_reference, papiea_url)
+        invoke_procedure: (proc_name: string, entity_reference: Entity_Reference, input: any) => invoke_entity_procedure(provider, kind, version, proc_name, input, entity_reference, papiea_url),
+        invoke_kind_procedure: (proc_name: string, input:any) => invoke_kind_procedure(provider, kind, version, proc_name, input, papiea_url)
     }
     return crudder
 }
