@@ -1,6 +1,6 @@
 import { ProceduralCtx_Interface } from "./typescript_sdk_interface";
 import { Entity, Metadata, Status, Entity_Reference } from "papiea-core";
-import axios from "axios";
+import axios, { AxiosInstance } from "axios";
 
 export class ProceduralCtx implements ProceduralCtx_Interface {
 
@@ -8,13 +8,15 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
     provider_prefix: string;
     provider_version: string;
     provider_url: string;
+    private readonly providerApi: AxiosInstance;
 
 
-    constructor(provider_url:string, entity_url: string, provider_prefix: string, provider_version: string) {
+    constructor(provider_url:string, entity_url: string, provider_prefix: string, provider_version: string, providerApi:AxiosInstance) {
         this.provider_url = provider_url
         this.base_url = entity_url;
         this.provider_prefix = provider_prefix;
         this.provider_version = provider_version;
+        this.providerApi = providerApi
     }
 
     url_for(entity: Entity): string {
@@ -22,7 +24,7 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
     }
 
     async update_status(entity_reference: Entity_Reference, status: Status): Promise<boolean> {
-        const res = await axios.patch(`${this.provider_url}/update_status`,{
+        const res = await this.providerApi.patch(`${this.provider_url}/update_status`,{
             entity_ref: entity_reference,
             status: status
         })

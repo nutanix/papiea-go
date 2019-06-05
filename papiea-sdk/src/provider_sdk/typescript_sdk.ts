@@ -4,7 +4,7 @@ import {
     Provider_Power,
     IntentfulCtx_Interface,
 } from "./typescript_sdk_interface";
-import axios from "axios"
+import axios, { AxiosInstance } from "axios"
 import { plural } from "pluralize"
 import * as express from "express";
 import * as asyncHandler from "express-async-handler";
@@ -20,12 +20,13 @@ export class ProviderSdk implements ProviderImpl {
     private readonly _procedures: { [key: string]: Procedural_Signature };
     private readonly validator: Validator;
     private readonly server_manager: Provider_Server_Manager;
+    private readonly providerApi: AxiosInstance;
     private _version: Version | null;
     private _prefix: string | null;
     private meta_ext: { [key: string]: string };
     private _provider: Provider | null;
-    private papiea_url: string;
-    private s2skey: string;
+    private readonly papiea_url: string;
+    private readonly s2skey: string;
 
     constructor(papiea_url: string, s2skey: string, server_manager?: Provider_Server_Manager, validator?: Validator) {
         this._version = null;
@@ -40,6 +41,14 @@ export class ProviderSdk implements ProviderImpl {
         this.validator = validator || new Validator();
         this.get_prefix = this.get_prefix.bind(this);
         this.get_version = this.get_version.bind(this);
+        this.providerApi = axios.create({
+            baseURL: this.provider_url,
+            timeout: 1000,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.s2skey}`
+            }
+        });
     }
 
     get provider() {
@@ -95,7 +104,7 @@ export class ProviderSdk implements ProviderImpl {
                     entity_procedures: {},
                     differ: undefined,
                 };
-                const kind_builder = new Kind_Builder(spec_only_kind, this.entity_url, this.provider_url, this.get_prefix, this.get_version, this.server_manager, validator || this.validator);
+                const kind_builder = new Kind_Builder(spec_only_kind, this.entity_url, this.provider_url, this.get_prefix, this.get_version, this.server_manager, this.providerApi, validator || this.validator);
                 this._kind.push(spec_only_kind);
                 return kind_builder;
             } else {
@@ -110,7 +119,7 @@ export class ProviderSdk implements ProviderImpl {
     add_kind(kind: Kind): Kind_Builder | null {
         if (this._kind.indexOf(kind) === -1) {
             this._kind.push(kind);
-            const kind_builder = new Kind_Builder(kind, this.entity_url, this.provider_url, this.get_prefix, this.get_version, this.server_manager);
+            const kind_builder = new Kind_Builder(kind, this.entity_url, this.provider_url, this.get_prefix, this.get_version, this.server_manager, this.providerApi);
             return kind_builder;
         } else {
             return null;
@@ -160,7 +169,7 @@ export class ProviderSdk implements ProviderImpl {
         const version = this.get_version();
         this.server_manager.register_handler("/" + name, async (req, res) => {
             try {
-                const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version), req.body.input);
+                const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version, this.providerApi), req.body.input);
                 this.validator.validate(result, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc));
                 res.json(result);
             } catch (e) {
@@ -184,15 +193,7 @@ export class ProviderSdk implements ProviderImpl {
                 extension_structure: this.meta_ext
             };
             try {
-                const providerApi = axios.create({
-                    baseURL: this.provider_url,
-                    timeout: 1000,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${this.s2skey}`
-                    }
-                });
-                await providerApi.post('/', this._provider);
+                await this.providerApi.post('/', this._provider);
                 this.server_manager.startServer();
             } catch (err) {
                 throw err;
@@ -283,14 +284,16 @@ export class Kind_Builder {
     private server_manager: Provider_Server_Manager;
     provider_url: string;
     private validator: Validator;
+    private readonly providerApi: AxiosInstance;
 
-    constructor(kind: Kind, entity_url: string, provider_url:string, get_prefix: () => string, get_version: () => string, server_manager: Provider_Server_Manager, validator?: Validator) {
+    constructor(kind: Kind, entity_url: string, provider_url:string, get_prefix: () => string, get_version: () => string, server_manager: Provider_Server_Manager, providerApi:AxiosInstance, validator?: Validator) {
         this.server_manager = server_manager;
         this.kind = kind;
         this.entity_url = entity_url;
         this.get_prefix = get_prefix;
         this.get_version = get_version;
         this.provider_url = provider_url;
+        this.providerApi = providerApi
         this.validator = validator || new Validator();
     }
 
@@ -312,7 +315,7 @@ export class Kind_Builder {
         const version = this.get_version();
         this.server_manager.register_handler(`/${this.kind.name}/${name}`, async (req, res) => {
             try {
-                const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version), {
+                const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version, this.providerApi), {
                     metadata: req.body.metadata,
                     spec: req.body.spec,
                     status: req.body.status
@@ -347,7 +350,7 @@ export class Kind_Builder {
         const version = this.get_version();
         this.server_manager.register_handler(`/${this.kind.name}/${name}`, async (req, res) => {
             try {
-                const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version), req.body.input);
+                const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version, this.providerApi), req.body.input);
                 this.validator.validate(result, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc));
                 res.json(result);
             } catch (e) {
