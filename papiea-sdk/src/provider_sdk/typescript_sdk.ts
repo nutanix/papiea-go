@@ -174,6 +174,7 @@ export class ProviderSdk implements ProviderImpl {
                 res.json(result);
             } catch (e) {
                 if (e instanceof ValidationError) {
+                    console.error(`Provider procedure ${name} didn't return correct value`, e)
                     return res.status(422).json(e.mapErr(errors => `Provider procedure ${name} didn't return correct value`))
                 }
                 throw new Error("Unable to execute handler");
