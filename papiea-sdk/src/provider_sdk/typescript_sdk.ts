@@ -43,7 +43,7 @@ export class ProviderSdk implements ProviderImpl {
         this.get_version = this.get_version.bind(this);
         this.providerApi = axios.create({
             baseURL: this.provider_url,
-            timeout: 1000,
+            timeout: 5000,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${this.s2skey}`
