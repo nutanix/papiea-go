@@ -80,9 +80,12 @@ describe("Provider Sdk tests", () => {
             sdk.new_kind(location_yaml);
             sdk.prefix("test_provider");
             await sdk.register();
+            sdk.server.close();
+            done.fail()
         } catch (err) {
             expect(err.message).toBe("Malformed provider description. Missing: version");
             done();
+            return
         }
     });
     test("Provider without kind should fail to register", async (done) => {
@@ -91,6 +94,8 @@ describe("Provider Sdk tests", () => {
             sdk.prefix("test_provider");
             sdk.version(provider_version);
             await sdk.register();
+            sdk.server.close();
+            done.fail()
         } catch (err) {
             expect(err.message).toBe("Malformed provider description. Missing: kind");
             done();
@@ -102,6 +107,8 @@ describe("Provider Sdk tests", () => {
             sdk.new_kind(location_yaml);
             sdk.version(provider_version);
             await sdk.register();
+            sdk.server.close();
+            done.fail()
         } catch (err) {
             expect(err.message).toBe("Malformed provider description. Missing: prefix");
             done();
@@ -136,6 +143,9 @@ describe("Provider Sdk tests", () => {
         sdk.prefix("location_provider");
         try {
             await sdk.register();
+            try {
+                sdk.server.close()
+            } catch(e) {}
         } catch (e) {
             done.fail(e)
         }
@@ -159,53 +169,57 @@ describe("Provider Sdk tests", () => {
                 spec: entity.spec,
                 metadata: entity.metadata
             });
-            return res.data;
+            return res.data.spec;
         });
         try {
             await sdk.register();
+            done();
         } catch (e) {
             done.fail(e)
+        } finally {
+            sdk.server.close();
         }
-        sdk.server.close();
-        done();
     });
     test("Entity should be allowed to be modified using procedures defined using provider SDK", async (done) => {
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
-        const location = sdk.new_kind(location_yaml);
-        sdk.version(provider_version);
-        sdk.prefix("location_provider");
-        const proceduralSignature: Procedural_Signature = {
-            name: "moveX",
-            argument: loadYaml("./procedure_move_input.yml"),
-            result: loadYaml("./location_kind_test_data.yml"),
-            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: procedure_callback
-        };
-        location.entity_procedure(proceduralSignature.name, {}, proceduralSignature.execution_strategy, proceduralSignature.argument, proceduralSignature.result, async (ctx, entity, input) => {
-            entity.spec.x += input;
-            const res = await axios.put(ctx.url_for(entity), {
-                spec: entity.spec,
-                metadata: entity.metadata
-            });
-            return res.data;
-        });
-        await sdk.register();
-        const kind_name = sdk.provider.kinds[0].name;
-        const { data: { metadata, spec } } = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }`, {
-            x: 10,
-            y: 11
-        });
         try {
-            const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { input: 5 });
-            const updatedEntity: any = await axios.get(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`);
+            const location = sdk.new_kind(location_yaml);
+            sdk.version(provider_version);
+            sdk.prefix("location_provider");
+            const proceduralSignature: Procedural_Signature = {
+                name: "moveX",
+                argument: loadYaml("./procedure_move_input.yml"),
+                result: loadYaml("./location_kind_test_data.yml"),
+                execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
+                procedure_callback: procedure_callback
+            };
+            location.entity_procedure(proceduralSignature.name, {}, proceduralSignature.execution_strategy, proceduralSignature.argument, proceduralSignature.result, async (ctx, entity, input) => {
+                entity.spec.x += input;
+                const res = await axios.put(ctx.url_for(entity), {
+                    spec: entity.spec,
+                    metadata: entity.metadata
+                });
+                return res.data.spec;
+            });
+            await sdk.register();
+            const kind_name = sdk.provider.kinds[0].name;
+            const { data: { metadata, spec } } = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, { input: 5 });
+            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`);
             expect(updatedEntity.data.metadata.spec_version).toEqual(2);
             expect(updatedEntity.data.spec.x).toEqual(15);
+            done();
         } catch (e) {
             done.fail(e);
         } finally {
             sdk.server.close();
         }
-        done();
     });
     test("Malformed handler registered on sdk should fail", async (done) => {
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
@@ -224,16 +238,23 @@ describe("Provider Sdk tests", () => {
             throw new Error("Malformed provider")
 
         });
-        await sdk.register();
-        const kind_name = sdk.provider.kinds[0].name;
-        const { data: { metadata, spec } } = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }`, {
-            x: 10,
-            y: 11
-        });
         try {
-            const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { input: 5 });
+            await sdk.register();
+            const kind_name = sdk.provider.kinds[0].name;
+            const { data: { metadata, spec } } = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+            try {
+                const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, { input: 5 });
+            } catch (e) {
+                done();
+            }
         } catch (e) {
-            done();
+            console.error('Test failed with', e)
+            done.fail()
         } finally {
             sdk.server.close();
         }
@@ -258,7 +279,7 @@ describe("Provider Sdk tests", () => {
                     spec: entity.spec,
                     metadata: entity.metadata
                 });
-                return res.data;
+                return res.data.spec;
             });
         } catch (e) {
             expect(e.message).toBe("Provider prefix is not set");
@@ -284,7 +305,7 @@ describe("Provider Sdk tests", () => {
                 spec: entity.spec,
                 metadata: entity.metadata
             });
-            return res.data;
+            return res.data.spec;
         });
 
         const geolocationComputeProceduralSignature: Procedural_Signature = {
@@ -308,11 +329,12 @@ describe("Provider Sdk tests", () => {
 
         try {
             await sdk.register();
+            done();
         } catch (e) {
             done.fail(e)
+        } finally {
+            sdk.server.close();
         }
-        sdk.server.close();
-        done();
     });
 
     test("Provider with kind level procedures should be executed", async (done) => {
@@ -333,7 +355,7 @@ describe("Provider Sdk tests", () => {
                 spec: entity.spec,
                 metadata: entity.metadata
             });
-            return res.data;
+            return res.data.spec;
         });
 
         const geolocationComputeProceduralSignature: Procedural_Signature = {
@@ -357,13 +379,14 @@ describe("Provider Sdk tests", () => {
         await sdk.register();
         const kind_name = sdk.provider.kinds[0].name;
         try {
-            const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/procedure/computeGeolocation`, { input: "2" });
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/procedure/computeGeolocation`, { input: "2" });
             expect(res.data).toBe("us.west.2");
+            done();
         } catch (e) {
             done.fail(e)
+        } finally {
+            sdk.server.close();
         }
-        sdk.server.close();
-        done();
     });
 
     test("Provider with provider level procedures should be created on papiea", async (done) => {
@@ -384,7 +407,7 @@ describe("Provider Sdk tests", () => {
                 spec: entity.spec,
                 metadata: entity.metadata
             });
-            return res.data;
+            return res.data.spec;
         });
         const proceduralSignatureForProvider: Procedural_Signature = {
             name: "computeSum",
@@ -404,11 +427,12 @@ describe("Provider Sdk tests", () => {
         );
         try {
             await sdk.register();
+            done();
         } catch (e) {
             done.fail(e)
+        } finally {
+            sdk.server.close();
         }
-        sdk.server.close();
-        done();
     });
 
     test("Provider with provider level procedures should be executed", async (done) => {
@@ -429,7 +453,7 @@ describe("Provider Sdk tests", () => {
                 spec: entity.spec,
                 metadata: entity.metadata
             });
-            return res.data;
+            return res.data.spec;
         });
         const proceduralSignatureForProvider: Procedural_Signature = {
             name: "computeSum",
@@ -449,13 +473,14 @@ describe("Provider Sdk tests", () => {
         );
         await sdk.register();
         try {
-            const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSum`, { input: {"a": 5, "b": 5} });
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { input: { "a": 5, "b": 5 } });
             expect(res.data).toBe(10);
+            done();
         } catch (e) {
             done.fail(e)
+        } finally {
+            sdk.server.close();
         }
-        sdk.server.close();
-        done();
     });
 
     test("Provider with provider level procedures should fail validation if wrong type is returned", async (done) => {
@@ -476,7 +501,7 @@ describe("Provider Sdk tests", () => {
                 spec: entity.spec,
                 metadata: entity.metadata
             });
-            return res.data;
+            return res.data.spec;
         });
         const proceduralSignatureForProvider: Procedural_Signature = {
             name: "computeSum",
@@ -494,16 +519,21 @@ describe("Provider Sdk tests", () => {
                 return "Totally not a number should fail provider-level validation";
             }
         );
-        await sdk.register();
         try {
-            const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSum`, { input: {"a": 5, "b": 5} });
-            done.fail();
+            await sdk.register();
+            try {
+                const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { input: { "a": 5, "b": 5 } });
+                done.fail();
+            } catch (e) {
+                console.log(e);
+                done();
+            }
         } catch (e) {
-            console.log(e);
-            done();
+            console.error("Test failed with", e)
+            done.fail()
+        } finally {
+            sdk.server.close();
         }
-        sdk.server.close();
-        done();
     });
 
     test("Provider with provider level procedures should be allowed to be created without validation scheme", async (done) => {
@@ -526,16 +556,21 @@ describe("Provider Sdk tests", () => {
             async (ctx, input) => {
             }
         );
-        await sdk.register();
         try {
-            const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSum`, { input: {"a": 5, "b": 5} });
-            done.fail();
+            await sdk.register();
+            try {
+                const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { input: { "a": 5, "b": 5 } });
+                done.fail();
+            } catch (e) {
+                console.log(e);
+                done();
+            }
         } catch (e) {
-            console.log(e);
-            done();
+            console.error("Test failed with", e)
+            done.fail()
+        } finally {
+            sdk.server.close();
         }
-        sdk.server.close();
-        done();
     });
 
     test("Provider with provider level procedures should return error if the return type is not void", async (done) => {
@@ -559,15 +594,20 @@ describe("Provider Sdk tests", () => {
                 return "Totally not a void type"
             }
         );
-        await sdk.register();
         try {
-            const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSum`, { input: {"a": 5, "b": 5} });
-            done.fail();
+            await sdk.register();
+            try {
+                const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { input: { "a": 5, "b": 5 } });
+                done.fail();
+            } catch (e) {
+                console.log(e);
+                done();
+            }
         } catch (e) {
-            console.log(e);
-            done();
+            console.error('Test failed with', e)
+            done.fail()
+        } finally {
+            sdk.server.close();
         }
-        sdk.server.close();
-        done();
     });
 });
