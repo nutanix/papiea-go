@@ -37,19 +37,19 @@ describe("Casbin authorizer tests", () => {
         });
     }
 
-    test("Alice fails to write an imaged host of another user without rights", done => {
+    test("Alice fails to write an kind_3 of another user without rights", done => {
         actionShouldFail(
             { "owner": "alice", "tenant": "1" },
-            { "metadata": { "extension": { "owner": "1alice1" }, "kind": "imaged_host" } },
+            { "metadata": { "extension": { "owner": "1alice1" }, "kind": "kind_3" } },
             CreateAction,
             done
         );
     });
 
-    test("Alice fails to delete her own imaged_host, which is explicitly denied", done => {
+    test("Alice fails to delete her own kind_4, which is explicitly denied", done => {
         actionShouldFail(
             { "owner": "alice", "tenant": "1" },
-            { "metadata": { "extension": { "owner": "alice" }, "kind": "imaged_host" } },
+            { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_4" } },
             DeleteAction,
             done
         );
@@ -58,106 +58,106 @@ describe("Casbin authorizer tests", () => {
     test("Alice succeeds reading her own imaged host which is explicitly allowed", done => {
         actionShouldSucceed(
             { "owner": "alice", "tenant": "1" },
-            { "metadata": { "extension": { "owner": "alice" }, "kind": "imaged_host" } },
+            { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_3" } },
             ReadAction,
             done
         );
     });
 
-    test("Bob succeeds reading alice's geolocation, which is allowed to read by everyone using the default 'reader_group'", done => {
+    test("Bob succeeds reading alice's kind_1, which is allowed to read by everyone using the default 'reader_group'", done => {
         actionShouldSucceed(
             { "owner": "bob", "tenant": "1" },
-            { "metadata": { "extension": { "owner": "alice" }, "kind": "geolocation" } },
+            { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_1" } },
             ReadAction,
             done
         );
     });
 
-    test("Bob fails to delete a geolocation since no rule allows for it", done => {
+    test("Bob fails to delete a kind_1 since no rule allows for it", done => {
         actionShouldFail(
             { "owner": "bob", "tenant": "1" },
-            { "metadata": { "extension": { "owner": "alice" }, "kind": "geolocation" } },
+            { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_1" } },
             DeleteAction,
             done
         );
     });
 
-    test("Alice succeeds reading a host_type owned by her since it was explicitly allowed", done => {
+    test("Alice succeeds reading a kind_2 owned by her since it was explicitly allowed", done => {
         actionShouldSucceed(
             { "owner": "alice", "tenant": "1" },
-            { "metadata": { "extension": { "owner": "alice" }, "kind": "host_type" } },
+            { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_2" } },
             ReadAction,
             done
         );
     });
 
-    test("Bill succeeds reading alice's host_type since the reader_group allows it for everyone", done => {
+    test("Bill succeeds reading alice's kind_2 since the reader_group allows it for everyone", done => {
         actionShouldSucceed(
             { "owner": "bill", "tenant": "1" },
-            { "metadata": { "extension": { "owner": "alice" }, "kind": "host_type" } },
+            { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_2" } },
             ReadAction,
             done
         );
     });
 
-    test("Bill fails deleting alice's host_type, since no rule allows it", done => {
+    test("Bill fails deleting alice's kind_2, since no rule allows it", done => {
         actionShouldFail(
             { "owner": "bill", "tenant": "1" },
-            { "metadata": { "extension": { "owner": "alice" }, "kind": "host_type" } },
+            { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_2" } },
             DeleteAction,
             done
         );
     });
 
-    test("Bill fails deleting alice's imaged_type, since the standard_group only allows deleting to owners", done => {
+    test("Bill fails deleting alice's kind_3, since the standard_group only allows deleting to owners", done => {
         actionShouldFail(
             { "owner": "bill", "tenant": "1" },
-            { "metadata": { "extension": { "owner": "alice" }, "kind": "imaged_host" } },
+            { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_3" } },
             DeleteAction,
             done
         );
     });
 
-    test("Bill succeeds deleting his own imaged_type, since the standard_group only allows deleting to owners", done => {
+    test("Bill succeeds deleting his own kind_3, since the standard_group only allows deleting to owners", done => {
         actionShouldSucceed(
             { "owner": "bill", "tenant": "1" },
-            { "metadata": { "extension": { "owner": "bill" }, "kind": "imaged_host" } },
+            { "metadata": { "extension": { "owner": "bill" }, "kind": "kind_3" } },
             DeleteAction,
             done
         );
     });
 
-    test("Anonymous user is denied reading alice's host_type, by a rule denying anything of anyone's entity", done => {
+    test("Anonymous user is denied reading alice's kind_2, by a rule denying anything of anyone's entity", done => {
         actionShouldFail(
             { "owner": "anonymous" },
-            { "metadata": { "extension": { "owner": "alice" }, "kind": "host_type" } },
+            { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_2" } },
             ReadAction,
             done
         );
     });
 
-    test("Admin can delete alice's imaged_host since admin belongs to the admin's group", done => {
+    test("Admin can delete alice's kind_3 since admin belongs to the admin's group", done => {
         actionShouldSucceed(
             { "owner": "admin" },
-            { "metadata": { "extension": { "owner": "alice" }, "kind": "imaged_host" } },
+            { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_3" } },
             DeleteAction,
             done
         );
     });
 
-    test("Rick can delete alice's imaged_host since he is in her tenant and is a part of tenant_group", done => {
+    test("Rick can delete alice's kind_3 since he is in her tenant and is a part of tenant_group", done => {
         actionShouldSucceed(
             { "owner": "rick", "tenant": "1" },
-            { "metadata": { "extension": { "owner": "alice", "tenant_uuid": "1" }, "kind": "imaged_host" } },
+            { "metadata": { "extension": { "owner": "alice", "tenant_uuid": "1" }, "kind": "kind_3" } },
             DeleteAction,
             done
         );
     });
 
-    test("Rick fails to delete alice's imaged_cluster since he is in her tenant and is a part of tenant_group but the rule denies deleteing", done => {
+    test("Rick fails to delete alice's kind_4 since he is in her tenant and is a part of tenant_group but the rule denies deleteing", done => {
         actionShouldFail(
             { "owner": "rick", "tenant": "1" },
-            { "metadata": { "extension": { "owner": "alice", "tenant_uuid": "1" }, "kind": "imaged_cluster" } },
+            { "metadata": { "extension": { "owner": "alice", "tenant_uuid": "1" }, "kind": "kind_4" } },
             DeleteAction,
             done
         );
@@ -196,419 +196,10 @@ describe("Casbin authorizer tests for default provider policy", () => {
         });
     }
 
-    describe('read_group', () => {
-        describe('geolocation', () => {
-            const kind = 'geolocation'
-            test("Alice can read", done => {
-                actionShouldSucceed(
-                    { owner: 'someone', tenant: '1' },
-                    { metadata: { extension: { owner: 'alice' }, kind } },
-                    ReadAction,
-                    done
-                )
-            })
-
-            describe("Alice cannot modify", () => {
-                test('Update', done => {
-                    actionShouldFail(
-                        { owner: 'someone', tenant: '1' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        UpdateAction,
-                        done
-                    )
-                })
-                test('Delete', done => {
-                    actionShouldFail(
-                        { owner: 'someoneelse', tenant: '100' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        DeleteAction,
-                        done
-                    )
-                })
-                test('Create', done => {
-                    actionShouldFail(
-                        { owner: 'someone', tenant: '1' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        CreateAction,
-                        done
-                    )
-                })
-            })
-        })
-
-        describe('host_type', () => {
-            const kind = 'host_type'
-            test("Alice can read", done => {
-                actionShouldSucceed(
-                    { owner: 'someoneelse', tenant: '100' },
-                    { metadata: { extension: { owner: 'alice' }, kind } },
-                    ReadAction,
-                    done
-                )
-            })
-
-            describe("Alice cannot modify", () => {
-                test('Update', done => {
-                    actionShouldFail(
-                        { owner: 'someone', tenant: '1' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        UpdateAction,
-                        done
-                    )
-                })
-                test('Delete', done => {
-                    actionShouldFail(
-                        { owner: 'someoneelse', tenant: '100' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        DeleteAction,
-                        done
-                    )
-                })
-                test('Create', done => {
-                    actionShouldFail(
-                        { owner: 'someone', tenant: '1' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        CreateAction,
-                        done
-                    )
-                })
-            })
-        })
-    })
-
-    describe('tenant_group', () => {
-        describe('imaged_host', () => {
-            const kind = 'imaged_host'
-            test("Alice can read tenant's", done => {
-                actionShouldSucceed(
-                    { owner: 'someone', tenant: '100' },
-                    { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
-                    ReadAction,
-                    done
-                )
-            })
-            describe("Alice cannot modify tenant's", () => {
-                test("Update", done => {
-                    actionShouldFail(
-                        { owner: 'someone', tenant: '100' },
-                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
-                        UpdateAction,
-                        done
-                    )
-                })
-                test("Create", done => {
-                    actionShouldFail(
-                        { owner: 'someone', tenant: '100' },
-                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
-                        CreateAction,
-                        done
-                    )
-                })
-                test("Delete", done => {
-                    actionShouldFail(
-                        { owner: 'someone', tenant: '100' },
-                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
-                        DeleteAction,
-                        done
-                    )
-                })
-            })
-            describe("Alice cannot access other tenant's", () => {
-                test("Read", done => {
-                    actionShouldFail(
-                        { owner: 'someone', tenant: '500' },
-                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
-                        ReadAction,
-                        done
-                    )
-                })
-                test("Update", done => {
-                    actionShouldFail(
-                        { owner: 'someone', tenant: '500' },
-                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
-                        UpdateAction,
-                        done
-                    )
-                })
-                test("Delete", done => {
-                    actionShouldFail(
-                        { owner: 'someone', tenant: '500' },
-                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
-                        DeleteAction,
-                        done
-                    )
-                })
-                test("Create", done => {
-                    actionShouldFail(
-                        { owner: 'someone', tenant: '500' },
-                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
-                        CreateAction,
-                        done
-                    )
-                })
-
-            })
-        })
-        describe('imaged_cluster', () => {
-            const kind = 'imaged_cluster'
-            test("Alice can read tenant's", done => {
-                actionShouldSucceed(
-                    { owner: 'someone', tenant: '100' },
-                    { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
-                    ReadAction,
-                    done
-                )
-            })
-            describe("Alice cannot modify tenant's", () => {
-                test("Update", done => {
-                    actionShouldFail(
-                        { owner: 'someone', tenant: '100' },
-                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
-                        UpdateAction,
-                        done
-                    )
-                })
-                test("Create", done => {
-                    actionShouldFail(
-                        { owner: 'someone', tenant: '100' },
-                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
-                        CreateAction,
-                        done
-                    )
-                })
-                test("Delete", done => {
-                    actionShouldFail(
-                        { owner: 'someone', tenant: '100' },
-                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
-                        DeleteAction,
-                        done
-                    )
-                })
-            })
-            describe("Alice cannot access other tenant's", () => {
-                test("Read", done => {
-                    actionShouldFail(
-                        { owner: 'someone', tenant: '500' },
-                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
-                        ReadAction,
-                        done
-                    )
-                })
-                test("Update", done => {
-                    actionShouldFail(
-                        { owner: 'someone', tenant: '500' },
-                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
-                        UpdateAction,
-                        done
-                    )
-                })
-                test("Delete", done => {
-                    actionShouldFail(
-                        { owner: 'someone', tenant: '500' },
-                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
-                        DeleteAction,
-                        done
-                    )
-                })
-                test("Create", done => {
-                    actionShouldFail(
-                        { owner: 'someone', tenant: '500' },
-                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
-                        CreateAction,
-                        done
-                    )
-                })
-
-            })
-        })
-    })
-
-    describe('owner_group', () => {
-        describe('imaged_host', () => {
-            const kind = 'imaged_host'
-            describe("Alice can access her own", () => {
-                test("Read", done => {
-                    actionShouldSucceed(
-                        { owner: 'alice', tenant: '100' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        ReadAction,
-                        done
-                    )
-                })
-                test("Create", done => {
-                    actionShouldSucceed(
-                        { owner: 'alice', tenant: '100' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        CreateAction,
-                        done
-                    )
-                })
-                test("Update", done => {
-                    actionShouldSucceed(
-                        { owner: 'alice', tenant: '100' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        UpdateAction,
-                        done
-                    )
-                })
-                test("Delete", done => {
-                    actionShouldSucceed(
-                        { owner: 'alice', tenant: '100' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        DeleteAction,
-                        done
-                    )
-                })
-            })
-        })
-        describe('imaged_cluster', () => {
-            const kind = 'imaged_cluster'
-            describe("Alice can access her own", () => {
-                test("Read", done => {
-                    actionShouldSucceed(
-                        { owner: 'alice', tenant: '100' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        ReadAction,
-                        done
-                    )
-                })
-                test("Create", done => {
-                    actionShouldSucceed(
-                        { owner: 'alice', tenant: '100' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        CreateAction,
-                        done
-                    )
-                })
-                test("Update", done => {
-                    actionShouldSucceed(
-                        { owner: 'alice', tenant: '100' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        UpdateAction,
-                        done
-                    )
-                })
-                test("Delete", done => {
-                    actionShouldSucceed(
-                        { owner: 'alice', tenant: '100' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        DeleteAction,
-                        done
-                    )
-                })
-            })
-        })
-    })
-
     describe('admin user', () => {
         describe('has access to everything', () => {
-            describe('geolocation', () => {
-                const kind = 'geolocation'
-                test("Read", done => {
-                    actionShouldSucceed(
-                        { owner: 'admin' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        ReadAction,
-                        done
-                    )
-                })
-                test("Create", done => {
-                    actionShouldSucceed(
-                        { owner: 'admin' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        CreateAction,
-                        done
-                    )
-                })
-                test("Update", done => {
-                    actionShouldSucceed(
-                        { owner: 'admin' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        UpdateAction,
-                        done
-                    )
-                })
-                test("Delete", done => {
-                    actionShouldSucceed(
-                        { owner: 'admin' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        DeleteAction,
-                        done
-                    )
-                })
-            })
-            describe('host_kind', () => {
-                const kind = 'host_kind'
-                test("Read", done => {
-                    actionShouldSucceed(
-                        { owner: 'admin' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        ReadAction,
-                        done
-                    )
-                })
-                test("Create", done => {
-                    actionShouldSucceed(
-                        { owner: 'admin' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        CreateAction,
-                        done
-                    )
-                })
-                test("Update", done => {
-                    actionShouldSucceed(
-                        { owner: 'admin' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        UpdateAction,
-                        done
-                    )
-                })
-                test("Delete", done => {
-                    actionShouldSucceed(
-                        { owner: 'admin' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        DeleteAction,
-                        done
-                    )
-                })
-            })
-            describe('imaged_cluster', () => {
-                const kind = 'imaged_cluster'
-                test("Read", done => {
-                    actionShouldSucceed(
-                        { owner: 'admin' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        ReadAction,
-                        done
-                    )
-                })
-                test("Create", done => {
-                    actionShouldSucceed(
-                        { owner: 'admin' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        CreateAction,
-                        done
-                    )
-                })
-                test("Update", done => {
-                    actionShouldSucceed(
-                        { owner: 'admin' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        UpdateAction,
-                        done
-                    )
-                })
-                test("Delete", done => {
-                    actionShouldSucceed(
-                        { owner: 'admin' },
-                        { metadata: { extension: { owner: 'alice' }, kind } },
-                        DeleteAction,
-                        done
-                    )
-                })
-            })
-            describe('imaged_host', () => {
-                const kind = 'imaged_host'
+            describe('some_kind', () => {
+                const kind = 'some_kind'
                 test("Read", done => {
                     actionShouldSucceed(
                         { owner: 'admin' },
@@ -648,8 +239,8 @@ describe("Casbin authorizer tests for default provider policy", () => {
     describe('anonymous user', () => {
         describe('has access to nothing', () => {
             describe('his own (should never have any anyway)', () => {
-                describe('geolocation', () => {
-                    const kind = 'geolocation'
+                describe('some_kind', () => {
+                    const kind = 'some_kind'
                     test("Read", done => {
                         actionShouldFail(
                             { owner: 'anonymous' },
@@ -683,220 +274,10 @@ describe("Casbin authorizer tests for default provider policy", () => {
                         )
                     })
                 })
-                describe('host_kind', () => {
-                    const kind = 'host_kind'
-                    test("Read", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'anonymous' }, kind } },
-                            ReadAction,
-                            done
-                        )
-                    })
-                    test("Create", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'anonymous' }, kind } },
-                            CreateAction,
-                            done
-                        )
-                    })
-                    test("Update", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'anonymous' }, kind } },
-                            UpdateAction,
-                            done
-                        )
-                    })
-                    test("Delete", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'anonymous' }, kind } },
-                            DeleteAction,
-                            done
-                        )
-                    })
-                })
-                describe('imaged_cluster', () => {
-                    const kind = 'imaged_cluster'
-                    test("Read", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'anonymous' }, kind } },
-                            ReadAction,
-                            done
-                        )
-                    })
-                    test("Create", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'anonymous' }, kind } },
-                            CreateAction,
-                            done
-                        )
-                    })
-                    test("Update", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'anonymous' }, kind } },
-                            UpdateAction,
-                            done
-                        )
-                    })
-                    test("Delete", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'anonymous' }, kind } },
-                            DeleteAction,
-                            done
-                        )
-                    })
-                })
-                describe('imaged_host', () => {
-                    const kind = 'imaged_host'
-                    test("Read", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'anonymous' }, kind } },
-                            ReadAction,
-                            done
-                        )
-                    })
-                    test("Create", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'anonymous' }, kind } },
-                            CreateAction,
-                            done
-                        )
-                    })
-                    test("Update", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'anonymous' }, kind } },
-                            UpdateAction,
-                            done
-                        )
-                    })
-                    test("Delete", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'anonymous' }, kind } },
-                            DeleteAction,
-                            done
-                        )
-                    })
-                })
-            })
+})
             describe('other owners', () => {
-                describe('geolocation', () => {
-                    const kind = 'geolocation'
-                    test("Read", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'alice' }, kind } },
-                            ReadAction,
-                            done
-                        )
-                    })
-                    test("Create", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'alice' }, kind } },
-                            CreateAction,
-                            done
-                        )
-                    })
-                    test("Update", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'alice' }, kind } },
-                            UpdateAction,
-                            done
-                        )
-                    })
-                    test("Delete", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'alice' }, kind } },
-                            DeleteAction,
-                            done
-                        )
-                    })
-                })
-                describe('host_kind', () => {
-                    const kind = 'host_kind'
-                    test("Read", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'alice' }, kind } },
-                            ReadAction,
-                            done
-                        )
-                    })
-                    test("Create", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'alice' }, kind } },
-                            CreateAction,
-                            done
-                        )
-                    })
-                    test("Update", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'alice' }, kind } },
-                            UpdateAction,
-                            done
-                        )
-                    })
-                    test("Delete", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'alice' }, kind } },
-                            DeleteAction,
-                            done
-                        )
-                    })
-                })
-                describe('imaged_cluster', () => {
-                    const kind = 'imaged_cluster'
-                    test("Read", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'alice' }, kind } },
-                            ReadAction,
-                            done
-                        )
-                    })
-                    test("Create", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'alice' }, kind } },
-                            CreateAction,
-                            done
-                        )
-                    })
-                    test("Update", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'alice' }, kind } },
-                            UpdateAction,
-                            done
-                        )
-                    })
-                    test("Delete", done => {
-                        actionShouldFail(
-                            { owner: 'anonymous' },
-                            { metadata: { extension: { owner: 'alice' }, kind } },
-                            DeleteAction,
-                            done
-                        )
-                    })
-                })
-                describe('imaged_host', () => {
-                    const kind = 'imaged_host'
+                describe('some_kind', () => {
+                    const kind = 'some_kind'
                     test("Read", done => {
                         actionShouldFail(
                             { owner: 'anonymous' },
