@@ -7,6 +7,9 @@ p, anonymous, anyone, *, *, deny
 // define admin group
 p, admin_group, anyone, *, *, allow
 
+// assign user admin to admin group
+g, admin, admin_group
+
 // reader_group - allows reading anyones geolocation and host_type 
 p, reader_group, anyone, geolocation, read, allow
 p, reader_group, anyone, host_type, read, allow
@@ -23,6 +26,3 @@ p, owner_group, owner, imaged_cluster, *, allow
 g2, reader_group, default
 g2, tenant_group, default
 g2, owner_group, default
-
-// assign user admin to admin group
-g, admin, admin_group
