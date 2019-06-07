@@ -14,7 +14,7 @@ declare var process: {
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 const adminKey = process.env.ADMIN_S2S_KEY || '';
-const papieaUrl = 'http://127.0.0.1:3000';
+const papieaUrl = `http://127.0.0.1:${serverPort}`;
 
 const server_config = {
     host: "127.0.0.1",

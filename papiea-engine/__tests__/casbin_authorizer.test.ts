@@ -163,3 +163,774 @@ describe("Casbin authorizer tests", () => {
         );
     });
 });
+
+describe("Casbin authorizer tests for default provider policy", () => {
+    const pathToModel: string = resolve(__dirname, "../src/auth/default_provider_model.txt");
+    const pathToPolicy: string = resolve(__dirname, "../src/auth/default_provider_policy.txt");
+    const authorizer = new CasbinAuthorizer(pathToModel, pathToPolicy);
+
+    beforeAll(async () => {
+        await authorizer.init();
+    });
+
+    afterAll(async () => {
+    });
+
+    function actionShouldFail(user: UserAuthInfo, object: any, action: Action, done: any) {
+        authorizer.checkPermission(user, object, action).then(_ => {
+            done.fail();
+        }).catch(e => {
+            if (e.constructor === PermissionDeniedError) {
+                done();
+            } else {
+                done.fail(e);
+            }
+        });
+    }
+
+    function actionShouldSucceed(user: UserAuthInfo, object: any, action: Action, done: any) {
+        authorizer.checkPermission(user, object, action).then(_ => {
+            done();
+        }).catch(e => {
+            done.fail(e);
+        });
+    }
+
+    describe('read_group', () => {
+        describe('geolocation', () => {
+            const kind = 'geolocation'
+            test("Alice can read", done => {
+                actionShouldSucceed(
+                    { owner: 'someone', tenant: '1' },
+                    { metadata: { extension: { owner: 'alice' }, kind } },
+                    ReadAction,
+                    done
+                )
+            })
+
+            describe("Alice cannot modify", () => {
+                test('Update', done => {
+                    actionShouldFail(
+                        { owner: 'someone', tenant: '1' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        UpdateAction,
+                        done
+                    )
+                })
+                test('Delete', done => {
+                    actionShouldFail(
+                        { owner: 'someoneelse', tenant: '100' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        DeleteAction,
+                        done
+                    )
+                })
+                test('Create', done => {
+                    actionShouldFail(
+                        { owner: 'someone', tenant: '1' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        CreateAction,
+                        done
+                    )
+                })
+            })
+        })
+
+        describe('host_type', () => {
+            const kind = 'host_type'
+            test("Alice can read", done => {
+                actionShouldSucceed(
+                    { owner: 'someoneelse', tenant: '100' },
+                    { metadata: { extension: { owner: 'alice' }, kind } },
+                    ReadAction,
+                    done
+                )
+            })
+
+            describe("Alice cannot modify", () => {
+                test('Update', done => {
+                    actionShouldFail(
+                        { owner: 'someone', tenant: '1' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        UpdateAction,
+                        done
+                    )
+                })
+                test('Delete', done => {
+                    actionShouldFail(
+                        { owner: 'someoneelse', tenant: '100' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        DeleteAction,
+                        done
+                    )
+                })
+                test('Create', done => {
+                    actionShouldFail(
+                        { owner: 'someone', tenant: '1' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        CreateAction,
+                        done
+                    )
+                })
+            })
+        })
+    })
+
+    describe('tenant_group', () => {
+        describe('imaged_host', () => {
+            const kind = 'imaged_host'
+            test("Alice can read tenant's", done => {
+                actionShouldSucceed(
+                    { owner: 'someone', tenant: '100' },
+                    { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
+                    ReadAction,
+                    done
+                )
+            })
+            describe("Alice cannot modify tenant's", () => {
+                test("Update", done => {
+                    actionShouldFail(
+                        { owner: 'someone', tenant: '100' },
+                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
+                        UpdateAction,
+                        done
+                    )
+                })
+                test("Create", done => {
+                    actionShouldFail(
+                        { owner: 'someone', tenant: '100' },
+                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
+                        CreateAction,
+                        done
+                    )
+                })
+                test("Delete", done => {
+                    actionShouldFail(
+                        { owner: 'someone', tenant: '100' },
+                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
+                        DeleteAction,
+                        done
+                    )
+                })
+            })
+            describe("Alice cannot access other tenant's", () => {
+                test("Read", done => {
+                    actionShouldFail(
+                        { owner: 'someone', tenant: '500' },
+                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
+                        ReadAction,
+                        done
+                    )
+                })
+                test("Update", done => {
+                    actionShouldFail(
+                        { owner: 'someone', tenant: '500' },
+                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
+                        UpdateAction,
+                        done
+                    )
+                })
+                test("Delete", done => {
+                    actionShouldFail(
+                        { owner: 'someone', tenant: '500' },
+                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
+                        DeleteAction,
+                        done
+                    )
+                })
+                test("Create", done => {
+                    actionShouldFail(
+                        { owner: 'someone', tenant: '500' },
+                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
+                        CreateAction,
+                        done
+                    )
+                })
+
+            })
+        })
+        describe('imaged_cluster', () => {
+            const kind = 'imaged_cluster'
+            test("Alice can read tenant's", done => {
+                actionShouldSucceed(
+                    { owner: 'someone', tenant: '100' },
+                    { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
+                    ReadAction,
+                    done
+                )
+            })
+            describe("Alice cannot modify tenant's", () => {
+                test("Update", done => {
+                    actionShouldFail(
+                        { owner: 'someone', tenant: '100' },
+                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
+                        UpdateAction,
+                        done
+                    )
+                })
+                test("Create", done => {
+                    actionShouldFail(
+                        { owner: 'someone', tenant: '100' },
+                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
+                        CreateAction,
+                        done
+                    )
+                })
+                test("Delete", done => {
+                    actionShouldFail(
+                        { owner: 'someone', tenant: '100' },
+                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
+                        DeleteAction,
+                        done
+                    )
+                })
+            })
+            describe("Alice cannot access other tenant's", () => {
+                test("Read", done => {
+                    actionShouldFail(
+                        { owner: 'someone', tenant: '500' },
+                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
+                        ReadAction,
+                        done
+                    )
+                })
+                test("Update", done => {
+                    actionShouldFail(
+                        { owner: 'someone', tenant: '500' },
+                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
+                        UpdateAction,
+                        done
+                    )
+                })
+                test("Delete", done => {
+                    actionShouldFail(
+                        { owner: 'someone', tenant: '500' },
+                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
+                        DeleteAction,
+                        done
+                    )
+                })
+                test("Create", done => {
+                    actionShouldFail(
+                        { owner: 'someone', tenant: '500' },
+                        { metadata: { extension: { owner: 'alice', tenant_uuid: '100' }, kind } },
+                        CreateAction,
+                        done
+                    )
+                })
+
+            })
+        })
+    })
+
+    describe('owner_group', () => {
+        describe('imaged_host', () => {
+            const kind = 'imaged_host'
+            describe("Alice can access her own", () => {
+                test("Read", done => {
+                    actionShouldSucceed(
+                        { owner: 'alice', tenant: '100' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        ReadAction,
+                        done
+                    )
+                })
+                test("Create", done => {
+                    actionShouldSucceed(
+                        { owner: 'alice', tenant: '100' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        CreateAction,
+                        done
+                    )
+                })
+                test("Update", done => {
+                    actionShouldSucceed(
+                        { owner: 'alice', tenant: '100' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        UpdateAction,
+                        done
+                    )
+                })
+                test("Delete", done => {
+                    actionShouldSucceed(
+                        { owner: 'alice', tenant: '100' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        DeleteAction,
+                        done
+                    )
+                })
+            })
+        })
+        describe('imaged_cluster', () => {
+            const kind = 'imaged_cluster'
+            describe("Alice can access her own", () => {
+                test("Read", done => {
+                    actionShouldSucceed(
+                        { owner: 'alice', tenant: '100' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        ReadAction,
+                        done
+                    )
+                })
+                test("Create", done => {
+                    actionShouldSucceed(
+                        { owner: 'alice', tenant: '100' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        CreateAction,
+                        done
+                    )
+                })
+                test("Update", done => {
+                    actionShouldSucceed(
+                        { owner: 'alice', tenant: '100' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        UpdateAction,
+                        done
+                    )
+                })
+                test("Delete", done => {
+                    actionShouldSucceed(
+                        { owner: 'alice', tenant: '100' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        DeleteAction,
+                        done
+                    )
+                })
+            })
+        })
+    })
+
+    describe('admin user', () => {
+        describe('has access to everything', () => {
+            describe('geolocation', () => {
+                const kind = 'geolocation'
+                test("Read", done => {
+                    actionShouldSucceed(
+                        { owner: 'admin' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        ReadAction,
+                        done
+                    )
+                })
+                test("Create", done => {
+                    actionShouldSucceed(
+                        { owner: 'admin' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        CreateAction,
+                        done
+                    )
+                })
+                test("Update", done => {
+                    actionShouldSucceed(
+                        { owner: 'admin' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        UpdateAction,
+                        done
+                    )
+                })
+                test("Delete", done => {
+                    actionShouldSucceed(
+                        { owner: 'admin' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        DeleteAction,
+                        done
+                    )
+                })
+            })
+            describe('host_kind', () => {
+                const kind = 'host_kind'
+                test("Read", done => {
+                    actionShouldSucceed(
+                        { owner: 'admin' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        ReadAction,
+                        done
+                    )
+                })
+                test("Create", done => {
+                    actionShouldSucceed(
+                        { owner: 'admin' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        CreateAction,
+                        done
+                    )
+                })
+                test("Update", done => {
+                    actionShouldSucceed(
+                        { owner: 'admin' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        UpdateAction,
+                        done
+                    )
+                })
+                test("Delete", done => {
+                    actionShouldSucceed(
+                        { owner: 'admin' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        DeleteAction,
+                        done
+                    )
+                })
+            })
+            describe('imaged_cluster', () => {
+                const kind = 'imaged_cluster'
+                test("Read", done => {
+                    actionShouldSucceed(
+                        { owner: 'admin' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        ReadAction,
+                        done
+                    )
+                })
+                test("Create", done => {
+                    actionShouldSucceed(
+                        { owner: 'admin' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        CreateAction,
+                        done
+                    )
+                })
+                test("Update", done => {
+                    actionShouldSucceed(
+                        { owner: 'admin' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        UpdateAction,
+                        done
+                    )
+                })
+                test("Delete", done => {
+                    actionShouldSucceed(
+                        { owner: 'admin' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        DeleteAction,
+                        done
+                    )
+                })
+            })
+            describe('imaged_host', () => {
+                const kind = 'imaged_host'
+                test("Read", done => {
+                    actionShouldSucceed(
+                        { owner: 'admin' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        ReadAction,
+                        done
+                    )
+                })
+                test("Create", done => {
+                    actionShouldSucceed(
+                        { owner: 'admin' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        CreateAction,
+                        done
+                    )
+                })
+                test("Update", done => {
+                    actionShouldSucceed(
+                        { owner: 'admin' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        UpdateAction,
+                        done
+                    )
+                })
+                test("Delete", done => {
+                    actionShouldSucceed(
+                        { owner: 'admin' },
+                        { metadata: { extension: { owner: 'alice' }, kind } },
+                        DeleteAction,
+                        done
+                    )
+                })
+            })
+        })
+    })
+
+    describe('anonymous user', () => {
+        describe('has access to nothing', () => {
+            describe('his own (should never have any anyway)', () => {
+                describe('geolocation', () => {
+                    const kind = 'geolocation'
+                    test("Read", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'anonymous' }, kind } },
+                            ReadAction,
+                            done
+                        )
+                    })
+                    test("Create", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'anonymous' }, kind } },
+                            CreateAction,
+                            done
+                        )
+                    })
+                    test("Update", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'anonymous' }, kind } },
+                            UpdateAction,
+                            done
+                        )
+                    })
+                    test("Delete", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'anonymous' }, kind } },
+                            DeleteAction,
+                            done
+                        )
+                    })
+                })
+                describe('host_kind', () => {
+                    const kind = 'host_kind'
+                    test("Read", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'anonymous' }, kind } },
+                            ReadAction,
+                            done
+                        )
+                    })
+                    test("Create", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'anonymous' }, kind } },
+                            CreateAction,
+                            done
+                        )
+                    })
+                    test("Update", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'anonymous' }, kind } },
+                            UpdateAction,
+                            done
+                        )
+                    })
+                    test("Delete", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'anonymous' }, kind } },
+                            DeleteAction,
+                            done
+                        )
+                    })
+                })
+                describe('imaged_cluster', () => {
+                    const kind = 'imaged_cluster'
+                    test("Read", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'anonymous' }, kind } },
+                            ReadAction,
+                            done
+                        )
+                    })
+                    test("Create", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'anonymous' }, kind } },
+                            CreateAction,
+                            done
+                        )
+                    })
+                    test("Update", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'anonymous' }, kind } },
+                            UpdateAction,
+                            done
+                        )
+                    })
+                    test("Delete", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'anonymous' }, kind } },
+                            DeleteAction,
+                            done
+                        )
+                    })
+                })
+                describe('imaged_host', () => {
+                    const kind = 'imaged_host'
+                    test("Read", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'anonymous' }, kind } },
+                            ReadAction,
+                            done
+                        )
+                    })
+                    test("Create", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'anonymous' }, kind } },
+                            CreateAction,
+                            done
+                        )
+                    })
+                    test("Update", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'anonymous' }, kind } },
+                            UpdateAction,
+                            done
+                        )
+                    })
+                    test("Delete", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'anonymous' }, kind } },
+                            DeleteAction,
+                            done
+                        )
+                    })
+                })
+            })
+            describe('other owners', () => {
+                describe('geolocation', () => {
+                    const kind = 'geolocation'
+                    test("Read", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'alice' }, kind } },
+                            ReadAction,
+                            done
+                        )
+                    })
+                    test("Create", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'alice' }, kind } },
+                            CreateAction,
+                            done
+                        )
+                    })
+                    test("Update", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'alice' }, kind } },
+                            UpdateAction,
+                            done
+                        )
+                    })
+                    test("Delete", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'alice' }, kind } },
+                            DeleteAction,
+                            done
+                        )
+                    })
+                })
+                describe('host_kind', () => {
+                    const kind = 'host_kind'
+                    test("Read", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'alice' }, kind } },
+                            ReadAction,
+                            done
+                        )
+                    })
+                    test("Create", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'alice' }, kind } },
+                            CreateAction,
+                            done
+                        )
+                    })
+                    test("Update", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'alice' }, kind } },
+                            UpdateAction,
+                            done
+                        )
+                    })
+                    test("Delete", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'alice' }, kind } },
+                            DeleteAction,
+                            done
+                        )
+                    })
+                })
+                describe('imaged_cluster', () => {
+                    const kind = 'imaged_cluster'
+                    test("Read", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'alice' }, kind } },
+                            ReadAction,
+                            done
+                        )
+                    })
+                    test("Create", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'alice' }, kind } },
+                            CreateAction,
+                            done
+                        )
+                    })
+                    test("Update", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'alice' }, kind } },
+                            UpdateAction,
+                            done
+                        )
+                    })
+                    test("Delete", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'alice' }, kind } },
+                            DeleteAction,
+                            done
+                        )
+                    })
+                })
+                describe('imaged_host', () => {
+                    const kind = 'imaged_host'
+                    test("Read", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'alice' }, kind } },
+                            ReadAction,
+                            done
+                        )
+                    })
+                    test("Create", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'alice' }, kind } },
+                            CreateAction,
+                            done
+                        )
+                    })
+                    test("Update", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'alice' }, kind } },
+                            UpdateAction,
+                            done
+                        )
+                    })
+                    test("Delete", done => {
+                        actionShouldFail(
+                            { owner: 'anonymous' },
+                            { metadata: { extension: { owner: 'alice' }, kind } },
+                            DeleteAction,
+                            done
+                        )
+                    })
+                })
+            })
+        })
+    })
+});
