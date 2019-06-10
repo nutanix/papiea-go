@@ -21,5 +21,8 @@ coverage
 papiea-engine/papiea-lib-clj/papiea-lib-clj.js
 papiea-engine/papiea-lib-clj/target/
 
+# vscode
+.vscode
+
 # backups
 package.json.backup
