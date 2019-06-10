@@ -122,8 +122,9 @@ export class Entity_API_Impl implements Entity_API {
 
     async call_procedure(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, entity_uuid: uuid4, procedure_name: string, input: any): Promise<any> {
         const kind: Kind = await this.get_kind(user, prefix, kind_name, version);
-        const entity_data: [Metadata, Spec] = await this.get_entity_spec(user, kind_name, entity_uuid);
-        await this.authorizer.checkPermission(user, { "metadata": entity_data[0] }, CallProcedureByNameAction(procedure_name));
+        const entity_spec: [Metadata, Spec] = await this.get_entity_spec(user, kind_name, entity_uuid);
+        const entity_status: [Metadata, Status] = await this.get_entity_status(user, kind_name, entity_uuid);
+        await this.authorizer.checkPermission(user, { "metadata": entity_spec[0] }, CallProcedureByNameAction(procedure_name));
         const procedure: Procedural_Signature | undefined = kind.entity_procedures[procedure_name];
         if (procedure === undefined) {
             throw new Error(`Procedure ${procedure_name} not found for kind ${kind.name}`);
@@ -137,8 +138,9 @@ export class Entity_API_Impl implements Entity_API {
         try {
             const { data } = await axios.post(procedure.procedure_callback,
                 {
-                    metadata: entity_data[0],
-                    spec: entity_data[1],
+                    metadata: entity_spec[0],
+                    spec: entity_spec[1],
+                    status: entity_status[1],
                     input: input
                 }, {
                     headers: user ? user.headers : undefined
