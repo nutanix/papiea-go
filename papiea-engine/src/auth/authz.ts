@@ -124,7 +124,7 @@ export class PerProviderAuthorizer extends Authorizer {
             return this.providerToAuthorizer[providerPrefix];
         }
         const provider: Provider = await this.providerApi.get_latest_provider(user, providerPrefix);
-        if (!provider.policy) {
+        if (!provider.authModel || !provider.policy) {
             this.providerToAuthorizer[providerPrefix] = null;
             return null;
         }

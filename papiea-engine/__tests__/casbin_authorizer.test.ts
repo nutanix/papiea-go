@@ -3,13 +3,16 @@ import { UserAuthInfo } from "../src/auth/authn";
 import { PermissionDeniedError, Action, ReadAction, CreateAction, UpdateAction, DeleteAction } from "../src/auth/authz";
 import { CasbinAuthorizer } from "../src/auth/casbin";
 import { resolve } from "path";
+import { readFileSync } from "fs";
 
 
 describe("Casbin authorizer tests", () => {
-    const pathToModel: string = resolve(__dirname, "../src/auth/default_provider_model.txt");
+    const pathToModel: string = resolve(__dirname, "../src/auth/provider_model_example.txt");
+    const modelText: string = readFileSync(pathToModel).toString();
     const pathToPolicy: string = resolve(__dirname, "../src/auth/provider_policy_example.txt");
-    const authorizer = new CasbinAuthorizer(pathToModel, pathToPolicy);
-
+    const policyText: string = readFileSync(pathToPolicy).toString();
+    const authorizer = new CasbinAuthorizer(modelText, policyText);
+    
     beforeAll(async () => {
         await authorizer.init();
     });
@@ -165,10 +168,12 @@ describe("Casbin authorizer tests", () => {
 });
 
 describe("Casbin authorizer tests for default provider policy", () => {
-    const pathToModel: string = resolve(__dirname, "../src/auth/default_provider_model.txt");
-    const pathToPolicy: string = resolve(__dirname, "../src/auth/default_provider_policy.txt");
-    const authorizer = new CasbinAuthorizer(pathToModel, pathToPolicy);
-
+    const pathToModel: string = resolve(__dirname, "../src/auth/provider_model_example.txt");
+    const modelText: string = readFileSync(pathToModel).toString();
+    const pathToPolicy: string = resolve(__dirname, "../src/auth/provider_policy_example.txt");
+    const policyText: string = readFileSync(pathToPolicy).toString();
+    const authorizer = new CasbinAuthorizer(modelText, policyText);
+    
     beforeAll(async () => {
         await authorizer.init();
     });

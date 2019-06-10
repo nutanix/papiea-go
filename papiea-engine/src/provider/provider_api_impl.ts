@@ -94,9 +94,12 @@ export class Provider_API_Impl implements Provider_API {
         this.validator.validate(status, Maybe.fromValue(Object.values(kind.kind_structure)[0]), schemas);
     }
 
-    async update_auth(user: UserAuthInfo, provider_prefix: string, provider_version: string, auth: any): Promise<void> {
+    async update_auth(user: UserAuthInfo, provider_prefix: string, provider_version: Version, auth: any): Promise<void> {
         const provider: Provider = await this.get_provider(user, provider_prefix, provider_version);
         await this.authorizer.checkPermission(user, provider, UpdateAuthAction);
+        if (auth.authModel !== undefined) {
+            provider.authModel = auth.authModel;
+        }
         if (auth.policy !== undefined) {
             provider.policy = auth.policy;
         }

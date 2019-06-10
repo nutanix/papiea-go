@@ -181,6 +181,7 @@ export interface Provider {
     created_at?: Date;
     policy?: string;
     oauth2?: any;
+    authModel?: string;
 }
 
 // Add support for partial types where relevant

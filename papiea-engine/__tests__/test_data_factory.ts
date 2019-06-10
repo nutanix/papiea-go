@@ -61,6 +61,7 @@ export class ProviderBuilder {
     private _extension_structure: any = {};
     private _policy: any;
     private _callback: string = `http://${default_hostname}:${port}/`;
+    private _authModel: any;
 
     constructor(prefix?: string) {
         if (prefix !== undefined) {
@@ -73,7 +74,9 @@ export class ProviderBuilder {
 
     public build(): Provider {
         const provider: Provider = { prefix: this._prefix, version: this._version, kinds: this._kinds,
-            oauth2: this._oauth2, procedures: this._procedures, extension_structure: this._extension_structure, policy: this._policy};
+            oauth2: this._oauth2, procedures: this._procedures, extension_structure: this._extension_structure, policy: this._policy,
+            authModel: this._authModel
+        };
         return provider;
     }
 
@@ -125,6 +128,17 @@ export class ProviderBuilder {
             this._oauth2 = loadYaml("./auth.yaml");
         } else {
             this._oauth2 = value
+        }
+        return this;
+    }
+
+    public withAuthModel(value?: any) {
+        if (value === undefined) {
+            const pathToModel: string = resolve(__dirname, "../src/auth/provider_model_example.txt");
+            const modelText: string = readFileSync(pathToModel).toString();
+            this._authModel = modelText;
+        } else {
+            this._authModel = value
         }
         return this;
     }

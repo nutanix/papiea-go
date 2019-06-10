@@ -62,6 +62,7 @@ describe("Entity API auth tests", () => {
                                 .withKindProcedures()
                                 .withProviderProcedures()
                                 .withOAuth2Description()
+                                .withAuthModel()
                                 .build();
     const kind_name = provider.kinds[0].name;
     let entity_metadata: Metadata, entity_spec: Spec;
