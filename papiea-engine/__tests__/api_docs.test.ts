@@ -123,6 +123,20 @@ describe("API Docs Tests", () => {
                     },
                     "y": {
                         "type": "number"
+                    },
+                    "z": {
+                        "type": "number"
+                    },
+                    "v": {
+                        "type": "object",
+                        "properties": {
+                            "d": {
+                               "type": "number"
+                            },
+                            "e": {
+                                "type": "number"
+                            }
+                        }
                     }
                 }
             });

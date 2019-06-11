@@ -2,7 +2,15 @@ import { load } from "js-yaml";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import { plural } from "pluralize";
-import { Data_Description, Version, SpecOnlyEntityKind, Kind, Procedural_Signature, Provider, Procedural_Execution_Strategy } from "papiea-core";
+import {
+    Data_Description,
+    Version,
+    SpecOnlyEntityKind,
+    Kind,
+    Procedural_Signature,
+    Provider,
+    Procedural_Execution_Strategy
+} from "papiea-core";
 
 function randomString(len: number) {
     const charSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -17,6 +25,7 @@ function randomString(len: number) {
 export function loadYaml(relativePath: string): any {
     return load(readFileSync(resolve(__dirname, relativePath), "utf-8"));
 }
+
 export function getLocationDataDescription(): Data_Description {
     let locationDataDescription = loadYaml("./location_kind_test_data.yml");
     let randomizedLocationDataDescription: any = {};
@@ -46,7 +55,7 @@ export function getSpecOnlyEntityKind(): SpecOnlyEntityKind {
 }
 
 function formatErrorMsg(current_field: string, missing_field: string) {
-    return `Please specify ${missing_field} before ${current_field}`
+    return `Please specify ${ missing_field } before ${ current_field }`
 }
 
 const default_hostname = "127.0.0.1";
@@ -60,7 +69,7 @@ export class ProviderBuilder {
     private _oauth2: any = undefined;
     private _extension_structure: any = {};
     private _policy: any;
-    private _callback: string = `http://${default_hostname}:${port}/`;
+    private _callback: string = `http://${ default_hostname }:${ port }/`;
     private _authModel: any;
 
     constructor(prefix?: string) {
@@ -73,8 +82,14 @@ export class ProviderBuilder {
     }
 
     public build(): Provider {
-        const provider: Provider = { prefix: this._prefix, version: this._version, kinds: this._kinds,
-            oauth2: this._oauth2, procedures: this._procedures, extension_structure: this._extension_structure, policy: this._policy,
+        const provider: Provider = {
+            prefix: this._prefix,
+            version: this._version,
+            kinds: this._kinds,
+            oauth2: this._oauth2,
+            procedures: this._procedures,
+            extension_structure: this._extension_structure,
+            policy: this._policy,
             authModel: this._authModel
         };
         return provider;
@@ -218,6 +233,7 @@ export class ProviderBuilder {
         }
         return this;
     }
+
     get kinds(): Kind[] {
         return this._kinds;
     }
@@ -239,4 +255,33 @@ export class ProviderBuilder {
         this._version = value;
         return this;
     }
+}
+
+interface DoneCallback {
+    (...args: any[]): any;
+
+    fail(error?: string | { message: string }): any;
+}
+
+export class ValidationBuilder {
+    static createSimpleValidationFunc(done: DoneCallback): (func: () => void, shouldFail?: boolean) => void | never  {
+        return function tryValidate(func: () => void, shouldFail: boolean = false): void | never {
+            if (shouldFail) {
+                try {
+                    func();
+                    done.fail();
+                } catch (e) {
+                    done();
+                }
+            } else {
+                try {
+                    func();
+                    done();
+                } catch (e) {
+                    console.error(e);
+                    done.fail();
+                }
+            }
+        }
+    };
 }

@@ -311,6 +311,7 @@ describe("Entity API tests", () => {
 
             done();
         } catch (e) {
+            console.log(e.response.data.errors);
             done.fail(e);
         }
     });
