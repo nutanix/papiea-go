@@ -15,15 +15,17 @@ export class ValidationError extends Error {
 
 export class Validator {
     private validator: any;
+    private readonly disallowExtraProps: boolean;
 
-    constructor() {
+    constructor(disallowExtraProps: boolean) {
+        this.disallowExtraProps = disallowExtraProps;
         this.validator = new SwaggerModelValidator();
     }
 
     validate(data: any, model: Maybe<any>, models: any) {
         console.dir(model);
         model.mapOrElse((val) => {
-            const res = this.validator.validate(data, val, models);
+            const res = this.validator.validate(data, val, models, false, this.disallowExtraProps);
             if (!res.valid) {
                 throw new ValidationError(res.errors);
             }

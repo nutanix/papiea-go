@@ -25,7 +25,8 @@ declare var process: {
         MONGO_PORT: string
         PAPIEA_PUBLIC_ADDR: string,
         DEBUG_LEVEL: string,
-        ADMIN_S2S_KEY: string
+        ADMIN_S2S_KEY: string,
+        DISALLOW_EXTRA_PROPERTIES: string
     },
     title: string;
 };
@@ -39,6 +40,7 @@ const oauth2RedirectUri: string = publicAddr + "/provider/auth/callback";
 const mongoHost = process.env.MONGO_HOST || 'mongo';
 const mongoPort = process.env.MONGO_PORT || '27017';
 const adminKey = process.env.ADMIN_S2S_KEY || '';
+const disallowExtraProps = process.env.DISALLOW_EXTRA_PROPERTIES !== "false";
 
 async function setUpApplication(): Promise<express.Express> {
     const app = express();
@@ -50,7 +52,7 @@ async function setUpApplication(): Promise<express.Express> {
     const specDb = await mongoConnection.get_spec_db();
     const statusDb = await mongoConnection.get_status_db();
     const s2skeyDb = await mongoConnection.get_s2skey_db();
-    const validator = new Validator();
+    const validator = new Validator(disallowExtraProps);
     const providerApi = new Provider_API_Impl(providerDb, statusDb, s2skeyDb, validator, new AdminAuthorizer());
     const signature = new JWTHMAC(tokenSecret, tokenExpiresSeconds);
     app.use(createAuthnRouter(adminKey, signature, s2skeyDb));

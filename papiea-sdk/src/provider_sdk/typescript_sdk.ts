@@ -38,7 +38,7 @@ export class ProviderSdk implements ProviderImpl {
         this.server_manager = server_manager || new Provider_Server_Manager();
         this._procedures = {};
         this.meta_ext = {};
-        this.validator = validator || new Validator();
+        this.validator = validator || new Validator(true);
         this.get_prefix = this.get_prefix.bind(this);
         this.get_version = this.get_version.bind(this);
         this.providerApi = axios.create({
@@ -294,8 +294,8 @@ export class Kind_Builder {
         this.get_prefix = get_prefix;
         this.get_version = get_version;
         this.provider_url = provider_url;
-        this.providerApi = providerApi
-        this.validator = validator || new Validator();
+        this.providerApi = providerApi;
+        this.validator = validator || new Validator(true);
     }
 
     entity_procedure(name: string, rbac: any,
