@@ -20,12 +20,6 @@ declare var process: {
 const mongoHost = process.env.MONGO_HOST || 'mongo';
 const mongoPort = process.env.MONGO_PORT || '27017';
 
-const providerApi = axios.create({
-    baseURL: `http://127.0.0.1:9010/provider`,
-    timeout: 1000,
-    headers: { 'Content-Type': 'application/json' }
-});
-
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 const adminKey = process.env.ADMIN_S2S_KEY || '';
 
@@ -139,9 +133,6 @@ describe("API Docs Tests", () => {
                     "y": {
                         "type": "number"
                     },
-                    "z": {
-                        "type": "number"
-                    },
                     "v": {
                         "type": "object",
                         "properties": {
@@ -195,9 +186,9 @@ describe("API docs test entity", () => {
     });
 
     test("Provider with procedures generates correct openAPI spec", async done => {
-        const procedure_id = "computeSumNoValidation";
+        const procedure_id = "computeSumWithValidation";
         const proceduralSignatureForProvider: Procedural_Signature = {
-            name: "computeSumWithNoValidation",
+            name: "computeSumWithValidation",
             argument: loadYaml("./procedure_sum_input.yml"),
             result: loadYaml("./procedure_sum_output.yml"),
             execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
@@ -214,22 +205,22 @@ describe("API docs test entity", () => {
         try {
             await providerApi.post('/', provider);
             const apiDoc = await apiDocsGenerator.getApiDocs();
-            console.dir(apiDoc.paths);
+
             expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
                 .post
                 .requestBody
                 .content["application/json"]
                 .schema
                 .properties
-                .input['$ref']).toEqual(`#/components/schemas/AnyValue`);
+                .input['$ref']).toEqual(`#/components/schemas/SumInput`);
 
+            console.log(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
+                .post.responses["200"].content);
             expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
                 .post
                 .responses["200"]
                 .content["application/json"]
-                .schema
-                .properties
-                .input['$ref']).toEqual(`#/components/schemas/AnyValue`);
+                .schema["$ref"]).toEqual(`#/components/schemas/SumOutput`);
 
             done();
             providerApi.delete(`${ provider.prefix }/${ provider.version }`)

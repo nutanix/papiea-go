@@ -13,6 +13,7 @@ Location:
       type: number
     z:
       type: number
+      x-papiea: status-only
     v:
       type: object
       properties:
