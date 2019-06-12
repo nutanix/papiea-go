@@ -1,5 +1,10 @@
-import { ProceduralCtx_Interface, Provider as ProviderImpl, Provider_Power, IntentfulCtx_Interface } from "./typescript_sdk_interface";
-import axios from "axios"
+import {
+    ProceduralCtx_Interface,
+    Provider as ProviderImpl,
+    Provider_Power,
+    IntentfulCtx_Interface,
+} from "./typescript_sdk_interface";
+import axios, { AxiosInstance } from "axios"
 import { plural } from "pluralize"
 import * as express from "express";
 import * as asyncHandler from "express-async-handler";
@@ -8,32 +13,42 @@ import { Server } from "http";
 import { ProceduralCtx } from "./typescript_sdk_context_impl";
 import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity } from "papiea-core";
 import { ValidationError, Validator } from "./typescript_sdk_validation";
+import { Maybe } from "./typescript_sdk_utils";
 
 export class ProviderSdk implements ProviderImpl {
     private readonly _kind: Kind[];
     private readonly _procedures: { [key: string]: Procedural_Signature };
     private readonly validator: Validator;
     private readonly server_manager: Provider_Server_Manager;
+    private readonly providerApi: AxiosInstance;
     private _version: Version | null;
     private _prefix: string | null;
     private meta_ext: { [key: string]: string };
-    _provider: Provider | null;
-    papiea_url: string;
-    papiea_port: number;
+    private _provider: Provider | null;
+    private readonly papiea_url: string;
+    private readonly s2skey: string;
 
-    constructor(papiea_url: string, papiea_port: number, server_manager?: Provider_Server_Manager, validator?: Validator) {
+    constructor(papiea_url: string, s2skey: string, server_manager?: Provider_Server_Manager, validator?: Validator) {
         this._version = null;
         this._prefix = null;
         this._kind = [];
         this._provider = null;
         this.papiea_url = papiea_url;
-        this.papiea_port = papiea_port;
+        this.s2skey = s2skey;
         this.server_manager = server_manager || new Provider_Server_Manager();
         this._procedures = {};
         this.meta_ext = {};
-        this.validator = validator || new Validator();
+        this.validator = validator || new Validator(true);
         this.get_prefix = this.get_prefix.bind(this);
         this.get_version = this.get_version.bind(this);
+        this.providerApi = axios.create({
+            baseURL: this.provider_url,
+            timeout: 5000,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.s2skey}`
+            }
+        });
     }
 
     get provider() {
@@ -45,11 +60,11 @@ export class ProviderSdk implements ProviderImpl {
     }
 
     get provider_url(): string {
-        return `http://${ this.papiea_url }:${ this.papiea_port }/provider`
+        return `${ this.papiea_url }/provider`
     }
 
     get entity_url(): string {
-        return `http://${ this.papiea_url }:${ this.papiea_port }/services`
+        return `${ this.papiea_url }/services`
     }
 
     private get_prefix(): string {
@@ -89,7 +104,7 @@ export class ProviderSdk implements ProviderImpl {
                     entity_procedures: {},
                     differ: undefined,
                 };
-                const kind_builder = new Kind_Builder(spec_only_kind, this.entity_url, this.provider_url, this.get_prefix, this.get_version, this.server_manager, validator || this.validator);
+                const kind_builder = new Kind_Builder(spec_only_kind, this.entity_url, this.provider_url, this.get_prefix, this.get_version, this.server_manager, this.providerApi, validator || this.validator);
                 this._kind.push(spec_only_kind);
                 return kind_builder;
             } else {
@@ -104,7 +119,7 @@ export class ProviderSdk implements ProviderImpl {
     add_kind(kind: Kind): Kind_Builder | null {
         if (this._kind.indexOf(kind) === -1) {
             this._kind.push(kind);
-            const kind_builder = new Kind_Builder(kind, this.entity_url, this.provider_url, this.get_prefix, this.get_version, this.server_manager);
+            const kind_builder = new Kind_Builder(kind, this.entity_url, this.provider_url, this.get_prefix, this.get_version, this.server_manager, this.providerApi);
             return kind_builder;
         } else {
             return null;
@@ -154,11 +169,12 @@ export class ProviderSdk implements ProviderImpl {
         const version = this.get_version();
         this.server_manager.register_handler("/" + name, async (req, res) => {
             try {
-                const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version), req.body.input);
-                this.validator.validate(result, Object.values(output_desc)[0], Validator.build_schemas(input_desc, output_desc));
+                const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version, this.providerApi), req.body.input);
+                this.validator.validate(result, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc));
                 res.json(result);
             } catch (e) {
                 if (e instanceof ValidationError) {
+                    console.error(`Provider procedure ${name} didn't return correct value`, e)
                     return res.status(422).json(e.mapErr(errors => `Provider procedure ${name} didn't return correct value`))
                 }
                 throw new Error("Unable to execute handler");
@@ -178,7 +194,7 @@ export class ProviderSdk implements ProviderImpl {
                 extension_structure: this.meta_ext
             };
             try {
-                await axios.post(this.provider_url, this._provider);
+                await this.providerApi.post('/', this._provider);
                 this.server_manager.startServer();
             } catch (err) {
                 throw err;
@@ -200,9 +216,9 @@ export class ProviderSdk implements ProviderImpl {
         throw new Error(`Malformed provider description. Missing: ${ missing_field }`)
     }
 
-    static create_provider(papiea_host: string, papiea_port: number, public_host?: string, public_port?: number, validator?: Validator): ProviderSdk {
+    static create_provider(papiea_url: string, s2skey: string, public_host?: string, public_port?: number, validator?: Validator): ProviderSdk {
         const server_manager = new Provider_Server_Manager(public_host, public_port);
-        return new ProviderSdk(papiea_host, papiea_port, server_manager, validator)
+        return new ProviderSdk(papiea_url, s2skey, server_manager, validator)
     }
 }
 
@@ -269,15 +285,17 @@ export class Kind_Builder {
     private server_manager: Provider_Server_Manager;
     provider_url: string;
     private validator: Validator;
+    private readonly providerApi: AxiosInstance;
 
-    constructor(kind: Kind, entity_url: string, provider_url:string, get_prefix: () => string, get_version: () => string, server_manager: Provider_Server_Manager, validator?: Validator) {
+    constructor(kind: Kind, entity_url: string, provider_url:string, get_prefix: () => string, get_version: () => string, server_manager: Provider_Server_Manager, providerApi:AxiosInstance, validator?: Validator) {
         this.server_manager = server_manager;
         this.kind = kind;
         this.entity_url = entity_url;
         this.get_prefix = get_prefix;
         this.get_version = get_version;
         this.provider_url = provider_url;
-        this.validator = validator || new Validator();
+        this.providerApi = providerApi;
+        this.validator = validator || new Validator(true);
     }
 
     entity_procedure(name: string, rbac: any,
@@ -298,16 +316,16 @@ export class Kind_Builder {
         const version = this.get_version();
         this.server_manager.register_handler(`/${this.kind.name}/${name}`, async (req, res) => {
             try {
-                const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version), {
+                const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version, this.providerApi), {
                     metadata: req.body.metadata,
                     spec: req.body.spec,
                     status: req.body.status
                 }, req.body.input);
-                this.validator.validate(result.spec, Object.values(output_desc)[0], Validator.build_schemas(input_desc, output_desc));
-                res.json(result.spec);
+                this.validator.validate(result, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc));
+                res.json(result);
             } catch (e) {
                 if (e instanceof ValidationError) {
-                    return res.status(422).json(e.mapErr(errors => `Entity procedure ${name} didn't return correct value`))
+                    return res.status(422).json(e.mapErr(errors => `Entity procedure '${name}' didn't return correct value`))
                 }
                 throw new Error(`Unable to execute handler '${e.message}'`);
             }
@@ -333,8 +351,8 @@ export class Kind_Builder {
         const version = this.get_version();
         this.server_manager.register_handler(`/${this.kind.name}/${name}`, async (req, res) => {
             try {
-                const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version), req.body.input);
-                this.validator.validate(result, Object.values(output_desc)[0], Validator.build_schemas(input_desc, output_desc));
+                const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version, this.providerApi), req.body.input);
+                this.validator.validate(result, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc));
                 res.json(result);
             } catch (e) {
                 if (e instanceof ValidationError) {
@@ -343,7 +361,7 @@ export class Kind_Builder {
                 throw new Error(`Unable to execute handler '${e.message}'`);
             }
         });
-    return this   
+        return this
     }
 }
 export {Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, ProceduralCtx_Interface, Provider_Power, IntentfulCtx_Interface}

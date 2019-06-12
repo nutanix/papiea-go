@@ -21,12 +21,18 @@ export class Action {
     }
 }
 
-const ReadAction = new Action('read'),
+export const ReadAction = new Action('read'),
     UpdateAction = new Action('write'),
     CreateAction = new Action('create'),
-    DeleteAction = new Action('delete');
-
-export { ReadAction, UpdateAction, CreateAction, DeleteAction };
+    DeleteAction = new Action('delete'),
+    RegisterProviderAction = new Action('register_provider'),
+    UnregisterProviderAction = new Action('unregister_provider'),
+    ReadProviderAction = new Action('read_provider'),
+    UpdateStatusAction = new Action('update_status'),
+    UpdateAuthAction = new Action('update_auth'),
+    CreateS2SKeyAction = new Action('create_key'),
+    ReadS2SKeyAction = new Action('read_key'),
+    InactivateS2SKeyAction = new Action('inactivate_key');
 
 export function CallProcedureByNameAction(procedureName: string) {
     return new Action('call' + procedureName);
@@ -47,10 +53,14 @@ export abstract class Authorizer {
 
     abstract checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void>;
 
-    async filter(user: UserAuthInfo, objectList: any[], transformfn: (object: any) => any, action: Action): Promise<any[]> {
+    async filter(user: UserAuthInfo, objectList: any[], action: Action, transformfn?: (object: any) => any): Promise<any[]> {
         return filterAsync(objectList, async (object) => {
             try {
-                await this.checkPermission(user, transformfn(object), action);
+                if (transformfn) {
+                    await this.checkPermission(user, transformfn(object), action);
+                } else {
+                    await this.checkPermission(user, object, action);
+                }
                 return true;
             } catch (e) {
                 return false;
@@ -114,7 +124,7 @@ export class PerProviderAuthorizer extends Authorizer {
             return this.providerToAuthorizer[providerPrefix];
         }
         const provider: Provider = await this.providerApi.get_latest_provider(user, providerPrefix);
-        if (!provider.policy) {
+        if (!provider.authModel || !provider.policy) {
             this.providerToAuthorizer[providerPrefix] = null;
             return null;
         }
@@ -131,6 +141,58 @@ export class PerProviderAuthorizer extends Authorizer {
         if (!user) {
             throw new UnauthorizedError();
         }
+        if (user.is_admin) {
+            return;
+        }
+        if (user.is_provider_admin) {
+            const providerPrefix = await this.getProviderPrefixByObject(user, object);
+            if (user.provider_prefix === providerPrefix) {
+                return;
+            } else {
+                throw new PermissionDeniedError();
+            }
+        }
         return authorizer.checkPermission(user, object, action);
+    }
+}
+
+export class AdminAuthorizer extends Authorizer {
+    async checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void> {
+        if (action === ReadProviderAction) {
+            return;
+        }
+        if (!user) {
+            throw new UnauthorizedError();
+        }
+        if (user.is_admin) {
+            return;
+        }
+        if (action === CreateS2SKeyAction) {
+            if (object.owner !== user.owner || object.provider_prefix !== user.provider_prefix) {
+                throw new PermissionDeniedError();
+            }
+            if (user.is_provider_admin) {
+                return;
+            }
+            // object.extension contains UserInfo which will be used when s2s key is passed
+            // check who can talk on behalf of whom
+            if (object.extension.is_admin || object.extension.is_provider_admin
+                || (object.extension.provider_prefix !== user.provider_prefix)
+                || (object.extension.owner && object.extension.owner !== user.owner)) {
+                throw new PermissionDeniedError();
+            }
+            return;
+        }
+        if (action === ReadS2SKeyAction || action === InactivateS2SKeyAction) {
+            if (object.owner !== user.owner || object.provider_prefix !== user.provider_prefix) {
+                throw new PermissionDeniedError();
+            } else {
+                return;
+            }
+        }
+        if (user.is_provider_admin && object.prefix === user.provider_prefix) {
+            return;
+        }
+        throw new PermissionDeniedError();
     }
 }

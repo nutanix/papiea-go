@@ -4,7 +4,7 @@ import { Data_Description, Version, Status, Entity, Entity_Reference } from "pap
 
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Providers-SDK-518][provider_sdk_ts_provider_interface]]
 // Api for the provider-sdk
-export enum Provider_Power {On, Off, Suspended};
+export enum Provider_Power {On, Off, Suspended}
 
 export interface Provider {
     new_kind(entity_yaml:Data_Description):Kind_Builder;
@@ -14,7 +14,7 @@ export interface Provider {
 // provider_sdk_ts_provider_interface ends here
 
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Providers-SDK-518][provider_sdk_ts_kind_interface]]
-enum Procedural_Execution_Strategy {Halt_Intentful};
+enum Procedural_Execution_Strategy {Halt_Intentful}
 
 interface IKindImpl {
 

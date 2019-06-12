@@ -46,6 +46,11 @@ export interface Entity {
 }
 // entity-struct ends here
 
+export interface EntitySpec {
+    metadata: Metadata,
+    spec: Spec
+}
+
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Interfaces-559][SFS-interfaces]]
 // Intentful signature
 export type SFS = string;
@@ -176,4 +181,26 @@ export interface Provider {
     created_at?: Date;
     policy?: string;
     oauth2?: any;
+    authModel?: string;
+}
+
+// Add support for partial types where relevant
+export type Partial<T> = {
+    [P in keyof T]?: T[P];
+};
+
+export type Key = string;
+
+export interface S2S_Key {
+    name: string;
+    owner: string;
+    provider_prefix: string;
+    key: Key;
+
+    // Additional fields
+    created_at: Date;
+    deleted_at?: Date;
+    extension: {
+        [key: string]: any;
+    }
 }

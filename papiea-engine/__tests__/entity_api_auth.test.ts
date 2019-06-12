@@ -10,15 +10,26 @@ import { Metadata, Spec, Provider } from "papiea-core";
 
 declare var process: {
     env: {
-        SERVER_PORT: string
+        SERVER_PORT: string,
+        ADMIN_S2S_KEY: string
     }
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
+const adminKey = process.env.ADMIN_S2S_KEY || '';
 
 const entityApi = axios.create({
     baseURL: `http://127.0.0.1:${serverPort}/services`,
     timeout: 1000,
     headers: { 'Content-Type': 'application/json' }
+});
+
+const providerApiAdmin = axios.create({
+    baseURL: `http://127.0.0.1:${serverPort}/provider`,
+    timeout: 1000,
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminKey}`
+    }
 });
 
 const providerApi = axios.create({
@@ -27,7 +38,7 @@ const providerApi = axios.create({
     headers: { 'Content-Type': 'application/json' }
 });
 
-export function base64UrlEncode(...parts: any[]): string {
+function base64UrlEncode(...parts: any[]): string {
     function base64UrlEncodePart(data: any): string {
         return Buffer.from(JSON.stringify(data))
             .toString('base64')
@@ -51,8 +62,8 @@ describe("Entity API auth tests", () => {
                                 .withKindProcedures()
                                 .withProviderProcedures()
                                 .withOAuth2Description()
+                                .withAuthModel()
                                 .build();
-    console.dir(provider);
     const kind_name = provider.kinds[0].name;
     let entity_metadata: Metadata, entity_spec: Spec;
 
@@ -150,19 +161,19 @@ describe("Entity API auth tests", () => {
     });
 
     beforeAll(async () => {
-        await providerApi.post('/', provider);
+        await providerApiAdmin.post('/', provider);
         oauth2Server.listen(oauth2ServerPort, oauth2ServerHost, () => {
             console.log(`Server running at http://${oauth2ServerHost}:${oauth2ServerPort}/`);
         });
     });
 
     afterAll(async () => {
-        await providerApi.delete(`/${provider.prefix}/${provider.version}`);
+        await providerApiAdmin.delete(`/${provider.prefix}/${provider.version}`);
         oauth2Server.close();
     });
 
     beforeEach(async () => {
-        await providerApi.post(`/${provider.prefix}/${provider.version}/auth`, {
+        await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
             policy: null
         });
         const { data: { metadata, spec } } = await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}`, {
@@ -182,7 +193,7 @@ describe("Entity API auth tests", () => {
     });
 
     afterEach(async () => {
-        await providerApi.post(`/${provider.prefix}/${provider.version}/auth`, {
+        await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
             policy: null
         });
         await entityApi.delete(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}`);
@@ -196,6 +207,7 @@ describe("Entity API auth tests", () => {
             );
             expect(data.owner).toEqual("alice");
             expect(data.tenant).toEqual(tenant_uuid);
+            expect(data.provider_prefix).toEqual(provider.prefix);
             done();
         } catch (e) {
             done.fail(e);
@@ -233,7 +245,7 @@ describe("Entity API auth tests", () => {
     test("Get entity should raise permission denied", async done => {
         try {
             const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
-            await providerApi.post(`/${provider.prefix}/${provider.version}/auth`, {
+            await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
                 policy: `p, bill, owner, ${kind_name}, *, allow`
             });
             await entityApi.get(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}`,
@@ -249,7 +261,7 @@ describe("Entity API auth tests", () => {
     test("Get entity should succeed after policy set", async done => {
         try {
             const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
-            await providerApi.post(`/${provider.prefix}/${provider.version}/auth`, {
+            await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
                 policy: `p, alice, owner, ${kind_name}, *, allow`
             });
             const { data: { metadata, spec } } = await entityApi.get(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}`,
@@ -298,7 +310,7 @@ describe("Entity API auth tests", () => {
             console.log(`Server running at http://${procedureCallbackHostname}:${procedureCallbackPort}/`);
         });
         const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
-        await providerApi.post(`/${provider.prefix}/${provider.version}/auth`, {
+        await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
             policy: `p, alice, owner, ${kind_name}, *, allow`
         });
         await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}/procedure/moveX`, { input: 5 },
@@ -306,4 +318,110 @@ describe("Entity API auth tests", () => {
         );
         done();
     });
+
+    test("Create, get and inacivate s2s key", async done => {
+        try {
+            const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+            const { data: userInfo } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/user_info`,
+                { headers: { 'Authorization': 'Bearer ' + token } }
+            );
+            const { data: s2skey } = await providerApi.post(`/${provider.prefix}/${provider.version}/s2skey`,
+                {
+                    owner: userInfo.owner,
+                    provider_prefix: userInfo.provider_prefix
+                },
+                { headers: { 'Authorization': 'Bearer ' + token } }
+            );
+            const { data: s2skeys } = await providerApi.get(`/${provider.prefix}/${provider.version}/s2skey`,
+                { headers: { 'Authorization': 'Bearer ' + token } }
+            );
+            expect(s2skeys.length).toEqual(1);
+            expect(s2skeys[0].key).toEqual(s2skey.key);
+            const { data } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/user_info`,
+                { headers: { 'Authorization': 'Bearer ' + s2skey.key } }
+            );
+            expect(data.owner).toEqual("alice");
+            expect(data.tenant).toEqual(tenant_uuid);
+            expect(data.provider_prefix).toEqual(provider.prefix);
+            await providerApi.put(`/${provider.prefix}/${provider.version}/s2skey`,
+                {
+                    key: s2skey.key,
+                    active: false
+                },
+                { headers: { 'Authorization': 'Bearer ' + token } }
+            );
+            try {
+                await providerApi.get(`/${provider.prefix}/${provider.version}/auth/user_info`,
+                    { headers: { 'Authorization': 'Bearer ' + s2skey.key } }
+                );
+                done.fail("Key hasn't been inactivated");
+            } catch (e) {
+                done();
+            }
+        } catch (e) {
+            done.fail(e);
+        }
+    });
+
+    test("Get entity with s2skey should succeed", async done => {
+        try {
+            const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+            await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
+                policy: `p, alice, owner, ${kind_name}, *, allow`
+            });
+            const { data: userInfo } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/user_info`,
+                { headers: { 'Authorization': 'Bearer ' + token } }
+            );
+            const { data: s2skey } = await providerApi.post(`/${provider.prefix}/${provider.version}/s2skey`,
+                {
+                    owner: userInfo.owner,
+                    provider_prefix: userInfo.provider_prefix
+                },
+                { headers: { 'Authorization': 'Bearer ' + token } }
+            );
+            const { data: { metadata, spec } } = await entityApi.get(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}`,
+                { headers: { 'Authorization': 'Bearer ' + s2skey.key } }
+            );
+            expect(metadata).toEqual(entity_metadata);
+            expect(spec).toEqual(entity_spec);
+            done();
+        } catch (e) {
+            done.fail(e);
+        }
+    });
+
+    test("Create s2s key with another owner or provider should fail", async done => {
+        try {
+            const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+            const { data: userInfo } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/user_info`,
+                { headers: { 'Authorization': 'Bearer ' + token } }
+            );
+            try {
+                await providerApi.post(`/${provider.prefix}/${provider.version}/s2skey`,
+                    {
+                        owner: "another_owner",
+                        provider_prefix: userInfo.provider_prefix
+                    },
+                    { headers: { 'Authorization': 'Bearer ' + token } }
+                );
+                done.fail("Key created with another owner");
+            } catch (e) {
+            }
+            try {
+                await providerApi.post(`/${provider.prefix}/${provider.version}/s2skey`,
+                    {
+                        owner: userInfo.owner,
+                        provider_prefix: "another_provider"
+                    },
+                    { headers: { 'Authorization': 'Bearer ' + token } }
+                );
+                done.fail("Key created with another provider");
+            } catch (e) {
+            }
+            done();
+        } catch (e) {
+            done.fail(e);
+        }
+    });
+
 });

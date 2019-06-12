@@ -291,8 +291,18 @@ export default class ApiDocsGenerator {
         };
     }
 
+    processEmptyValidation(proc_def: any, sig: Procedural_Signature) {
+        if (!sig.argument) {
+            proc_def.requestBody.content["application/json"].schema.properties.input.$ref = `#/components/schemas/Nothing`
+        }
+        if (!sig.result) {
+            proc_def.responses["200"].content["application/json"].schema.properties.input.$ref = `#/components/schemas/Nothing`
+        }
+        return proc_def
+    }
+
     callKindProcedure(provider: Provider, kind: Kind, procedure: Procedural_Signature) {
-        return {
+        const procedural_def = {
             "description": `Calls a procedure ${ procedure.name }`,
             "operationId": `call${ provider.prefix }${ procedure.name }`,
             "tags": [`${ provider.prefix }/${ provider.version }/${ kind.name }/procedure`],
@@ -325,10 +335,11 @@ export default class ApiDocsGenerator {
                 "default": this.getDefaultResponse()
             }
         };
+        return this.processEmptyValidation(procedural_def, procedure)
     }
 
     callEntityProcedure(provider: Provider, kind: Kind, procedure: Procedural_Signature) {
-        return {
+        const procedural_def =  {
             "description": `Calls a procedure ${ procedure.name }`,
             "operationId": `call${ provider.prefix }${ procedure.name }`,
             "tags": [`${ provider.prefix }/${ provider.version }/${ kind.name }/procedure`],
@@ -373,10 +384,11 @@ export default class ApiDocsGenerator {
                 "default": this.getDefaultResponse()
             }
         };
+        return this.processEmptyValidation(procedural_def, procedure)
     }
 
     callProviderProcedure(provider: Provider, procedure: Procedural_Signature) {
-        return {
+        const procedural_def = {
             "description": `Calls a procedure ${ procedure.name }`,
             "operationId": `call${ provider.prefix }${ procedure.name }`,
             "tags": [`${ provider.prefix }/${ provider.version }/procedure`],
@@ -411,6 +423,7 @@ export default class ApiDocsGenerator {
                 "default": this.getDefaultResponse()
             }
         };
+        return this.processEmptyValidation(procedural_def, procedure)
     }
 
     async getApiDocs(): Promise<any> {
@@ -476,6 +489,10 @@ export default class ApiDocsGenerator {
                             }
                         }
                     },
+                    "Nothing": {
+                        "type": "object",
+                        "description": "Representation of a 'void' type"
+                    }
                     /*"PatchRequest": {
                         "type": "array",
                         "items": {

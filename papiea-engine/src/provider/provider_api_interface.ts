@@ -1,6 +1,5 @@
 import { UserAuthInfo } from "../auth/authn";
-import { Provider, Version, Entity_Reference, Status } from "papiea-core";
-
+import { Provider, Version, Entity_Reference, Status, S2S_Key, Key } from "papiea-core";
 
 
 // This will be provided using REST APIs. 
@@ -34,11 +33,20 @@ export interface Provider_API {
 
     get_latest_provider(user: UserAuthInfo, provider_prefix: string): Promise<Provider>
 
-    update_auth(user: UserAuthInfo, provider_prefix: string, provider_version: Version, policy: string): Promise<void>;
+    update_auth(user: UserAuthInfo, provider_prefix: string, provider_version: Version, auth: any): Promise<void>;
 
     on_auth_change(callbackfn: (provider: Provider) => void): void;
 
     // Updating status
     // POST "/provider/update_status"
-    update_status(user: UserAuthInfo, context: any, entity_ref: Entity_Reference, status: Status): Promise<void>
+    update_status(user: UserAuthInfo, context: any, entity_ref: Entity_Reference, status: Status): Promise<void>;
+
+    create_key(user: UserAuthInfo, name: string, owner: string, provider_prefix: string, extension?: any, key?: string): Promise<S2S_Key>;
+
+    get_key(user: UserAuthInfo, key: Key): Promise<S2S_Key>;
+
+    list_keys(user: UserAuthInfo, fields_map: any): Promise<S2S_Key[]>;
+
+    inactivate_key(user: UserAuthInfo, key: Key): Promise<void>;
+
 }

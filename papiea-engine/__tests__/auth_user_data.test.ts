@@ -3,7 +3,17 @@ import { deref, parseJwt } from '../src/auth/user_data_evaluator'
 import * as _ from "lodash"
 import { loadYaml } from "./test_data_factory";
 import uuid = require("uuid");
-import { base64UrlEncode } from "./entity_api_auth.test";
+
+function base64UrlEncode(...parts: any[]): string {
+    function base64UrlEncodePart(data: any): string {
+        return Buffer.from(JSON.stringify(data))
+            .toString('base64')
+            .replace('+', '-')
+            .replace('/', '_')
+            .replace(/=+$/, '');
+    }
+    return parts.map(x => base64UrlEncodePart(x)).join('.');
+}
 
 const tenant_uuid = uuid();
 

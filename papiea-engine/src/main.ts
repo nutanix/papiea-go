@@ -8,12 +8,11 @@ import { createEntityAPIRouter } from "./entity/entity_routes";
 import { Entity_API_Impl, ProcedureInvocationError } from "./entity/entity_api_impl";
 import { ValidationError, Validator } from "./validator";
 import { EntityNotFoundError } from "./databases/utils/errors";
-import { UnauthorizedError } from "./auth/authn";
+import { UnauthorizedError, createAuthnRouter } from "./auth/authn";
 import { createOAuth2Router } from "./auth/oauth2";
 import { JWTHMAC } from "./auth/crypto";
-import { Authorizer, NoAuthAuthorizer, PerProviderAuthorizer, PermissionDeniedError } from "./auth/authz";
+import { Authorizer, AdminAuthorizer, PerProviderAuthorizer, PermissionDeniedError } from "./auth/authz";
 import { ProviderCasbinAuthorizerFactory } from "./auth/casbin";
-import { resolve } from "path";
 import morgan = require("morgan");
 
 declare var process: {
@@ -25,7 +24,9 @@ declare var process: {
         MONGO_HOST: string,
         MONGO_PORT: string
         PAPIEA_PUBLIC_ADDR: string,
-        DEBUG_LEVEL: string
+        DEBUG_LEVEL: string,
+        ADMIN_S2S_KEY: string,
+        DISALLOW_EXTRA_PROPERTIES: string
     },
     title: string;
 };
@@ -34,11 +35,12 @@ const serverPort = parseInt(process.env.SERVER_PORT || "3000");
 const tokenSecret = process.env.TOKEN_SECRET || "secret";
 const debugLevel = process.env.DEBUG_LEVEL || "common";
 const tokenExpiresSeconds = parseInt(process.env.TOKEN_EXPIRES_SECONDS || (60 * 60 * 24 * 7).toString());
-const pathToDefaultModel: string = resolve(__dirname, "./auth/default_provider_model.txt");
 const publicAddr: string = process.env.PAPIEA_PUBLIC_ADDR || "http://localhost:3000";
 const oauth2RedirectUri: string = publicAddr + "/provider/auth/callback";
-const mongoHost = process.env.MONGO_HOST || 'mongo'
-const mongoPort = process.env.MONGO_PORT || '27017'
+const mongoHost = process.env.MONGO_HOST || 'mongo';
+const mongoPort = process.env.MONGO_PORT || '27017';
+const adminKey = process.env.ADMIN_S2S_KEY || '';
+const disallowExtraProps = process.env.DISALLOW_EXTRA_PROPERTIES !== "false";
 
 async function setUpApplication(): Promise<express.Express> {
     const app = express();
@@ -49,10 +51,13 @@ async function setUpApplication(): Promise<express.Express> {
     const providerDb = await mongoConnection.get_provider_db();
     const specDb = await mongoConnection.get_spec_db();
     const statusDb = await mongoConnection.get_status_db();
-    const validator = new Validator();
-    const providerApi = new Provider_API_Impl(providerDb, statusDb, validator, new NoAuthAuthorizer());
-    app.use(createOAuth2Router(oauth2RedirectUri, new JWTHMAC(tokenSecret, tokenExpiresSeconds), providerDb));
-    const entityApiAuthorizer: Authorizer = new PerProviderAuthorizer(providerApi, new ProviderCasbinAuthorizerFactory(pathToDefaultModel));
+    const s2skeyDb = await mongoConnection.get_s2skey_db();
+    const validator = new Validator(disallowExtraProps);
+    const providerApi = new Provider_API_Impl(providerDb, statusDb, s2skeyDb, validator, new AdminAuthorizer());
+    const signature = new JWTHMAC(tokenSecret, tokenExpiresSeconds);
+    app.use(createAuthnRouter(adminKey, signature, s2skeyDb));
+    app.use(createOAuth2Router(oauth2RedirectUri, signature, providerDb));
+    const entityApiAuthorizer: Authorizer = new PerProviderAuthorizer(providerApi, new ProviderCasbinAuthorizerFactory());
     app.use('/provider', createProviderAPIRouter(providerApi));
     app.use('/services', createEntityAPIRouter(new Entity_API_Impl(statusDb, specDb, providerApi, validator, entityApiAuthorizer)));
     app.use('/api-docs', createAPIDocsRouter('/api-docs', new ApiDocsGenerator(providerDb)));

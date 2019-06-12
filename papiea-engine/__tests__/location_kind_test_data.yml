@@ -11,3 +11,12 @@ Location:
       type: number
     y:
       type: number
+    z:
+      type: number
+    v:
+      type: object
+      properties:
+        e:
+          type: number
+        d:
+          type: number

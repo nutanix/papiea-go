@@ -11,6 +11,7 @@ services:
                 ports:
                         - "3333:3000"
                 environment:
+                        - ADMIN_S2S_KEY=${PAPIEA_ADMIN_S2S_KEY}
                         - HOT_RELOAD=${HOT_RELOAD:-false}
         mongo:
                 image: mongo:4.1

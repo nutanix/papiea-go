@@ -52,5 +52,23 @@ export default function createProviderAPIRouter(providerApi: Provider_API) {
         res.json("OK");
     }));
 
+    providerApiRouter.get('/:prefix/:version/s2skey', asyncHandler(async (req, res) => {
+        const s2skeys = await providerApi.list_keys(req.user, {});
+        res.json(s2skeys);
+    }));
+
+    providerApiRouter.post('/:prefix/:version/s2skey', asyncHandler(async (req, res) => {
+        const s2skey = await providerApi.create_key(req.user, req.body.name, req.body.owner, req.body.provider_prefix,
+            req.body.extension, req.body.key);
+        res.json(s2skey);
+    }));
+
+    providerApiRouter.put('/:prefix/:version/s2skey', asyncHandler(async (req, res) => {
+        if (req.body.active === false) {
+            await providerApi.inactivate_key(req.user, req.body.key);
+        }
+        res.json("OK");
+    }));
+
     return providerApiRouter;
 }

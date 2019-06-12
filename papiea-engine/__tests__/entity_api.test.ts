@@ -8,15 +8,13 @@ import uuid = require("uuid");
 
 declare var process: {
     env: {
-        SERVER_PORT: string
+        SERVER_PORT: string,
+        ADMIN_S2S_KEY: string
     }
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
-
-const papiea_config = {
-    host: "127.0.0.1",
-    port: 3000
-};
+const adminKey = process.env.ADMIN_S2S_KEY || '';
+const papieaUrl = `http://127.0.0.1:${serverPort}`;
 
 const server_config = {
     host: "127.0.0.1",
@@ -35,7 +33,7 @@ describe("Entity API tests", () => {
     const locationDataDescription = getLocationDataDescription();
     const kind_name = Object.keys(locationDataDescription)[0];
     beforeAll(async () => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         sdk.new_kind(locationDataDescription);
         sdk.version(providerVersion);
         sdk.prefix(providerPrefix);
@@ -313,6 +311,7 @@ describe("Entity API tests", () => {
 
             done();
         } catch (e) {
+            console.log(e.response.data.errors);
             done.fail(e);
         }
     });
@@ -482,7 +481,7 @@ describe("Entity API with metadata extension tests", () => {
     let entity_spec: Spec;
 
     beforeAll(async () => {
-        const sdk = ProviderSdk.create_provider(papiea_config.host, papiea_config.port, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         sdk.new_kind(locationDataDescription);
         sdk.version(providerVersion);
         sdk.prefix(providerPrefix);

@@ -10,10 +10,11 @@ import { MongoConnection } from "../src/databases/mongo";
 
 declare var process: {
     env: {
-        SERVER_PORT: string,
         MONGO_DB: string,
         MONGO_HOST: string,
         MONGO_PORT: string
+        SERVER_PORT: string,
+        ADMIN_S2S_KEY: string
     }
 };
 const mongoHost = process.env.MONGO_HOST || 'mongo';
@@ -26,11 +27,21 @@ const providerApi = axios.create({
 });
 
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
+const adminKey = process.env.ADMIN_S2S_KEY || '';
 
 const api = axios.create({
     baseURL: `http://127.0.0.1:${ serverPort }/`,
     timeout: 1000,
     headers: { 'Content-Type': 'application/json' }
+});
+
+const providerApi = axios.create({
+    baseURL: `http://127.0.0.1:${serverPort}/provider`,
+    timeout: 1000,
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminKey}`
+    }
 });
 
 class Provider_DB_Mock implements Provider_DB {
@@ -127,6 +138,20 @@ describe("API Docs Tests", () => {
                     },
                     "y": {
                         "type": "number"
+                    },
+                    "z": {
+                        "type": "number"
+                    },
+                    "v": {
+                        "type": "object",
+                        "properties": {
+                            "d": {
+                               "type": "number"
+                            },
+                            "e": {
+                                "type": "number"
+                            }
+                        }
                     }
                 }
             });
