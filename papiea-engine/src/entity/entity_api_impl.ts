@@ -101,10 +101,10 @@ export class Entity_API_Impl implements Entity_API {
         return filteredRes;
     }
 
-    async update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, kind_name: string, version: Version, spec_description: Spec): Promise<[Metadata, Spec]> {
+    async update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, extension: {[key: string]: any}, kind_name: string, version: Version, spec_description: Spec): Promise<[Metadata, Spec]> {
         const kind: Kind = await this.get_kind(user, prefix, kind_name, version);
         this.validate_spec(spec_description, kind);
-        const metadata: Metadata = { uuid: uuid, kind: kind.name, spec_version: spec_version } as Metadata;
+        const metadata: Metadata = { uuid: uuid, kind: kind.name, spec_version: spec_version, extension: extension } as Metadata;
         await this.authorizer.checkPermission(user, { "metadata": metadata }, UpdateAction);
         const [_, spec] = await this.spec_db.update_spec(metadata, spec_description);
         if (kind.kind_structure[kind.name]['x-papiea-entity'] === 'spec-only')
