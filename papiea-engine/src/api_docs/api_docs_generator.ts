@@ -292,7 +292,6 @@ export default class ApiDocsGenerator {
     }
 
     processEmptyValidation(proc_def: any, sig: Procedural_Signature) {
-        console.log(sig);
         if (Object.entries(sig.argument).length === 0 && sig.argument.constructor === Object) {
             proc_def.requestBody.content["application/json"].schema.properties.input['$ref'] = `#/components/schemas/Nothing`
         }

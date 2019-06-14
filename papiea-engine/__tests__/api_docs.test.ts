@@ -9,11 +9,7 @@ import ApiDocsGenerator from "../src/api_docs/api_docs_generator";
 
 declare var process: {
     env: {
-        MONGO_DB: string,
-        MONGO_HOST: string,
-        MONGO_PORT: string
         SERVER_PORT: string,
-        ADMIN_S2S_KEY: string
     }
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
