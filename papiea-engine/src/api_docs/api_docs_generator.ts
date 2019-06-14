@@ -292,11 +292,12 @@ export default class ApiDocsGenerator {
     }
 
     processEmptyValidation(proc_def: any, sig: Procedural_Signature) {
-        if (!sig.argument) {
-            proc_def.requestBody.content["application/json"].schema.properties.input.$ref = `#/components/schemas/Nothing`
+        console.log(sig);
+        if (Object.entries(sig.argument).length === 0 && sig.argument.constructor === Object) {
+            proc_def.requestBody.content["application/json"].schema.properties.input['$ref'] = `#/components/schemas/Nothing`
         }
-        if (!sig.result) {
-            proc_def.responses["200"].content["application/json"].schema.properties.input.$ref = `#/components/schemas/Nothing`
+        if (Object.entries(sig.result).length === 0 && sig.result.constructor === Object) {
+            proc_def.responses["200"].content["application/json"].schema["$ref"] = `#/components/schemas/Nothing`
         }
         return proc_def
     }

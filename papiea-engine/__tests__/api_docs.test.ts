@@ -193,7 +193,7 @@ describe("API docs test entity", () => {
             execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
             procedure_callback: "127.0.0.1:9011"
         };
-        const provider: Provider = new ProviderBuilder("provider_no_validation_scheme")
+        const provider: Provider = new ProviderBuilder("provider_with_validation_scheme")
             .withVersion("0.1.0")
             .withKinds()
             .withCallback(`http://127.0.0.1:9010`)
@@ -271,10 +271,54 @@ describe("API docs test entity", () => {
                     }
                 }
             });
-            providerApi.delete(`${ provider.prefix }/${ provider.version }`)
+            providerApi.delete(`${ provider.prefix }/${ provider.version }`);
             done();
         } catch (err) {
             done.fail(err);
         }
-    })
+    });
+
+    test("Provider with procedures that have no validation generate correct open api docs", async done => {
+        const procedure_id = "computeSumNoValidation";
+        const proceduralSignatureForProvider: Procedural_Signature = {
+            name: "computeSumNoValidation",
+            argument: {},
+            result: {},
+            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
+            procedure_callback: "127.0.0.1:9011"
+        };
+        const provider: Provider = new ProviderBuilder("provider_no_validation_scheme")
+            .withVersion("0.1.0")
+            .withKinds()
+            .withCallback(`http://127.0.0.1:9010`)
+            .withProviderProcedures({ [procedure_id]: proceduralSignatureForProvider })
+            .withKindProcedures()
+            .withEntityProcedures()
+            .build();
+        try {
+            await providerApi.post('/', provider);
+            const apiDoc = await apiDocsGenerator.getApiDocs();
+
+            expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
+                .post
+                .requestBody
+                .content["application/json"]
+                .schema
+                .properties
+                .input['$ref']).toEqual(`#/components/schemas/Nothing`);
+
+            console.log(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
+                .post.responses["200"].content);
+            expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
+                .post
+                .responses["200"]
+                .content["application/json"]
+                .schema["$ref"]).toEqual(`#/components/schemas/Nothing`);
+
+            providerApi.delete(`${ provider.prefix }/${ provider.version }`);
+            done();
+        } catch (e) {
+            done.fail(e);
+        }
+    });
 });
