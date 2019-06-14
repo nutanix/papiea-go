@@ -6,7 +6,6 @@ import { loadYaml, ProviderBuilder } from "./test_data_factory";
 import { Provider_DB } from "../src/databases/provider_db_interface";
 import { Provider, Version, Procedural_Signature, Procedural_Execution_Strategy } from "papiea-core";
 import ApiDocsGenerator from "../src/api_docs/api_docs_generator";
-import { MongoConnection } from "../src/databases/mongo";
 
 declare var process: {
     env: {
@@ -17,34 +16,21 @@ declare var process: {
         ADMIN_S2S_KEY: string
     }
 };
-const mongoHost = process.env.MONGO_HOST || 'mongo';
-const mongoPort = process.env.MONGO_PORT || '27017';
-
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
-const adminKey = process.env.ADMIN_S2S_KEY || '';
-
 const api = axios.create({
     baseURL: `http://127.0.0.1:${ serverPort }/`,
     timeout: 1000,
     headers: { 'Content-Type': 'application/json' }
 });
-
-const providerApi = axios.create({
-    baseURL: `http://127.0.0.1:${ serverPort }/provider`,
-    timeout: 1000,
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${ adminKey }`
-    }
-});
-
 class Provider_DB_Mock implements Provider_DB {
     provider: Provider;
 
-    constructor() {
-        this.provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();
-        // @ts-ignore
-        this.provider.procedures = undefined;   // can read such value from db
+    constructor(provider?: Provider) {
+        if (provider === undefined) {
+            this.provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();
+        } else {
+            this.provider = provider;
+        }
     }
 
     async save_provider(provider: Provider): Promise<void> {
@@ -157,33 +143,6 @@ describe("API Docs Tests", () => {
 });
 
 describe("API docs test entity", () => {
-    const hostname = '127.0.0.1';
-    const port = 9001;
-    let mongoConnection: MongoConnection;
-    let providerDb: Provider_DB;
-    let apiDocsGenerator: ApiDocsGenerator;
-    const provider: Provider = new ProviderBuilder()
-        .withVersion("0.1.0")
-        .withKinds()
-        .withCallback(`http://${ hostname }:${ port }`)
-        .withEntityProcedures()
-        .withKindProcedures()
-        .withProviderProcedures()
-        .build();
-
-    beforeAll(async () => {
-        mongoConnection = new MongoConnection(`mongodb://${ mongoHost }:${ mongoPort }`, process.env.MONGO_DB || 'papiea');
-        await mongoConnection.connect();
-        providerDb = await mongoConnection.get_provider_db();
-        apiDocsGenerator = new ApiDocsGenerator(providerDb);
-        await providerApi.post('/', provider);
-    });
-
-    afterAll(async () => {
-        await providerApi.delete(`/${ provider.prefix }/${ provider.version }`);
-        await mongoConnection.close();
-    });
-
     test("Provider with procedures generates correct openAPI spec", async done => {
         const procedure_id = "computeSumWithValidation";
         const proceduralSignatureForProvider: Procedural_Signature = {
@@ -201,8 +160,9 @@ describe("API docs test entity", () => {
             .withKindProcedures()
             .withEntityProcedures()
             .build();
+        const providerDbMock = new Provider_DB_Mock(provider);
+        const apiDocsGenerator = new ApiDocsGenerator(providerDbMock);
         try {
-            await providerApi.post('/', provider);
             const apiDoc = await apiDocsGenerator.getApiDocs();
 
             expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
@@ -219,7 +179,6 @@ describe("API docs test entity", () => {
                 .content["application/json"]
                 .schema["$ref"]).toEqual(`#/components/schemas/SumOutput`);
 
-            providerApi.delete(`${ provider.prefix }/${ provider.version }`);
             done();
         } catch (e) {
             done.fail(e);
@@ -229,13 +188,14 @@ describe("API docs test entity", () => {
     test("Provider with procedures generates correct openAPI emitting all variables without 'x-papiea' - 'status_only' property", async done => {
         try {
             const provider = new ProviderBuilder("provider_include_all_props").withVersion("0.1.0").withKinds().build();
+            const providerDbMock = new Provider_DB_Mock(provider);
+            const apiDocsGenerator = new ApiDocsGenerator(providerDbMock);
             const kind_name = provider.kinds[0].name;
             const structure = provider.kinds[0].kind_structure[kind_name];
 
             // remove x-papiea prop so 'z' could be included in entity schema
             delete structure.properties.z["x-papiea"];
 
-            await providerApi.post('/', provider);
             const apiDoc = await apiDocsGenerator.getApiDocs();
             const entityName = kind_name;
             expect(Object.keys(apiDoc.components.schemas)).toContain(entityName);
@@ -269,7 +229,6 @@ describe("API docs test entity", () => {
                     }
                 }
             });
-            providerApi.delete(`${ provider.prefix }/${ provider.version }`);
             done();
         } catch (err) {
             done.fail(err);
@@ -294,7 +253,8 @@ describe("API docs test entity", () => {
             .withEntityProcedures()
             .build();
         try {
-            await providerApi.post('/', provider);
+            const providerDbMock = new Provider_DB_Mock(provider);
+            const apiDocsGenerator = new ApiDocsGenerator(providerDbMock);
             const apiDoc = await apiDocsGenerator.getApiDocs();
 
             expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
@@ -311,7 +271,6 @@ describe("API docs test entity", () => {
                 .content["application/json"]
                 .schema["$ref"]).toEqual(`#/components/schemas/Nothing`);
 
-            providerApi.delete(`${ provider.prefix }/${ provider.version }`);
             done();
         } catch (e) {
             done.fail(e);
