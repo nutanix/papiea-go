@@ -132,9 +132,7 @@ export class Entity_API_Impl implements Entity_API {
         const schemas: any = {};
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
-        console.log("Unvalid")
         this.validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas);
-        console.log("Valid")
         try {
             const { data } = await axios.post(procedure.procedure_callback,
                 {

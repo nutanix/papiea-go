@@ -23,7 +23,6 @@ export class Validator {
     }
 
     validate(data: any, model: Maybe<any>, models: any) {
-        console.dir(model);
         model.mapOrElse((val) => {
             const res = this.validator.validate(data, val, models, false, this.disallowExtraProps);
             if (!res.valid) {

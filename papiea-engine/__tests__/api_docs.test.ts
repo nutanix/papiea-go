@@ -213,8 +213,6 @@ describe("API docs test entity", () => {
                 .properties
                 .input['$ref']).toEqual(`#/components/schemas/SumInput`);
 
-            console.log(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
-                .post.responses["200"].content);
             expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
                 .post
                 .responses["200"]
@@ -307,8 +305,6 @@ describe("API docs test entity", () => {
                 .properties
                 .input['$ref']).toEqual(`#/components/schemas/Nothing`);
 
-            console.log(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
-                .post.responses["200"].content);
             expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
                 .post
                 .responses["200"]
