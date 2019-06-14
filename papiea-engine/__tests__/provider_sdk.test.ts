@@ -521,16 +521,12 @@ describe("Provider Sdk tests", () => {
         );
         try {
             await sdk.register();
-            try {
-                const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { input: { "a": 5, "b": 5 } });
-                done.fail();
-            } catch (e) {
-                console.log(e);
-                done();
-            }
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { input: { "a": 5, "b": 5 } });
+            done.fail();
         } catch (e) {
-            console.error("Test failed with", e)
-            done.fail()
+            expect(e.response.data.errors[0].msg).toBe('Provider procedure computeSum didn\'t return correct value');
+            expect(e.response.data.errors[0].errors).not.toBeUndefined();
+            done();
         } finally {
             sdk.server.close();
         }
@@ -543,8 +539,8 @@ describe("Provider Sdk tests", () => {
         sdk.prefix("location_provider_no_validation_scheme");
         const proceduralSignatureForProvider: Procedural_Signature = {
             name: "computeSumWithNoValidation",
-            argument: loadYaml("./procedure_sum_input.yml"),
-            result: loadYaml("./procedure_sum_output.yml"),
+            argument: {},
+            result: {},
             execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
             procedure_callback: procedure_callback
         };
@@ -558,16 +554,11 @@ describe("Provider Sdk tests", () => {
         );
         try {
             await sdk.register();
-            try {
-                const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { input: { "a": 5, "b": 5 } });
-                done.fail();
-            } catch (e) {
-                console.log(e);
-                done();
-            }
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumWithNoValidation`, { input: {} });
+            done();
         } catch (e) {
-            console.error("Test failed with", e)
-            done.fail()
+            console.log(e.response.data);
+            done.fail(e);
         } finally {
             sdk.server.close();
         }
@@ -596,16 +587,45 @@ describe("Provider Sdk tests", () => {
         );
         try {
             await sdk.register();
-            try {
-                const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { input: { "a": 5, "b": 5 } });
-                done.fail();
-            } catch (e) {
-                console.log(e);
-                done();
-            }
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumWithNoValidation`, { input: { "a": 5, "b": 5 } });
+            done.fail();
         } catch (e) {
-            console.error('Test failed with', e)
-            done.fail()
+            expect(e.response.data.errors[0]).toBe('Function was expecting output of type void');
+            done();
+        } finally {
+            sdk.server.close();
+        }
+    });
+
+    test("Provider with provider level procedures throws error inside procedure", async (done) => {
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        sdk.version(provider_version);
+        sdk.prefix("location_provider_throws_error");
+        const proceduralSignatureForProvider: Procedural_Signature = {
+            name: "computeSumThrowsError",
+            argument: loadYaml("./procedure_sum_input.yml"),
+            result: loadYaml("./procedure_sum_output.yml"),
+            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
+            procedure_callback: procedure_callback
+        };
+        sdk.provider_procedure(proceduralSignatureForProvider.name,
+            {},
+            proceduralSignatureForProvider.execution_strategy,
+            proceduralSignatureForProvider.argument,
+            proceduralSignatureForProvider.result,
+            async (ctx, input) => {
+                throw new Error("My custom error")
+            }
+        );
+        try {
+            await sdk.register();
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumThrowsError`, { input: { "a": 5, "b": 5 } });
+            done.fail();
+        } catch (e) {
+            expect(e.response.data.errors[0].message).toBe("My custom error");
+            expect(e.response.data.errors[0].stacktrace).not.toBeUndefined();
+            done();
         } finally {
             sdk.server.close();
         }

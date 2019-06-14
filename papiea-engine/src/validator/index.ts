@@ -23,6 +23,7 @@ export class Validator {
     }
 
     validate(data: any, model: Maybe<any>, models: any) {
+        console.log(data);
         model.mapOrElse((val) => {
             const res = this.validator.validate(data, val, models, false, this.disallowExtraProps);
             if (!res.valid) {
@@ -30,7 +31,7 @@ export class Validator {
             }
             return Maybe.fromValue(res)
         }, () => {
-            if (data !== undefined && data !== null) {
+            if (data !== undefined && data !== null && data !== "" && !(Object.entries(data).length === 0 && data.constructor === Object)) {
                 throw new ValidationError([{
                     name: "Error",
                     message: "Function was expecting output of type void"
