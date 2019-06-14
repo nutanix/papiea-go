@@ -30,11 +30,11 @@ const api = axios.create({
 });
 
 const providerApi = axios.create({
-    baseURL: `http://127.0.0.1:${serverPort}/provider`,
+    baseURL: `http://127.0.0.1:${ serverPort }/provider`,
     timeout: 1000,
     headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${adminKey}`
+        'Authorization': `Bearer ${ adminKey }`
     }
 });
 
@@ -137,7 +137,7 @@ describe("API Docs Tests", () => {
                         "type": "object",
                         "properties": {
                             "d": {
-                               "type": "number"
+                                "type": "number"
                             },
                             "e": {
                                 "type": "number"
@@ -170,7 +170,6 @@ describe("API docs test entity", () => {
         .withKindProcedures()
         .withProviderProcedures()
         .build();
-    const kind_name = provider.kinds[0].name;
 
     beforeAll(async () => {
         mongoConnection = new MongoConnection(`mongodb://${ mongoHost }:${ mongoPort }`, process.env.MONGO_DB || 'papiea');
@@ -222,10 +221,60 @@ describe("API docs test entity", () => {
                 .content["application/json"]
                 .schema["$ref"]).toEqual(`#/components/schemas/SumOutput`);
 
+            providerApi.delete(`${ provider.prefix }/${ provider.version }`);
             done();
-            providerApi.delete(`${ provider.prefix }/${ provider.version }`)
         } catch (e) {
             done.fail(e);
+        }
+    });
+
+    test("Provider with procedures generates correct openAPI emitting all variables without 'x-papiea' - 'status_only' property", async done => {
+        try {
+            const provider = new ProviderBuilder("provider_include_all_props").withVersion("0.1.0").withKinds().build();
+            const kind_name = provider.kinds[0].name;
+            const structure = provider.kinds[0].kind_structure[kind_name];
+
+            // remove x-papiea prop so 'z' could be included in entity schema
+            delete structure.properties.z["x-papiea"];
+
+            await providerApi.post('/', provider);
+            const apiDoc = await apiDocsGenerator.getApiDocs();
+            const entityName = kind_name;
+            expect(Object.keys(apiDoc.components.schemas)).toContain(entityName);
+            const entitySchema = apiDoc.components.schemas[entityName];
+            expect(entitySchema).toEqual({
+                "type": "object",
+                "title": "X\/Y Location",
+                "description": "Stores an XY location of something",
+                "x-papiea-entity": "spec-only",
+                "required": ["x", "y"],
+                "properties": {
+                    "x": {
+                        "type": "number"
+                    },
+                    "y": {
+                        "type": "number"
+                    },
+                    "z": {
+                        "type": "number"
+                    },
+                    "v": {
+                        "type": "object",
+                        "properties": {
+                            "d": {
+                                "type": "number"
+                            },
+                            "e": {
+                                "type": "number"
+                            }
+                        }
+                    }
+                }
+            });
+            providerApi.delete(`${ provider.prefix }/${ provider.version }`)
+            done();
+        } catch (err) {
+            done.fail(err);
         }
     })
 });
