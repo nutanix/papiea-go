@@ -12,7 +12,7 @@ export interface Entity_API {
 
     filter_entity_status(user: UserAuthInfo, kind_name: string, fields: any): Promise<[Metadata, Status][]>
 
-    update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, kind_name: string, version: Version, spec_description: any): Promise<[Metadata, Spec]>
+    update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, extension: {[key: string]: any}, kind_name: string, version: Version, spec_description: Spec): Promise<[Metadata, Spec]>
 
     delete_entity_spec(user: UserAuthInfo, kind_name: string, entity_uuid: uuid4): Promise<void>
 
