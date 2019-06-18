@@ -66,7 +66,7 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
         res.redirect(authorizationUri);
     }));
 
-    router.use('/provider/:prefix/:version/auth/logout'), asyncHandler(async (req, res) => {
+    router.post('/provider/:prefix/:version/auth/logout'), asyncHandler(async (req, res) => {
         const provider: Provider = await providerDb.get_provider(req.params.prefix, req.params.version);
         const oauth2 = getOAuth2(provider);
         await oauth2.accessToken.revokeAll();
