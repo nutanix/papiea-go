@@ -4,6 +4,8 @@ import { Signature } from "./crypto";
 import { Provider_DB } from "../databases/provider_db_interface";
 import { extract_property } from "./user_data_evaluator";
 import { Provider } from "papiea-core";
+import Axios from "axios";
+import { access } from "fs";
 
 const simpleOauthModule = require("simple-oauth2"),
     queryString = require("query-string"),
@@ -69,11 +71,12 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
     router.use('/provider/:prefix/:version/auth/logout', asyncHandler(async (req, res) => {
         const provider: Provider = await providerDb.get_provider(req.params.prefix, req.params.version);
         const oauth2 = getOAuth2(provider);
-        console.dir(req.headers);
-        const tokenString = req.headers.authorization ? req.headers.authorization : "";
-        console.log(tokenString);
-        const token = oauth2.accessToken.create(tokenString.split(" ")[1]);
-        await token.revokeAll();
+        // console.dir(req.headers);
+        // const tokenString = req.headers.authorization ? req.headers.authorization : "";
+        // console.log(tokenString);
+        // const token = oauth2.accessToken.create(tokenString.split(" ")[1]);
+        // await token.revokeAll();
+        await Axios.post(oauth2.revokePath, {"token": req.headers.authorization, "token_type_hint": "access_token"});
         res.redirect('/');
     })); 
 
