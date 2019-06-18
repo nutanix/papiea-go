@@ -74,11 +74,6 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
 
     router.use('/provider/:prefix/:version/auth/logout', asyncHandler(async (req, res) => {
         const provider: Provider = await providerDb.get_provider(req.params.prefix, req.params.version);
-        console.dir("provider");
-        console.dir(provider);
-        const oauth2 = getOAuth2(provider);
-        console.dir("oauth2");
-        console.dir(oauth2);
         const headers = {
             "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
         }
@@ -87,13 +82,12 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
         // console.log(tokenString);
         // const token = oauth2.accessToken.create(tokenString.split(" ")[1]);
         // await token.revokeAll();
-        console.log(`${provider.oauth2.oauth.auth_host}${provider.oauth2.oauth.revoke_uri}`);
         await Axios.post(`${provider.oauth2.oauth.auth_host}${provider.oauth2.oauth.revoke_uri}`, querystring.stringify({"token": req.headers.authorization, "token_type_hint": "access_token"}), { headers, auth: {
             username: provider.oauth2.oauth.client_id,
             password: provider.oauth2.oauth.client_secret
             }
         });
-        res.redirect('/');
+        res.redirect(req.hostname);
     })); 
 
     router.use(url.parse(redirect_uri).path, asyncHandler(async (req, res, next) => {
