@@ -13,7 +13,10 @@ const simpleOauthModule = require("simple-oauth2"),
 
 function convertToSimpleOauth2(description: any) {
     const oauth = description.oauth;
-
+    console.dir("description");
+    console.dir(description);
+    console.dir("oauth");
+    console.dir(oauth);
     const simple_oauth_config = {
         client: {
             id: oauth.client_id,
@@ -70,7 +73,11 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
 
     router.use('/provider/:prefix/:version/auth/logout', asyncHandler(async (req, res) => {
         const provider: Provider = await providerDb.get_provider(req.params.prefix, req.params.version);
+        console.dir("provider");
+        console.dir(provider);
         const oauth2 = getOAuth2(provider);
+        console.dir("oauth2");
+        console.dir(oauth2);
         // console.dir(req.headers);
         // const tokenString = req.headers.authorization ? req.headers.authorization : "";
         // console.log(tokenString);
