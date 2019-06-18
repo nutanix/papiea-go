@@ -70,6 +70,7 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
         const provider: Provider = await providerDb.get_provider(req.params.prefix, req.params.version);
         const oauth2 = getOAuth2(provider);
         const tokenString = req.headers.authorization ? req.headers.authorization : "";
+        console.log(tokenString);
         const token = oauth2.accessToken.create(tokenString.split(" ")[1]);
         await token.revokeAll();
         // await token.revoke('refresh_token');        
