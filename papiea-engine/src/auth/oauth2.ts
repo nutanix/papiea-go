@@ -78,13 +78,20 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
         const oauth2 = getOAuth2(provider);
         console.dir("oauth2");
         console.dir(oauth2);
+        const headers = {
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+        }
         // console.dir(req.headers);
         // const tokenString = req.headers.authorization ? req.headers.authorization : "";
         // console.log(tokenString);
         // const token = oauth2.accessToken.create(tokenString.split(" ")[1]);
         // await token.revokeAll();
         console.log(`${provider.oauth2.oauth.auth_host}${provider.oauth2.oauth.revoke_uri}`);
-        await Axios.post(`${provider.oauth2.oauth.auth_host}${provider.oauth2.oauth.revoke_uri}`, {"token": req.headers.authorization, "token_type_hint": "access_token"});
+        await Axios.post(`${provider.oauth2.oauth.auth_host}${provider.oauth2.oauth.revoke_uri}`, {"token": req.headers.authorization, "token_type_hint": "access_token"}, { headers, auth: {
+            username: provider.oauth2.oauth.client_id,
+            password: provider.oauth2.oauth.client_secret
+            }
+        });
         res.redirect('/');
     })); 
 
