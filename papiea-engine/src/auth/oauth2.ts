@@ -71,7 +71,7 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
         const oauth2 = getOAuth2(provider);
         await oauth2.accessToken.revokeAll();
         res.redirect('/');
-    }) 
+    })); 
 
     router.use(url.parse(redirect_uri).path, asyncHandler(async (req, res, next) => {
         const code = req.query.code;
