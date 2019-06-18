@@ -5,6 +5,7 @@ import { Provider_DB } from "../databases/provider_db_interface";
 import { extract_property } from "./user_data_evaluator";
 import { Provider } from "papiea-core";
 import Axios from "axios";
+const querystring = require('querystring');
 import { access } from "fs";
 
 const simpleOauthModule = require("simple-oauth2"),
@@ -87,7 +88,7 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
         // const token = oauth2.accessToken.create(tokenString.split(" ")[1]);
         // await token.revokeAll();
         console.log(`${provider.oauth2.oauth.auth_host}${provider.oauth2.oauth.revoke_uri}`);
-        await Axios.post(`${provider.oauth2.oauth.auth_host}${provider.oauth2.oauth.revoke_uri}`, {"token": req.headers.authorization, "token_type_hint": "access_token"}, { headers, auth: {
+        await Axios.post(`${provider.oauth2.oauth.auth_host}${provider.oauth2.oauth.revoke_uri}`, querystring.stringify({"token": req.headers.authorization, "token_type_hint": "access_token"}), { headers, auth: {
             username: provider.oauth2.oauth.client_id,
             password: provider.oauth2.oauth.client_secret
             }
