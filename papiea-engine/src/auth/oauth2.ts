@@ -87,7 +87,7 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
             password: provider.oauth2.oauth.client_secret
             }
         });
-        return res.status(200);
+        return res.status(200).json("OK");
     })); 
 
     router.use(url.parse(redirect_uri).path, asyncHandler(async (req, res, next) => {
