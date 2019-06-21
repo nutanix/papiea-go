@@ -73,12 +73,13 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
         const headers = {
             "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
         }
+        console.log(req.headers)
         const revokeResponse = await Axios.post(`${provider.oauth2.oauth.auth_host}${provider.oauth2.oauth.revoke_uri}`, querystring.stringify({"token": req.headers.authorization, "token_type_hint": "access_token"}), { headers, auth: {
             username: provider.oauth2.oauth.client_id,
             password: provider.oauth2.oauth.client_secret
             }
         });
-        console.dir(revokeResponse);
+        console.log(revokeResponse.status);
         return res.status(200).json("OK");
     })); 
 
