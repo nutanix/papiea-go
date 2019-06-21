@@ -65,6 +65,7 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
             // prompt: "login"
         };
         const authorizationUri = oauth2.authorizationCode.authorizeURL(options);
+        console.log(authorizationUri);
         res.redirect(authorizationUri);
     }));
 
