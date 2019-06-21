@@ -71,19 +71,27 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
 
     router.use('/provider/:prefix/:version/auth/logout', asyncHandler(async (req, res) => {
         const provider: Provider = await providerDb.get_provider(req.params.prefix, req.params.version);
-        const headers = {
-            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+        // const headers = {
+        //     "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+        // }
+        // console.log(req.headers)
+        // const revokeResponse = await Axios.post(`${provider.oauth2.oauth.auth_host}${provider.oauth2.oauth.revoke_uri}`, querystring.stringify({"token": req.user.authorization.split(' ')[1], "token_type_hint": "access_token"}), { headers, auth: {
+        //     username: provider.oauth2.oauth.client_id,
+        //     password: provider.oauth2.oauth.client_secret
+        //     }
+        // });
+        // console.log(revokeResponse.status);
+        const oauth2 = getOAuth2(provider);
+        console.dir(oauth2);
+        const token = oauth2.accessToken.create({ "access_token": req.user.authorization.split(' ')[1] });
+        console.dir(token);
+        try {
+            const response = await token.revokeAll();
+            console.dir(response);            
+        } catch (e) {
+            console.dir(e)
+            return res.status(400).json("failed");
         }
-        console.log(req.headers)
-        const revokeResponse = await Axios.post(`${provider.oauth2.oauth.auth_host}${provider.oauth2.oauth.revoke_uri}`, querystring.stringify({"token": req.user.authorization.split(' ')[1], "token_type_hint": "access_token"}), { headers, auth: {
-            username: provider.oauth2.oauth.client_id,
-            password: provider.oauth2.oauth.client_secret
-            }
-        });
-        console.log(revokeResponse.status);
-        // const oauth2 = getOAuth2(provider);
-        // const token = oauth2.accessToken.create({ "access_token": req.user.authorization.split(' ')[1] });
-        // await token.revokeAll();
         return res.status(200).json("OK");
     }));
 
