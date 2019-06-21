@@ -86,7 +86,7 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
         const token = oauth2.accessToken.create({ "access_token": req.user.authorization.split(' ')[1] });
         console.dir(token);
         try {
-            const response = await token.revokeAll();
+            const response = await token.revoke('access_token');
             console.dir(response);            
         } catch (e) {
             console.dir(e)
