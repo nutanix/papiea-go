@@ -82,6 +82,7 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
         // });
         // console.log(revokeResponse.status);
         const oauth2 = getOAuth2(provider);
+        console.dir(req);
         const token = oauth2.accessToken.create({ "access_token": req.user.authorization.split(' ')[1] });
         token.revokeAll();
         return res.status(200).json("OK");
