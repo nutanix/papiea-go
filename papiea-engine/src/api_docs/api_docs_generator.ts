@@ -436,7 +436,7 @@ export default class ApiDocsGenerator {
         }
     }
 
-    setSecurity() {
+    setSecurityScheme() {
         return {
             "securitySchemes": {
                 "bearerAuth": {
@@ -444,7 +444,12 @@ export default class ApiDocsGenerator {
                     "scheme": "bearer",
                     "bearerFormat": "JWT"
                 }
-            },
+            }
+        }
+    }
+
+    setSecurity() {
+        return {
             "security": [
                 {
                     "bearerAuth": []
@@ -612,7 +617,8 @@ export default class ApiDocsGenerator {
             });
         });
 
-        Object.assign(root.components, this.setSecurity());
+        Object.assign(root.components, this.setSecurityScheme());
+        Object.assign(root, this.setSecurity());
 
         return root;
     }
