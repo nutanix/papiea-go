@@ -612,7 +612,7 @@ export default class ApiDocsGenerator {
             });
         });
 
-        Object.assign(schemas, this.setSecurity());
+        Object.assign(root.components, this.setSecurity());
 
         return root;
     }
