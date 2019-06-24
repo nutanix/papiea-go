@@ -436,6 +436,23 @@ export default class ApiDocsGenerator {
         }
     }
 
+    setSecurity() {
+        return {
+            "securitySchemes": {
+                "bearerAuth": {
+                    "type": "http",
+                    "scheme": "bearer",
+                    "bearerFormat": "JWT"
+                }
+            },
+            "security": [
+                {
+                    "bearerAuth": []
+                }
+            ]
+        }
+    }
+
     async getApiDocs(): Promise<any> {
         const root: any = {
             "openapi": "3.0.0",
@@ -594,6 +611,8 @@ export default class ApiDocsGenerator {
                 Object.assign(schemas, kind.kind_structure);
             });
         });
+
+        Object.assign(schemas, this.setSecurity());
 
         return root;
     }
