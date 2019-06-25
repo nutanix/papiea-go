@@ -27,6 +27,9 @@ export class ProviderSdk implements ProviderImpl {
     private _provider: Provider | null;
     private readonly papiea_url: string;
     private readonly s2skey: string;
+    private _policy: string | null = null;
+    private _oauth2: string | null = null;
+    private _authModel: any | null = null;
 
     constructor(papiea_url: string, s2skey: string, server_manager?: Provider_Server_Manager, validator?: Validator) {
         this._version = null;
@@ -191,7 +194,10 @@ export class ProviderSdk implements ProviderImpl {
                 version: this._version!,
                 prefix: this._prefix!,
                 procedures: this._procedures,
-                extension_structure: this.meta_ext
+                extension_structure: this.meta_ext,
+                ...(this._policy) && {policy: this._policy},
+                ...(this._oauth2) && {oauth2: this._oauth2},
+                ...(this._authModel) && {authModel: this._authModel}
             };
             try {
                 await this.providerApi.post('/', this._provider);
@@ -219,6 +225,13 @@ export class ProviderSdk implements ProviderImpl {
     static create_provider(papiea_url: string, s2skey: string, public_host?: string, public_port?: number, validator?: Validator): ProviderSdk {
         const server_manager = new Provider_Server_Manager(public_host, public_port);
         return new ProviderSdk(papiea_url, s2skey, server_manager, validator)
+    }
+
+    public secure_with(oauth_config: any, casbin_model: string, casbin_initial_policy: string) : ProviderSdk {
+        this._oauth2=oauth_config
+        this._authModel=casbin_model
+        this._policy=casbin_initial_policy
+        return this
     }
 }
 
@@ -273,9 +286,6 @@ class Provider_Server_Manager {
         }
     }
 }
-
-
-
 export class Kind_Builder {
 
     kind: Kind;
