@@ -1,57 +1,58 @@
 import axios from "axios";
 import { Metadata, Spec, Entity_Reference, Entity, EntitySpec } from "papiea-core";
 
-async function create_entity(provider: string, kind: string, version: string, request_spec: Spec, papiea_url: string): Promise<EntitySpec> {
+async function create_entity(provider: string, kind: string, version: string, request_spec: Spec, papiea_url: string, s2skey: string): Promise<EntitySpec> {
     const { data: { metadata, spec } } = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}`, {
         spec: request_spec
-    });
+    }, {headers:{"Authorization": `Bearer ${s2skey}`}});
     return { metadata, spec };
 }
 
-async function create_entity_with_meta(provider: string, kind: string, version: string, meta: Partial<Metadata>, request_spec: Spec, papiea_url: string): Promise<EntitySpec> {
+async function create_entity_with_meta(provider: string, kind: string, version: string, meta: Partial<Metadata>, request_spec: Spec, papiea_url: string, s2skey: string): Promise<EntitySpec> {
     const { data: { metadata, spec } } = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}`, {
         spec: request_spec,
         metadata: meta
-    });
+    }, {headers:{"Authorization": `Bearer ${s2skey}`}});
     return { metadata, spec };
 }
 
-async function update_entity(provider: string, kind: string, version: string, request_spec: Spec, request_metadata: Metadata, papiea_url: string): Promise<EntitySpec> {
+async function update_entity(provider: string, kind: string, version: string, request_spec: Spec, request_metadata: Metadata, papiea_url: string, s2skey: string): Promise<EntitySpec> {
     const { data: { metadata, spec } } = await axios.put(`${papiea_url}/services/${provider}/${version}/${kind}/${request_metadata.uuid}`, {
         spec: request_spec,
         metadata: {
             spec_version: request_metadata.spec_version
         }
-    });
+    }, {headers:{"Authorization": `Bearer ${s2skey}`}});
     return { metadata, spec }
 }
 
-async function get_entity(provider: string, kind: string, version: string, entity_reference: Entity_Reference, papiea_url: string): Promise<Entity> {
-    const { data: { metadata, spec, status } } = await axios.get(`${papiea_url}/services/${provider}/${version}/${kind}/${entity_reference.uuid}`);
+async function get_entity(provider: string, kind: string, version: string, entity_reference: Entity_Reference, papiea_url: string, s2skey: string): Promise<Entity> {
+    const { data: { metadata, spec, status } } = await axios.get(`${papiea_url}/services/${provider}/${version}/${kind}/${entity_reference.uuid}`,
+    {headers:{"Authorization": `Bearer ${s2skey}`}});
     return { metadata, spec, status }
 }
 
-async function delete_entity(provider: string, kind: string, version: string, entity_reference: Entity_Reference, papiea_url: string): Promise<void> {
-    await axios.delete(`${papiea_url}/services/${provider}/${version}/${kind}/${entity_reference.uuid}`);
+async function delete_entity(provider: string, kind: string, version: string, entity_reference: Entity_Reference, papiea_url: string, s2skey: string): Promise<void> {
+    await axios.delete(`${papiea_url}/services/${provider}/${version}/${kind}/${entity_reference.uuid}`, {headers:{"Authorization": `Bearer ${s2skey}`}});
 }
 
-async function invoke_entity_procedure(provider: string, kind: string, version: string, procedure_name: string, input: any, entity_reference: Entity_Reference, papiea_url: string): Promise<any> {
-    const res = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}/${entity_reference.uuid}/procedure/${procedure_name}`, {input});
+async function invoke_entity_procedure(provider: string, kind: string, version: string, procedure_name: string, input: any, entity_reference: Entity_Reference, papiea_url: string, s2skey: string): Promise<any> {
+    const res = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}/${entity_reference.uuid}/procedure/${procedure_name}`, {input}, {headers:{"Authorization": `Bearer ${s2skey}`}});
     return res.data;
 }
 
-async function invoke_kind_procedure(provider: string, kind: string, version: string, procedure_name: string, input: any, papiea_url: string): Promise<any> {
-    const res = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}/procedure/${procedure_name}`, {input});
+async function invoke_kind_procedure(provider: string, kind: string, version: string, procedure_name: string, input: any, papiea_url: string, s2skey: string): Promise<any> {
+    const res = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}/procedure/${procedure_name}`, {input}, {headers:{"Authorization": `Bearer ${s2skey}`}});
     return res.data;
 }
 
-export async function invoke_provider_procedure(provider: string, version: string, procedure_name: string, input: any, papiea_url: string): Promise<any> {
-    const res = await axios.post(`${papiea_url}/services/${provider}/${version}/procedure/${procedure_name}`, {input});
+export async function invoke_provider_procedure(provider: string, version: string, procedure_name: string, input: any, papiea_url: string, s2skey: string): Promise<any> {
+    const res = await axios.post(`${papiea_url}/services/${provider}/${version}/procedure/${procedure_name}`, {input}, {headers:{"Authorization": `Bearer ${s2skey}`}});
     return res.data;
 }
 
-async function filter_entity(provider: string, kind: string, version: string, filter: any, papiea_url: string): Promise<Entity[]> {
-    const res = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}/filter/`, filter);
+async function filter_entity(provider: string, kind: string, version: string, filter: any, papiea_url: string, s2skey: string): Promise<Entity[]> {
+    const res = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}/filter/`, filter, {headers:{"Authorization": `Bearer ${s2skey}`}});
     return res.data;
 }
 
@@ -60,10 +61,11 @@ export interface ProviderClient {
     invoke_procedure(procedure_name: string, input: any): Promise<any>
 }
 
-export function provider_client(papiea_url: string, provider: string, version: string) : ProviderClient {
+export function provider_client(papiea_url: string, provider: string, version: string, s2skey?: string) : ProviderClient {
+    const the_s2skey = s2skey || 'anonymous'
     return <ProviderClient> {
-        get_kind: (kind: string)=> kind_client(papiea_url, provider, kind, version),
-        invoke_procedure: (proc_name: string, input: any)=> invoke_provider_procedure(provider, version, proc_name, input, papiea_url)
+        get_kind: (kind: string)=> kind_client(papiea_url, provider, kind, version, the_s2skey),
+        invoke_procedure: (proc_name: string, input: any)=> invoke_provider_procedure(provider, version, proc_name, input, papiea_url, the_s2skey)
     }
 }
 
@@ -79,16 +81,17 @@ export interface EntityCRUD {
     invoke_kind_procedure(procedure_name: string, input: any): Promise<any>
 }
 
-export function kind_client(papiea_url: string, provider: string, kind: string, version: string): EntityCRUD {
+export function kind_client(papiea_url: string, provider: string, kind: string, version: string, s2skey?: string): EntityCRUD {
+    const the_s2skey = s2skey || 'anonymous'
     const crudder: EntityCRUD = {
-        get: (entity_reference: Entity_Reference) => get_entity(provider, kind, version, entity_reference, papiea_url),
-        create: (spec: Spec) => create_entity(provider, kind, version, spec, papiea_url),
-        create_with_meta: (meta: Partial<Metadata>, spec: Spec) => create_entity_with_meta(provider,kind, version, meta, spec, papiea_url),
-        update: (metadata: Metadata, spec: Spec) => update_entity(provider, kind, version, spec, metadata, papiea_url),
-        delete: (entity_reference: Entity_Reference) => delete_entity(provider, kind, version, entity_reference, papiea_url),
-        filter: (filter:any)=>filter_entity(provider, kind, version, filter, papiea_url),
-        invoke_procedure: (proc_name: string, entity_reference: Entity_Reference, input: any) => invoke_entity_procedure(provider, kind, version, proc_name, input, entity_reference, papiea_url),
-        invoke_kind_procedure: (proc_name: string, input:any) => invoke_kind_procedure(provider, kind, version, proc_name, input, papiea_url)
+        get: (entity_reference: Entity_Reference) => get_entity(provider, kind, version, entity_reference, papiea_url, the_s2skey),
+        create: (spec: Spec) => create_entity(provider, kind, version, spec, papiea_url, the_s2skey),
+        create_with_meta: (meta: Partial<Metadata>, spec: Spec) => create_entity_with_meta(provider,kind, version, meta, spec, papiea_url, the_s2skey),
+        update: (metadata: Metadata, spec: Spec) => update_entity(provider, kind, version, spec, metadata, papiea_url, the_s2skey),
+        delete: (entity_reference: Entity_Reference) => delete_entity(provider, kind, version, entity_reference, papiea_url, the_s2skey),
+        filter: (filter:any)=>filter_entity(provider, kind, version, filter, papiea_url, the_s2skey),
+        invoke_procedure: (proc_name: string, entity_reference: Entity_Reference, input: any) => invoke_entity_procedure(provider, kind, version, proc_name, input, entity_reference, papiea_url, the_s2skey),
+        invoke_kind_procedure: (proc_name: string, input:any) => invoke_kind_procedure(provider, kind, version, proc_name, input, papiea_url, the_s2skey)
     }
     return crudder
 }
