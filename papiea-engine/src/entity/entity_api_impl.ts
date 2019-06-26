@@ -235,6 +235,9 @@ export class Entity_API_Impl implements Entity_API {
         if (isEmpty(extension_structure)) {
             return
         }
+        if (isEmpty(metadata)) {
+            throw new ValidationError([{"name": "Error", message: "Metadata extension is not specified"}])
+        }
         const schemas: any = Object.assign({}, extension_structure);
         this.validator.validate(metadata.extension, Maybe.fromValue(Object.values(extension_structure)[0]), schemas);
     }

@@ -581,4 +581,22 @@ describe("Entity API with metadata extension tests", () => {
             done.fail(e);
         }
     });
+
+    test("Create entity with no metadata extension should display a friendly error", async done => {
+        try {
+            await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
+                spec: {
+                    x: 100,
+                    y: 11
+                },
+            });
+            done.fail();
+        } catch (err) {
+            const res = err.response;
+            expect(res.status).toEqual(400);
+            expect(res.data.errors.length).toEqual(1);
+            expect(res.data.errors[0]).toEqual("Metadata extension is not specified");
+            done();
+        }
+    });
 });
