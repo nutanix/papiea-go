@@ -11,25 +11,25 @@ import * as asyncHandler from "express-async-handler";
 import { Express, RequestHandler } from "express";
 import { Server } from "http";
 import { ProceduralCtx } from "./typescript_sdk_context_impl";
-import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity } from "papiea-core";
+import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, S2S_Key, Key, uuid4 } from "papiea-core";
 import { ValidationError, Validator } from "./typescript_sdk_validation";
 import { Maybe } from "./typescript_sdk_utils";
 
 export class ProviderSdk implements ProviderImpl {
-    private readonly _kind: Kind[];
-    private readonly _procedures: { [key: string]: Procedural_Signature };
-    private readonly validator: Validator;
-    private readonly server_manager: Provider_Server_Manager;
-    private readonly providerApi: AxiosInstance;
-    private _version: Version | null;
-    private _prefix: string | null;
-    private meta_ext: { [key: string]: string };
-    private _provider: Provider | null;
-    private readonly papiea_url: string;
-    private readonly s2skey: string;
-    private _policy: string | null = null;
-    private _oauth2: string | null = null;
-    private _authModel: any | null = null;
+    protected readonly _kind: Kind[];
+    protected readonly _procedures: { [key: string]: Procedural_Signature };
+    protected readonly validator: Validator;
+    protected readonly server_manager: Provider_Server_Manager;
+    protected readonly providerApi: AxiosInstance;
+    protected _version: Version | null;
+    protected _prefix: string | null;
+    protected meta_ext: { [key: string]: string };
+    protected _provider: Provider | null;
+    protected readonly papiea_url: string;
+    protected readonly s2skey: string;
+    protected _policy: string | null = null;
+    protected _oauth2: string | null = null;
+    protected _authModel: any | null = null;
 
     constructor(papiea_url: string, s2skey: string, server_manager?: Provider_Server_Manager, validator?: Validator) {
         this._version = null;
@@ -233,7 +233,70 @@ export class ProviderSdk implements ProviderImpl {
         this._policy=casbin_initial_policy
         return this
     }
+
+    SecurityApi = class {
+        provider: ProviderSdk;
+        constructor (provider:ProviderSdk) {
+            this.provider=provider
+        }
+        // Returns the user-info of user with s2skey or the current user 
+        public async user_info(other_s2skey?:Key): Promise<any> {
+            other_s2skey = other_s2skey || this.provider.s2skey
+            try {
+                const {data: userInfo } = await this.provider.providerApi.get(`${this.provider.prefix}/${this.provider.version}/auth/user_info`, {headers: {'Authorization': `Bearer ${other_s2skey}`}})
+                return userInfo
+            } catch (e) {
+                console.log("error getting user_info", e)
+                throw new Error("Cannot get user info" + e.message)
+            }
+        }
+    
+        public async list_keys(other_s2skey?:Key) {
+            other_s2skey = other_s2skey || this.provider.s2skey
+            try {
+                const {data: keys } = await this.provider.providerApi.get(`${this.provider.prefix}/${this.provider.version}/s2skey`, {headers: {'Authorization': `Bearer ${other_s2skey}`}})
+                return keys
+            } catch (e) {
+                console.log("error getting s2skeys", e)
+                throw new Error("Cannot get s2skeys" + e.message)
+            }
+        }
+        
+        public async  create_key(new_key: {key:Key, extension:any}, other_s2skey?:Key) {
+            other_s2skey = other_s2skey || this.provider.s2skey
+            try {
+                new_key.extension.provider_prefix = new_key.extension.provider_prefix || this.provider.prefix
+                new_key.extension.provider_version = new_key.extension.provider_version || this.provider.version
+                const {data: s2skey } = await this.provider.providerApi.put(`${this.provider.prefix}/${this.provider.version}/s2skey`, new_key, {headers: {'Authorization': `Bearer ${other_s2skey}`}})
+                return s2skey
+            } catch (e) {
+                console.log("error getting s2skeys", e)
+                throw new Error("Cannot get s2skeys" + e.message)
+            }
+        }
+
+        public async deactivate_key(other_s2skey?:Key) {
+            other_s2skey = other_s2skey || this.provider.s2skey
+            
+            try {                
+                const {data: r } = await this.provider.providerApi.put(`${this.provider.prefix}/${this.provider.version}/s2skey`, {active:false}, {headers: {'Authorization': `Bearer ${other_s2skey}`}})
+                return r
+            } catch (e) {
+                console.log("error getting s2skeys", e)
+                throw new Error("Cannot get s2skeys" + e.message)
+            }
+        }
+    }
+
+    protected _securityApi = new this.SecurityApi(this)
+    
+    public get securityApi() {
+        return this._securityApi
+    }
 }
+
+
+
 
 class Provider_Server_Manager {
     private readonly public_host: string;
