@@ -156,14 +156,7 @@ describe("Provider Sdk tests", () => {
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
-        const proceduralSignature: Procedural_Signature = {
-            name: "moveX",
-            argument: loadYaml("./procedure_move_input.yml"),
-            result: loadYaml("./location_kind_test_data.yml"),
-            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: procedure_callback
-        };
-        location.entity_procedure(proceduralSignature.name, {}, proceduralSignature.execution_strategy, proceduralSignature.argument, proceduralSignature.result, async (ctx, entity, input) => {
+        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./procedure_move_input.yml"), loadYaml("./location_kind_test_data.yml"), async (ctx, entity, input) => {
             entity.spec.x += input;
             const res = await axios.put(ctx.url_for(entity), {
                 spec: entity.spec,
@@ -186,14 +179,7 @@ describe("Provider Sdk tests", () => {
             const location = sdk.new_kind(location_yaml);
             sdk.version(provider_version);
             sdk.prefix("location_provider");
-            const proceduralSignature: Procedural_Signature = {
-                name: "moveX",
-                argument: loadYaml("./procedure_move_input.yml"),
-                result: loadYaml("./location_kind_test_data.yml"),
-                execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-                procedure_callback: procedure_callback
-            };
-            location.entity_procedure(proceduralSignature.name, {}, proceduralSignature.execution_strategy, proceduralSignature.argument, proceduralSignature.result, async (ctx, entity, input) => {
+            location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./procedure_move_input.yml"), loadYaml("./location_kind_test_data.yml"), async (ctx, entity, input) => {
                 entity.spec.x += input;
                 const res = await axios.put(ctx.url_for(entity), {
                     spec: entity.spec,
@@ -226,14 +212,7 @@ describe("Provider Sdk tests", () => {
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
-        const proceduralSignature: Procedural_Signature = {
-            name: "moveX",
-            argument: loadYaml("./procedure_move_input.yml"),
-            result: loadYaml("./location_kind_test_data.yml"),
-            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: procedure_callback
-        };
-        location.entity_procedure(proceduralSignature.name, {}, proceduralSignature.execution_strategy, proceduralSignature.argument, proceduralSignature.result, async (ctx, entity, input) => {
+        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./procedure_move_input.yml"), loadYaml("./location_kind_test_data.yml"), async (ctx, entity, input) => {
 
             throw new Error("Malformed provider")
 
@@ -265,15 +244,8 @@ describe("Provider Sdk tests", () => {
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
-        const proceduralSignature: Procedural_Signature = {
-            name: "moveX",
-            argument: loadYaml("./procedure_move_input.yml"),
-            result: loadYaml("./location_kind_test_data.yml"),
-            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: procedure_callback
-        };
         try {
-            location.entity_procedure(proceduralSignature.name, {}, proceduralSignature.execution_strategy, proceduralSignature.argument, proceduralSignature.result, async (ctx, entity, input) => {
+            location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./procedure_move_input.yml"), loadYaml("./location_kind_test_data.yml"), async (ctx, entity, input) => {
                 entity.spec.x += input;
                 const res = await axios.put(ctx.url_for(entity), {
                     spec: entity.spec,
@@ -292,14 +264,7 @@ describe("Provider Sdk tests", () => {
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
-        const proceduralSignature: Procedural_Signature = {
-            name: "moveX",
-            argument: loadYaml("./procedure_move_input.yml"),
-            result: loadYaml("./location_kind_test_data.yml"),
-            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: procedure_callback
-        };
-        location.entity_procedure(proceduralSignature.name, {}, proceduralSignature.execution_strategy, proceduralSignature.argument, proceduralSignature.result, async (ctx, entity, input) => {
+        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./procedure_move_input.yml"), loadYaml("./location_kind_test_data.yml"), async (ctx, entity, input) => {
             entity.spec.x += input;
             const res = await axios.put(ctx.url_for(entity), {
                 spec: entity.spec,
@@ -307,20 +272,11 @@ describe("Provider Sdk tests", () => {
             });
             return res.data.spec;
         });
-
-        const geolocationComputeProceduralSignature: Procedural_Signature = {
-            name: "computeGeolocation",
-            argument: loadYaml("./procedure_geolocation_compute_input.yml"),
-            result: loadYaml("./procedure_geolocation_compute_input.yml"),
-            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: procedure_callback
-        };
-
         location.kind_procedure(
-            geolocationComputeProceduralSignature.name,
-            {}, geolocationComputeProceduralSignature.execution_strategy,
-            geolocationComputeProceduralSignature.argument,
-            geolocationComputeProceduralSignature.result, async (ctx, input) => {
+            "computeGeolocation",
+            {}, Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./procedure_geolocation_compute_input.yml"),
+            loadYaml("./procedure_geolocation_compute_input.yml"), async (ctx, input) => {
                 let cluster_location = "us.west.";
                 cluster_location += input;
                 return cluster_location
@@ -342,14 +298,7 @@ describe("Provider Sdk tests", () => {
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
-        const proceduralSignature: Procedural_Signature = {
-            name: "moveX",
-            argument: loadYaml("./procedure_move_input.yml"),
-            result: loadYaml("./location_kind_test_data.yml"),
-            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: procedure_callback
-        };
-        location.entity_procedure(proceduralSignature.name, {}, proceduralSignature.execution_strategy, proceduralSignature.argument, proceduralSignature.result, async (ctx, entity, input) => {
+        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./procedure_move_input.yml"), loadYaml("./location_kind_test_data.yml"), async (ctx, entity, input) => {
             entity.spec.x += input;
             const res = await axios.put(ctx.url_for(entity), {
                 spec: entity.spec,
@@ -357,20 +306,11 @@ describe("Provider Sdk tests", () => {
             });
             return res.data.spec;
         });
-
-        const geolocationComputeProceduralSignature: Procedural_Signature = {
-            name: "computeGeolocation",
-            argument: loadYaml("./procedure_geolocation_compute_input.yml"),
-            result: loadYaml("./procedure_geolocation_compute_input.yml"),
-            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: procedure_callback
-        };
-
         location.kind_procedure(
-            geolocationComputeProceduralSignature.name,
-            {}, geolocationComputeProceduralSignature.execution_strategy,
-            geolocationComputeProceduralSignature.argument,
-            geolocationComputeProceduralSignature.result, async (ctx, input) => {
+            "computeGeolocation",
+            {}, Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./procedure_geolocation_compute_input.yml"),
+            loadYaml("./procedure_geolocation_compute_input.yml"), async (ctx, input) => {
                 let cluster_location = "us.west.";
                 cluster_location += input;
                 return cluster_location
@@ -394,14 +334,7 @@ describe("Provider Sdk tests", () => {
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
-        const proceduralSignature: Procedural_Signature = {
-            name: "moveX",
-            argument: loadYaml("./procedure_move_input.yml"),
-            result: loadYaml("./location_kind_test_data.yml"),
-            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: procedure_callback
-        };
-        location.entity_procedure(proceduralSignature.name, {}, proceduralSignature.execution_strategy, proceduralSignature.argument, proceduralSignature.result, async (ctx, entity, input) => {
+        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./procedure_move_input.yml"), loadYaml("./location_kind_test_data.yml"), async (ctx, entity, input) => {
             entity.spec.x += input;
             const res = await axios.put(ctx.url_for(entity), {
                 spec: entity.spec,
@@ -416,11 +349,11 @@ describe("Provider Sdk tests", () => {
             execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
             procedure_callback: procedure_callback
         };
-        sdk.provider_procedure(proceduralSignatureForProvider.name,
+        sdk.provider_procedure("computeSum",
             {},
-            proceduralSignatureForProvider.execution_strategy,
-            proceduralSignatureForProvider.argument,
-            proceduralSignatureForProvider.result,
+            Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./procedure_sum_output.yml"),
             async (ctx, input) => {
                 return input.a + input.b;
             }
@@ -440,14 +373,7 @@ describe("Provider Sdk tests", () => {
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
-        const proceduralSignature: Procedural_Signature = {
-            name: "moveX",
-            argument: loadYaml("./procedure_move_input.yml"),
-            result: loadYaml("./location_kind_test_data.yml"),
-            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: procedure_callback
-        };
-        location.entity_procedure(proceduralSignature.name, {}, proceduralSignature.execution_strategy, proceduralSignature.argument, proceduralSignature.result, async (ctx, entity, input) => {
+        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./procedure_move_input.yml"), loadYaml("./location_kind_test_data.yml"), async (ctx, entity, input) => {
             entity.spec.x += input;
             const res = await axios.put(ctx.url_for(entity), {
                 spec: entity.spec,
@@ -455,18 +381,11 @@ describe("Provider Sdk tests", () => {
             });
             return res.data.spec;
         });
-        const proceduralSignatureForProvider: Procedural_Signature = {
-            name: "computeSum",
-            argument: loadYaml("./procedure_sum_input.yml"),
-            result: loadYaml("./procedure_sum_output.yml"),
-            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: procedure_callback
-        };
-        sdk.provider_procedure(proceduralSignatureForProvider.name,
+        sdk.provider_procedure("computeSum",
             {},
-            proceduralSignatureForProvider.execution_strategy,
-            proceduralSignatureForProvider.argument,
-            proceduralSignatureForProvider.result,
+            Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./procedure_sum_output.yml"),
             async (ctx, input) => {
                 return input.a + input.b;
             }
@@ -488,14 +407,7 @@ describe("Provider Sdk tests", () => {
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
-        const proceduralSignature: Procedural_Signature = {
-            name: "moveX",
-            argument: loadYaml("./procedure_move_input.yml"),
-            result: loadYaml("./location_kind_test_data.yml"),
-            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: procedure_callback
-        };
-        location.entity_procedure(proceduralSignature.name, {}, proceduralSignature.execution_strategy, proceduralSignature.argument, proceduralSignature.result, async (ctx, entity, input) => {
+        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./procedure_move_input.yml"), loadYaml("./location_kind_test_data.yml"), async (ctx, entity, input) => {
             entity.spec.x += input;
             const res = await axios.put(ctx.url_for(entity), {
                 spec: entity.spec,
@@ -503,18 +415,11 @@ describe("Provider Sdk tests", () => {
             });
             return res.data.spec;
         });
-        const proceduralSignatureForProvider: Procedural_Signature = {
-            name: "computeSum",
-            argument: loadYaml("./procedure_sum_input.yml"),
-            result: loadYaml("./procedure_sum_output.yml"),
-            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: procedure_callback
-        };
-        sdk.provider_procedure(proceduralSignatureForProvider.name,
+        sdk.provider_procedure("computeSum",
             {},
-            proceduralSignatureForProvider.execution_strategy,
-            proceduralSignatureForProvider.argument,
-            proceduralSignatureForProvider.result,
+            Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./procedure_sum_output.yml"),
             async (ctx, input) => {
                 return "Totally not a number should fail provider-level validation";
             }
@@ -537,16 +442,9 @@ describe("Provider Sdk tests", () => {
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider_no_validation_scheme");
-        const proceduralSignatureForProvider: Procedural_Signature = {
-            name: "computeSumWithNoValidation",
-            argument: {},
-            result: {},
-            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: procedure_callback
-        };
-        sdk.provider_procedure(proceduralSignatureForProvider.name,
+        sdk.provider_procedure("computeSumWithNoValidation",
             {},
-            proceduralSignatureForProvider.execution_strategy,
+            Procedural_Execution_Strategy.Halt_Intentful,
             {},
             {},
             async (ctx, input) => {
@@ -569,16 +467,9 @@ describe("Provider Sdk tests", () => {
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider_no_validation_scheme");
-        const proceduralSignatureForProvider: Procedural_Signature = {
-            name: "computeSumWithNoValidation",
-            argument: loadYaml("./procedure_sum_input.yml"),
-            result: loadYaml("./procedure_sum_output.yml"),
-            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: procedure_callback
-        };
-        sdk.provider_procedure(proceduralSignatureForProvider.name,
+        sdk.provider_procedure("computeSumWithNoValidation",
             {},
-            proceduralSignatureForProvider.execution_strategy,
+            Procedural_Execution_Strategy.Halt_Intentful,
             {},
             {},
             async (ctx, input) => {
@@ -602,18 +493,11 @@ describe("Provider Sdk tests", () => {
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider_throws_error");
-        const proceduralSignatureForProvider: Procedural_Signature = {
-            name: "computeSumThrowsError",
-            argument: loadYaml("./procedure_sum_input.yml"),
-            result: loadYaml("./procedure_sum_output.yml"),
-            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: procedure_callback
-        };
-        sdk.provider_procedure(proceduralSignatureForProvider.name,
+        sdk.provider_procedure("computeSumThrowsError",
             {},
-            proceduralSignatureForProvider.execution_strategy,
-            proceduralSignatureForProvider.argument,
-            proceduralSignatureForProvider.result,
+            Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./procedure_sum_output.yml"),
             async (ctx, input) => {
                 throw new Error("My custom error")
             }
