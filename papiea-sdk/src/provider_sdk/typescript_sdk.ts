@@ -235,7 +235,7 @@ export class ProviderSdk implements ProviderImpl {
     }
 
     SecurityApi = class {
-        provider: ProviderSdk;
+        readonly provider: ProviderSdk;
         constructor (provider:ProviderSdk) {
             this.provider=provider
         }
@@ -243,7 +243,8 @@ export class ProviderSdk implements ProviderImpl {
         public async user_info(other_s2skey?:Key): Promise<any> {
             other_s2skey = other_s2skey || this.provider.s2skey
             try {
-                const {data: userInfo } = await this.provider.providerApi.get(`${this.provider.prefix}/${this.provider.version}/auth/user_info`, {headers: {'Authorization': `Bearer ${other_s2skey}`}})
+                const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`
+                const {data: userInfo } = await this.provider.providerApi.get(`${url}/auth/user_info`, {headers: {'Authorization': `Bearer ${other_s2skey}`}})
                 return userInfo
             } catch (e) {
                 console.log("error getting user_info", e)
@@ -254,7 +255,8 @@ export class ProviderSdk implements ProviderImpl {
         public async list_keys(other_s2skey?:Key) {
             other_s2skey = other_s2skey || this.provider.s2skey
             try {
-                const {data: keys } = await this.provider.providerApi.get(`${this.provider.prefix}/${this.provider.version}/s2skey`, {headers: {'Authorization': `Bearer ${other_s2skey}`}})
+                const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`
+                const {data: keys } = await this.provider.providerApi.get(`${url}/s2skey`, {headers: {'Authorization': `Bearer ${other_s2skey}`}})
                 return keys
             } catch (e) {
                 console.log("error getting s2skeys", e)
@@ -265,9 +267,8 @@ export class ProviderSdk implements ProviderImpl {
         public async  create_key(new_key: {key:Key, extension:any}, other_s2skey?:Key) {
             other_s2skey = other_s2skey || this.provider.s2skey
             try {
-                new_key.extension.provider_prefix = new_key.extension.provider_prefix || this.provider.prefix
-                new_key.extension.provider_version = new_key.extension.provider_version || this.provider.version
-                const {data: s2skey } = await this.provider.providerApi.put(`${this.provider.prefix}/${this.provider.version}/s2skey`, new_key, {headers: {'Authorization': `Bearer ${other_s2skey}`}})
+                const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`
+                const {data: s2skey } = await this.provider.providerApi.post(`${url}/s2skey`, new_key, {headers: {'Authorization': `Bearer ${other_s2skey}`}})
                 return s2skey
             } catch (e) {
                 console.log("error getting s2skeys", e)
@@ -275,11 +276,12 @@ export class ProviderSdk implements ProviderImpl {
             }
         }
 
-        public async deactivate_key(other_s2skey?:Key) {
+        public async deactivate_key(key_to_deactivate:Key, other_s2skey?:Key) {
             other_s2skey = other_s2skey || this.provider.s2skey
             
-            try {                
-                const {data: r } = await this.provider.providerApi.put(`${this.provider.prefix}/${this.provider.version}/s2skey`, {active:false}, {headers: {'Authorization': `Bearer ${other_s2skey}`}})
+            try {
+                const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`
+                const {data: r } = await this.provider.providerApi.put(`${url}/s2skey`, {key: key_to_deactivate, active:false}, {headers: {'Authorization': `Bearer ${other_s2skey}`}})
                 return r
             } catch (e) {
                 console.log("error getting s2skeys", e)
