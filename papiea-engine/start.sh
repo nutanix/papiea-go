@@ -12,7 +12,11 @@ npm run build-clj
 wait-port $DB_HOST:$DB_PORT
 if [ $HOT_RELOAD == 'true' ]
 then
-    npm run dev
+    if [ $PAPIEA_DEBUG == 'true' ]; then
+        npm run debug
+    else
+        npm run dev
+    fi
 else
     npm run start
 fi
