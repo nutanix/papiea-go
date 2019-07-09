@@ -1,3 +1,5 @@
+import { ValidationError } from "../validator";
+
 export class Maybe<T> {
     private constructor(private value: T | null) {}
 
@@ -23,6 +25,44 @@ export class Maybe<T> {
             someFn(this.value);
         }
     }
+}
+
+function validatePaginationParams(pageNo: number | undefined, limit: number | undefined) {
+    if (pageNo) {
+        if (pageNo <= 0) {
+            throw new ValidationError([new Error("Page number should not be less or equal to zero")])
+        }
+    }
+    if (limit) {
+        if (limit <= 0) {
+            throw new ValidationError([new Error("Limit should not be less or equal to zero")])
+        }
+    }
+}
+
+export function processPaginationParams(pageNo: number | undefined, limit: number | undefined): [number, number] {
+    let skip = 0;
+    let size = 30;
+    if (!pageNo && !limit) {
+        validatePaginationParams(pageNo, limit);
+        return [skip, size]
+    }
+    else if (!pageNo && limit) {
+        validatePaginationParams(pageNo, limit);
+        size = limit;
+        return [skip, size]
+    }
+    else if (pageNo && !limit) {
+        validatePaginationParams(pageNo, limit);
+        skip = size * (pageNo - 1);
+        return [skip, size]
+    } else {
+        validatePaginationParams(pageNo, limit);
+        size = limit as number;
+        skip = size * (pageNo as number - 1);
+        return [skip, size]
+    }
+
 }
 
 export function isEmpty(obj: any) {

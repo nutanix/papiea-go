@@ -116,7 +116,7 @@ describe("Entity API tests", () => {
                     y: 11
                 }
             });
-            expect(res.data.length).toBeGreaterThanOrEqual(1);
+            expect(res.data.data.length).toBeGreaterThanOrEqual(1);
             res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter`, {
                 spec: {
                     x: 10,
@@ -124,7 +124,7 @@ describe("Entity API tests", () => {
                     z: 111
                 }
             });
-            expect(res.data.length).toBe(0);
+            expect(res.data.data.length).toBe(0);
             done();
         } catch (e) {
             done.fail(e);
@@ -139,8 +139,8 @@ describe("Entity API tests", () => {
                     y: 11
                 }
             });
-            expect(res.data.length).toBeGreaterThanOrEqual(1);
-            const entity = res.data[0];
+            expect(res.data.data.length).toBeGreaterThanOrEqual(1);
+            const entity = res.data.data[0];
             expect(entity.spec.x).toEqual(10);
             expect(entity.status).toEqual(entity.spec);
             done();
@@ -157,8 +157,8 @@ describe("Entity API tests", () => {
                     y: 11
                 }
             });
-            expect(res.data.length).toBeGreaterThanOrEqual(1);
-            res.data.forEach((entity: any) => {
+            expect(res.data.data.length).toBeGreaterThanOrEqual(1);
+            res.data.data.forEach((entity: any) => {
                 expect(entity.status.x).toEqual(10);
                 expect(entity.status.y).toEqual(11);
             });
@@ -167,8 +167,8 @@ describe("Entity API tests", () => {
                     x: 10
                 }
             });
-            expect(res.data.length).toBeGreaterThanOrEqual(1);
-            res.data.forEach((entity: any) => {
+            expect(res.data.data.length).toBeGreaterThanOrEqual(1);
+            res.data.data.forEach((entity: any) => {
                 expect(entity.status.x).toEqual(10);
             });
             res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter`, {
@@ -177,7 +177,7 @@ describe("Entity API tests", () => {
                     z: 1111
                 }
             });
-            expect(res.data.length).toBe(0);
+            expect(res.data.data.length).toBe(0);
             done();
         } catch (e) {
             done.fail(e);
@@ -196,8 +196,8 @@ describe("Entity API tests", () => {
                     y: 11
                 }
             });
-            expect(res.data.length).toBeGreaterThanOrEqual(1);
-            res.data.forEach((entity: any) => {
+            expect(res.data.data.length).toBeGreaterThanOrEqual(1);
+            res.data.data.forEach((entity: any) => {
                 expect(entity.spec.x).toEqual(10);
                 expect(entity.spec.y).toEqual(11);
                 expect(entity.status.x).toEqual(10);
@@ -227,8 +227,8 @@ describe("Entity API tests", () => {
                     "v.e": 12
                 }
             });
-            expect(res.data.length).toBeGreaterThanOrEqual(1);
-            res.data.forEach((entity: any) => {
+            expect(res.data.data.length).toBeGreaterThanOrEqual(1);
+            res.data.data.forEach((entity: any) => {
                 expect(entity.spec.x).toEqual(10);
                 expect(entity.spec.v.e).toEqual(12);
             });
@@ -241,8 +241,8 @@ describe("Entity API tests", () => {
                     }
                 }
             });
-            expect(res.data.length).toBeGreaterThanOrEqual(1);
-            res.data.forEach((entity: any) => {
+            expect(res.data.data.length).toBeGreaterThanOrEqual(1);
+            res.data.data.forEach((entity: any) => {
                 expect(entity.spec.x).toEqual(10);
                 expect(entity.spec.v.e).toEqual(12);
             });
@@ -254,16 +254,16 @@ describe("Entity API tests", () => {
                     }
                 }
             });
-            expect(res.data.length).toBe(0);
-            
+            expect(res.data.data.length).toBe(0);
+
             res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter`, {
                 status: {
                     x: 10,
                     "v.e": 12
                 }
             });
-            expect(res.data.length).toBeGreaterThanOrEqual(1);
-            res.data.forEach((entity: any) => {
+            expect(res.data.data.length).toBeGreaterThanOrEqual(1);
+            res.data.data.forEach((entity: any) => {
                 expect(entity.status.x).toEqual(10);
                 expect(entity.status.v.e).toEqual(12);
             });
@@ -276,8 +276,8 @@ describe("Entity API tests", () => {
                     },
                 }
             });
-            expect(res.data.length).toBeGreaterThanOrEqual(1);
-            res.data.forEach((entity: any) => {
+            expect(res.data.data.length).toBeGreaterThanOrEqual(1);
+            res.data.data.forEach((entity: any) => {
                 expect(entity.status.x).toEqual(10);
                 expect(entity.status.v.e).toEqual(12);
             });
@@ -289,7 +289,7 @@ describe("Entity API tests", () => {
                     }
                 }
             });
-            expect(res.data.length).toBe(0);
+            expect(res.data.data.length).toBe(0);
 
             res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter`, {
                 spec: {
@@ -301,8 +301,8 @@ describe("Entity API tests", () => {
                     "v.e": 12
                 }
             });
-            expect(res.data.length).toBeGreaterThanOrEqual(1);
-            res.data.forEach((entity: any) => {
+            expect(res.data.data.length).toBeGreaterThanOrEqual(1);
+            res.data.data.forEach((entity: any) => {
                 expect(entity.spec.x).toEqual(10);
                 expect(entity.spec.v.e).toEqual(12);
                 expect(entity.status.x).toEqual(10);
@@ -326,7 +326,7 @@ describe("Entity API tests", () => {
         };
         try {
             const res = await entityApi.get(`${providerPrefix}/${providerVersion}/${kind_name}?${stringify(spec_query)}`);
-            expect(res.data.length).toBeGreaterThanOrEqual(1);
+            expect(res.data.data.length).toBeGreaterThanOrEqual(1);
             done();
         } catch (e) {
             done.fail(e);
@@ -449,7 +449,7 @@ describe("Entity API tests", () => {
                     uuid: metadata.uuid
                 }
             });
-            expect(res.data.length).toBe(0);
+            expect(res.data.data.length).toBe(0);
             ["papiea_one_hour_ago", "papiea_one_day_ago"].forEach(async deleted_at => {
                 let res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter`, {
                     metadata: {
@@ -457,9 +457,9 @@ describe("Entity API tests", () => {
                         deleted_at: deleted_at
                     }
                 });
-                expect(res.data.length).toBe(1);
-                expect(res.data[0].spec).toEqual(spec);
-                expect(res.data[0].status).toEqual(spec);
+                expect(res.data.data.length).toBe(1);
+                expect(res.data.data[0].spec).toEqual(spec);
+                expect(res.data.data[0].status).toEqual(spec);
             });
             done();
         } catch (e) {
@@ -575,7 +575,7 @@ describe("Entity API with metadata extension tests", () => {
                     "extension.tenant_id": tenant_id
                 }
             });
-            expect(res.data.length).toBe(1);
+            expect(res.data.data.length).toBe(1);
             done();
         } catch (e) {
             done.fail(e);
@@ -599,4 +599,194 @@ describe("Entity API with metadata extension tests", () => {
             done();
         }
     });
+});
+
+describe("Entity API tests", () => {
+    const providerPrefix = "test";
+    const providerVersion = "0.1.0";
+    const locationDataDescription = getLocationDataDescription();
+    const kind_name = Object.keys(locationDataDescription)[0];
+    beforeAll(async () => {
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        sdk.new_kind(locationDataDescription);
+        sdk.version(providerVersion);
+        sdk.prefix(providerPrefix);
+        await sdk.register();
+    });
+
+    afterAll(async () => {
+        jest.setTimeout(5000);
+        await axios.delete(`http://127.0.0.1:${serverPort}/provider/${providerPrefix}/${providerVersion}`);
+    });
+
+    let uuids: string[] = [];
+    test("Create multiple entities", async (done) => {
+        expect.assertions(1);
+        const entityPromises: Promise<any>[] = [];
+        try {
+            for (let i = 0; i < 70; i++) {
+                entityPromises.push(entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
+                    spec: {
+                        x: 10,
+                        y: 11
+                    }
+                }));
+            }
+            const entityResponses: any[] = await Promise.all(entityPromises);
+            uuids = entityResponses.map(entityResp => entityResp.data.metadata.uuid);
+            expect(entityResponses.length).toBe(70);
+            done();
+        } catch (e) {
+            done.fail(e);
+        }
+    });
+
+    test("Pagination test", async (done) => {
+        try {
+            let res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+            expect(res.data.data.length).toBe(30);
+            expect(res.data.page_count).toBe(3);
+            done();
+        } catch (e) {
+            done.fail(e);
+        }
+    });
+
+    test("Pagination test with limit", async (done) => {
+        try {
+            let res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?limit=10`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+            expect(res.data.data.length).toBe(10);
+            expect(res.data.page_count).toBe(7);
+            done();
+        } catch (e) {
+            done.fail(e);
+        }
+    });
+    test("Pagination test with page", async (done) => {
+        try {
+            let res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?page=3`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+            expect(res.data.data.length).toBe(10);
+            expect(res.data.page_count).toBe(3);
+            done();
+        } catch (e) {
+            done.fail(e);
+        }
+    });
+
+    test("Pagination test with limit and page", async (done) => {
+        try {
+            let res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?page=2&limit=40`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+            expect(res.data.data.length).toBe(30);
+            expect(res.data.page_count).toBe(2);
+            done();
+        } catch (e) {
+            done.fail(e);
+        }
+    });
+
+    test("Pagination test with negative limit", async (done) => {
+        try {
+            await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?limit=-1`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+            done.fail();
+        } catch (e) {
+            expect(e.response.data.errors[0]).toBe("Limit should not be less or equal to zero");
+            done();
+        }
+    });
+
+    test("Pagination test with negative page", async (done) => {
+        try {
+            await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?page=-1`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+            done.fail();
+        } catch (e) {
+            expect(e.response.data.errors[0]).toBe("Page number should not be less or equal to zero");
+            done();
+        }
+    });
+
+    test("Pagination test with page equal to zero", async (done) => {
+        try {
+            await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?page=0`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+            done.fail();
+        } catch (e) {
+            expect(e.response.data.errors[0]).toBe("Page number should not be less or equal to zero");
+            done();
+        }
+    });
+
+    test("Pagination test with limit equal to zero", async (done) => {
+        try {
+            await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?limit=0`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+            done.fail();
+        } catch (e) {
+            expect(e.response.data.errors[0]).toBe("Limit should not be less or equal to zero");
+            done();
+        }
+    });
+
+    test("Delete multiple entities", async (done) => {
+        const deletePromises: Promise<any>[] = [];
+        try {
+            uuids.forEach(uuid => {
+                deletePromises.push(entityApi.delete(`/${providerPrefix}/${providerVersion}/${kind_name}/${uuid}`));
+            });
+            await Promise.all(deletePromises);
+        } catch (e) {
+            done.fail(e);
+            return;
+        }
+        try {
+            let res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+            expect(res.data.data.length).toBe(0);
+            done();
+        } catch (e) {
+            done.fail(e);
+        }
+    })
+
 });
