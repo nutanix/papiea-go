@@ -51,6 +51,45 @@ export default class ApiDocsGenerator {
         };
     }
 
+    getPaginatedResponse(kind: Kind) {
+        return {
+            "200": {
+                "description": `${ kind.name } response`,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "results": {
+                                    "type": "array",
+                                    "items": {
+                                        "required": ["metadata", "spec"],
+                                        "properties": {
+                                            "metadata": {
+                                                "$ref": `#/components/schemas/Metadata`
+                                            },
+                                            "spec": {
+                                                "$ref": `#/components/schemas/${ kind.name }`
+                                            },
+                                            "status": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    }
+                                },
+                                "entity_count": {
+                                    "type": "integer",
+                                    "format": "int32"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "default": this.getDefaultResponse()
+        };
+    }
+
     getResponseSingle(kind: Kind) {
         return {
             "200": {
@@ -114,7 +153,7 @@ export default class ApiDocsGenerator {
                     }
                 }
             ],
-            "responses": this.getResponseMany(kind)
+            "responses": this.getPaginatedResponse(kind)
         };
     }
 
@@ -123,6 +162,28 @@ export default class ApiDocsGenerator {
             "description": `Returns all entities' specs of kind ${ kind.name }`,
             "operationId": `find${ provider.prefix }${ kind.name }Filter`,
             "tags": [`${ provider.prefix }/${ provider.version }/${ kind.name }`],
+            "parameters": [
+                {
+                    "name": "offset",
+                    "in": "query",
+                    "description": "offset of results to return",
+                    "required": false,
+                    "schema": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                },
+                {
+                    "name": "limit",
+                    "in": "query",
+                    "description": "maximum number of results to return",
+                    "required": false,
+                    "schema": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            ],
             "requestBody": {
                 "description": `${ kind.name } to add`,
                 "required": false,
@@ -138,7 +199,7 @@ export default class ApiDocsGenerator {
                     }
                 }
             },
-            "responses": this.getResponseMany(kind)
+            "responses": this.getPaginatedResponse(kind)
         };
     }
 
