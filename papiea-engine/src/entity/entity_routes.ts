@@ -24,23 +24,18 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
         });
 
         const entities = Object.values(uuidToEntity);
-        console.log(entities.length);
-        console.log(size);
-        console.log(entities.length / size);
-        console.log("SKip" + skip);
-        const totalPages: number = Math.ceil(entities.length / size);
+        const totalEntities: number = entities.length;
         const pageEntities = entities.slice(skip, skip + size);
+        console.log("Skip + size: " + (skip+size));
 
-        return {data: pageEntities, page_count: totalPages};
+        return {results: pageEntities, entity_count: totalEntities};
     };
 
     router.get("/:prefix/:version/:kind", asyncHandler(async (req, res) => {
         const filter: any = {};
-        const pageNo: undefined | number = req.query.page;
+        const offset: undefined | number = req.query.offset;
         const limit: undefined | number = req.query.limit;
-        console.log(pageNo);
-        console.log(limit);
-        const [skip, size] = processPaginationParams(pageNo, limit);
+        const [skip, size] = processPaginationParams(offset, limit);
         if (req.query.spec) {
             filter.spec = JSON.parse(req.query.spec);
         } else {
@@ -66,11 +61,13 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
     }));
 
     router.post("/:prefix/:version/:kind/filter", asyncHandler(async (req, res) => {
-        const pageNo: undefined | number = req.query.page;
+        const offset: undefined | number = req.query.offset;
         const limit: undefined | number = req.query.limit;
-        console.log(pageNo);
+        console.log(offset);
         console.log(limit);
-        const [skip, size] = processPaginationParams(pageNo, limit);
+        const [skip, size] = processPaginationParams(offset, limit);
+        console.log(skip);
+        console.log(size);
         const filter: any = {};
         if (req.body.spec) {
             filter.spec = req.body.spec;

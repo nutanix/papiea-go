@@ -27,10 +27,10 @@ export class Maybe<T> {
     }
 }
 
-function validatePaginationParams(pageNo: number | undefined, limit: number | undefined) {
-    if (pageNo) {
-        if (pageNo <= 0) {
-            throw new ValidationError([new Error("Page number should not be less or equal to zero")])
+function validatePaginationParams(offset: number | undefined, limit: number | undefined) {
+    if (offset) {
+        if (offset <= 0) {
+            throw new ValidationError([new Error("Offset should not be less or equal to zero")])
         }
     }
     if (limit) {
@@ -40,26 +40,26 @@ function validatePaginationParams(pageNo: number | undefined, limit: number | un
     }
 }
 
-export function processPaginationParams(pageNo: number | undefined, limit: number | undefined): [number, number] {
+export function processPaginationParams(offset: number | undefined, limit: number | undefined): [number, number] {
     let skip = 0;
     let size = 30;
-    if (!pageNo && !limit) {
-        validatePaginationParams(pageNo, limit);
+    if (!offset && !limit) {
+        validatePaginationParams(offset, limit);
         return [skip, size]
     }
-    else if (!pageNo && limit) {
-        validatePaginationParams(pageNo, limit);
-        size = limit;
+    else if (!offset && limit) {
+        validatePaginationParams(offset, limit);
+        size = Number(limit);
         return [skip, size]
     }
-    else if (pageNo && !limit) {
-        validatePaginationParams(pageNo, limit);
-        skip = size * (pageNo - 1);
+    else if (offset && !limit) {
+        validatePaginationParams(offset, limit);
+        skip = Number(offset);
         return [skip, size]
     } else {
-        validatePaginationParams(pageNo, limit);
-        size = limit as number;
-        skip = size * (pageNo as number - 1);
+        validatePaginationParams(offset, limit);
+        size = Number(limit);
+        skip = Number(offset);
         return [skip, size]
     }
 
