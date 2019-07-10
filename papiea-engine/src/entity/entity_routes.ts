@@ -26,7 +26,6 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
         const entities = Object.values(uuidToEntity);
         const totalEntities: number = entities.length;
         const pageEntities = entities.slice(skip, skip + size);
-        console.log("Skip + size: " + (skip+size));
 
         return {results: pageEntities, entity_count: totalEntities};
     };
@@ -63,11 +62,7 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
     router.post("/:prefix/:version/:kind/filter", asyncHandler(async (req, res) => {
         const offset: undefined | number = req.query.offset;
         const limit: undefined | number = req.query.limit;
-        console.log(offset);
-        console.log(limit);
         const [skip, size] = processPaginationParams(offset, limit);
-        console.log(skip);
-        console.log(size);
         const filter: any = {};
         if (req.body.spec) {
             filter.spec = req.body.spec;
