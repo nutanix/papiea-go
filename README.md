@@ -7,16 +7,41 @@ between intended state and real world state.
 # Design document
 Please see [Papiea's design document](https://nutanix.github.io/papiea-js/Papiea-design.html)
 
-# Build Instructions
-There are two components that for now are needed to be built separatly:
+# Build Instructions Papiea
+Since papiea consists of multiple package you need to 
+build them all separately or use a set of commands to build them all
 
-1. Papiea itself using `npm run build`.
+1. In the project root install all dependencies `npm run install-all`.
 
-1. The clojure-script parts of `intentful-core`.
+2. In the project root build all packages `npm run build-all`.
 
-At the project's root directory, run either `npm run build-clj` to build once or `npm run build-clj-auto` to have a file system listener that build automatically and runs all tests on every file change.
+# Local Development Instructions Papiea-Engine
+Papiea-Engine is the main component that serves web requests and integrates intentful engine
+with entity information stores in a database. Make sure that you have Docker and Docker-compose since they are required to run Papiea-Engine
 
-Alternatively run `docker-compose up` to install all dependencies, build the application and run nodejs server with live reload. To run tests execute `docker-compose exec server npm run test-watch`.
+1. In the project root cd into papiea engine package `cd papiea-engine`
+
+2. To start a container `docker-compose up -d`
+
+Papiea-Engine will now be running on port `3000` inside the container and will use port `3333` externally
+
+To stop a container
+
+1. `docker-compose stop`
+
+# Debug configuration Papiea-Engine
+Instead of using usual `docker-compose up` in papiea-engine dir, use `docker-compose -f docker-compose-debug.yml` to enable hot-reload and debugger listening on port `9229`
+
+# Environment Papiea-Engine
+A set of these variables might be used to tweak the default papiea-engine configuration
+* `MONGO_HOST` - mongo host (default `mongo`)
+* `MONGO_PORT` - mongo port (default `27017`)
+* `PAPIEA_PUBLIC_ADDR` - external papiea address (default `"http://localhost:3000"`)
+* `HOT_RELOAD` - use nodemon to autoreload papiea on code changes (default `false`)
+* `TOKEN_SECRET` - secret for papiea JWT HMAC
+* `TOKEN_EXPIRES_SECONDS` - token expiration time in seconds (default `604800` 1 week)
+* `DEBUG_LEVEL` - log level for [morgan](https://github.com/expressjs/morgan) logging (default `common`)
+* `DISALLOW_EXTRA_PROPERTIES` - prohibit usage of props not specified in yaml structure (default `true`)
 
 # CLJS instructions
 For now this clojurescript library is embedded, but it may end up in a different repository and will be exposed as a regular npm package which will be imported through npm. Until this happens, here are the instructions for developing this library:
