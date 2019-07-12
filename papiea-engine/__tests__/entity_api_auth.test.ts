@@ -597,4 +597,29 @@ describe("Entity API auth tests", () => {
             done.fail(e);
         }
     });
+
+    test("Call kind procedure by provider-admin of different provider should fail", async done => {
+        try {
+            // There should be some policy in place
+            await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
+                policy: `p, alice, owner, ${kind_name}, *, allow`
+            });
+            const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
+                {
+                    extension: {
+                        provider_prefix: provider.prefix + "1",
+                        is_provider_admin: true
+                    }
+                }
+            );
+            await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/moveX`, { input: 5 },
+                { headers: { 'Authorization': 'Bearer ' + s2skey.key } }
+            );
+            done.fail("Call procedure without permission should fail");
+        } catch (e) {
+            // Unauthorized bacause provider-admin is authorized against different provider
+            expect(e.response.status).toEqual(401);
+            done();
+        }
+    });
 });
