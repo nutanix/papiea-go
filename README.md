@@ -31,6 +31,8 @@ To stop a container
 
 # Debug configuration Papiea-Engine
 Instead of using usual `docker-compose up` in papiea-engine dir, use `docker-compose -f docker-compose-debug.yml` to enable hot-reload and debugger listening on port `9229`
+See [Attaching to node js using VS Code](https://code.visualstudio.com/docs/nodejs/nodejs-debugging#_attaching-to-nodejs)
+See [Attaching to node js using Intellij](https://www.jetbrains.com/help/pycharm/running-and-debugging-node-js.html#a34dc5da)
 
 # Environment Papiea-Engine
 A set of these variables might be used to tweak the default papiea-engine configuration
@@ -42,6 +44,7 @@ A set of these variables might be used to tweak the default papiea-engine config
 * `TOKEN_EXPIRES_SECONDS` - token expiration time in seconds (default `604800` 1 week)
 * `DEBUG_LEVEL` - log level for [morgan](https://github.com/expressjs/morgan) logging (default `common`)
 * `DISALLOW_EXTRA_PROPERTIES` - prohibit usage of props not specified in yaml structure (default `true`)
+* `PAPIEA_ADMIN_S2S_KEY` - papiea admin's s2s key
 
 # CLJS instructions
 For now this clojurescript library is embedded, but it may end up in a different repository and will be exposed as a regular npm package which will be imported through npm. Until this happens, here are the instructions for developing this library:
