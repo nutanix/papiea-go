@@ -55,15 +55,15 @@ describe("Entity API auth tests", () => {
     const procedureCallbackHostname = "127.0.0.1";
     const procedureCallbackPort = 9001;
     const provider: Provider = new ProviderBuilder()
-                                .withVersion("0.1.0")
-                                .withKinds()
-                                .withCallback(`http://${procedureCallbackHostname}:${procedureCallbackPort}`)
-                                .withEntityProcedures()
-                                .withKindProcedures()
-                                .withProviderProcedures()
-                                .withOAuth2Description()
-                                .withAuthModel()
-                                .build();
+        .withVersion("0.1.0")
+        .withKinds()
+        .withCallback(`http://${procedureCallbackHostname}:${procedureCallbackPort}`)
+        .withEntityProcedures()
+        .withKindProcedures()
+        .withProviderProcedures()
+        .withOAuth2Description()
+        .withAuthModel()
+        .build();
     const kind_name = provider.kinds[0].name;
     let entity_metadata: Metadata, entity_spec: Spec;
 
@@ -424,4 +424,52 @@ describe("Entity API auth tests", () => {
         }
     });
 
+    test("Call entity procedure without permission should fail", async done => {
+        try {
+            const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+            await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
+                policy: `p, alice, owner, ${kind_name}, read, allow`
+            });
+            await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}/procedure/moveX`, { input: 5 },
+                { headers: { 'Authorization': 'Bearer ' + token } }
+            );
+            done.fail("Call procedure without permission should fail");
+        } catch (e) {
+            expect(e.response.status).toEqual(403);
+            done();
+        }
+    });
+
+    test("Call entity procedure with permission should succeed", async done => {
+        try {
+            const server = http.createServer((req, res) => {
+                if (req.method == 'POST') {
+                    let body = '';
+                    req.on('data', function (data) {
+                        body += data;
+                    });
+                    req.on('end', function () {
+                        const post = JSON.parse(body);
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'text/plain');
+                        res.end(JSON.stringify(post.spec));
+                        server.close();
+                    });
+                }
+            });
+            server.listen(procedureCallbackPort, procedureCallbackHostname, () => {
+                console.log(`Server running at http://${procedureCallbackHostname}:${procedureCallbackPort}/`);
+            });
+            const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+            await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
+                policy: `p, alice, owner, ${kind_name}, read, allow\np, alice, owner, ${kind_name}, callmovex, allow`
+            });
+            await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}/procedure/moveX`, { input: 5 },
+                { headers: { 'Authorization': 'Bearer ' + token } }
+            );
+            done();
+        } catch (e) {
+            done.fail(e);
+        }
+    });
 });
