@@ -168,17 +168,19 @@ export class AdminAuthorizer extends Authorizer {
             return;
         }
         if (action === CreateS2SKeyAction) {
-            if (object.owner !== user.owner || object.provider_prefix !== user.provider_prefix) {
+            // object.extension contains UserInfo which will be used when s2s key is passed
+            // check who can talk on behalf of whom
+            if (object.owner !== user.owner
+                || object.provider_prefix !== user.provider_prefix
+                || object.extension.provider_prefix !== user.provider_prefix
+                || object.extension.is_admin) {
                 throw new PermissionDeniedError();
             }
             if (user.is_provider_admin) {
                 return;
             }
-            // object.extension contains UserInfo which will be used when s2s key is passed
-            // check who can talk on behalf of whom
-            if (object.extension.is_admin || object.extension.is_provider_admin
-                || (object.extension.provider_prefix !== user.provider_prefix)
-                || (object.extension.owner && object.extension.owner !== user.owner)) {
+            if (object.extension.is_provider_admin
+                || object.extension.owner !== user.owner) {
                 throw new PermissionDeniedError();
             }
             return;
