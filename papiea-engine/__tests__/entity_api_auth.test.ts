@@ -472,4 +472,129 @@ describe("Entity API auth tests", () => {
             done.fail(e);
         }
     });
+
+    test("Call kind procedure by provider-user should fail", async done => {
+        try {
+            const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+            await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
+                policy: `p, alice, owner, ${kind_name}, *, allow`
+            });
+            await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/moveX`, { input: 5 },
+                { headers: { 'Authorization': 'Bearer ' + token } }
+            );
+            done.fail("Call procedure without permission should fail");
+        } catch (e) {
+            expect(e.response.status).toEqual(403);
+            done();
+        }
+    });
+
+    test("Call kind procedure by provider-admin should succeed", async done => {
+        try {
+            const server = http.createServer((req, res) => {
+                if (req.method == 'POST') {
+                    let body = '';
+                    req.on('data', function (data) {
+                        body += data;
+                    });
+                    req.on('end', function () {
+                        const post = JSON.parse(body);
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'text/plain');
+                        res.end(JSON.stringify(post.spec));
+                        server.close();
+                    });
+                }
+            });
+            server.listen(procedureCallbackPort, procedureCallbackHostname, () => {
+                console.log(`Server running at http://${procedureCallbackHostname}:${procedureCallbackPort}/`);
+            });
+            // There should be some policy in place
+            await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
+                policy: `p, alice, owner, ${kind_name}, *, allow`
+            });
+            const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
+                {
+                    extension: {
+                        provider_prefix: provider.prefix,
+                        is_provider_admin: true
+                    }
+                }
+            );
+            await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/computeGeolocation`, { input: "2" },
+                { headers: { 'Authorization': 'Bearer ' + s2skey.key } }
+            );
+            done();
+        } catch (e) {
+            done.fail(e);
+        }
+    });
+
+    test("Call provider procedure by provider-user should fail", async done => {
+        try {
+            const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+            await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
+                policy: `p, alice, owner, ${kind_name}, *, allow`
+            });
+            await entityApi.post(`/${provider.prefix}/${provider.version}/procedure/computeSum`, {
+                input: {
+                    "a": 5,
+                    "b": 5
+                }
+            },
+                { headers: { 'Authorization': 'Bearer ' + token } }
+            );
+            done.fail("Call procedure without permission should fail");
+        } catch (e) {
+            expect(e.response.status).toEqual(403);
+            done();
+        }
+    });
+
+    test("Call provider procedure by provider-admin should succeed", async done => {
+        try {
+            const server = http.createServer((req, res) => {
+                if (req.method == 'POST') {
+                    let body = '';
+                    req.on('data', function (data) {
+                        body += data;
+                    });
+                    req.on('end', function () {
+                        const post = JSON.parse(body);
+                        const sum = post.input.a + post.input.b;
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'text/plain');
+                        res.end(JSON.stringify(sum));
+                        server.close();
+                    });
+                }
+            });
+            server.listen(procedureCallbackPort, procedureCallbackHostname, () => {
+                console.log(`Server running at http://${procedureCallbackHostname}:${procedureCallbackPort}/`);
+            });
+            // There should be some policy in place
+            await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
+                policy: `p, alice, owner, ${kind_name}, *, allow`
+            });
+            const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
+                {
+                    extension: {
+                        provider_prefix: provider.prefix,
+                        is_provider_admin: true
+                    }
+                }
+            );
+            await entityApi.post(`/${provider.prefix}/${provider.version}/procedure/computeSum`, {
+                input: {
+                    "a": 5,
+                    "b": 5
+                }
+            },
+                { headers: { 'Authorization': 'Bearer ' + s2skey.key } }
+            );
+            done();
+        } catch (e) {
+            done.fail(e);
+        }
+    });
 });

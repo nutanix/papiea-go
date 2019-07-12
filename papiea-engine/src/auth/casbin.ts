@@ -24,7 +24,12 @@ export class CasbinAuthorizer extends Authorizer {
     }
 
     async checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void> {
-        if (!this.enforcer.enforce(user, object, action.getAction())) {
+        try {
+            if (!this.enforcer.enforce(user, object, action.getAction())) {
+                throw new PermissionDeniedError();
+            }
+        } catch (e) {
+            console.error(e);
             throw new PermissionDeniedError();
         }
     }
