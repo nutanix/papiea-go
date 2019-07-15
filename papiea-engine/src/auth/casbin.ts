@@ -29,7 +29,7 @@ export class CasbinAuthorizer extends Authorizer {
                 throw new PermissionDeniedError();
             }
         } catch (e) {
-            console.error(e);
+            console.error("CasbinAuthorizer checkPermission error", e);
             throw new PermissionDeniedError();
         }
     }

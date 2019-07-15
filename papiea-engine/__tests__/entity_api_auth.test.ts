@@ -462,7 +462,7 @@ describe("Entity API auth tests", () => {
             });
             const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
             await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
-                policy: `p, alice, owner, ${kind_name}, read, allow\np, alice, owner, ${kind_name}, callmovex, allow`
+                policy: `p, alice, owner, ${kind_name}, read, allow\np, alice, owner, ${kind_name}, call_movex, allow`
             });
             await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}/procedure/moveX`, { input: 5 },
                 { headers: { 'Authorization': 'Bearer ' + token } }
