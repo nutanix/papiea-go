@@ -1,16 +1,17 @@
 import { Entity_API } from "./entity_api_interface";
 import { Router } from "express";
 import { UserAuthInfo, asyncHandler } from '../auth/authn';
+import { processPaginationParams } from "../utils/utils";
 
 
 export function createEntityAPIRouter(entity_api: Entity_API): Router {
     const router = Router();
 
-    const filterEntities = async function (user: UserAuthInfo, kind_name: string, filter: any): Promise<any> {
+    const filterEntities = async function (user: UserAuthInfo, kind_name: string, filter: any, skip: number, size: number): Promise<any> {
         const resultSpecs: any[] = await entity_api.filter_entity_spec(user, kind_name, filter);
-        
+
         const resultStatuses: any[] = await entity_api.filter_entity_status(user, kind_name, filter);
-        
+
         const uuidToEntity: { [key: string]: any } = {};
 
         resultSpecs.forEach(x => {
@@ -22,11 +23,18 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
                 uuidToEntity[x[0].uuid].status = x[1];
         });
 
-        return Object.values(uuidToEntity);
+        const entities = Object.values(uuidToEntity);
+        const totalEntities: number = entities.length;
+        const pageEntities = entities.slice(skip, skip + size);
+
+        return {results: pageEntities, entity_count: totalEntities};
     };
 
     router.get("/:prefix/:version/:kind", asyncHandler(async (req, res) => {
         const filter: any = {};
+        const offset: undefined | number = req.query.offset;
+        const limit: undefined | number = req.query.limit;
+        const [skip, size] = processPaginationParams(offset, limit);
         if (req.query.spec) {
             filter.spec = JSON.parse(req.query.spec);
         } else {
@@ -42,7 +50,7 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
         } else {
             filter.metadata = {};
         }
-        res.json(await filterEntities(req.user, req.params.kind, filter));
+        res.json(await filterEntities(req.user, req.params.kind, filter, skip, size));
     }));
 
     router.get("/:prefix/:version/:kind/:uuid", asyncHandler(async (req, res) => {
@@ -52,6 +60,9 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
     }));
 
     router.post("/:prefix/:version/:kind/filter", asyncHandler(async (req, res) => {
+        const offset: undefined | number = req.query.offset;
+        const limit: undefined | number = req.query.limit;
+        const [skip, size] = processPaginationParams(offset, limit);
         const filter: any = {};
         if (req.body.spec) {
             filter.spec = req.body.spec;
@@ -69,7 +80,7 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
             filter.metadata = {};
         }
 
-        res.json(await filterEntities(req.user, req.params.kind, filter));
+        res.json(await filterEntities(req.user, req.params.kind, filter, skip, size));
     }));
 
     router.put("/:prefix/:version/:kind/:uuid", asyncHandler(async (req, res) => {

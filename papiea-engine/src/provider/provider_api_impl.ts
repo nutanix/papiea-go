@@ -115,6 +115,17 @@ export class Provider_API_Impl implements Provider_API {
     }
 
     async create_key(user: UserAuthInfo, name: string, owner: string, provider_prefix: string, extension?: any, key?: string): Promise<S2S_Key> {
+        // - name is not mandatory, displayed in UI
+        // - owner is the owner of the key (usually email),
+        // it is not unique, different providers may have same owner
+        // - provider_prefix determines provider key belongs to,
+        // tuple (owner, provider_prefix) determines a set of keys owner owns for given provider
+        // - extension is a UserAuthInfo which will be used when s2s key provided, that is 
+        // if s2skey A is provided in Authoriation
+        // then casbin will do all checks against A.extension.owner,
+        // A.extension.provider_prefix, A.extension.tenant, etc.
+        // In other words user with s2skey A talks on behalf of user in A.extension
+        // All rules who can talk on behalf of whom are defined in AdminAuthorizer
         const s2skey: S2S_Key = {
             name: name,
             owner: owner,
