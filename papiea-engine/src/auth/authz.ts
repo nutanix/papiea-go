@@ -35,7 +35,7 @@ export const ReadAction = new Action('read'),
     InactivateS2SKeyAction = new Action('inactivate_key');
 
 export function CallProcedureByNameAction(procedureName: string) {
-    return new Action('call' + procedureName);
+    return new Action('call_' + procedureName.toLowerCase());
 }
 
 function mapAsync<T, U>(array: T[], callbackfn: (value: T, index: number, array: T[]) => Promise<U>): Promise<U[]> {

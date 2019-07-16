@@ -1,0 +1,20 @@
+version: '3.5'
+services:
+        papiea-engine:
+                container_name: papiea-engine
+                build: .
+                image: nutanix-docker.jfrog.io/papiea:base
+                volumes:
+                        - ../:/code
+                depends_on:
+                        - mongo
+                ports:
+                        - "3333:3000"
+                        - "9229:9229"
+                environment:
+                        - ADMIN_S2S_KEY=${PAPIEA_ADMIN_S2S_KEY}
+                        - PAPIEA_PUBLIC_ADDR=${PAPIEA_PUBLIC_ADDR}
+                        - HOT_RELOAD=true
+                        - PAPIEA_DEBUG=true
+        mongo:
+                image: mongo:4.1
