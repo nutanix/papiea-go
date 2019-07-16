@@ -2,7 +2,7 @@ import "jest"
 import axios from "axios"
 import { ProviderSdk } from "papiea-sdk";
 import { Metadata, Spec } from "papiea-core";
-import { getLocationDataDescription, getMetadataDescription, ProviderBuilder } from "./test_data_factory";
+import { getLocationDataDescription, getMetadataDescription } from "./test_data_factory";
 import { stringify } from "querystring"
 import uuid = require("uuid");
 
@@ -46,7 +46,7 @@ describe("Entity API tests", () => {
 
     let entity_metadata: Metadata;
     let entity_spec: Spec;
-    test("Create spec-only entity", async (done) => {
+    test("Create spec-only entity", async () => {
         expect.assertions(3);
         try {
             const { data: { metadata, spec } } = await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
@@ -60,13 +60,12 @@ describe("Entity API tests", () => {
             expect(spec).not.toBeUndefined();
             entity_metadata = metadata;
             entity_spec = spec;
-            done();
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Create entity with malformed spec should fail", async (done) => {
+    test("Create entity with malformed spec should fail", async () => {
         expect.assertions(2);
         try {
             await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
@@ -75,40 +74,38 @@ describe("Entity API tests", () => {
                     y: 11
                 }
             });
-            done.fail();
         } catch (err) {
             const res = err.response;
             expect(res.status).toEqual(400);
             expect(res.data.errors.length).toEqual(1);
-            done();
         }
     });
 
-    test("Get spec-only entity", async (done) => {
+    test("Get spec-only entity", async () => {
         expect.assertions(2);
         try {
             const res = await entityApi.get(`/${providerPrefix}/${providerVersion}/${kind_name}/${entity_metadata.uuid}`);
             expect(res.data.spec).toEqual(entity_spec);
             expect(res.data.status).toEqual(entity_spec);
-            done();
+
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Get non-existent spec-only entity should fail", async (done) => {
+    test("Get non-existent spec-only entity should fail", async () => {
         expect.assertions(2);
         try {
             await entityApi.get(`/${ providerPrefix }/${providerVersion}/${ kind_name }/${ uuid() }`);
-            done.fail();
         } catch (e) {
             expect(e.response.status).toBe(404);
             expect(e.response.data).not.toBeUndefined();
-            done();
+
         }
     });
 
-    test("Filter entity", async (done) => {
+    test("Filter entity", async () => {
+        expect.hasAssertions();
         try {
             let res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter`, {
                 spec: {
@@ -125,13 +122,14 @@ describe("Entity API tests", () => {
                 }
             });
             expect(res.data.results.length).toBe(0);
-            done();
+
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Filter spec only entity should contain status", async (done) => {
+    test("Filter spec only entity should contain status", async () => {
+        expect.hasAssertions();
         try {
             const res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter`, {
                 spec: {
@@ -143,13 +141,14 @@ describe("Entity API tests", () => {
             const entity = res.data.results[0];
             expect(entity.spec.x).toEqual(10);
             expect(entity.status).toEqual(entity.spec);
-            done();
+
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Filter entity by status", async (done) => {
+    test("Filter entity by status", async () => {
+        expect.hasAssertions();
         try {
             let res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter`, {
                 status: {
@@ -178,13 +177,14 @@ describe("Entity API tests", () => {
                 }
             });
             expect(res.data.results.length).toBe(0);
-            done();
+
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Filter entity by spec and status", async (done) => {
+    test("Filter entity by spec and status", async () => {
+        expect.hasAssertions();
         try {
             const res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter`, {
                 spec: {
@@ -203,13 +203,14 @@ describe("Entity API tests", () => {
                 expect(entity.status.x).toEqual(10);
                 expect(entity.status.y).toEqual(11);
             });
-            done();
+
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Filter entity by nested fields", async (done) => {
+    // TODO: rewrite it with fast check
+    test("Filter entity by nested fields", async () => {
         try {
             await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
                 spec: {
@@ -309,14 +310,14 @@ describe("Entity API tests", () => {
                 expect(entity.status.v.e).toEqual(12);
             });
 
-            done();
+
         } catch (e) {
-            console.log(e.response.data.errors);
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Filter entity with query params", async (done) => {
+    test("Filter entity with query params", async () => {
+        expect.assertions(1);
         const spec = {
             x: 10,
             y: 11
@@ -327,13 +328,13 @@ describe("Entity API tests", () => {
         try {
             const res = await entityApi.get(`${providerPrefix}/${providerVersion}/${kind_name}?${stringify(spec_query)}`);
             expect(res.data.results.length).toBeGreaterThanOrEqual(1);
-            done();
+
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Update spec-only entity spec", async (done) => {
+    test("Update spec-only entity spec", async () => {
         expect.assertions(3);
         try {
             let res = await entityApi.put(`/${providerPrefix}/${providerVersion}/${kind_name}/${entity_metadata.uuid}`, {
@@ -349,13 +350,13 @@ describe("Entity API tests", () => {
             res = await entityApi.get(`/${providerPrefix}/${providerVersion}/${kind_name}/${entity_metadata.uuid}`);
             expect(res.data.spec.x).toEqual(20);
             expect(res.data.status.x).toEqual(20);
-            done();
+
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Update entity with malformed spec should fail", async (done) => {
+    test("Update entity with malformed spec should fail", async () => {
         expect.assertions(3);
         try {
             const { data: { metadata, spec } } = await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
@@ -374,16 +375,15 @@ describe("Entity API tests", () => {
                     spec_version: 1
                 }
             });
-            done.fail();
         } catch (err) {
             const res = err.response;
             expect(res.status).toEqual(400);
             expect(res.data.errors.length).toEqual(1);
-            done();
+
         }
     });
 
-    test("Create entity with non valid uuid should be an error", async (done) => {
+    test("Create entity with non valid uuid should be an error", async () => {
         try {
             const { data: { metadata, spec } } = await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
                 spec: {
@@ -395,11 +395,12 @@ describe("Entity API tests", () => {
                 }
             });
         } catch (e) {
-            done();
+            expect(e).toBeDefined();
         }
     });
 
-    test("Create entity and provide uuid", async (done) => {
+    test("Create entity and provide uuid", async () => {
+        expect.assertions(2);
         try {
             const entity_uuid = uuid();
             const { data: { metadata, spec } } = await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
@@ -414,28 +415,29 @@ describe("Entity API tests", () => {
             expect(metadata.uuid).toEqual(entity_uuid);
             const res = await entityApi.get(`/${providerPrefix}/${providerVersion}/${kind_name}/${entity_uuid}`);
             expect(res.data.metadata.uuid).toEqual(entity_uuid);
-            done();
+
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Delete entity", async (done) => {
+    test("Delete entity", async () => {
+        expect.assertions(1);
         try {
             await entityApi.delete(`/${providerPrefix}/${providerVersion}/${kind_name}/${entity_metadata.uuid}`);
         } catch (e) {
-            done.fail(e);
+            throw e;
             return;
         }
         try {
             await entityApi.get(`/${providerPrefix}/${providerVersion}/${kind_name}/${entity_metadata.uuid}`);
-            done.fail("Entity has not been removed");
         } catch (e) {
-            done();
+            expect(e).toBeDefined();
         }
     });
 
-    test("Filter deleted entity", async (done) => {
+    test("Filter deleted entity", async () => {
+        expect.hasAssertions();
         try {
             const { data: { metadata, spec } } = await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
                 spec: {
@@ -461,9 +463,9 @@ describe("Entity API tests", () => {
                 expect(res.data.results[0].spec).toEqual(spec);
                 expect(res.data.results[0].status).toEqual(spec);
             });
-            done();
+
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 });
@@ -493,7 +495,8 @@ describe("Entity API with metadata extension tests", () => {
         await axios.delete(`http://127.0.0.1:${serverPort}/provider/${providerPrefix}/${providerVersion}`);
     });
 
-    test("Create entity with missing metadata extension should fail validation", async done => {
+    test("Create entity with missing metadata extension should fail validation", async () => {
+        expect.hasAssertions();
         try {
             await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
                 spec: {
@@ -501,16 +504,16 @@ describe("Entity API with metadata extension tests", () => {
                     y: 11
                 }
             });
-            done.fail();
         } catch (err) {
             const res = err.response;
             expect(res.status).toEqual(400);
             expect(res.data.errors.length).toEqual(1);
-            done();
+
         }
     });
 
-    test("Create entity with metadata extension", async done => {
+    test("Create entity with metadata extension", async () => {
+        expect.assertions(2);
         try {
             const { data: { metadata, spec } } = await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
                 spec: {
@@ -526,25 +529,26 @@ describe("Entity API with metadata extension tests", () => {
             });
             entity_metadata = metadata;
             entity_spec = spec;
-            done();
+            expect(spec).toBeDefined();
+            expect(metadata).toBeDefined();
         } catch (err) {
-            done.fail(err);
         }
     });
 
-    test("Get spec-only entity with extension", async (done) => {
+    test("Get spec-only entity with extension", async () => {
         expect.assertions(2);
         try {
             const res = await entityApi.get(`/${providerPrefix}/${providerVersion}/${kind_name}/${entity_metadata.uuid}`);
             expect(res.data.spec).toEqual(entity_spec);
             expect(res.data.status).toEqual(entity_spec);
-            done();
+
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Create entity with non-valid metadata extension", async done => {
+    test("Create entity with non-valid metadata extension", async () => {
+        expect.assertions(2);
         try {
             await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
                 spec: {
@@ -558,16 +562,15 @@ describe("Entity API with metadata extension tests", () => {
                     }
                 }
             });
-            done.fail();
         } catch (err) {
             const res = err.response;
             expect(res.status).toEqual(400);
             expect(res.data.errors.length).toEqual(1);
-            done();
         }
     });
 
-    test("Filter entity by extension", async done => {
+    test("Filter entity by extension", async () => {
+        expect.assertions(1);
         try {
             const res = await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}/filter`, {
                 metadata: {
@@ -576,13 +579,14 @@ describe("Entity API with metadata extension tests", () => {
                 }
             });
             expect(res.data.results.length).toBe(1);
-            done();
+
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Create entity with no metadata extension should display a friendly error", async done => {
+    test("Create entity with no metadata extension should display a friendly error", async () => {
+        expect.assertions(3);
         try {
             await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
                 spec: {
@@ -590,13 +594,12 @@ describe("Entity API with metadata extension tests", () => {
                     y: 11
                 },
             });
-            done.fail();
         } catch (err) {
             const res = err.response;
             expect(res.status).toEqual(400);
             expect(res.data.errors.length).toEqual(1);
             expect(res.data.errors[0]).toEqual("Metadata extension is not specified");
-            done();
+
         }
     });
 });
@@ -620,7 +623,7 @@ describe("Pagination tests", () => {
     });
 
     let uuids: string[] = [];
-    test("Create multiple entities", async (done) => {
+    test("Create multiple entities", async () => {
         expect.assertions(1);
         const entityPromises: Promise<any>[] = [];
         try {
@@ -635,13 +638,13 @@ describe("Pagination tests", () => {
             const entityResponses: any[] = await Promise.all(entityPromises);
             uuids = entityResponses.map(entityResp => entityResp.data.metadata.uuid);
             expect(entityResponses.length).toBe(70);
-            done();
+
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Pagination test", async (done) => {
+    test("Pagination test", async () => {
         try {
             let res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter`, {
                 spec: {
@@ -651,13 +654,14 @@ describe("Pagination tests", () => {
             });
             expect(res.data.results.length).toBe(30);
             expect(res.data.entity_count).toBe(70);
-            done();
+
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Pagination test with limit", async (done) => {
+    test("Pagination test with limit", async () => {
+        expect.assertions(2);
         try {
             let res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?limit=10`, {
                 spec: {
@@ -667,13 +671,14 @@ describe("Pagination tests", () => {
             });
             expect(res.data.results.length).toBe(10);
             expect(res.data.entity_count).toBe(70);
-            done();
+
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Pagination test with offset", async (done) => {
+    test("Pagination test with offset", async () => {
+        expect.assertions(2);
         try {
             let res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?offset=30`, {
                 spec: {
@@ -683,13 +688,13 @@ describe("Pagination tests", () => {
             });
             expect(res.data.results.length).toBe(30);
             expect(res.data.entity_count).toBe(70);
-            done();
+
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Pagination test with limit and offset", async (done) => {
+    test("Pagination test with limit and offset", async () => {
         try {
             let res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?offset=50&limit=40`, {
                 spec: {
@@ -699,13 +704,14 @@ describe("Pagination tests", () => {
             });
             expect(res.data.results.length).toBe(20);
             expect(res.data.entity_count).toBe(70);
-            done();
+
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Pagination limit should be positive", async (done) => {
+    test("Pagination limit should be positive", async () => {
+        expect.assertions(1);
         try {
             await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?limit=-1`, {
                 spec: {
@@ -713,14 +719,14 @@ describe("Pagination tests", () => {
                     y: 11
                 }
             });
-            done.fail();
         } catch (e) {
             expect(e.response.data.errors[0]).toBe("Limit should not be less or equal to zero");
-            done();
+
         }
     });
 
-    test("Pagination offset should be positive", async (done) => {
+    test("Pagination offset should be positive", async () => {
+        expect.assertions(1);
         try {
             await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?offset=-1`, {
                 spec: {
@@ -728,14 +734,14 @@ describe("Pagination tests", () => {
                     y: 11
                 }
             });
-            done.fail();
         } catch (e) {
             expect(e.response.data.errors[0]).toBe("Offset should not be less or equal to zero");
-            done();
+
         }
     });
 
-    test("Pagination test with offset equal to zero", async (done) => {
+    test("Pagination test with offset equal to zero", async () => {
+        expect.assertions(1);
         try {
             await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?offset=0`, {
                 spec: {
@@ -743,14 +749,14 @@ describe("Pagination tests", () => {
                     y: 11
                 }
             });
-            done.fail();
         } catch (e) {
             expect(e.response.data.errors[0]).toBe("Offset should not be less or equal to zero");
-            done();
+
         }
     });
 
-    test("Pagination test with limit equal to zero", async (done) => {
+    test("Pagination test with limit equal to zero", async () => {
+        expect.assertions(1);
         try {
             await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?limit=0`, {
                 spec: {
@@ -758,14 +764,14 @@ describe("Pagination tests", () => {
                     y: 11
                 }
             });
-            done.fail();
         } catch (e) {
             expect(e.response.data.errors[0]).toBe("Limit should not be less or equal to zero");
-            done();
+
         }
     });
 
-    test("Delete multiple entities", async (done) => {
+    test("Delete multiple entities", async () => {
+        expect.assertions(1);
         const deletePromises: Promise<any>[] = [];
         try {
             uuids.forEach(uuid => {
@@ -773,8 +779,7 @@ describe("Pagination tests", () => {
             });
             await Promise.all(deletePromises);
         } catch (e) {
-            done.fail(e);
-            return;
+            throw e;
         }
         try {
             let res = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter`, {
@@ -784,10 +789,9 @@ describe("Pagination tests", () => {
                 }
             });
             expect(res.data.results.length).toBe(0);
-            done();
+
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     })
-
 });
