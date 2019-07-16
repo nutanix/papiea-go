@@ -604,6 +604,7 @@ describe("Entity API with metadata extension tests", () => {
     });
 });
 
+// TODO: rewrite the whole suite with fast check
 describe("Pagination tests", () => {
     const providerPrefix = "test";
     const providerVersion = "0.1.0";

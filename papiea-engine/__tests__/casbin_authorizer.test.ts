@@ -204,7 +204,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
     describe('admin user', () => {
         describe('has access to everything', () => {
             describe('some_kind', () => {
-                const kind = 'some_kind'
+                const kind = 'some_kind';
                 test("Read", done => {
                     actionShouldSucceed(
                         { owner: 'admin' },
@@ -212,7 +212,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                         ReadAction,
                         done
                     )
-                })
+                });
                 test("Create", done => {
                     actionShouldSucceed(
                         { owner: 'admin' },
@@ -220,7 +220,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                         CreateAction,
                         done
                     )
-                })
+                });
                 test("Update", done => {
                     actionShouldSucceed(
                         { owner: 'admin' },
@@ -228,7 +228,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                         UpdateAction,
                         done
                     )
-                })
+                });
                 test("Delete", done => {
                     actionShouldSucceed(
                         { owner: 'admin' },
@@ -239,13 +239,13 @@ describe("Casbin authorizer tests for default provider policy", () => {
                 })
             })
         })
-    })
+    });
 
     describe('anonymous user', () => {
         describe('has access to nothing', () => {
             describe('his own (should never have any anyway)', () => {
                 describe('some_kind', () => {
-                    const kind = 'some_kind'
+                    const kind = 'some_kind';
                     test("Read", done => {
                         actionShouldFail(
                             { owner: 'anonymous' },
@@ -253,7 +253,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                             ReadAction,
                             done
                         )
-                    })
+                    });
                     test("Create", done => {
                         actionShouldFail(
                             { owner: 'anonymous' },
@@ -261,7 +261,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                             CreateAction,
                             done
                         )
-                    })
+                    });
                     test("Update", done => {
                         actionShouldFail(
                             { owner: 'anonymous' },
@@ -269,7 +269,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                             UpdateAction,
                             done
                         )
-                    })
+                    });
                     test("Delete", done => {
                         actionShouldFail(
                             { owner: 'anonymous' },
@@ -279,10 +279,10 @@ describe("Casbin authorizer tests for default provider policy", () => {
                         )
                     })
                 })
-})
+});
             describe('other owners', () => {
                 describe('some_kind', () => {
-                    const kind = 'some_kind'
+                    const kind = 'some_kind';
                     test("Read", done => {
                         actionShouldFail(
                             { owner: 'anonymous' },
@@ -290,7 +290,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                             ReadAction,
                             done
                         )
-                    })
+                    });
                     test("Create", done => {
                         actionShouldFail(
                             { owner: 'anonymous' },
@@ -298,7 +298,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                             CreateAction,
                             done
                         )
-                    })
+                    });
                     test("Update", done => {
                         actionShouldFail(
                             { owner: 'anonymous' },
@@ -306,7 +306,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                             UpdateAction,
                             done
                         )
-                    })
+                    });
                     test("Delete", done => {
                         actionShouldFail(
                             { owner: 'anonymous' },

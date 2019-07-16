@@ -71,8 +71,6 @@ describe("Provider API tests", () => {
         }
     });
 
-    // TODO(adolgarev): there is no API to list providers
-
     test("Unregister provider", done => {
         providerApi.delete(`/${providerPrefix}/${providerVersion}`).then(() => done()).catch(done.fail);
     });
@@ -115,8 +113,9 @@ describe("Provider API tests", () => {
         }
     });
 
-    test("Update status with malformed status should fail validation", async done => {
-        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();;
+    test("Update status with malformed status should fail validation", async () => {
+        expect.hasAssertions();
+        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();
         await providerApi.post('/', provider);
         const kind_name = provider.kinds[0].name;
         const { data: { metadata, spec } } = await entityApi.post(`/${ provider.prefix }/${provider.version}/${ kind_name }`, {
@@ -135,13 +134,13 @@ describe("Provider API tests", () => {
                 },
                 status: { x: 11, y: "Totally not a number" }
             });
-            done.fail();
         } catch (err) {
-            done();
+            expect(err).toBeDefined();
         }
     });
 
-    test("Update policy", async done => {
+    test("Update policy", async () => {
+        expect.hasAssertions();
         try {
             const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();
             await providerApi.post('/', provider);
@@ -152,13 +151,13 @@ describe("Provider API tests", () => {
             });
             const { data: { policy } } = await providerApi.get(`/${provider.prefix}/${provider.version}`);
             expect(policy).toEqual(originalPolicy);
-            done();
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Update status with partial status definition", async done => {
+    test("Update status with partial status definition", async () => {
+        expect.hasAssertions();
         try {
             const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();
             await providerApi.post('/', provider);
@@ -184,9 +183,8 @@ describe("Provider API tests", () => {
             expect(res.data.status.x).toEqual(10);
             expect(res.data.status.y).toEqual(20);
             expect(res.data.status.z).toEqual(111);
-            done();
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
