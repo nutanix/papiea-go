@@ -136,14 +136,10 @@ describe("Provider Sdk tests", () => {
         sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
+        await sdk.register();
         try {
-            await sdk.register();
-            try {
-                sdk.server.close()
-            } catch(e) {}
+            sdk.server.close()
         } catch (e) {
-            expect(e).toBeUndefined();
-            throw e;
         }
     });
     test("Provider with procedures should be created on papiea", async () => {
@@ -227,8 +223,6 @@ describe("Provider Sdk tests", () => {
             } catch (e) {
                 expect(e).toBeDefined();
             }
-        } catch (e) {
-            expect(e).toBeUndefined();
         } finally {
             sdk.server.close();
         }
@@ -279,9 +273,6 @@ describe("Provider Sdk tests", () => {
 
         try {
             await sdk.register();
-        } catch (e) {
-            expect(e).toBeUndefined();
-            throw e;
         } finally {
             sdk.server.close();
         }
@@ -316,9 +307,6 @@ describe("Provider Sdk tests", () => {
         try {
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/procedure/computeGeolocation`, { input: "2" });
             expect(res.data).toBe("us.west.2");
-        } catch (e) {
-            expect(e).toBeUndefined();
-            throw e;
         } finally {
             sdk.server.close();
         }
@@ -348,8 +336,6 @@ describe("Provider Sdk tests", () => {
         );
         try {
             await sdk.register();
-        } catch (e) {
-            expect(e).toBeUndefined();
         } finally {
             sdk.server.close();
         }
@@ -382,9 +368,6 @@ describe("Provider Sdk tests", () => {
         try {
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { input: { "a": 5, "b": 5 } });
             expect(res.data).toBe(10);
-        } catch (e) {
-            expect(e).toBeUndefined();
-            throw e;
         } finally {
             sdk.server.close();
         }
@@ -440,8 +423,6 @@ describe("Provider Sdk tests", () => {
         try {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumWithNoValidation`, { input: {} });
-        } catch (e) {
-            expect(e).toBeUndefined()
         } finally {
             sdk.server.close();
         }
