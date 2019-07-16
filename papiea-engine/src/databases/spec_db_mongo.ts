@@ -4,6 +4,7 @@ import { ConflictingEntityError, EntityNotFoundError } from "./utils/errors";
 import { datestringToFilter } from "./utils/date";
 import { encode } from "mongo-dot-notation-tool";
 import { Entity_Reference, Metadata, Spec, Entity } from "papiea-core";
+import { SortParams } from "../utils/utils";
 
 export class Spec_DB_Mongo implements Spec_DB {
     collection: Collection;
@@ -73,7 +74,7 @@ export class Spec_DB_Mongo implements Spec_DB {
         return [result.metadata, result.spec];
     }
 
-    async list_specs(fields_map: any): Promise<([Metadata, Spec])[]> {
+    async list_specs(fields_map: any, sortParams: SortParams): Promise<([Metadata, Spec])[]> {
         const filter: any = {};
         filter["metadata.deleted_at"] = datestringToFilter(fields_map.metadata.deleted_at);
         for (let key in fields_map.metadata) {
@@ -87,7 +88,7 @@ export class Spec_DB_Mongo implements Spec_DB {
         for (let key in fields_map.status) {
             filter["status." + key] = fields_map.status[key];
         }
-        const result = await this.collection.find(filter).toArray();
+        const result = await this.collection.find(filter).sort(sortParams).toArray();
         return result.map((x: any): [Metadata, Spec] => {
             if (x.spec !== null) {
                 return [x.metadata, x.spec]

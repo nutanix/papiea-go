@@ -3,6 +3,7 @@ import { Db, Collection } from "mongodb";
 import { datestringToFilter } from "./utils/date";
 import { encode } from "mongo-dot-notation-tool"
 import { Entity_Reference, Status, Metadata, Entity } from "papiea-core";
+import { SortParams } from "../utils/utils";
 
 export class Status_DB_Mongo implements Status_DB {
     collection: Collection;
@@ -61,7 +62,7 @@ export class Status_DB_Mongo implements Status_DB {
         return [result.metadata, result.status]
     }
 
-    async list_status(fields_map: any): Promise<([Metadata, Status])[]> {
+    async list_status(fields_map: any, sortParams: SortParams): Promise<([Metadata, Status])[]> {
         const filter: any = {};
         filter["metadata.deleted_at"] = datestringToFilter(fields_map.metadata.deleted_at);
         for (let key in fields_map.metadata) {
@@ -76,7 +77,7 @@ export class Status_DB_Mongo implements Status_DB {
         for (let key in fields_map.status) {
             filter["status." + key] = fields_map.status[key];
         }
-        const result = await this.collection.find(filter).toArray();
+        const result = await this.collection.find(filter).sort(sortParams).toArray();
         return result.map((x: any): [Metadata, Status] => {
             if (x.status !== null) {
                 return [x.metadata, x.status]

@@ -9,7 +9,7 @@ import { UserAuthInfo } from "../auth/authn";
 import { Provider_API } from "../provider/provider_api_interface";
 import uuid = require("uuid");
 import { Version, Spec, Metadata, uuid4, Entity_Reference, Status, Data_Description, Provider, Kind, Procedural_Signature } from "papiea-core";
-import { isEmpty, Maybe } from "../utils/utils";
+import { isEmpty, Maybe, SortParams } from "../utils/utils";
 
 export class ProcedureInvocationError extends Error {
     errors: string[];
@@ -87,16 +87,16 @@ export class Entity_API_Impl implements Entity_API {
         return [metadata, status];
     }
 
-    async filter_entity_spec(user: UserAuthInfo, kind_name: string, fields: any): Promise<[Metadata, Spec][]> {
+    async filter_entity_spec(user: UserAuthInfo, kind_name: string, fields: any, sortParams: SortParams): Promise<[Metadata, Spec][]> {
         fields.metadata.kind = kind_name;
-        const res = await this.spec_db.list_specs(fields);
+        const res = await this.spec_db.list_specs(fields, sortParams);
         const filteredRes = await this.authorizer.filter(user, res, ReadAction, x => { return { "metadata": x[0] } });
         return filteredRes;
     }
 
-    async filter_entity_status(user: UserAuthInfo, kind_name: string, fields: any): Promise<[Metadata, Status][]> {
+    async filter_entity_status(user: UserAuthInfo, kind_name: string, fields: any, sortParams: SortParams): Promise<[Metadata, Status][]> {
         fields.metadata.kind = kind_name;
-        const res = await this.status_db.list_status(fields);
+        const res = await this.status_db.list_status(fields, sortParams);
         const filteredRes = await this.authorizer.filter(user, res, ReadAction, x => { return { "metadata": x[0] } });
         return filteredRes;
     }

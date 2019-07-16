@@ -791,3 +791,65 @@ describe("Pagination tests", () => {
     })
 
 });
+
+describe("Pagination tests", () => {
+    const providerPrefix = "test";
+    const providerVersion = "0.1.0";
+    const locationDataDescription = getLocationDataDescription();
+    const kind_name = Object.keys(locationDataDescription)[0];
+
+    let uuids: string[] = [];
+    const entityPromises: Promise<any>[] = [];
+
+    beforeAll(async () => {
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        sdk.new_kind(locationDataDescription);
+        sdk.version(providerVersion);
+        sdk.prefix(providerPrefix);
+        await sdk.register();
+
+        try {
+            for (let i = 0; i < 70; i++) {
+                entityPromises.push(entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
+                    spec: {
+                        x: i,
+                        y: 11
+                    }
+                }));
+            }
+            const entityResponses: any[] = await Promise.all(entityPromises);
+            uuids = entityResponses.map(entityResp => entityResp.data.metadata.uuid);
+            expect(entityResponses.length).toBe(70);
+        } catch (e) {
+            throw e;
+        }
+    }, 5000);
+
+    afterAll(async () => {
+        const deletePromises: Promise<any>[] = [];
+        await axios.delete(`http://127.0.0.1:${serverPort}/provider/${providerPrefix}/${providerVersion}`);
+        try {
+            uuids.forEach(uuid => {
+                deletePromises.push(entityApi.delete(`/${providerPrefix}/${providerVersion}/${kind_name}/${uuid}`));
+            });
+            await Promise.all(deletePromises);
+        } catch (e) {
+            throw e;
+        }
+    }, 5000);
+
+    test.only("Sorting with no explicit order should be ascending", async (done) => {
+        try {
+            const { data } = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?sort=spec.x`, {
+                spec: {
+                    y: 11
+                }
+            });
+            console.log(data.results[0]);
+            expect(data.results[0].spec.x).toBe(0);
+            done();
+        } catch (e) {
+            done.fail(e);
+        }
+    });
+});

@@ -27,6 +27,8 @@ export class Maybe<T> {
     }
 }
 
+export type SortParams = { [key: string]: number };
+
 function validatePaginationParams(offset: number | undefined, limit: number | undefined) {
     if (offset) {
         if (offset <= 0) {
@@ -63,6 +65,31 @@ export function processPaginationParams(offset: number | undefined, limit: numbe
         return [skip, size]
     }
 
+}
+
+export function processSortQuery(query: string | undefined) {
+    if (query === undefined) {
+        return {};
+    }
+    const processedQuery: SortParams = {};
+    const splitFields = query.split(",");
+    splitFields.forEach(fieldQuery => {
+        const [field, sortOrd] = fieldQuery.split(":");
+        switch (sortOrd) {
+            case "asc":
+                processedQuery[field] = 1;
+                break;
+            case "desc":
+                processedQuery[field] = -1;
+                break;
+            case undefined:
+                processedQuery[field] = 1;
+                break;
+            default:
+                throw new ValidationError([new Error("Sorting key's value must be either 'asc' or 'desc'")])
+        }
+    });
+    return processedQuery;
 }
 
 export function isEmpty(obj: any) {
