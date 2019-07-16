@@ -132,8 +132,8 @@ export class Entity_API_Impl implements Entity_API {
         const schemas: any = {};
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
-        this.validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas);
         try {
+            this.validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas);
             const { data } = await axios.post(procedure.procedure_callback,
                 {
                     metadata: entity_spec[0],
@@ -147,7 +147,7 @@ export class Entity_API_Impl implements Entity_API {
             return data;
         } catch (err) {
             if (err instanceof ValidationError) {
-                throw new ProcedureInvocationError(err.errors, 500);
+                throw new ProcedureInvocationError(err.errors, 400);
             } else if (err.response) {
                 throw new ProcedureInvocationError([err.response.data], err.response.status)
             } else {
@@ -169,8 +169,8 @@ export class Entity_API_Impl implements Entity_API {
         const schemas: any = {};
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
-        this.validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas);
         try {
+            this.validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas);
             const { data } = await axios.post(procedure.procedure_callback,
                 {
                     input: input
@@ -181,7 +181,7 @@ export class Entity_API_Impl implements Entity_API {
             return data;
         } catch (err) {
             if (err instanceof ValidationError) {
-                throw new ProcedureInvocationError(err.errors, 500);
+                throw new ProcedureInvocationError(err.errors, 400);
             } else {
                 throw new ProcedureInvocationError([err.response.data], err.response.status)
             }
@@ -198,8 +198,8 @@ export class Entity_API_Impl implements Entity_API {
         const schemas: any = {};
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
-        this.validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas);
         try {
+            this.validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas);
             const { data } = await axios.post(procedure.procedure_callback,
                 {
                     input: input
@@ -210,16 +210,10 @@ export class Entity_API_Impl implements Entity_API {
             return data;
         } catch (err) {
             if (err instanceof ValidationError) {
-                console.error(`Cannot invoke procedure '${procedure_name}':`, err)
-                // SHLOMI: TODO: This should bubble up to the provider!
-                throw new ProcedureInvocationError(err.errors, 500);
-            } else if (err.response){
-                console.error(`Cannot invoke procedure '${procedure_name}':`, err.response.data)
+                throw new ProcedureInvocationError(err.errors, 400);
+            } else {
                 throw new ProcedureInvocationError([err.response.data], err.response.status)
-           } else {
-                console.error(`Cannot invoke procedure '${procedure_name}':`, err)
-                throw new ProcedureInvocationError([err], 500)
-           }
+            }
         }
     }
 
@@ -234,6 +228,9 @@ export class Entity_API_Impl implements Entity_API {
         }
         if (isEmpty(extension_structure)) {
             return
+        }
+        if (isEmpty(metadata)) {
+            throw new ValidationError([{"name": "Error", message: "Metadata extension is not specified"}])
         }
         const schemas: any = Object.assign({}, extension_structure);
         this.validator.validate(metadata.extension, Maybe.fromValue(Object.values(extension_structure)[0]), schemas);

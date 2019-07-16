@@ -151,7 +151,7 @@ describe("Procedures tests", () => {
             await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, { input: 5 });
         } catch (err) {
             const res = err.response;
-            expect(res.status).toEqual(500);
+            expect(res.status).toEqual(400);
             expect(res.data.errors.length).toEqual(2);
             expect(res.data.errors[0]).toEqual("x is a required field");
             expect(res.data.errors[1]).toEqual("y is a required field");

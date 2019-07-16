@@ -30,7 +30,7 @@ export class Validator {
             }
             return Maybe.fromValue(res)
         }, () => {
-            if (data !== undefined && data !== null) {
+            if (data !== undefined && data !== null && data !== "" && !(Object.entries(data).length === 0 && data.constructor === Object)) {
                 throw new ValidationError([{
                     name: "Error",
                     message: "Function was expecting output of type void"

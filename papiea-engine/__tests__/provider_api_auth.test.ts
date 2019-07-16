@@ -233,6 +233,7 @@ describe("Provider API auth tests", () => {
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
                     extension: {
+                        owner: "admin@provider",
                         provider_prefix: provider.prefix,
                         is_provider_admin: true
                     }
@@ -240,7 +241,10 @@ describe("Provider API auth tests", () => {
             );
             await providerApi.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
+                    owner: "admin@provider",
+                    provider_prefix: provider.prefix,
                     extension: {
+                        owner: "anotheradmin@provider",
                         provider_prefix: provider.prefix,
                         is_admin: true
                     }
@@ -254,11 +258,12 @@ describe("Provider API auth tests", () => {
         }
     });
 
-    test("Provider-admin should not create s2s key for provider-admin", async done => {
+    test("Provider-admin should not create s2s key with another provider prefix", async done => {
         try {
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
                     extension: {
+                        owner: "admin@provider",
                         provider_prefix: provider.prefix,
                         is_provider_admin: true
                     }
@@ -266,9 +271,11 @@ describe("Provider API auth tests", () => {
             );
             await providerApi.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
+                    owner: "admin@provider",
+                    provider_prefix: provider.prefix,
                     extension: {
-                        provider_prefix: provider.prefix,
-                        is_provider_admin: true
+                        owner: "admin@provider",
+                        provider_prefix: provider.prefix + "1"
                     }
                 }, {
                     headers: { 'Authorization': `Bearer ${s2skey.key}` }
@@ -277,6 +284,165 @@ describe("Provider API auth tests", () => {
             done.fail("Provider-admin should not create s2s key for provider-admin");
         } catch (e) {
             done();
+        }
+    });
+
+    test("Provider-admin should create s2s key for another provider-admin", async done => {
+        try {
+            const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
+                {
+                    extension: {
+                        owner: "admin@provider",
+                        provider_prefix: provider.prefix,
+                        is_provider_admin: true
+                    }
+                }
+            );
+            await providerApi.post(`/${provider.prefix}/${provider.version}/s2skey`,
+                {
+                    owner: "admin@provider",
+                    provider_prefix: provider.prefix,
+                    extension: {
+                        owner: "anotheradmin@provider",
+                        provider_prefix: provider.prefix,
+                        is_provider_admin: true
+                    }
+                }, {
+                    headers: { 'Authorization': `Bearer ${s2skey.key}` }
+                }
+            );
+            done();
+        } catch (e) {
+            done.fail(e);
+        }
+    });
+
+    test("Provider-admin should create s2s key for provider-user", async done => {
+        try {
+            const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
+                {
+                    extension: {
+                        owner: "admin@provider",
+                        provider_prefix: provider.prefix,
+                        is_provider_admin: true
+                    }
+                }
+            );
+            await providerApi.post(`/${provider.prefix}/${provider.version}/s2skey`,
+                {
+                    owner: "admin@provider",
+                    provider_prefix: provider.prefix,
+                    extension: {
+                        owner: "user@provider",
+                        provider_prefix: provider.prefix
+                    }
+                }, {
+                    headers: { 'Authorization': `Bearer ${s2skey.key}` }
+                }
+            );
+            done();
+        } catch (e) {
+            done.fail(e);
+        }
+    });
+
+    test("Provider-admin should not create s2s key for provider-user with provider-user owner", async done => {
+        try {
+            const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
+                {
+                    extension: {
+                        owner: "admin@provider",
+                        provider_prefix: provider.prefix,
+                        is_provider_admin: true
+                    }
+                }
+            );
+            await providerApi.post(`/${provider.prefix}/${provider.version}/s2skey`,
+                {
+                    owner: "user@provider",
+                    provider_prefix: provider.prefix,
+                    extension: {
+                        owner: "user@provider",
+                        provider_prefix: provider.prefix
+                    }
+                }, {
+                    headers: { 'Authorization': `Bearer ${s2skey.key}` }
+                }
+            );
+            done.fail("Provider-admin should not create s2s key for provider-user with provider-user owner");
+        } catch (e) {
+            done();
+        }
+    });
+
+    test("Provider-user should list only his s2s keys", async done => {
+        try {
+            const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
+                {
+                    owner: "user1@provider",
+                    provider_prefix: provider.prefix,
+                    extension: {
+                        owner: "user1@provider",
+                        provider_prefix: provider.prefix
+                    }
+                }
+            );
+            await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
+                {
+                    owner: "user2@provider",
+                    provider_prefix: provider.prefix,
+                    extension: {
+                        owner: "user2@provider",
+                        provider_prefix: provider.prefix
+                    }
+                }
+            );
+            const { data } = await providerApi.get(`/${provider.prefix}/${provider.version}/s2skey`,
+                {
+                    headers: { 'Authorization': `Bearer ${s2skey.key}` }
+                }
+            );
+            expect(data.length).toEqual(1);
+            expect(data[0].owner).toEqual("user1@provider");
+            done();
+        } catch (e) {
+            done.fail(e);
+        }
+    });
+
+    test("Provider-admin should list only his s2s keys not including provider-users", async done => {
+        try {
+            const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
+                {
+                    owner: "admin123@provider",
+                    provider_prefix: provider.prefix,
+                    extension: {
+                        owner: "admin123@provider",
+                        provider_prefix: provider.prefix,
+                        is_provider_admin: true
+                    }
+                }
+            );
+            await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
+                {
+                    owner: "user2@provider",
+                    provider_prefix: provider.prefix,
+                    extension: {
+                        owner: "user2@provider",
+                        provider_prefix: provider.prefix
+                    }
+                }
+            );
+            const { data } = await providerApi.get(`/${provider.prefix}/${provider.version}/s2skey`,
+                {
+                    headers: { 'Authorization': `Bearer ${s2skey.key}` }
+                }
+            );
+            expect(data.length).toEqual(1);
+            expect(data[0].owner).toEqual("admin123@provider");
+            done();
+        } catch (e) {
+            done.fail(e);
         }
     });
 

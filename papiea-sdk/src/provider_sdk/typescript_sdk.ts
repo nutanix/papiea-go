@@ -11,9 +11,11 @@ import * as asyncHandler from "express-async-handler";
 import { Express, RequestHandler } from "express";
 import { Server } from "http";
 import { ProceduralCtx } from "./typescript_sdk_context_impl";
+
 import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, S2S_Key, Key, uuid4 } from "papiea-core";
-import { ValidationError, Validator } from "./typescript_sdk_validation";
+import { Validator } from "./typescript_sdk_validation";
 import { Maybe } from "./typescript_sdk_utils";
+import { InvocationError, ValidationError } from "./typescript_sdk_exceptions";
 
 export class ProviderSdk implements ProviderImpl {
     protected readonly _kind: Kind[];
@@ -177,10 +179,18 @@ export class ProviderSdk implements ProviderImpl {
                 res.json(result);
             } catch (e) {
                 if (e instanceof ValidationError) {
-                    console.error(`Provider procedure ${name} didn't return correct value`, e)
-                    return res.status(422).json(e.mapErr(errors => `Provider procedure ${name} didn't return correct value`))
+                    return res.status(422).json(e.mapErr(() => `Provider procedure ${name} didn't return correct value`))
+                } else if (e instanceof InvocationError) {
+                    return res.status(e.status_code).json({
+                        message: e.message,
+                        stacktrace: e.stack
+                    })
                 }
-                throw new Error("Unable to execute handler");
+                const errors = InvocationError.fromError(500, e);
+                res.status(500).json({
+                    message: errors.message,
+                    stacktrace: errors.stack
+                })
             }
         });
         return this
@@ -400,9 +410,18 @@ export class Kind_Builder {
                 res.json(result);
             } catch (e) {
                 if (e instanceof ValidationError) {
-                    return res.status(422).json(e.mapErr(errors => `Entity procedure '${name}' didn't return correct value`))
+                    return res.status(422).json(e.mapErr(() => `Entity procedure ${name} didn't return correct value`))
+                } else if (e instanceof InvocationError) {
+                    return res.status(e.status_code).json({
+                        message: e.message,
+                        stacktrace: e.stack
+                    })
                 }
-                throw new Error(`Unable to execute handler '${e.message}'`);
+                const errors = InvocationError.fromError(500, e);
+                res.status(500).json({
+                    message: errors.message,
+                    stacktrace: errors.stack
+                })
             }
         });
         return this
@@ -431,9 +450,18 @@ export class Kind_Builder {
                 res.json(result);
             } catch (e) {
                 if (e instanceof ValidationError) {
-                    return res.status(422).json(e.mapErr(errors => `Kind procedure ${name} didn't return correct value`))
+                    return res.status(422).json(e.mapErr(() => `Kind procedure ${name} didn't return correct value`))
+                } else if (e instanceof InvocationError) {
+                    return res.status(e.status_code).json({
+                        message: e.message,
+                        stacktrace: e.stack
+                    })
                 }
-                throw new Error(`Unable to execute handler '${e.message}'`);
+                const errors = InvocationError.fromError(500, e);
+                res.status(500).json({
+                    message: errors.message,
+                    stacktrace: errors.stack
+                })
             }
         });
         return this

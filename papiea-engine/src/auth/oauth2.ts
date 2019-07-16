@@ -62,7 +62,6 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
             redirect_uri: redirect_uri,
             state: queryString.stringify(state),
             scope: "openid",
-            prompt: "login"
         };
         const authorizationUri = oauth2.authorizationCode.authorizeURL(options);
         res.redirect(authorizationUri);
@@ -81,7 +80,7 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
         return res.status(200).json("OK");
     }));
 
-    router.use(url.parse(redirect_uri).path, asyncHandler(async (req, res, next) => {
+    router.use('/provider/auth/callback', asyncHandler(async (req, res, next) => {
         const code = req.query.code;
         const state = queryString.parse(req.query.state);
         const provider: Provider = await providerDb.get_provider(state.provider_prefix, state.provider_version);
