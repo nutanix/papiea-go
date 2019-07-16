@@ -43,7 +43,8 @@ describe("Provider API auth tests", () => {
     const kind_name = provider.kinds[0].name;
     const tenant_uuid = uuid();
 
-    test("Admin should create s2s key for provider-admin", async done => {
+    test("Admin should create s2s key for provider-admin", async () => {
+        expect.hasAssertions();
         try {
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
@@ -58,13 +59,14 @@ describe("Provider API auth tests", () => {
             );
             expect(userInfo.provider_prefix).toEqual(provider.prefix);
             expect(userInfo.is_provider_admin).toBeTruthy();
-            done();
         } catch (e) {
-            done.fail(e);
+            expect(e).toBeUndefined();
+            throw e;
         }
     });
 
-    test("Admin should create s2s key for provider-admin with key provided", async done => {
+    test("Admin should create s2s key for provider-admin with key provided", async () => {
+        expect.hasAssertions();
         try {
             const key = uuid();
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
@@ -82,13 +84,13 @@ describe("Provider API auth tests", () => {
             );
             expect(userInfo.provider_prefix).toEqual(provider.prefix);
             expect(userInfo.is_provider_admin).toBeTruthy();
-            done();
         } catch (e) {
-            done.fail(e);
+            expect(e).toBeUndefined();
+            throw e;
         }
     });
 
-    test("Provider-admin should register and unregister provider", async done => {
+    test("Provider-admin should register and unregister provider", async () => {
         try {
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
@@ -104,13 +106,13 @@ describe("Provider API auth tests", () => {
             await providerApi.delete(`/${provider.prefix}/${provider.version}`, {
                 headers: { 'Authorization': `Bearer ${s2skey.key}` }
             });
-            done();
         } catch (e) {
-            done.fail(e);
+            expect(e).toBeUndefined();
         }
     });
 
-    test("Provider-admin should not register provider with another prefix", async done => {
+    test("Provider-admin should not register provider with another prefix", async () => {
+        expect.hasAssertions();
         try {
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
@@ -123,13 +125,13 @@ describe("Provider API auth tests", () => {
             await providerApi.post('/', provider, {
                 headers: { 'Authorization': `Bearer ${s2skey.key}` }
             });
-            done.fail("Provider-admin should not register provider with another prefix");
+            throw new Error("Provider-admin should not register provider with another prefix");
         } catch (e) {
-            done();
+            expect(e).toBeDefined();
         }
     });
 
-    test("Provider-admin should update status", async done => {
+    test("Provider-admin should update status", async () => {
         try {
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
@@ -170,13 +172,13 @@ describe("Provider API auth tests", () => {
             await providerApi.delete(`/${provider.prefix}/${provider.version}`, {
                 headers: { 'Authorization': `Bearer ${s2skey.key}` }
             });
-            done();
         } catch (e) {
-            done.fail(e);
+            expect(e).toBeUndefined();
         }
     });
 
-    test("Provider-admin should not update status for provider with another prefix", async done => {
+    test("Provider-admin should not update status for provider with another prefix", async () => {
+        expect.hasAssertions();
         try {
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
@@ -222,13 +224,14 @@ describe("Provider API auth tests", () => {
             }, {
                     headers: { 'Authorization': `Bearer ${data.s2skey.key}` }
                 });
-            done.fail("Provider-admin should not update status for provider with another prefix");
+            throw new Error("Provider-admin should not update status for provider with another prefix");
         } catch (e) {
-            done();
+            expect(e).toBeDefined();
         }
     });
 
-    test("Provider-admin should not create s2s key for admin", async done => {
+    test("Provider-admin should not create s2s key for admin", async () => {
+        expect.hasAssertions();
         try {
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
@@ -252,13 +255,14 @@ describe("Provider API auth tests", () => {
                     headers: { 'Authorization': `Bearer ${s2skey.key}` }
                 }
             );
-            done.fail("Provider-admin should not create s2s key for admin");
+            throw new Error("Provider-admin should not create s2s key for admin");
         } catch (e) {
-            done();
+            expect(e).toBeDefined();
         }
     });
 
-    test("Provider-admin should not create s2s key with another provider prefix", async done => {
+    test("Provider-admin should not create s2s key with another provider prefix", async () => {
+        expect.hasAssertions();
         try {
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
@@ -281,13 +285,13 @@ describe("Provider API auth tests", () => {
                     headers: { 'Authorization': `Bearer ${s2skey.key}` }
                 }
             );
-            done.fail("Provider-admin should not create s2s key for provider-admin");
+            throw new Error("Provider-admin should not create s2s key for provider-admin");
         } catch (e) {
-            done();
+            expect(e).toBeDefined();
         }
     });
 
-    test("Provider-admin should create s2s key for another provider-admin", async done => {
+    test("Provider-admin should create s2s key for another provider-admin", async () => {
         try {
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
@@ -311,13 +315,12 @@ describe("Provider API auth tests", () => {
                     headers: { 'Authorization': `Bearer ${s2skey.key}` }
                 }
             );
-            done();
         } catch (e) {
-            done.fail(e);
+            expect(e).toBeUndefined();
         }
     });
 
-    test("Provider-admin should create s2s key for provider-user", async done => {
+    test("Provider-admin should create s2s key for provider-user", async () => {
         try {
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
@@ -340,13 +343,13 @@ describe("Provider API auth tests", () => {
                     headers: { 'Authorization': `Bearer ${s2skey.key}` }
                 }
             );
-            done();
         } catch (e) {
-            done.fail(e);
+            expect(e).toBeUndefined();
         }
     });
 
-    test("Provider-admin should not create s2s key for provider-user with provider-user owner", async done => {
+    test("Provider-admin should not create s2s key for provider-user with provider-user owner", async () => {
+        expect.hasAssertions();
         try {
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
@@ -369,13 +372,14 @@ describe("Provider API auth tests", () => {
                     headers: { 'Authorization': `Bearer ${s2skey.key}` }
                 }
             );
-            done.fail("Provider-admin should not create s2s key for provider-user with provider-user owner");
+            throw new Error("Provider-admin should not create s2s key for provider-user with provider-user owner");
         } catch (e) {
-            done();
+            expect(e).toBeDefined();
         }
     });
 
-    test("Provider-user should list only his s2s keys", async done => {
+    test("Provider-user should list only his s2s keys", async () => {
+        expect.hasAssertions();
         try {
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
@@ -404,13 +408,13 @@ describe("Provider API auth tests", () => {
             );
             expect(data.length).toEqual(1);
             expect(data[0].owner).toEqual("user1@provider");
-            done();
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Provider-admin should list only his s2s keys not including provider-users", async done => {
+    test("Provider-admin should list only his s2s keys not including provider-users", async () => {
+        expect.hasAssertions();
         try {
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
@@ -440,9 +444,8 @@ describe("Provider API auth tests", () => {
             );
             expect(data.length).toEqual(1);
             expect(data[0].owner).toEqual("admin123@provider");
-            done();
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 

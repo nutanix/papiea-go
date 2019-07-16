@@ -199,7 +199,8 @@ describe("Entity API auth tests", () => {
         await entityApi.delete(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}`);
     });
 
-    test("Get user info", async done => {
+    test("Get user info", async () => {
+        expect.hasAssertions();
         try {
             const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
             const { data } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/user_info`,
@@ -208,13 +209,13 @@ describe("Entity API auth tests", () => {
             expect(data.owner).toEqual("alice");
             expect(data.tenant).toEqual(tenant_uuid);
             expect(data.provider_prefix).toEqual(provider.prefix);
-            done();
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Login from SPA", async done => {
+    test("Login from SPA", async () => {
+        expect.hasAssertions();
         try {
             const hostname = "127.0.0.1";
             const port = 9003;
@@ -236,13 +237,13 @@ describe("Entity API auth tests", () => {
             );
             expect(data.owner).toEqual("alice");
             expect(data.tenant).toEqual(tenant_uuid);
-            done();
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Get entity should raise permission denied", async done => {
+    test("Get entity should raise permission denied", async () => {
+        expect.hasAssertions();
         try {
             const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
             await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
@@ -251,14 +252,13 @@ describe("Entity API auth tests", () => {
             await entityApi.get(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}`,
                 { headers: { 'Authorization': 'Bearer ' + token } }
             );
-            done.fail();
         } catch (e) {
             expect(e.response.status).toEqual(403);
-            done();
         }
     });
 
-    test("Get entity should succeed after policy set", async done => {
+    test("Get entity should succeed after policy set", async () => {
+        expect.hasAssertions();
         try {
             const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
             await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
@@ -269,57 +269,61 @@ describe("Entity API auth tests", () => {
             );
             expect(metadata).toEqual(entity_metadata);
             expect(spec).toEqual(entity_spec);
-            done();
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Get entity of another provider should raise unauthorized", async done => {
+    test("Get entity of another provider should raise unauthorized", async () => {
+        expect.hasAssertions();
         try {
             const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
             await entityApi.get(`/${provider.prefix}1/${provider.version}/${kind_name}/${entity_metadata.uuid}`,
                 { headers: { 'Authorization': 'Bearer ' + token } }
             );
-            done.fail();
         } catch (e) {
             expect(e.response.status).toEqual(401);
-            done();
         }
     });
 
-    test("Entity procedure should receive headers", async (done) => {
-        let headers: any = {};
-        const server = http.createServer((req, res) => {
-            if (req.method == 'POST') {
-                Object.assign(headers, req.headers);
-                let body = '';
-                req.on('data', function (data) {
-                    body += data;
-                });
-                req.on('end', function () {
-                    const post = JSON.parse(body);
-                    res.statusCode = 200;
-                    res.setHeader('Content-Type', 'text/plain');
-                    res.end(JSON.stringify(post.spec));
-                    server.close();
-                });
-            }
-        });
-        server.listen(procedureCallbackPort, procedureCallbackHostname, () => {
-            console.log(`Server running at http://${procedureCallbackHostname}:${procedureCallbackPort}/`);
-        });
-        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
-        await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
-            policy: `p, alice, owner, ${kind_name}, *, allow`
-        });
-        await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}/procedure/moveX`, { input: 5 },
-            { headers: { 'Authorization': 'Bearer ' + token } }
-        );
-        done();
+    test("Entity procedure should receive headers", async () => {
+        expect.hasAssertions();
+        try {
+            let headers: any = {};
+            const server = http.createServer((req, res) => {
+                if (req.method == 'POST') {
+                    Object.assign(headers, req.headers);
+                    let body = '';
+                    req.on('data', function (data) {
+                        body += data;
+                    });
+                    req.on('end', function () {
+                        const post = JSON.parse(body);
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'text/plain');
+                        res.end(JSON.stringify(post.spec));
+                        server.close();
+                    });
+                }
+            });
+            server.listen(procedureCallbackPort, procedureCallbackHostname, () => {
+                console.log(`Server running at http://${ procedureCallbackHostname }:${ procedureCallbackPort }/`);
+            });
+            const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`);
+            await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+                policy: `p, alice, owner, ${ kind_name }, *, allow`
+            });
+            const result = await entityApi.post(`/${ provider.prefix }/${ provider.version }/${ kind_name }/${ entity_metadata.uuid }/procedure/moveX`, { input: 5 },
+                { headers: { 'Authorization': 'Bearer ' + token } }
+            );
+            expect(result);
+        } catch (e) {
+
+        }
     });
 
-    test("Create, get and inacivate s2s key", async done => {
+    test("Create, get and inacivate s2s key", async () => {
+        expect.hasAssertions();
         try {
             const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
             const { data: userInfo } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/user_info`,
@@ -354,16 +358,16 @@ describe("Entity API auth tests", () => {
                 await providerApi.get(`/${provider.prefix}/${provider.version}/auth/user_info`,
                     { headers: { 'Authorization': 'Bearer ' + s2skey.key } }
                 );
-                done.fail("Key hasn't been inactivated");
+                throw new Error("Key hasn't been inactivated");
             } catch (e) {
-                done();
+                expect(e).toBeDefined();
             }
         } catch (e) {
-            done.fail(e);
         }
     });
 
-    test("Get entity with s2skey should succeed", async done => {
+    test("Get entity with s2skey should succeed", async () => {
+        expect.hasAssertions();
         try {
             const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
             await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
@@ -384,13 +388,12 @@ describe("Entity API auth tests", () => {
             );
             expect(metadata).toEqual(entity_metadata);
             expect(spec).toEqual(entity_spec);
-            done();
         } catch (e) {
-            done.fail(e);
         }
     });
 
-    test("Create s2s key with another owner or provider should fail", async done => {
+    test("Create s2s key with another owner or provider should fail", async () => {
+        expect.hasAssertions();
         try {
             const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
             const { data: userInfo } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/user_info`,
@@ -404,7 +407,7 @@ describe("Entity API auth tests", () => {
                     },
                     { headers: { 'Authorization': 'Bearer ' + token } }
                 );
-                done.fail("Key created with another owner");
+                throw new Error("Key created with another owner");
             } catch (e) {
             }
             try {
@@ -415,16 +418,17 @@ describe("Entity API auth tests", () => {
                     },
                     { headers: { 'Authorization': 'Bearer ' + token } }
                 );
-                done.fail("Key created with another provider");
+                throw new Error("Key created with another provider");
             } catch (e) {
+                expect(e).toBeDefined();
             }
-            done();
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Call entity procedure without permission should fail", async done => {
+    test("Call entity procedure without permission should fail", async () => {
+        expect.hasAssertions();
         try {
             const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
             await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
@@ -433,14 +437,14 @@ describe("Entity API auth tests", () => {
             await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}/procedure/moveX`, { input: 5 },
                 { headers: { 'Authorization': 'Bearer ' + token } }
             );
-            done.fail("Call procedure without permission should fail");
+            throw new Error("Call procedure without permission should fail");
         } catch (e) {
             expect(e.response.status).toEqual(403);
-            done();
         }
     });
 
-    test("Call entity procedure with permission should succeed", async done => {
+    test("Call entity procedure with permission should succeed", async () => {
+        expect.hasAssertions();
         try {
             const server = http.createServer((req, res) => {
                 if (req.method == 'POST') {
@@ -464,16 +468,17 @@ describe("Entity API auth tests", () => {
             await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
                 policy: `p, alice, owner, ${kind_name}, read, allow\np, alice, owner, ${kind_name}, call_movex, allow`
             });
-            await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}/procedure/moveX`, { input: 5 },
+            const result = await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}/procedure/moveX`, { input: 5 },
                 { headers: { 'Authorization': 'Bearer ' + token } }
             );
-            done();
+            expect(result);
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Call kind procedure by provider-user should fail", async done => {
+    test("Call kind procedure by provider-user should fail", async () => {
+        expect.hasAssertions();
         try {
             const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
             await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
@@ -482,14 +487,14 @@ describe("Entity API auth tests", () => {
             await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/moveX`, { input: 5 },
                 { headers: { 'Authorization': 'Bearer ' + token } }
             );
-            done.fail("Call procedure without permission should fail");
+            throw new Error("Call procedure without permission should fail");
         } catch (e) {
             expect(e.response.status).toEqual(403);
-            done();
         }
     });
 
-    test("Call kind procedure by provider-admin should succeed", async done => {
+    test("Call kind procedure by provider-admin should succeed", async () => {
+        expect.hasAssertions();
         try {
             const server = http.createServer((req, res) => {
                 if (req.method == 'POST') {
@@ -521,16 +526,17 @@ describe("Entity API auth tests", () => {
                     }
                 }
             );
-            await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/computeGeolocation`, { input: "2" },
+            const result = await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/computeGeolocation`, { input: "2" },
                 { headers: { 'Authorization': 'Bearer ' + s2skey.key } }
             );
-            done();
+            expect(result).toBeDefined();
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Call provider procedure by provider-user should fail", async done => {
+    test("Call provider procedure by provider-user should fail", async () => {
+        expect.hasAssertions();
         try {
             const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
             await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
@@ -544,14 +550,14 @@ describe("Entity API auth tests", () => {
             },
                 { headers: { 'Authorization': 'Bearer ' + token } }
             );
-            done.fail("Call procedure without permission should fail");
+            throw new Error("Call procedure without permission should fail");
         } catch (e) {
             expect(e.response.status).toEqual(403);
-            done();
         }
     });
 
-    test("Call provider procedure by provider-admin should succeed", async done => {
+    test("Call provider procedure by provider-admin should succeed", async () => {
+        expect.hasAssertions();
         try {
             const server = http.createServer((req, res) => {
                 if (req.method == 'POST') {
@@ -584,7 +590,7 @@ describe("Entity API auth tests", () => {
                     }
                 }
             );
-            await entityApi.post(`/${provider.prefix}/${provider.version}/procedure/computeSum`, {
+            const result = await entityApi.post(`/${provider.prefix}/${provider.version}/procedure/computeSum`, {
                 input: {
                     "a": 5,
                     "b": 5
@@ -592,13 +598,14 @@ describe("Entity API auth tests", () => {
             },
                 { headers: { 'Authorization': 'Bearer ' + s2skey.key } }
             );
-            done();
+            expect(result).toBeDefined();
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Call kind procedure by provider-admin of different provider should fail", async done => {
+    test("Call kind procedure by provider-admin of different provider should fail", async () => {
+        expect.hasAssertions();
         try {
             // There should be some policy in place
             await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
@@ -615,11 +622,10 @@ describe("Entity API auth tests", () => {
             await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/moveX`, { input: 5 },
                 { headers: { 'Authorization': 'Bearer ' + s2skey.key } }
             );
-            done.fail("Call procedure without permission should fail");
+            throw new Error("Call procedure without permission should fail");
         } catch (e) {
             // Unauthorized bacause provider-admin is authorized against different provider
             expect(e.response.status).toEqual(401);
-            done();
         }
     });
 });

@@ -23,7 +23,7 @@ export interface Status_DB {
     // We could come up with command such as greater-than etc at some
     // later point, or we could use a similar dsl to mongodb search
     // dsl.
-    list_status(fields_map: any, sortParams: SortParams): Promise<([Metadata, Status])[]>;
+    list_status(fields_map: any, sortParams?: SortParams): Promise<([Metadata, Status])[]>;
 
     delete_status(entity_ref: Entity_Reference): Promise<void>
 

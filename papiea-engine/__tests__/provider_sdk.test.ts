@@ -74,44 +74,40 @@ describe("Provider Sdk tests", () => {
             done();
         }
     });
-    test("Provider without version should fail to register", async (done) => {
+    test("Provider without version should fail to register", async () => {
+        expect.hasAssertions();
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
             sdk.new_kind(location_yaml);
             sdk.prefix("test_provider");
             await sdk.register();
             sdk.server.close();
-            done.fail()
         } catch (err) {
             expect(err.message).toBe("Malformed provider description. Missing: version");
-            done();
-            return
         }
     });
-    test("Provider without kind should fail to register", async (done) => {
+    test("Provider without kind should fail to register", async () => {
+        expect.hasAssertions();
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
             sdk.prefix("test_provider");
             sdk.version(provider_version);
             await sdk.register();
             sdk.server.close();
-            done.fail()
         } catch (err) {
             expect(err.message).toBe("Malformed provider description. Missing: kind");
-            done();
         }
     });
-    test("Provider without prefix should fail to register", async (done) => {
+    test("Provider without prefix should fail to register", async () => {
+        expect.hasAssertions();
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
             sdk.new_kind(location_yaml);
             sdk.version(provider_version);
             await sdk.register();
             sdk.server.close();
-            done.fail()
         } catch (err) {
             expect(err.message).toBe("Malformed provider description. Missing: prefix");
-            done();
         }
     });
     test("Add multiple kinds shouldn't fail", (done) => {
@@ -135,8 +131,7 @@ describe("Provider Sdk tests", () => {
         expect(sdk.add_kind(location_kind_manager.kind)).toBeNull();
         done();
     });
-    test("Provider should be created on papiea", async (done) => {
-        jest.setTimeout(10000);
+    test("Provider should be created on papiea", async () => {
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         sdk.new_kind(location_yaml);
         sdk.version(provider_version);
@@ -147,11 +142,11 @@ describe("Provider Sdk tests", () => {
                 sdk.server.close()
             } catch(e) {}
         } catch (e) {
-            done.fail(e)
+            expect(e).toBeUndefined();
+            throw e;
         }
-        done();
     });
-    test("Provider with procedures should be created on papiea", async (done) => {
+    test("Provider with procedures should be created on papiea", async () => {
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
@@ -166,14 +161,15 @@ describe("Provider Sdk tests", () => {
         });
         try {
             await sdk.register();
-            done();
         } catch (e) {
-            done.fail(e)
+            expect(e).toBeUndefined();
+            throw e;
         } finally {
             sdk.server.close();
         }
     });
-    test("Entity should be allowed to be modified using procedures defined using provider SDK", async (done) => {
+    test("Entity should be allowed to be modified using procedures defined using provider SDK", async () => {
+        expect.hasAssertions();
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
             const location = sdk.new_kind(location_yaml);
@@ -200,14 +196,14 @@ describe("Provider Sdk tests", () => {
             const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`);
             expect(updatedEntity.data.metadata.spec_version).toEqual(2);
             expect(updatedEntity.data.spec.x).toEqual(15);
-            done();
         } catch (e) {
-            done.fail(e);
+            throw e;
         } finally {
             sdk.server.close();
         }
     });
-    test("Malformed handler registered on sdk should fail", async (done) => {
+    test("Malformed handler registered on sdk should fail", async () => {
+        expect.hasAssertions();
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
@@ -229,17 +225,16 @@ describe("Provider Sdk tests", () => {
             try {
                 const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, { input: 5 });
             } catch (e) {
-                done();
+                expect(e).toBeDefined();
             }
         } catch (e) {
-            console.error('Test failed with', e)
-            done.fail()
+            expect(e).toBeUndefined();
         } finally {
             sdk.server.close();
         }
     });
 
-    test("Registering Provider procedures without prefix already set should fail", async (done) => {
+    test("Registering Provider procedures without prefix already set should fail", async () => {
         expect.assertions(1);
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
@@ -255,11 +250,10 @@ describe("Provider Sdk tests", () => {
             });
         } catch (e) {
             expect(e.message).toBe("Provider prefix is not set");
-            done();
         }
     });
 
-    test("Provider with kind level procedures should be created on papiea", async (done) => {
+    test("Provider with kind level procedures should be created on papiea", async () => {
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
@@ -285,15 +279,16 @@ describe("Provider Sdk tests", () => {
 
         try {
             await sdk.register();
-            done();
         } catch (e) {
-            done.fail(e)
+            expect(e).toBeUndefined();
+            throw e;
         } finally {
             sdk.server.close();
         }
     });
 
-    test("Provider with kind level procedures should be executed", async (done) => {
+    test("Provider with kind level procedures should be executed", async () => {
+        expect.hasAssertions();
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
@@ -321,15 +316,15 @@ describe("Provider Sdk tests", () => {
         try {
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/procedure/computeGeolocation`, { input: "2" });
             expect(res.data).toBe("us.west.2");
-            done();
         } catch (e) {
-            done.fail(e)
+            expect(e).toBeUndefined();
+            throw e;
         } finally {
             sdk.server.close();
         }
     });
 
-    test("Provider with provider level procedures should be created on papiea", async (done) => {
+    test("Provider with provider level procedures should be created on papiea", async () => {
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
@@ -342,13 +337,6 @@ describe("Provider Sdk tests", () => {
             });
             return res.data.spec;
         });
-        const proceduralSignatureForProvider: Procedural_Signature = {
-            name: "computeSum",
-            argument: loadYaml("./procedure_sum_input.yml"),
-            result: loadYaml("./procedure_sum_output.yml"),
-            execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: procedure_callback
-        };
         sdk.provider_procedure("computeSum",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
@@ -360,15 +348,15 @@ describe("Provider Sdk tests", () => {
         );
         try {
             await sdk.register();
-            done();
         } catch (e) {
-            done.fail(e)
+            expect(e).toBeUndefined();
         } finally {
             sdk.server.close();
         }
     });
 
-    test("Provider with provider level procedures should be executed", async (done) => {
+    test("Provider with provider level procedures should be executed", async () => {
+        expect.hasAssertions();
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
@@ -394,15 +382,16 @@ describe("Provider Sdk tests", () => {
         try {
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { input: { "a": 5, "b": 5 } });
             expect(res.data).toBe(10);
-            done();
         } catch (e) {
-            done.fail(e)
+            expect(e).toBeUndefined();
+            throw e;
         } finally {
             sdk.server.close();
         }
     });
 
-    test("Provider with provider level procedures should fail validation if wrong type is returned", async (done) => {
+    test("Provider with provider level procedures should fail validation if wrong type is returned", async () => {
+        expect.hasAssertions();
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
@@ -427,17 +416,15 @@ describe("Provider Sdk tests", () => {
         try {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { input: { "a": 5, "b": 5 } });
-            done.fail();
         } catch (e) {
             expect(e.response.data.errors[0].msg).toBe('Provider procedure computeSum didn\'t return correct value');
             expect(e.response.data.errors[0].errors).not.toBeUndefined();
-            done();
         } finally {
             sdk.server.close();
         }
     });
 
-    test("Provider with provider level procedures should be allowed to be created without validation scheme", async (done) => {
+    test("Provider with provider level procedures should be allowed to be created without validation scheme", async () => {
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
@@ -453,16 +440,15 @@ describe("Provider Sdk tests", () => {
         try {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumWithNoValidation`, { input: {} });
-            done();
         } catch (e) {
-            console.log(e.response.data);
-            done.fail(e);
+            expect(e).toBeUndefined()
         } finally {
             sdk.server.close();
         }
     });
 
-    test("Provider with provider level procedures should return error if the return type is not void", async (done) => {
+    test("Provider with provider level procedures should return error if the return type is not void", async () => {
+        expect.hasAssertions();
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
@@ -479,16 +465,15 @@ describe("Provider Sdk tests", () => {
         try {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumWithNoValidation`, { input: { "a": 5, "b": 5 } });
-            done.fail();
         } catch (e) {
             expect(e.response.data.errors[0]).toBe('Function was expecting output of type void');
-            done();
         } finally {
             sdk.server.close();
         }
     });
 
-    test("Provider with provider level procedures throws error inside procedure", async (done) => {
+    test("Provider with provider level procedures throws error inside procedure", async () => {
+        expect.hasAssertions();
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
@@ -505,11 +490,9 @@ describe("Provider Sdk tests", () => {
         try {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumThrowsError`, { input: { "a": 5, "b": 5 } });
-            done.fail();
         } catch (e) {
             expect(e.response.data.errors[0].message).toBe("My custom error");
             expect(e.response.data.errors[0].stacktrace).not.toBeUndefined();
-            done();
         } finally {
             sdk.server.close();
         }

@@ -62,21 +62,21 @@ describe("API Docs Tests", () => {
 
     const providerDbMock = new Provider_DB_Mock();
     const apiDocsGenerator = new ApiDocsGenerator(providerDbMock);
-    test("Validate API Docs agains OpenAPI spec", async (done) => {
+    test("Validate API Docs agains OpenAPI spec", async () => {
+        expect.hasAssertions();
         try {
             const apiDoc = await apiDocsGenerator.getApiDocs();
             const apiDocJson = JSON.stringify(apiDoc);
             writeFileSync("api-docs.json", apiDocJson);
             const api = await validate("api-docs.json");
             expect(api.info.title).toEqual("Swagger Papiea");
-            done();
         } catch (err) {
-            done.fail(err);
         } finally {
             unlinkSync("api-docs.json");
         }
     });
-    test("API Docs should contain paths for CRUD", async (done) => {
+    test("API Docs should contain paths for CRUD", async () => {
+        expect.hasAssertions();
         try {
             const providerPrefix = providerDbMock.provider.prefix;
             const entityName = providerDbMock.provider.kinds[0].name;
@@ -91,12 +91,12 @@ describe("API Docs Tests", () => {
             expect(Object.keys(kindEntityPath)).toContain("get");
             expect(Object.keys(kindEntityPath)).toContain("delete");
             expect(Object.keys(kindEntityPath)).toContain("put");
-            done();
         } catch (err) {
-            done.fail(err);
+            throw err;
         }
     });
-    test("API Docs should contain Location scheme", async (done) => {
+    test("API Docs should contain Location scheme", async () => {
+        expect.hasAssertions();
         try {
             const apiDoc = await apiDocsGenerator.getApiDocs();
             const entityName = providerDbMock.provider.kinds[0].name;
@@ -128,9 +128,8 @@ describe("API Docs Tests", () => {
                     }
                 }
             });
-            done();
         } catch (err) {
-            done.fail(err);
+            throw err;
         }
     });
     test("API Docs should be accessible by the url", done => {
@@ -139,7 +138,8 @@ describe("API Docs Tests", () => {
 });
 
 describe("API docs test entity", () => {
-    test("Provider with procedures generates correct openAPI spec", async done => {
+    test("Provider with procedures generates correct openAPI spec", async () => {
+        expect.hasAssertions();
         const procedure_id = "computeSumWithValidation";
         const proceduralSignatureForProvider: Procedural_Signature = {
             name: "computeSumWithValidation",
@@ -175,14 +175,14 @@ describe("API docs test entity", () => {
                 .content["application/json"]
                 .schema["$ref"]).toEqual(`#/components/schemas/SumOutput`);
 
-            done();
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 
-    test("Provider with procedures generates correct openAPI emitting all variables without 'x-papiea' - 'status_only' property", async done => {
+    test("Provider with procedures generates correct openAPI emitting all variables without 'x-papiea' - 'status_only' property", async () => {
         try {
+            expect.hasAssertions();
             const provider = new ProviderBuilder("provider_include_all_props").withVersion("0.1.0").withKinds().build();
             const providerDbMock = new Provider_DB_Mock(provider);
             const apiDocsGenerator = new ApiDocsGenerator(providerDbMock);
@@ -225,13 +225,13 @@ describe("API docs test entity", () => {
                     }
                 }
             });
-            done();
         } catch (err) {
-            done.fail(err);
+            throw err;
         }
     });
 
-    test("Provider with procedures that have no validation generate correct open api docs", async done => {
+    test("Provider with procedures that have no validation generate correct open api docs", async () => {
+        expect.hasAssertions();
         const procedure_id = "computeSumNoValidation";
         const proceduralSignatureForProvider: Procedural_Signature = {
             name: "computeSumNoValidation",
@@ -266,10 +266,8 @@ describe("API docs test entity", () => {
                 .responses["200"]
                 .content["application/json"]
                 .schema["$ref"]).toEqual(`#/components/schemas/Nothing`);
-
-            done();
         } catch (e) {
-            done.fail(e);
+            throw e;
         }
     });
 });
