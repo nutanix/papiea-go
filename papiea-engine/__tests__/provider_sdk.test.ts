@@ -137,10 +137,7 @@ describe("Provider Sdk tests", () => {
         sdk.version(provider_version);
         sdk.prefix("location_provider");
         await sdk.register();
-        try {
-            sdk.server.close()
-        } catch (e) {
-        }
+        sdk.server.close()
     });
     test("Provider with procedures should be created on papiea", async () => {
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
@@ -157,9 +154,6 @@ describe("Provider Sdk tests", () => {
         });
         try {
             await sdk.register();
-        } catch (e) {
-            expect(e).toBeUndefined();
-            throw e;
         } finally {
             sdk.server.close();
         }
@@ -192,8 +186,6 @@ describe("Provider Sdk tests", () => {
             const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`);
             expect(updatedEntity.data.metadata.spec_version).toEqual(2);
             expect(updatedEntity.data.spec.x).toEqual(15);
-        } catch (e) {
-            throw e;
         } finally {
             sdk.server.close();
         }
