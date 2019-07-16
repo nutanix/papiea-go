@@ -177,17 +177,13 @@ describe("Procedures tests", () => {
         server.listen(port, hostname, () => {
             console.log(`Server running at http://${hostname}:${port}/`);
         });
-        try {
-            const res: any = await entityApi.post(`/${provider.prefix}/${provider.version}/procedure/computeSum`, {
-                input: {
-                    "a": 5,
-                    "b": 5
-                }
-            });
-            expect(res.data).toBe(10);
-        } catch (e) {
-            throw e;
-        }
+        const res: any = await entityApi.post(`/${ provider.prefix }/${ provider.version }/procedure/computeSum`, {
+            input: {
+                "a": 5,
+                "b": 5
+            }
+        });
+        expect(res.data).toBe(10);
 
     });
 

@@ -88,18 +88,15 @@ describe("MongoDb tests", () => {
         const specDb: Spec_DB = await connection.get_spec_db();
         const entity_ref: Entity_Reference = { uuid: entityA_uuid, kind: "test" };
         const res = await specDb.get_spec(entity_ref);
-        try {
-            expect(res).not.toBeNull();
-            if (res === null) {
-                throw new Error("Entity without spec");
-            }
-            const [metadata, spec] = res;
-            expect(metadata.uuid).toEqual(entity_ref.uuid);
-            expect(metadata.created_at).not.toBeNull();
-            expect(metadata.deleted_at).toBeFalsy();
-            expect(spec.a).toEqual("A1");
-        } catch (e) {
+        expect(res).not.toBeNull();
+        if (res === null) {
+            throw new Error("Entity without spec");
         }
+        const [metadata, spec] = res;
+        expect(metadata.uuid).toEqual(entity_ref.uuid);
+        expect(metadata.created_at).not.toBeNull();
+        expect(metadata.deleted_at).toBeFalsy();
+        expect(spec.a).toEqual("A1");
     });
 
     test("Get Spec for non existing entity should fail", async () => {
@@ -150,16 +147,13 @@ describe("MongoDb tests", () => {
         const statusDb: Status_DB = await connection.get_status_db();
         const entity_ref: Entity_Reference = { uuid: entityA_uuid, kind: "test" };
         const res = await statusDb.get_status(entity_ref);
-        try {
-            expect(res).not.toBeNull();
-            if (res === null) {
-                throw new Error("Entity without status");
-            }
-            const [metadata, status] = res;
-            expect(metadata.uuid).toEqual(entity_ref.uuid);
-            expect(status.a).toEqual("A1");
-        } catch (e) {
+        expect(res).not.toBeNull();
+        if (res === null) {
+            throw new Error("Entity without status");
         }
+        const [metadata, status] = res;
+        expect(metadata.uuid).toEqual(entity_ref.uuid);
+        expect(status.a).toEqual("A1");
     });
 
     test("Partially update Status", async () => {
@@ -169,17 +163,14 @@ describe("MongoDb tests", () => {
         const initial_status: Status = { b: "A3" };
         await statusDb.update_status(entity_ref, initial_status);
         const res = await statusDb.get_status(entity_ref);
-        try {
-            expect(res).not.toBeNull();
-            if (res === null) {
-                throw new Error("Entity without status");
-            }
-            const [metadata, status] = res;
-            expect(metadata.uuid).toEqual(entity_ref.uuid);
-            expect(status.a).toEqual("A1");
-            expect(status.b).toEqual("A3");
-        } catch (e) {
+        expect(res).not.toBeNull();
+        if (res === null) {
+            throw new Error("Entity without status");
         }
+        const [metadata, status] = res;
+        expect(metadata.uuid).toEqual(entity_ref.uuid);
+        expect(status.a).toEqual("A1");
+        expect(status.b).toEqual("A3");
     });
 
     test("Get Status for non existing entity should fail", async () => {
