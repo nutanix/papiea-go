@@ -1,6 +1,6 @@
 {
   "name": "papiea-core",
-  "version": "1.0.44",
+  "version": "1.0.49",
   "description": "Core 'header' files for papiea",
   "main": "build/core.js",
   "scripts": {
