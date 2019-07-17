@@ -62,76 +62,66 @@ describe("API Docs Tests", () => {
 
     const providerDbMock = new Provider_DB_Mock();
     const apiDocsGenerator = new ApiDocsGenerator(providerDbMock);
-    test("Validate API Docs agains OpenAPI spec", async (done) => {
+    test("Validate API Docs agains OpenAPI spec", async () => {
+        expect.hasAssertions();
         try {
             const apiDoc = await apiDocsGenerator.getApiDocs();
             const apiDocJson = JSON.stringify(apiDoc);
             writeFileSync("api-docs.json", apiDocJson);
             const api = await validate("api-docs.json");
             expect(api.info.title).toEqual("Swagger Papiea");
-            done();
-        } catch (err) {
-            done.fail(err);
         } finally {
             unlinkSync("api-docs.json");
         }
     });
-    test("API Docs should contain paths for CRUD", async (done) => {
-        try {
-            const providerPrefix = providerDbMock.provider.prefix;
-            const entityName = providerDbMock.provider.kinds[0].name;
-            const providerVersion = providerDbMock.provider.version;
-            const apiDoc = await apiDocsGenerator.getApiDocs();
-            expect(Object.keys(apiDoc.paths)).toContain(`/services/${ providerPrefix }/${ providerVersion }/${ entityName }`);
-            const kindPath = apiDoc.paths[`/services/${ providerPrefix }/${ providerVersion }/${ entityName }`];
-            expect(Object.keys(kindPath)).toContain("get");
-            expect(Object.keys(kindPath)).toContain("post");
-            expect(Object.keys(apiDoc.paths)).toContain(`/services/${ providerPrefix }/${ providerVersion }/${ entityName }/{uuid}`);
-            const kindEntityPath = apiDoc.paths[`/services/${ providerPrefix }/${ providerVersion }/${ entityName }/{uuid}`];
-            expect(Object.keys(kindEntityPath)).toContain("get");
-            expect(Object.keys(kindEntityPath)).toContain("delete");
-            expect(Object.keys(kindEntityPath)).toContain("put");
-            done();
-        } catch (err) {
-            done.fail(err);
-        }
+    test("API Docs should contain paths for CRUD", async () => {
+        expect.hasAssertions();
+        const providerPrefix = providerDbMock.provider.prefix;
+        const entityName = providerDbMock.provider.kinds[0].name;
+        const providerVersion = providerDbMock.provider.version;
+        const apiDoc = await apiDocsGenerator.getApiDocs();
+        expect(Object.keys(apiDoc.paths)).toContain(`/services/${ providerPrefix }/${ providerVersion }/${ entityName }`);
+        const kindPath = apiDoc.paths[`/services/${ providerPrefix }/${ providerVersion }/${ entityName }`];
+        expect(Object.keys(kindPath)).toContain("get");
+        expect(Object.keys(kindPath)).toContain("post");
+        expect(Object.keys(apiDoc.paths)).toContain(`/services/${ providerPrefix }/${ providerVersion }/${ entityName }/{uuid}`);
+        const kindEntityPath = apiDoc.paths[`/services/${ providerPrefix }/${ providerVersion }/${ entityName }/{uuid}`];
+        expect(Object.keys(kindEntityPath)).toContain("get");
+        expect(Object.keys(kindEntityPath)).toContain("delete");
+        expect(Object.keys(kindEntityPath)).toContain("put");
     });
-    test("API Docs should contain Location scheme", async (done) => {
-        try {
-            const apiDoc = await apiDocsGenerator.getApiDocs();
-            const entityName = providerDbMock.provider.kinds[0].name;
-            expect(Object.keys(apiDoc.components.schemas)).toContain(entityName);
-            const entitySchema = apiDoc.components.schemas[entityName];
-            expect(entitySchema).toEqual({
-                "type": "object",
-                "title": "X\/Y Location",
-                "description": "Stores an XY location of something",
-                "x-papiea-entity": "spec-only",
-                "required": ["x", "y"],
-                "properties": {
-                    "x": {
-                        "type": "number"
-                    },
-                    "y": {
-                        "type": "number"
-                    },
-                    "v": {
-                        "type": "object",
-                        "properties": {
-                            "d": {
-                                "type": "number"
-                            },
-                            "e": {
-                                "type": "number"
-                            }
+    test("API Docs should contain Location scheme", async () => {
+        expect.hasAssertions();
+        const apiDoc = await apiDocsGenerator.getApiDocs();
+        const entityName = providerDbMock.provider.kinds[0].name;
+        expect(Object.keys(apiDoc.components.schemas)).toContain(entityName);
+        const entitySchema = apiDoc.components.schemas[entityName];
+        expect(entitySchema).toEqual({
+            "type": "object",
+            "title": "X\/Y Location",
+            "description": "Stores an XY location of something",
+            "x-papiea-entity": "spec-only",
+            "required": ["x", "y"],
+            "properties": {
+                "x": {
+                    "type": "number"
+                },
+                "y": {
+                    "type": "number"
+                },
+                "v": {
+                    "type": "object",
+                    "properties": {
+                        "d": {
+                            "type": "number"
+                        },
+                        "e": {
+                            "type": "number"
                         }
                     }
                 }
-            });
-            done();
-        } catch (err) {
-            done.fail(err);
-        }
+            }
+        });
     });
     test("API Docs should be accessible by the url", done => {
         api.get("/api-docs/api-docs.json").then(() => done()).catch(done.fail);
@@ -139,7 +129,8 @@ describe("API Docs Tests", () => {
 });
 
 describe("API docs test entity", () => {
-    test("Provider with procedures generates correct openAPI spec", async done => {
+    test("Provider with procedures generates correct openAPI spec", async () => {
+        expect.hasAssertions();
         const procedure_id = "computeSumWithValidation";
         const proceduralSignatureForProvider: Procedural_Signature = {
             name: "computeSumWithValidation",
@@ -158,80 +149,71 @@ describe("API docs test entity", () => {
             .build();
         const providerDbMock = new Provider_DB_Mock(provider);
         const apiDocsGenerator = new ApiDocsGenerator(providerDbMock);
-        try {
-            const apiDoc = await apiDocsGenerator.getApiDocs();
+        const apiDoc = await apiDocsGenerator.getApiDocs();
 
-            expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
-                .post
-                .requestBody
-                .content["application/json"]
-                .schema
-                .properties
-                .input['$ref']).toEqual(`#/components/schemas/SumInput`);
+        expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
+            .post
+            .requestBody
+            .content["application/json"]
+            .schema
+            .properties
+            .input['$ref']).toEqual(`#/components/schemas/SumInput`);
 
-            expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
-                .post
-                .responses["200"]
-                .content["application/json"]
-                .schema["$ref"]).toEqual(`#/components/schemas/SumOutput`);
-
-            done();
-        } catch (e) {
-            done.fail(e);
-        }
+        expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
+            .post
+            .responses["200"]
+            .content["application/json"]
+            .schema["$ref"]).toEqual(`#/components/schemas/SumOutput`);
     });
 
-    test("Provider with procedures generates correct openAPI emitting all variables without 'x-papiea' - 'status_only' property", async done => {
-        try {
-            const provider = new ProviderBuilder("provider_include_all_props").withVersion("0.1.0").withKinds().build();
-            const providerDbMock = new Provider_DB_Mock(provider);
-            const apiDocsGenerator = new ApiDocsGenerator(providerDbMock);
-            const kind_name = provider.kinds[0].name;
-            const structure = provider.kinds[0].kind_structure[kind_name];
+    test("Provider with procedures generates correct openAPI emitting all variables without 'x-papiea' - 'status_only' property", async () => {
+        expect.hasAssertions();
+        const provider = new ProviderBuilder("provider_include_all_props").withVersion("0.1.0").withKinds().build();
+        const providerDbMock = new Provider_DB_Mock(provider);
+        const apiDocsGenerator = new ApiDocsGenerator(providerDbMock);
+        const kind_name = provider.kinds[0].name;
+        const structure = provider.kinds[0].kind_structure[kind_name];
 
-            // remove x-papiea prop so 'z' could be included in entity schema
-            delete structure.properties.z["x-papiea"];
+        // remove x-papiea prop so 'z' could be included in entity schema
+        delete structure.properties.z["x-papiea"];
 
-            const apiDoc = await apiDocsGenerator.getApiDocs();
-            const entityName = kind_name;
-            expect(Object.keys(apiDoc.components.schemas)).toContain(entityName);
-            const entitySchema = apiDoc.components.schemas[entityName];
-            expect(entitySchema).toEqual({
-                "type": "object",
-                "title": "X\/Y Location",
-                "description": "Stores an XY location of something",
-                "x-papiea-entity": "spec-only",
-                "required": ["x", "y"],
-                "properties": {
-                    "x": {
-                        "type": "number"
-                    },
-                    "y": {
-                        "type": "number"
-                    },
-                    "z": {
-                        "type": "number"
-                    },
-                    "v": {
-                        "type": "object",
-                        "properties": {
-                            "d": {
-                                "type": "number"
-                            },
-                            "e": {
-                                "type": "number"
-                            }
+        const apiDoc = await apiDocsGenerator.getApiDocs();
+        const entityName = kind_name;
+        expect(Object.keys(apiDoc.components.schemas)).toContain(entityName);
+        const entitySchema = apiDoc.components.schemas[entityName];
+        expect(entitySchema).toEqual({
+            "type": "object",
+            "title": "X\/Y Location",
+            "description": "Stores an XY location of something",
+            "x-papiea-entity": "spec-only",
+            "required": ["x", "y"],
+            "properties": {
+                "x": {
+                    "type": "number"
+                },
+                "y": {
+                    "type": "number"
+                },
+                "z": {
+                    "type": "number"
+                },
+                "v": {
+                    "type": "object",
+                    "properties": {
+                        "d": {
+                            "type": "number"
+                        },
+                        "e": {
+                            "type": "number"
                         }
                     }
                 }
-            });
-            done();
-        } catch (err) {
-            done.fail(err);
-        }
+            }
+        });
     });
 
-    test("Provider with procedures that have no validation generate correct open api docs", async done => {
+    test("Provider with procedures that have no validation generate correct open api docs", async () => {
+        expect.hasAssertions();
         const procedure_id = "computeSumNoValidation";
         const proceduralSignatureForProvider: Procedural_Signature = {
             name: "computeSumNoValidation",
@@ -248,28 +230,22 @@ describe("API docs test entity", () => {
             .withKindProcedures()
             .withEntityProcedures()
             .build();
-        try {
-            const providerDbMock = new Provider_DB_Mock(provider);
-            const apiDocsGenerator = new ApiDocsGenerator(providerDbMock);
-            const apiDoc = await apiDocsGenerator.getApiDocs();
+        const providerDbMock = new Provider_DB_Mock(provider);
+        const apiDocsGenerator = new ApiDocsGenerator(providerDbMock);
+        const apiDoc = await apiDocsGenerator.getApiDocs();
 
-            expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
-                .post
-                .requestBody
-                .content["application/json"]
-                .schema
-                .properties
-                .input['$ref']).toEqual(`#/components/schemas/Nothing`);
+        expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
+            .post
+            .requestBody
+            .content["application/json"]
+            .schema
+            .properties
+            .input['$ref']).toEqual(`#/components/schemas/Nothing`);
 
-            expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
-                .post
-                .responses["200"]
-                .content["application/json"]
-                .schema["$ref"]).toEqual(`#/components/schemas/Nothing`);
-
-            done();
-        } catch (e) {
-            done.fail(e);
-        }
+        expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
+            .post
+            .responses["200"]
+            .content["application/json"]
+            .schema["$ref"]).toEqual(`#/components/schemas/Nothing`);
     });
 });

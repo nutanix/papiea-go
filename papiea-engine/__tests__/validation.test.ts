@@ -7,10 +7,9 @@ describe("Validation tests", () => {
 
     const locationDataDescription = getLocationDataDescription();
     const trimmedLocationDataDescription = Object.assign({}, locationDataDescription);
-    const kind_name = Object.keys(locationDataDescription)[0];
     const maybeLocation = Maybe.fromValue(Object.values(locationDataDescription)[0]);
 
-    test("Basic validation should succeed", async (done) => {
+    test("Basic validation should succeed", (done) => {
         const entity = {
             spec: {
                 x: 10,
@@ -24,7 +23,7 @@ describe("Validation tests", () => {
         })
     });
 
-    test("Missing required parameter 'x'", async (done) => {
+    test("Missing required parameter 'x'", (done) => {
         const entity = {
             spec: {
                 y: 11
@@ -37,7 +36,7 @@ describe("Validation tests", () => {
         }, true)
     });
 
-    test("Additional expected parameter 'z'", async (done) => {
+    test("Additional expected parameter 'z'", (done) => {
         const entity = {
             spec: {
                 x: 10,
@@ -52,7 +51,7 @@ describe("Validation tests", () => {
         })
     });
 
-    test("Additional unexpected parameter 'k'", async (done) => {
+    test("Additional unexpected parameter 'k'", (done) => {
         const entity = {
             spec: {
                 x: 10,
@@ -67,7 +66,7 @@ describe("Validation tests", () => {
         }, true)
     });
 
-    test("Parameter x with wrong type string", async (done) => {
+    test("Parameter x with wrong type string", (done) => {
         const entity = {
             spec: {
                 x: "Totally not an integer",
@@ -81,7 +80,7 @@ describe("Validation tests", () => {
         }, true)
     });
 
-    test("Additional Nested parameter", async (done) => {
+    test("Additional Nested parameter", (done) => {
         const entity = {
             spec: {
                 x: 10,
@@ -98,7 +97,7 @@ describe("Validation tests", () => {
         })
     });
 
-    test("Additional Nested parameter with wrong type", async (done) => {
+    test("Additional Nested parameter with wrong type", (done) => {
         const entity = {
             spec: {
                 x: 10,
@@ -115,7 +114,7 @@ describe("Validation tests", () => {
         }, true)
     });
 
-    test("Additional Nested parameter with wrong type", async (done) => {
+    test("Additional Nested parameter with wrong type", (done) => {
         const entity = {
             spec: {
                 x: 10,
@@ -138,7 +137,7 @@ describe("Validation tests", () => {
     const trimmedLocationDataDescriptionStringParam = Object.assign({}, locationDataDescription);
     const maybeLocationStringParam = Maybe.fromValue(Object.values(locationDataDescriptionStringParam)[0]);
 
-    test("Basic validation with string param should succeed", async (done) => {
+    test("Basic validation with string param should succeed", (done) => {
         const entity = {
             spec: {
                 x: "String",
@@ -152,7 +151,7 @@ describe("Validation tests", () => {
         })
     });
 
-    test("Parameter x with wrong type number", async (done) => {
+    test("Parameter x with wrong type number", (done) => {
         const entity = {
             spec: {
                 x: 10,

@@ -49,7 +49,8 @@ describe("Procedures tests", () => {
         await providerApi.delete(`/${provider.prefix}/${provider.version}`);
     });
 
-    test("Call entity_procedure", async (done) => {
+    test("Call entity_procedure", async () => {
+        expect.hasAssertions();
         const server = http.createServer((req, res) => {
             if (req.method == 'POST') {
                 let body = '';
@@ -86,9 +87,9 @@ describe("Procedures tests", () => {
         const updatedEntity: any = await entityApi.get(`/${provider.prefix}/${provider.version}/${kind_name}/${metadata.uuid}`);
         expect(updatedEntity.data.metadata.spec_version).toEqual(2);
         expect(updatedEntity.data.spec.x).toEqual(15);
-        done();
     });
-    test("Procedure input validation", async (done) => {
+    test("Procedure input validation", async () => {
+        expect.hasAssertions();
         const { data: { metadata, spec } } = await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}`, {
             spec: {
                 x: 10,
@@ -101,12 +102,11 @@ describe("Procedures tests", () => {
             const res = err.response;
             expect(res.status).toEqual(400);
             expect(res.data.errors.length).toEqual(1);
-            done();
             return;
         }
-        done.fail();
     });
-    test("Procedure empty input", async (done) => {
+    test("Procedure empty input", async () => {
+        expect.hasAssertions();
         const { data: { metadata, spec } } = await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}`, {
             spec: {
                 x: 10,
@@ -120,12 +120,10 @@ describe("Procedures tests", () => {
             expect(res.status).toEqual(400);
             expect(res.data.errors.length).toEqual(1);
             expect(res.data.errors[0].includes("undefined")).toBeTruthy();
-            done();
-            return;
         }
-        done.fail();
     });
-    test("Procedure result validation", async (done) => {
+    test("Procedure result validation", async () => {
+        expect.hasAssertions();
         const server = http.createServer((req, res) => {
             if (req.method == 'POST') {
                 req.on('data', function (data) {
@@ -155,13 +153,11 @@ describe("Procedures tests", () => {
             expect(res.data.errors.length).toEqual(2);
             expect(res.data.errors[0]).toEqual("x is a required field");
             expect(res.data.errors[1]).toEqual("y is a required field");
-            done();
-            return;
         }
-        done.fail();
     });
 
-    test("Call provider level procedure", async (done) => {
+    test("Call provider level procedure", async () => {
+        expect.hasAssertions();
         const server = http.createServer((req, res) => {
             if (req.method == 'POST') {
                 let body = '';
@@ -181,23 +177,18 @@ describe("Procedures tests", () => {
         server.listen(port, hostname, () => {
             console.log(`Server running at http://${hostname}:${port}/`);
         });
-        try {
-            const res: any = await entityApi.post(`/${provider.prefix}/${provider.version}/procedure/computeSum`, {
-                input: {
-                    "a": 5,
-                    "b": 5
-                }
-            });
-            expect(res.data).toBe(10);
-            done();
-        } catch (e) {
-            console.log(e.response.data);
-            done.fail()
-        }
+        const res: any = await entityApi.post(`/${ provider.prefix }/${ provider.version }/procedure/computeSum`, {
+            input: {
+                "a": 5,
+                "b": 5
+            }
+        });
+        expect(res.data).toBe(10);
 
     });
 
-    test("Call provider level procedure with non-valid params fails validation", async (done) => {
+    test("Call provider level procedure with non-valid params fails validation", async () => {
+        expect.hasAssertions();
         const server = http.createServer((req, res) => {
             if (req.method == 'POST') {
                 let body = '';
@@ -222,11 +213,11 @@ describe("Procedures tests", () => {
         } catch (e) {
             expect(e.response.status).toBe(400);
             server.close();
-            done();
         }
     });
 
-    test("Call kind level procedure", async (done) => {
+    test("Call kind level procedure", async () => {
+        expect.hasAssertions();
         const server = http.createServer((req, res) => {
             if (req.method == 'POST') {
                 let body = '';
@@ -249,10 +240,10 @@ describe("Procedures tests", () => {
         });
         const res: any = await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/computeGeolocation`, { input: "2" });
         expect(res.data).toBe("us.west.2");
-        done();
     });
 
-    test("Call kind level procedure with non-valid params fails validation", async (done) => {
+    test("Call kind level procedure with non-valid params fails validation", async () => {
+        expect.hasAssertions();
         const server = http.createServer((req, res) => {
             if (req.method == 'POST') {
                 let body = '';
@@ -278,7 +269,6 @@ describe("Procedures tests", () => {
         } catch (e) {
             expect(e.response.status).toBe(400);
             server.close();
-            done();
         }
     });
 });
