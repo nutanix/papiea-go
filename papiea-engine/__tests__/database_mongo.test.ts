@@ -276,7 +276,7 @@ describe("MongoDb tests", () => {
         expect(res.deleted_at).toBeFalsy();
     });
 
-    test("Duplicate s2s key shoud thtrow an error", async () => {
+    test("Duplicate s2s key shoud throw an error", async () => {
         expect.assertions(1);
         const s2skeyDb: S2S_Key_DB = await connection.get_s2skey_db();
         const s2skey: S2S_Key = {

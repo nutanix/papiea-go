@@ -338,6 +338,7 @@ describe("Entity API tests", () => {
     });
 
     test("Create entity with non valid uuid should be an error", async () => {
+        expect.assertions(1);
         try {
             const { data: { metadata, spec } } = await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
                 spec: {
