@@ -9,7 +9,7 @@ import { UserAuthInfo } from "../auth/authn";
 import { Provider_API } from "../provider/provider_api_interface";
 import uuid = require("uuid");
 import { Version, Spec, Metadata, uuid4, Entity_Reference, Status, Data_Description, Provider, Kind, Procedural_Signature } from "papiea-core";
-import { isEmpty, Maybe, SortParams } from "../utils/utils";
+import { isEmpty, Maybe } from "../utils/utils";
 
 export class ProcedureInvocationError extends Error {
     errors: string[];
@@ -22,6 +22,8 @@ export class ProcedureInvocationError extends Error {
         this.status = status;
     }
 }
+
+export type SortParams = { [key: string]: number };
 
 export class Entity_API_Impl implements Entity_API {
     private status_db: Status_DB;

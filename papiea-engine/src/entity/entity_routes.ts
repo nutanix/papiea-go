@@ -1,7 +1,8 @@
 import { Entity_API } from "./entity_api_interface";
 import { Router } from "express";
 import { UserAuthInfo, asyncHandler } from '../auth/authn';
-import { processPaginationParams, processSortQuery, SortParams } from "../utils/utils";
+import { processPaginationParams, processSortQuery } from "../utils/utils";
+import { SortParams } from "./entity_api_impl";
 
 
 export function createEntityAPIRouter(entity_api: Entity_API): Router {

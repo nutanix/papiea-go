@@ -1,4 +1,5 @@
 import { ValidationError } from "../validator";
+import { SortParams } from "../entity/entity_api_impl";
 
 export class Maybe<T> {
     private constructor(private value: T | null) {}
@@ -26,8 +27,6 @@ export class Maybe<T> {
         }
     }
 }
-
-export type SortParams = { [key: string]: number };
 
 function validatePaginationParams(offset: number | undefined, limit: number | undefined) {
     if (offset) {

@@ -3,7 +3,7 @@ import { Db, Collection } from "mongodb";
 import { datestringToFilter } from "./utils/date";
 import { encode } from "mongo-dot-notation-tool"
 import { Entity_Reference, Status, Metadata, Entity } from "papiea-core";
-import { SortParams } from "../utils/utils";
+import { SortParams } from "../entity/entity_api_impl";
 
 export class Status_DB_Mongo implements Status_DB {
     collection: Collection;

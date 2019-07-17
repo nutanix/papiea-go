@@ -1,6 +1,6 @@
 import { UserAuthInfo } from "../auth/authn";
 import { Version, Spec, Metadata, uuid4, Status } from "papiea-core";
-import { SortParams } from "../utils/utils";
+import { SortParams } from "./entity_api_impl";
 
 export interface Entity_API {
     save_entity(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, spec_description: Spec, request_metadata: Metadata): Promise<[Metadata, Spec]>

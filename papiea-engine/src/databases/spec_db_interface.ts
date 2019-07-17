@@ -1,5 +1,5 @@
 import { Metadata, Spec, Entity_Reference } from "papiea-core";
-import { SortParams } from "../utils/utils";
+import { SortParams } from "../entity/entity_api_impl";
 
 
 // [[file:~/work/papiea-js/Papiea-design.org::*/src/databases/spec_db_interface.ts][/src/databases/spec_db_interface.ts:1]]
