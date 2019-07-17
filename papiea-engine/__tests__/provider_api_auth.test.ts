@@ -113,7 +113,7 @@ describe("Provider API auth tests", () => {
             });
             throw new Error("Provider-admin should not register provider with another prefix");
         } catch (e) {
-            expect(e).toBeDefined();
+            expect(e.response.status).toEqual(403);
         }
     });
 
@@ -188,7 +188,7 @@ describe("Provider API auth tests", () => {
                     headers: { 'Authorization': `Bearer ${s2skey.key}` }
                 });
             const newStatus = Object.assign({}, spec, { y: 12 })
-            const data: any = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
+            const { data } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
                     extension: {
                         provider_prefix: uuid(),
@@ -204,11 +204,11 @@ describe("Provider API auth tests", () => {
                 },
                 status: newStatus
             }, {
-                    headers: { 'Authorization': `Bearer ${data.s2skey.key}` }
+                    headers: { 'Authorization': `Bearer ${data.key}` }
                 });
             throw new Error("Provider-admin should not update status for provider with another prefix");
         } catch (e) {
-            expect(e).toBeDefined();
+            expect(e.response.status).toEqual(403);
         }
     });
 
@@ -239,7 +239,7 @@ describe("Provider API auth tests", () => {
             );
             throw new Error("Provider-admin should not create s2s key for admin");
         } catch (e) {
-            expect(e).toBeDefined();
+            expect(e.response.status).toEqual(403);
         }
     });
 
@@ -269,7 +269,7 @@ describe("Provider API auth tests", () => {
             );
             throw new Error("Provider-admin should not create s2s key for provider-admin");
         } catch (e) {
-            expect(e).toBeDefined();
+            expect(e.response.status).toEqual(403);
         }
     });
 
@@ -348,7 +348,7 @@ describe("Provider API auth tests", () => {
             );
             throw new Error("Provider-admin should not create s2s key for provider-user with provider-user owner");
         } catch (e) {
-            expect(e).toBeDefined();
+            expect(e.response.status).toEqual(403);
         }
     });
 

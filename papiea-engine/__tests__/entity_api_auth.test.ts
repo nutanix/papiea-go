@@ -159,6 +159,7 @@ describe("Entity API auth tests", () => {
             });
         }
     });
+    const expectAssertionsFromOauth2Server = 7;
 
     beforeAll(async () => {
         await providerApiAdmin.post('/', provider);
@@ -235,7 +236,7 @@ describe("Entity API auth tests", () => {
     });
 
     test("Get entity should raise permission denied", async () => {
-        expect.hasAssertions();
+        expect.assertions(1 + expectAssertionsFromOauth2Server);
         try {
             const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
             await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
@@ -250,7 +251,6 @@ describe("Entity API auth tests", () => {
     });
 
     test("Get entity should succeed after policy set", async () => {
-        expect.hasAssertions();
         const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`);
         await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
             policy: `p, alice, owner, ${ kind_name }, *, allow`
@@ -263,7 +263,7 @@ describe("Entity API auth tests", () => {
     });
 
     test("Get entity of another provider should raise unauthorized", async () => {
-        expect.hasAssertions();
+        expect.assertions(1 + expectAssertionsFromOauth2Server);
         try {
             const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
             await entityApi.get(`/${provider.prefix}1/${provider.version}/${kind_name}/${entity_metadata.uuid}`,
@@ -275,7 +275,6 @@ describe("Entity API auth tests", () => {
     });
 
     test("Entity procedure should receive headers", async () => {
-        expect.hasAssertions();
         let headers: any = {};
         const server = http.createServer((req, res) => {
             if (req.method == 'POST') {
@@ -303,6 +302,13 @@ describe("Entity API auth tests", () => {
         await entityApi.post(`/${ provider.prefix }/${ provider.version }/${ kind_name }/${ entity_metadata.uuid }/procedure/moveX`, { input: 5 },
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
+        expect(headers['tenant']).toEqual(tenant_uuid);
+        expect(headers['tenant-email']).toEqual('alice@localhost');
+        expect(headers['tenant-fname']).toEqual('Alice');
+        expect(headers['tenant-lname']).toEqual('Doe');
+        expect(headers['tenant-role']).toEqual('papiea-admin');
+        expect(headers['owner']).toEqual('alice');
+        expect(headers['authorization']).toBeDefined();
     });
 
     test("Create, get and inacivate s2s key", async () => {
@@ -342,7 +348,7 @@ describe("Entity API auth tests", () => {
             );
             throw new Error("Key hasn't been inactivated");
         } catch (e) {
-            expect(e).toBeDefined();
+            expect(e.response.status).toEqual(401);
         }
     });
 
@@ -370,7 +376,7 @@ describe("Entity API auth tests", () => {
     });
 
     test("Create s2s key with another owner or provider should fail", async () => {
-        expect.hasAssertions();
+        expect.assertions(2 + expectAssertionsFromOauth2Server);
         const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`);
         const { data: userInfo } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
             { headers: { 'Authorization': 'Bearer ' + token } }
@@ -383,8 +389,8 @@ describe("Entity API auth tests", () => {
                 },
                 { headers: { 'Authorization': 'Bearer ' + token } }
             );
-            throw new Error("Key created with another owner");
         } catch (e) {
+            expect(e.response.status).toEqual(403);
         }
         try {
             await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
@@ -394,9 +400,8 @@ describe("Entity API auth tests", () => {
                 },
                 { headers: { 'Authorization': 'Bearer ' + token } }
             );
-            throw new Error("Key created with another provider");
         } catch (e) {
-            expect(e).toBeDefined();
+            expect(e.response.status).toEqual(403);
         }
     });
 
