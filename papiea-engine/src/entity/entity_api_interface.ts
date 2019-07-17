@@ -9,9 +9,9 @@ export interface Entity_API {
 
     get_entity_status(user: UserAuthInfo, kind_name: string, entity_uuid: uuid4): Promise<[Metadata, Status]>
 
-    filter_entity_spec(user: UserAuthInfo, kind_name: string, fields: any, sortParams: SortParams): Promise<[Metadata, Spec][]>
+    filter_entity_spec(user: UserAuthInfo, kind_name: string, fields: any, sortParams?: SortParams): Promise<[Metadata, Spec][]>
 
-    filter_entity_status(user: UserAuthInfo, kind_name: string, fields: any, sortParams: SortParams): Promise<[Metadata, Status][]>
+    filter_entity_status(user: UserAuthInfo, kind_name: string, fields: any, sortParams?: SortParams): Promise<[Metadata, Status][]>
 
     update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, extension: {[key: string]: any}, kind_name: string, version: Version, spec_description: Spec): Promise<[Metadata, Spec]>
 

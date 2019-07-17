@@ -62,7 +62,7 @@ export class Status_DB_Mongo implements Status_DB {
         return [result.metadata, result.status]
     }
 
-    async list_status(fields_map: any, sortParams: SortParams): Promise<([Metadata, Status])[]> {
+    async list_status(fields_map: any, sortParams?: SortParams): Promise<([Metadata, Status])[]> {
         const filter: any = {};
         filter["metadata.deleted_at"] = datestringToFilter(fields_map.metadata.deleted_at);
         for (let key in fields_map.metadata) {
@@ -77,7 +77,12 @@ export class Status_DB_Mongo implements Status_DB {
         for (let key in fields_map.status) {
             filter["status." + key] = fields_map.status[key];
         }
-        const result = await this.collection.find(filter).sort(sortParams).toArray();
+        let result: any[];
+        if (sortParams) {
+            result = await this.collection.find(filter).sort(sortParams).toArray();
+        } else {
+            result = await this.collection.find(filter).toArray();
+        }
         return result.map((x: any): [Metadata, Status] => {
             if (x.status !== null) {
                 return [x.metadata, x.status]

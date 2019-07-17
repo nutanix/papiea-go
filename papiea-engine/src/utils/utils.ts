@@ -66,9 +66,9 @@ export function processPaginationParams(offset: number | undefined, limit: numbe
 
 }
 
-export function processSortQuery(query: string | undefined) {
+export function processSortQuery(query: string | undefined): undefined | SortParams {
     if (query === undefined) {
-        return {};
+        return undefined;
     }
     const processedQuery: SortParams = {};
     const splitFields = query.split(",");

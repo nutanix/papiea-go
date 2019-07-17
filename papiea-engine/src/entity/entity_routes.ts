@@ -8,7 +8,7 @@ import { SortParams } from "./entity_api_impl";
 export function createEntityAPIRouter(entity_api: Entity_API): Router {
     const router = Router();
 
-    const filterEntities = async function (user: UserAuthInfo, kind_name: string, filter: any, skip: number, size: number, sortParams: SortParams): Promise<any> {
+    const filterEntities = async function (user: UserAuthInfo, kind_name: string, filter: any, skip: number, size: number, sortParams?: SortParams): Promise<any> {
         const resultSpecs: any[] = await entity_api.filter_entity_spec(user, kind_name, filter, sortParams);
 
         const resultStatuses: any[] = await entity_api.filter_entity_status(user, kind_name, filter, sortParams);
@@ -66,7 +66,7 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
         const offset: undefined | number = req.query.offset;
         const limit: undefined | number = req.query.limit;
         const rawSortQuery: undefined | string = req.query.sort;
-        const sortParams = processSortQuery(rawSortQuery);
+        const sortParams: undefined | SortParams = processSortQuery(rawSortQuery);
         const [skip, size] = processPaginationParams(offset, limit);
         const filter: any = {};
         if (req.body.spec) {

@@ -74,7 +74,7 @@ export class Spec_DB_Mongo implements Spec_DB {
         return [result.metadata, result.spec];
     }
 
-    async list_specs(fields_map: any, sortParams: SortParams): Promise<([Metadata, Spec])[]> {
+    async list_specs(fields_map: any, sortParams?: SortParams): Promise<([Metadata, Spec])[]> {
         const filter: any = {};
         filter["metadata.deleted_at"] = datestringToFilter(fields_map.metadata.deleted_at);
         for (let key in fields_map.metadata) {
@@ -88,7 +88,12 @@ export class Spec_DB_Mongo implements Spec_DB {
         for (let key in fields_map.status) {
             filter["status." + key] = fields_map.status[key];
         }
-        const result = await this.collection.find(filter).sort(sortParams).toArray();
+        let result: any[];
+        if (sortParams) {
+            result = await this.collection.find(filter).sort(sortParams).toArray();
+        } else {
+            result = await this.collection.find(filter).toArray();
+        }
         return result.map((x: any): [Metadata, Spec] => {
             if (x.spec !== null) {
                 return [x.metadata, x.spec]
