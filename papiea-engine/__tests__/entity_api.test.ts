@@ -5,6 +5,8 @@ import { Metadata, Spec } from "papiea-core";
 import { getLocationDataDescription, getMetadataDescription, ProviderBuilder } from "./test_data_factory";
 import { stringify } from "querystring"
 import uuid = require("uuid");
+import { Action, Authorizer } from "../src/auth/authz";
+import { UserAuthInfo } from "../src/auth/authn";
 
 declare var process: {
     env: {
@@ -15,6 +17,15 @@ declare var process: {
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 const adminKey = process.env.ADMIN_S2S_KEY || '';
 const papieaUrl = `http://127.0.0.1:${serverPort}`;
+
+class MockedAuthorizer extends Authorizer {
+    async checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void> {
+        const random_boolean = Math.random() >= 0.5;
+        if (random_boolean) {
+            throw new Error("Not authorized")
+        }
+    }
+}
 
 const server_config = {
     host: "127.0.0.1",
@@ -838,7 +849,7 @@ describe("Pagination tests", () => {
         }
     }, 5000);
 
-    test.only("Sorting with no explicit order should be ascending", async (done) => {
+    test("Sorting with no explicit order should be ascending", async (done) => {
         try {
             const { data } = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?sort=spec.x`, {
                 spec: {
@@ -852,4 +863,13 @@ describe("Pagination tests", () => {
             done.fail(e);
         }
     });
+
+    test("Authorizer doesn't affect the order of sorting", async () => {
+        const authorizer = new MockedAuthorizer();
+        const specs = [{spec: {x: 10, y: 11}}, {spec: {x: 18, y:27}}, {spec: {x: 22, y: 8}}, {spec: {x: 41, y: 50}}];
+        const res = await authorizer.filter({} as UserAuthInfo, specs, {} as Action);
+        for (let i = 0; i < res.length - 1; i++) {
+            expect(res[i+1].spec.x).toBeGreaterThan(res[i].spec.x)
+        }
+    })
 });
