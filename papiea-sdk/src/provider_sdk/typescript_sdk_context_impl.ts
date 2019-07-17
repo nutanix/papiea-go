@@ -1,22 +1,28 @@
-import { ProceduralCtx_Interface } from "./typescript_sdk_interface";
-import { Entity, Metadata, Status, Entity_Reference } from "papiea-core";
+import { ProceduralCtx_Interface, SecurityApi } from "./typescript_sdk_interface";
+import { Entity, Status, Entity_Reference } from "papiea-core";
 import axios, { AxiosInstance } from "axios";
+import { Request, Response } from "express";
 
 export class ProceduralCtx implements ProceduralCtx_Interface {
-
     base_url: string;
     provider_prefix: string;
     provider_version: string;
     provider_url: string;
-    private readonly providerApi: AxiosInstance;
+    private readonly providerApiAxios: AxiosInstance;
+    private readonly securityApi: SecurityApi;
+    private req: Request;
+    private res: Response;
 
 
-    constructor(provider_url:string, entity_url: string, provider_prefix: string, provider_version: string, providerApi:AxiosInstance) {
+    constructor(provider_url:string, entity_url: string, provider_prefix: string, provider_version: string, providerApiAxios:AxiosInstance, securityApi:SecurityApi, req:Request, res:Response) {
         this.provider_url = provider_url
         this.base_url = entity_url;
         this.provider_prefix = provider_prefix;
         this.provider_version = provider_version;
-        this.providerApi = providerApi
+        this.providerApiAxios = providerApiAxios
+        this.securityApi = securityApi
+        this.req = req
+        this.res = res
     }
 
     url_for(entity: Entity): string {
@@ -24,7 +30,7 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
     }
 
     async update_status(entity_reference: Entity_Reference, status: Status): Promise<boolean> {
-        const res = await this.providerApi.patch(`${this.provider_url}/update_status`,{
+        const res = await this.providerApiAxios.patch(`${this.provider_url}/update_status`,{
             entity_ref: entity_reference,
             status: status
         })
@@ -37,5 +43,15 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
 
     update_progress(message: string, done_percent: number): boolean {
         throw new Error("Unimplemented")
+    }
+
+    get_security_api(): SecurityApi {
+        return this.securityApi
+    }
+    get_request(): Request {
+        return this.req
+    }
+    get_response(): Response {
+        return this.res
     }
 }

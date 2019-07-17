@@ -138,8 +138,9 @@ describe("Provider Sdk tests", () => {
         sdk.prefix("location_provider");
         await sdk.register();
         try {
-                sdk.server.close()
-        } catch(e) {}
+            sdk.server.close()
+        } catch (e) {
+        }
     });
     test("Provider with procedures should be created on papiea", async () => {
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
