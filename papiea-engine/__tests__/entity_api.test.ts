@@ -563,7 +563,7 @@ describe("Pagination tests", () => {
         const entityResponses: any[] = await Promise.all(entityPromises);
         uuids = entityResponses.map(entityResp => entityResp.data.metadata.uuid);
         expect(entityResponses.length).toBe(70);
-    });
+    }, 5000);
 
     test("Pagination test", async () => {
         let res = await entityApi.post(`${ providerPrefix }/${ providerVersion }/${ kind_name }/filter`, {
