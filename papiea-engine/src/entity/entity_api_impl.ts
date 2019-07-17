@@ -143,7 +143,7 @@ export class Entity_API_Impl implements Entity_API {
                     status: entity_status[1],
                     input: input
                 }, {
-                    headers: user ? user.headers : undefined
+                    headers: user
                 });
             this.validator.validate(data, Maybe.fromValue(Object.values(procedure.result)[0]), schemas);
             return data;
@@ -177,7 +177,7 @@ export class Entity_API_Impl implements Entity_API {
                 {
                     input: input
                 }, {
-                    headers: user ? user.headers : undefined
+                    headers: user
                 });
             this.validator.validate(data, Maybe.fromValue(Object.values(procedure.result)[0]), schemas);
             return data;
@@ -206,7 +206,7 @@ export class Entity_API_Impl implements Entity_API {
                 {
                     input: input
                 }, {
-                    headers: user ? user.headers : undefined
+                    headers: user
                 });
             this.validator.validate(data, Maybe.fromValue(Object.values(procedure.result)[0]), schemas);
             return data;
