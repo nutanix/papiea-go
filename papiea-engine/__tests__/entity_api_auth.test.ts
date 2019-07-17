@@ -316,6 +316,13 @@ describe("Entity API auth tests", () => {
         await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}/procedure/moveX`, { input: 5 },
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
+        expect(headers['tenant']).toEqual(tenant_uuid);
+        expect(headers['tenant-email']).toEqual('alice@localhost');
+        expect(headers['tenant-fname']).toEqual('Alice');
+        expect(headers['tenant-lname']).toEqual('Doe');
+        expect(headers['tenant-role']).toEqual('papiea-admin');
+        expect(headers['owner']).toEqual('alice');
+        expect(headers['authorization']).toBeDefined();
         done();
     });
 
