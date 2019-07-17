@@ -43,35 +43,23 @@ describe("Provider API tests", () => {
     test("Register malformed provider", done => {
         providerApi.post('/', {}).then(() => done.fail()).catch(() => done());
     });
-    test("Get provider", async done => {
-        try {
-            const res = await providerApi.get(`/${ providerPrefix }/${ providerVersion }`);
-            expect(res.data.kinds).not.toBeUndefined();
-            done();
-        } catch (e) {
-            done.fail(e)
-        }
+    test("Get provider", async () => {
+        const res = await providerApi.get(`/${ providerPrefix }/${ providerVersion }`);
+        expect(res.data.kinds).not.toBeUndefined();
     });
 
-    test("Get multiple providers", async done => {
+    test("Get multiple providers", async () => {
         const version1 = "1.0.0";
         const provider1: Provider = { prefix: providerPrefix, version: version1, kinds: [], procedures: {}, extension_structure: {} };
-        providerApi.post('/', provider1).then().catch(done.fail);
+        await providerApi.post('/', provider1);
         const version2 = "2.0.0";
         const provider2: Provider = { prefix: providerPrefix, version: version2, kinds: [], procedures: {}, extension_structure: {} };
-        providerApi.post('/', provider2).then().catch(done.fail);
-        try {
-            const res = await providerApi.get(`/${providerPrefix}`);
-            expect(res.data.length).toBeGreaterThanOrEqual(2);
-            await providerApi.delete(`/${providerPrefix}/${version1}`);
-            await providerApi.delete(`/${providerPrefix}/${version2}`);
-            done();
-        } catch (e) {
-            done.fail(e)
-        }
+        await providerApi.post('/', provider2);
+        const res = await providerApi.get(`/${providerPrefix}`);
+        expect(res.data.length).toBeGreaterThanOrEqual(2);
+        await providerApi.delete(`/${providerPrefix}/${version1}`);
+        await providerApi.delete(`/${providerPrefix}/${version2}`);
     });
-
-    // TODO(adolgarev): there is no API to list providers
 
     test("Unregister provider", done => {
         providerApi.delete(`/${providerPrefix}/${providerVersion}`).then(() => done()).catch(done.fail);
@@ -85,38 +73,34 @@ describe("Provider API tests", () => {
         providerApi.delete(`/123/123`).then(() => done.fail()).catch(() => done());
     });
 
-    test("Update status", async done => {
-        try {
-            const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();
-            await providerApi.post('/', provider);
-            const kind_name = provider.kinds[0].name;
-            const { data: { metadata, spec } } = await entityApi.post(`/${ provider.prefix }/${provider.version}/${ kind_name }`, {
-                spec: {
-                    x: 10,
-                    y: 11
-                }
-            });
+    test("Update status", async () => {
+        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();
+        await providerApi.post('/', provider);
+        const kind_name = provider.kinds[0].name;
+        const { data: { metadata, spec } } = await entityApi.post(`/${ provider.prefix }/${provider.version}/${ kind_name }`, {
+            spec: {
+                x: 10,
+                y: 11
+            }
+        });
 
-            const newStatus = { x: 10, y: 20, z: 111 };
-            await providerApi.post('/update_status', {
-                context: "some context",
-                entity_ref: {
-                    uuid: metadata.uuid,
-                    kind: kind_name
-                },
-                status: newStatus
-            });
+        const newStatus = { x: 10, y: 20, z: 111 };
+        await providerApi.post('/update_status', {
+            context: "some context",
+            entity_ref: {
+                uuid: metadata.uuid,
+                kind: kind_name
+            },
+            status: newStatus
+        });
 
-            const res = await entityApi.get(`/${ provider.prefix }/${provider.version}/${ kind_name }/${ metadata.uuid }`);
-            expect(res.data.status).toEqual(newStatus);
-            done();
-        } catch (e) {
-            done.fail(e);
-        }
+        const res = await entityApi.get(`/${ provider.prefix }/${provider.version}/${ kind_name }/${ metadata.uuid }`);
+        expect(res.data.status).toEqual(newStatus);
     });
 
-    test("Update status with malformed status should fail validation", async done => {
-        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();;
+    test("Update status with malformed status should fail validation", async () => {
+        expect.hasAssertions();
+        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();
         await providerApi.post('/', provider);
         const kind_name = provider.kinds[0].name;
         const { data: { metadata, spec } } = await entityApi.post(`/${ provider.prefix }/${provider.version}/${ kind_name }`, {
@@ -135,59 +119,50 @@ describe("Provider API tests", () => {
                 },
                 status: { x: 11, y: "Totally not a number" }
             });
-            done.fail();
         } catch (err) {
-            done();
+            expect(err).toBeDefined();
         }
     });
 
-    test("Update policy", async done => {
-        try {
-            const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();
-            await providerApi.post('/', provider);
+    test("Update policy", async () => {
+        expect.hasAssertions();
+        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();
+        await providerApi.post('/', provider);
 
-            const originalPolicy = "g, admin, admin_group";
-            await providerApi.post(`/${provider.prefix}/${provider.version}/auth`, {
-                policy: originalPolicy
-            });
-            const { data: { policy } } = await providerApi.get(`/${provider.prefix}/${provider.version}`);
-            expect(policy).toEqual(originalPolicy);
-            done();
-        } catch (e) {
-            done.fail(e);
-        }
+        const originalPolicy = "g, admin, admin_group";
+        await providerApi.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+            policy: originalPolicy
+        });
+        const { data: { policy } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }`);
+        expect(policy).toEqual(originalPolicy);
     });
 
-    test("Update status with partial status definition", async done => {
-        try {
-            const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();
-            await providerApi.post('/', provider);
-            const kind_name = provider.kinds[0].name;
-            const { data: { metadata, spec } } = await entityApi.post(`/${ provider.prefix }/${provider.version}/${ kind_name }`, {
-                spec: {
-                    x: 10,
-                    y: 11
-                }
-            });
+    test("Update status with partial status definition", async () => {
+        expect.hasAssertions();
+        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();
+        await providerApi.post('/', provider);
+        const kind_name = provider.kinds[0].name;
+        const { data: { metadata, spec } } = await entityApi.post(`/${ provider.prefix }/${ provider.version }/${ kind_name }`, {
+            spec: {
+                x: 10,
+                y: 11
+            }
+        });
 
-            const newStatus = { y: 20, z: 111 };
-            await providerApi.patch('/update_status', {
-                context: "some context",
-                entity_ref: {
-                    uuid: metadata.uuid,
-                    kind: kind_name
-                },
-                status: newStatus
-            });
+        const newStatus = { y: 20, z: 111 };
+        await providerApi.patch('/update_status', {
+            context: "some context",
+            entity_ref: {
+                uuid: metadata.uuid,
+                kind: kind_name
+            },
+            status: newStatus
+        });
 
-            const res = await entityApi.get(`/${ provider.prefix }/${provider.version}/${ kind_name }/${ metadata.uuid }`);
-            expect(res.data.status.x).toEqual(10);
-            expect(res.data.status.y).toEqual(20);
-            expect(res.data.status.z).toEqual(111);
-            done();
-        } catch (e) {
-            done.fail(e);
-        }
+        const res = await entityApi.get(`/${ provider.prefix }/${ provider.version }/${ kind_name }/${ metadata.uuid }`);
+        expect(res.data.status.x).toEqual(10);
+        expect(res.data.status.y).toEqual(20);
+        expect(res.data.status.z).toEqual(111);
     });
 
     test("Register provider with extension structure", done => {
