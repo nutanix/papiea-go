@@ -18,11 +18,12 @@
     "express-async-handler": "^1.1.4",
     "papiea-core": "file:../papiea-core",
     "pluralize": "^7.0.0",
-    "wait-port": "^0.2.2",
-    "swagger-model-validator": "^3.0.6"
+    "swagger-model-validator": "^3.0.6",
+    "wait-port": "^0.2.2"
   },
   "description": "",
   "devDependencies": {
+    "@types/axios": "^0.14.0",
     "@types/express": "^4.16.1",
     "typescript": "^3.4.5"
   }

@@ -18,15 +18,13 @@ export class Provider_API_Impl implements Provider_API {
     private providerDb: Provider_DB;
     private statusDb: Status_DB;
     private s2skeyDb: S2S_Key_DB;
-    private validator: Validator;
     private authorizer: Authorizer;
     private eventEmitter: EventEmitter;
 
-    constructor(providerDb: Provider_DB, statusDb: Status_DB, s2skeyDb: S2S_Key_DB, validator: Validator, authorizer: Authorizer) {
+    constructor(providerDb: Provider_DB, statusDb: Status_DB, s2skeyDb: S2S_Key_DB, authorizer: Authorizer) {
         this.providerDb = providerDb;
         this.statusDb = statusDb;
         this.s2skeyDb = s2skeyDb;
-        this.validator = validator;
         this.authorizer = authorizer;
         this.eventEmitter = new EventEmitter();
     }
@@ -87,11 +85,12 @@ export class Provider_API_Impl implements Provider_API {
 
     private async validate_status(provider: Provider, entity_ref: Entity_Reference, status: Status) {
         const kind = provider.kinds.find((kind: Kind) => kind.name === entity_ref.kind);
+        const allowExtraProps = provider.allowExtraProps;
         if (kind === undefined) {
             throw new Error("Kind not found");
         }
         const schemas: any = Object.assign({}, kind.kind_structure);
-        this.validator.validate(status, Maybe.fromValue(Object.values(kind.kind_structure)[0]), schemas);
+        Validator.validate(status, Maybe.fromValue(Object.values(kind.kind_structure)[0]), schemas, allowExtraProps);
     }
 
     async update_auth(user: UserAuthInfo, provider_prefix: string, provider_version: Version, auth: any): Promise<void> {

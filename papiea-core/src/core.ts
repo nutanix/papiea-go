@@ -182,6 +182,7 @@ export interface Provider {
     policy?: string;
     oauth2?: any;
     authModel?: string;
+    allowExtraProps: boolean;
 }
 
 // Add support for partial types where relevant

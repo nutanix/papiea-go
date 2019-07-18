@@ -5,17 +5,14 @@ import { ValidationError } from "./typescript_sdk_exceptions";
 const SwaggerModelValidator = require('swagger-model-validator');
 
 export class Validator {
-    private validator: any;
-    private readonly disallowExtraProps: boolean;
+    private static validator = new SwaggerModelValidator();
 
-    constructor(disallowExtraProps: boolean) {
-        this.disallowExtraProps = disallowExtraProps;
-        this.validator = new SwaggerModelValidator();
+    constructor() {
     }
 
-    validate(data: any, model: Maybe<any>, models: any) {
+    static validate(data: any, model: Maybe<any>, models: any, allowExtraProps: boolean) {
         model.mapOrElse((val) => {
-            const res = this.validator.validate(data, val, models, false, this.disallowExtraProps);
+            const res = this.validator.validate(data, val, models, false, allowExtraProps);
             if (!res.valid) {
                 throw new ValidationError(res.errors);
             }

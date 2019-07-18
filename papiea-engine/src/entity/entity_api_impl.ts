@@ -29,20 +29,22 @@ export class Entity_API_Impl implements Entity_API {
     private status_db: Status_DB;
     private spec_db: Spec_DB;
     private provider_api: Provider_API;
-    private validator: Validator;
     private authorizer: Authorizer;
 
-    constructor(status_db: Status_DB, spec_db: Spec_DB, provider_api: Provider_API, validator: Validator, authorizer: Authorizer) {
+    constructor(status_db: Status_DB, spec_db: Spec_DB, provider_api: Provider_API, authorizer: Authorizer) {
         this.status_db = status_db;
         this.spec_db = spec_db;
         this.provider_api = provider_api;
-        this.validator = validator;
         this.authorizer = authorizer;
     }
 
     private async get_kind(user: UserAuthInfo, prefix: string, kind_name: string, version: Version): Promise<Kind> {
         const provider = await this.provider_api.get_provider(user, prefix, version);
         return this.find_kind(provider, kind_name);
+    }
+
+    private async get_provider(user: UserAuthInfo, prefix: string, version: Version): Promise<Provider> {
+        return this.provider_api.get_provider(user, prefix, version);
     }
 
     private find_kind(provider: Provider, kind_name: string): Kind {
@@ -57,7 +59,7 @@ export class Entity_API_Impl implements Entity_API {
         const provider = await this.provider_api.get_provider(user, prefix, version);
         const kind = this.find_kind(provider, kind_name);
         this.validate_metadata_extension(provider.extension_structure, request_metadata);
-        this.validate_spec(spec_description, kind);
+        this.validate_spec(spec_description, kind, provider.allowExtraProps);
         if (!request_metadata.uuid) {
             request_metadata.uuid = uuid();
         }
@@ -104,8 +106,9 @@ export class Entity_API_Impl implements Entity_API {
     }
 
     async update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, extension: {[key: string]: any}, kind_name: string, version: Version, spec_description: Spec): Promise<[Metadata, Spec]> {
-        const kind: Kind = await this.get_kind(user, prefix, kind_name, version);
-        this.validate_spec(spec_description, kind);
+        const provider = await this.get_provider(user, prefix, version);
+        const kind = this.find_kind(provider, kind_name);
+        this.validate_spec(spec_description, kind, provider.allowExtraProps);
         const metadata: Metadata = { uuid: uuid, kind: kind.name, spec_version: spec_version, extension: extension } as Metadata;
         await this.authorizer.checkPermission(user, { "metadata": metadata }, UpdateAction);
         const [_, spec] = await this.spec_db.update_spec(metadata, spec_description);
@@ -123,7 +126,8 @@ export class Entity_API_Impl implements Entity_API {
     }
 
     async call_procedure(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, entity_uuid: uuid4, procedure_name: string, input: any): Promise<any> {
-        const kind: Kind = await this.get_kind(user, prefix, kind_name, version);
+        const provider = await this.get_provider(user, prefix, version);
+        const kind = this.find_kind(provider, kind_name);
         const entity_spec: [Metadata, Spec] = await this.get_entity_spec(user, kind_name, entity_uuid);
         const entity_status: [Metadata, Status] = await this.get_entity_status(user, kind_name, entity_uuid);
         await this.authorizer.checkPermission(user, { "metadata": entity_spec[0] }, CallProcedureByNameAction(procedure_name));
@@ -135,7 +139,7 @@ export class Entity_API_Impl implements Entity_API {
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
         try {
-            this.validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas);
+            Validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas, provider.allowExtraProps);
             const { data } = await axios.post(procedure.procedure_callback,
                 {
                     metadata: entity_spec[0],
@@ -145,7 +149,7 @@ export class Entity_API_Impl implements Entity_API {
                 }, {
                     headers: user
                 });
-            this.validator.validate(data, Maybe.fromValue(Object.values(procedure.result)[0]), schemas);
+            Validator.validate(data, Maybe.fromValue(Object.values(procedure.result)[0]), schemas, provider.allowExtraProps);
             return data;
         } catch (err) {
             if (err instanceof ValidationError) {
@@ -172,14 +176,14 @@ export class Entity_API_Impl implements Entity_API {
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
         try {
-            this.validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas);
+            Validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas, provider.allowExtraProps);
             const { data } = await axios.post(procedure.procedure_callback,
                 {
                     input: input
                 }, {
                     headers: user
                 });
-            this.validator.validate(data, Maybe.fromValue(Object.values(procedure.result)[0]), schemas);
+            Validator.validate(data, Maybe.fromValue(Object.values(procedure.result)[0]), schemas, provider.allowExtraProps);
             return data;
         } catch (err) {
             if (err instanceof ValidationError) {
@@ -191,7 +195,8 @@ export class Entity_API_Impl implements Entity_API {
     }
 
     async call_kind_procedure(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, procedure_name: string, input: any): Promise<any> {
-        const kind: Kind = await this.get_kind(user, prefix, kind_name, version);
+        const provider = await this.get_provider(user, prefix, version);
+        const kind = this.find_kind(provider, kind_name);
         await this.authorizer.checkPermission(user, { kind: kind }, CallProcedureByNameAction(procedure_name));
         const procedure: Procedural_Signature | undefined = kind.kind_procedures[procedure_name];
         if (procedure === undefined) {
@@ -201,14 +206,14 @@ export class Entity_API_Impl implements Entity_API {
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
         try {
-            this.validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas);
+            Validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas, provider.allowExtraProps);
             const { data } = await axios.post(procedure.procedure_callback,
                 {
                     input: input
                 }, {
                     headers: user
                 });
-            this.validator.validate(data, Maybe.fromValue(Object.values(procedure.result)[0]), schemas);
+            Validator.validate(data, Maybe.fromValue(Object.values(procedure.result)[0]), schemas, provider.allowExtraProps);
             return data;
         } catch (err) {
             if (err instanceof ValidationError) {
@@ -219,9 +224,9 @@ export class Entity_API_Impl implements Entity_API {
         }
     }
 
-    private validate_spec(spec: Spec, kind: Kind) {
+    private validate_spec(spec: Spec, kind: Kind, allowExtraProps: boolean) {
         const schemas: any = Object.assign({}, kind.kind_structure);
-        this.validator.validate(spec, Maybe.fromValue(Object.values(kind.kind_structure)[0]), schemas);
+        Validator.validate(spec, Maybe.fromValue(Object.values(kind.kind_structure)[0]), schemas, false);
     }
 
     private validate_metadata_extension(extension_structure: Data_Description, metadata: Metadata | undefined) {
@@ -235,6 +240,6 @@ export class Entity_API_Impl implements Entity_API {
             throw new ValidationError([{"name": "Error", message: "Metadata extension is not specified"}])
         }
         const schemas: any = Object.assign({}, extension_structure);
-        this.validator.validate(metadata.extension, Maybe.fromValue(Object.values(extension_structure)[0]), schemas);
+        Validator.validate(metadata.extension, Maybe.fromValue(Object.values(extension_structure)[0]), schemas, false);
     }
 }
