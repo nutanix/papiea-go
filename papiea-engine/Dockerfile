@@ -8,7 +8,7 @@ RUN apt-get update && apt-get upgrade -y \
     && apt-get install -y wget curl openjdk-11-jdk \
     # For nodejs
     && apt-get install -y gnupg \
-    && curl -sL https://deb.nodesource.com/setup_10.x | bash - \
+    && curl -sL https://deb.nodesource.com/setup_12.x | bash - \
     && apt-get install -y nodejs \
     # Cleanup
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
