@@ -11,8 +11,9 @@ export class Validator {
     }
 
     static validate(data: any, model: Maybe<any>, models: any, allowExtraProps: boolean) {
+        const validatorDenyExtraProps = !allowExtraProps;
         model.mapOrElse((val) => {
-            const res = this.validator.validate(data, val, models, false, allowExtraProps);
+            const res = this.validator.validate(data, val, models, false, validatorDenyExtraProps);
             if (!res.valid) {
                 throw new ValidationError(res.errors);
             }

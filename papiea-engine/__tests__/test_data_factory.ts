@@ -71,6 +71,7 @@ export class ProviderBuilder {
     private _policy: any;
     private _callback: string = `http://${ default_hostname }:${ port }/`;
     private _authModel: any;
+    private _allowExtraProps: boolean = false;
 
     constructor(prefix?: string) {
         if (prefix !== undefined) {
@@ -90,7 +91,8 @@ export class ProviderBuilder {
             procedures: this._procedures,
             extension_structure: this._extension_structure,
             policy: this._policy,
-            authModel: this._authModel
+            authModel: this._authModel,
+            allowExtraProps: this._allowExtraProps
         };
         return provider;
     }
@@ -105,6 +107,14 @@ export class ProviderBuilder {
 
     get policy(): any {
         return this._policy
+    }
+
+    get allowExtraProps(): boolean {
+        return this._allowExtraProps
+    }
+
+    public withAllowExtraProps(allowExtraProps: boolean) {
+        this._allowExtraProps = allowExtraProps
     }
 
     public withCallback(address: string) {
@@ -269,7 +279,7 @@ export class ValidationBuilder {
             if (shouldFail) {
                 try {
                     func();
-                    done.fail();
+                    done.fail(new Error("Falsely validated function"));
                 } catch (e) {
                     done();
                 }
@@ -279,7 +289,7 @@ export class ValidationBuilder {
                     done();
                 } catch (e) {
                     console.error(e);
-                    done.fail();
+                    done.fail(e);
                 }
             }
         }

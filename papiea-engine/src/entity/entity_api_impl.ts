@@ -58,7 +58,7 @@ export class Entity_API_Impl implements Entity_API {
     async save_entity(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, spec_description: Spec, request_metadata: Metadata = {} as Metadata): Promise<[Metadata, Spec]> {
         const provider = await this.provider_api.get_provider(user, prefix, version);
         const kind = this.find_kind(provider, kind_name);
-        this.validate_metadata_extension(provider.extension_structure, request_metadata);
+        this.validate_metadata_extension(provider.extension_structure, request_metadata, provider.allowExtraProps);
         this.validate_spec(spec_description, kind, provider.allowExtraProps);
         if (!request_metadata.uuid) {
             request_metadata.uuid = uuid();
@@ -226,10 +226,10 @@ export class Entity_API_Impl implements Entity_API {
 
     private validate_spec(spec: Spec, kind: Kind, allowExtraProps: boolean) {
         const schemas: any = Object.assign({}, kind.kind_structure);
-        Validator.validate(spec, Maybe.fromValue(Object.values(kind.kind_structure)[0]), schemas, false);
+        Validator.validate(spec, Maybe.fromValue(Object.values(kind.kind_structure)[0]), schemas, allowExtraProps);
     }
 
-    private validate_metadata_extension(extension_structure: Data_Description, metadata: Metadata | undefined) {
+    private validate_metadata_extension(extension_structure: Data_Description, metadata: Metadata | undefined, allowExtraProps: boolean) {
         if (metadata === undefined) {
             return
         }

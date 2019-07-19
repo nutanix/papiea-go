@@ -204,7 +204,7 @@ describe("MongoDb tests", () => {
     test("Register Provider", async () => {
         const providerDb: Provider_DB = await connection.get_provider_db();
         const test_kind = {} as Kind;
-        const provider: Provider = { prefix: "test", version: "0.1.0", kinds: [test_kind], procedures: {}, extension_structure: {} };
+        const provider: Provider = { prefix: "test", version: "0.1.0", kinds: [test_kind], procedures: {}, extension_structure: {}, allowExtraProps: false };
         await providerDb.save_provider(provider);
     });
 

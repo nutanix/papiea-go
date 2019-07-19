@@ -548,6 +548,7 @@ describe("Pagination tests", () => {
     const locationDataDescription = getLocationDataDescription();
     const kind_name = Object.keys(locationDataDescription)[0];
     beforeAll(async () => {
+        jest.setTimeout(5000);
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         sdk.new_kind(locationDataDescription);
         sdk.version(providerVersion);
@@ -556,7 +557,6 @@ describe("Pagination tests", () => {
     });
 
     afterAll(async () => {
-        jest.setTimeout(5000);
         await axios.delete(`http://127.0.0.1:${serverPort}/provider/${providerPrefix}/${providerVersion}`);
     });
 
@@ -697,7 +697,7 @@ describe("Pagination tests", () => {
 
 });
 
-describe("Pagination tests", () => {
+describe("Sorting tests", () => {
     const providerPrefix = "test";
     const providerVersion = "0.1.0";
     const locationDataDescription = getLocationDataDescription();
@@ -744,6 +744,7 @@ describe("Pagination tests", () => {
     }, 5000);
 
     test("Sorting with no explicit order should be ascending", async (done) => {
+        jest.setTimeout(5000);
         try {
             const { data } = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?sort=spec.x`, {
                 spec: {
@@ -759,6 +760,7 @@ describe("Pagination tests", () => {
     });
 
     test("Authorizer doesn't affect the order of sorting", async () => {
+        jest.setTimeout(5000);
         const authorizer = new MockedAuthorizer();
         const specs = [{spec: {x: 10, y: 11}}, {spec: {x: 18, y:27}}, {spec: {x: 22, y: 8}}, {spec: {x: 41, y: 50}}];
         const res = await authorizer.filter({} as UserAuthInfo, specs, {} as Action);
@@ -766,4 +768,43 @@ describe("Pagination tests", () => {
             expect(res[i+1].spec.x).toBeGreaterThan(res[i].spec.x)
         }
     })
+});
+
+describe("Provider with additional props tests", () => {
+    const providerPrefix = "test";
+    const providerVersion = "0.1.0";
+    const locationDataDescription = getLocationDataDescription();
+    const kind_name = Object.keys(locationDataDescription)[0];
+
+    beforeAll(async () => {
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, true);
+        sdk.new_kind(locationDataDescription);
+        sdk.version(providerVersion);
+        sdk.prefix(providerPrefix);
+        await sdk.register();
+    });
+
+    let entity_metadata: Metadata;
+    let entity_spec: Spec;
+
+    afterAll(async () => {
+        await entityApi.delete(`/${ providerPrefix }/${ providerVersion }/${ kind_name }/${ entity_metadata.uuid }`);
+        await axios.delete(`http://127.0.0.1:${serverPort}/provider/${providerPrefix}/${providerVersion}`);
+    });
+
+
+    test("Create spec-only entity with additional props", async () => {
+        const { data: { metadata, spec } } = await entityApi.post(`/${ providerPrefix }/${ providerVersion }/${ kind_name }`, {
+            spec: {
+                x: 10,
+                y: 11,
+                z: 100,
+                f: "Additional prop"
+            }
+        });
+        entity_metadata = metadata;
+        entity_spec = spec;
+    });
+
+
 });
