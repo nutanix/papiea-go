@@ -1,7 +1,7 @@
 import 'jest'
-import { deref, parseJwt } from '../src/auth/user_data_evaluator'
+import { deref, parseJwt } from '../../src/auth/user_data_evaluator'
 import * as _ from "lodash"
-import { loadYaml } from "./test_data_factory";
+import { loadYaml } from "../test_data_factory";
 import uuid = require("uuid");
 
 function base64UrlEncode(...parts: any[]): string {
@@ -218,7 +218,7 @@ describe("Test deref", () => {
 });
 
 describe("Evaluating a full yaml file", () => {
-    const doc = loadYaml("./auth.yaml");
+    const doc = loadYaml("./test_data/auth.yaml");
 
     const headers = doc.oauth.user_info.headers;
     let env = _.omit(doc.oauth.user_info, ['headers']);
