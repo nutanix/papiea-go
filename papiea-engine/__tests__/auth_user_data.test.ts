@@ -231,6 +231,7 @@ describe("Evaluating a full yaml file", () => {
 
             //evaluate headers
             const the_headers = _.mapValues(headers, (v: any) => deref(env, v));
+            delete the_headers["authorization"];
             expect(the_headers).toEqual(
                 {
                     "tenant-email": "alice@localhost",
@@ -238,7 +239,6 @@ describe("Evaluating a full yaml file", () => {
                     "tenant-fname": "Alice",
                     "tenant-lname": "Doe",
                     "tenant-role": "papiea-admin",
-                    "authorization": `Bearer ${ token.token.access_token }`,
                     "owner": "alice"
                 });
             done()
