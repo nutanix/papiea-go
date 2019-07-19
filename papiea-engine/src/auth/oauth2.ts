@@ -4,9 +4,6 @@ import { Signature } from "./crypto";
 import { Provider_DB } from "../databases/provider_db_interface";
 import { extract_property } from "./user_data_evaluator";
 import { Provider } from "papiea-core";
-import Axios from "axios";
-const querystring = require('querystring');
-import { access } from "fs";
 
 const simpleOauthModule = require("simple-oauth2"),
     queryString = require("query-string"),

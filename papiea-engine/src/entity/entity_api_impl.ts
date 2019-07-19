@@ -4,7 +4,7 @@ import { Spec_DB } from "../databases/spec_db_interface";
 import { Entity_API } from "./entity_api_interface";
 import { ValidationError, Validator } from "../validator";
 import * as uuid_validate from "uuid-validate";
-import { Authorizer, ReadAction, CreateAction, DeleteAction, UpdateAction, CallProcedureByNameAction } from "../auth/authz";
+import { Authorizer, ReadAction, CreateAction, DeleteAction, UpdateAction } from "../auth/authz";
 import { UserAuthInfo } from "../auth/authn";
 import { Provider_API } from "../provider/provider_api_interface";
 import uuid = require("uuid");
@@ -126,7 +126,6 @@ export class Entity_API_Impl implements Entity_API {
         const kind: Kind = await this.get_kind(user, prefix, kind_name, version);
         const entity_spec: [Metadata, Spec] = await this.get_entity_spec(user, kind_name, entity_uuid);
         const entity_status: [Metadata, Status] = await this.get_entity_status(user, kind_name, entity_uuid);
-        await this.authorizer.checkPermission(user, { "metadata": entity_spec[0] }, CallProcedureByNameAction(procedure_name));
         const procedure: Procedural_Signature | undefined = kind.entity_procedures[procedure_name];
         if (procedure === undefined) {
             throw new Error(`Procedure ${procedure_name} not found for kind ${kind.name}`);
@@ -160,7 +159,6 @@ export class Entity_API_Impl implements Entity_API {
 
     async call_provider_procedure(user: UserAuthInfo, prefix: string, version: Version, procedure_name: string, input: any): Promise<any> {
         const provider = await this.provider_api.get_provider(user, prefix, version);
-        await this.authorizer.checkPermission(user, { provider: provider }, CallProcedureByNameAction(procedure_name));
         if (provider.procedures === undefined) {
             throw new Error(`Procedure ${procedure_name} not found for provider ${prefix}`);
         }
@@ -192,7 +190,6 @@ export class Entity_API_Impl implements Entity_API {
 
     async call_kind_procedure(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, procedure_name: string, input: any): Promise<any> {
         const kind: Kind = await this.get_kind(user, prefix, kind_name, version);
-        await this.authorizer.checkPermission(user, { kind: kind }, CallProcedureByNameAction(procedure_name));
         const procedure: Procedural_Signature | undefined = kind.kind_procedures[procedure_name];
         if (procedure === undefined) {
             throw new Error(`Procedure ${procedure_name} not found for kind ${kind.name}`);

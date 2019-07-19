@@ -56,10 +56,12 @@ export function createAuthnRouter(adminKey: string, signature: Signature, s2skey
         } else {
             try {
                 userInfo = await signature.verify(token);
+                userInfo.authorization = req.headers.authorization;
             } catch (e) {
                 try {
                     const s2skey: S2S_Key = await s2skeyDb.get_key(token);
                     userInfo = s2skey.extension;
+                    userInfo.authorization = 'Bearer ' + s2skey.key;
                 } catch (e) {
                     throw new UnauthorizedError();
                 }

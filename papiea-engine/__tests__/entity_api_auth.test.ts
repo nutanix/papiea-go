@@ -406,7 +406,23 @@ describe("Entity API auth tests", () => {
     });
 
     test("Call entity procedure without permission should fail", async () => {
-        expect.hasAssertions();
+        const server = http.createServer((req, res) => {
+            if (req.method == 'POST') {
+                let body = '';
+                req.on('data', function (data) {
+                    body += data;
+                });
+                req.on('end', function () {
+                    // Some operation which causes forbidden
+                    res.statusCode = 403;
+                    res.end();
+                    server.close();
+                });
+            }
+        });
+        server.listen(procedureCallbackPort, procedureCallbackHostname, () => {
+            console.log(`Server running at http://${ procedureCallbackHostname }:${ procedureCallbackPort }/`);
+        });
         try {
             const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
             await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
@@ -422,7 +438,43 @@ describe("Entity API auth tests", () => {
     });
 
     test("Call entity procedure with permission should succeed", async () => {
-        expect.hasAssertions();
+        const server = http.createServer((req, res) => {
+            if (req.method == 'POST') {
+                let body = '';
+                req.on('data', function (data) {
+                    body += data;
+                });
+                req.on('end', function () {
+                    const post = JSON.parse(body);
+                    const authorization = req.headers['authorization'];
+                    entityApi.get(`/${ provider.prefix }/${ provider.version }/${ kind_name }/${ post.metadata.uuid }`,
+                        { headers: { 'Authorization': authorization } }
+                    ).then(response => {
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'text/plain');
+                        res.end(JSON.stringify(response.data.spec));
+                        server.close();
+                    }).catch(err => {
+                        res.statusCode = err.response.status;
+                        res.end();
+                        server.close();
+                    });
+                });
+            }
+        });
+        server.listen(procedureCallbackPort, procedureCallbackHostname, () => {
+            console.log(`Server running at http://${ procedureCallbackHostname }:${ procedureCallbackPort }/`);
+        });
+        const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`);
+        await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+            policy: `p, alice, owner, ${ kind_name }, read, allow`
+        });
+        await entityApi.post(`/${ provider.prefix }/${ provider.version }/${ kind_name }/${ entity_metadata.uuid }/procedure/moveX`, { input: 5 },
+            { headers: { 'Authorization': 'Bearer ' + token } }
+        );
+    });
+
+    test("Call kind procedure by provider-user should succeed", async () => {
         const server = http.createServer((req, res) => {
             if (req.method == 'POST') {
                 let body = '';
@@ -441,29 +493,13 @@ describe("Entity API auth tests", () => {
         server.listen(procedureCallbackPort, procedureCallbackHostname, () => {
             console.log(`Server running at http://${ procedureCallbackHostname }:${ procedureCallbackPort }/`);
         });
-        const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`);
-        await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
-            policy: `p, alice, owner, ${ kind_name }, read, allow\np, alice, owner, ${ kind_name }, call_movex, allow`
+        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+        await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
+            policy: `p, alice, owner, ${kind_name}, *, allow`
         });
-        await entityApi.post(`/${ provider.prefix }/${ provider.version }/${ kind_name }/${ entity_metadata.uuid }/procedure/moveX`, { input: 5 },
+        await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/computeGeolocation`, { input: "5" },
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
-    });
-
-    test("Call kind procedure by provider-user should fail", async () => {
-        expect.hasAssertions();
-        try {
-            const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
-            await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
-                policy: `p, alice, owner, ${kind_name}, *, allow`
-            });
-            await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/moveX`, { input: 5 },
-                { headers: { 'Authorization': 'Bearer ' + token } }
-            );
-            throw new Error("Call procedure without permission should fail");
-        } catch (e) {
-            expect(e.response.status).toEqual(403);
-        }
     });
 
     test("Call kind procedure by provider-admin should succeed", async () => {
@@ -502,25 +538,38 @@ describe("Entity API auth tests", () => {
         );
     });
 
-    test("Call provider procedure by provider-user should fail", async () => {
-        expect.hasAssertions();
-        try {
-            const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
-            await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
-                policy: `p, alice, owner, ${kind_name}, *, allow`
-            });
-            await entityApi.post(`/${provider.prefix}/${provider.version}/procedure/computeSum`, {
-                input: {
-                    "a": 5,
-                    "b": 5
-                }
-            },
-                { headers: { 'Authorization': 'Bearer ' + token } }
-            );
-            throw new Error("Call procedure without permission should fail");
-        } catch (e) {
-            expect(e.response.status).toEqual(403);
-        }
+    test("Call provider procedure by provider-user should succeed", async () => {
+        const server = http.createServer((req, res) => {
+            if (req.method == 'POST') {
+                let body = '';
+                req.on('data', function (data) {
+                    body += data;
+                });
+                req.on('end', function () {
+                    const post = JSON.parse(body);
+                    const sum = post.input.a + post.input.b;
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'text/plain');
+                    res.end(JSON.stringify(sum));
+                    server.close();
+                });
+            }
+        });
+        server.listen(procedureCallbackPort, procedureCallbackHostname, () => {
+            console.log(`Server running at http://${ procedureCallbackHostname }:${ procedureCallbackPort }/`);
+        });
+        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+        await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
+            policy: `p, alice, owner, ${kind_name}, *, allow`
+        });
+        await entityApi.post(`/${ provider.prefix }/${ provider.version }/procedure/computeSum`, {
+            input: {
+                "a": 5,
+                "b": 5
+            }
+        },
+            { headers: { 'Authorization': 'Bearer ' + token } }
+        );
     });
 
     test("Call provider procedure by provider-admin should succeed", async () => {
