@@ -140,3 +140,19 @@ export function extract_property(token: any, oauth_description: any, property: s
 
     return _.mapValues(user_identifiers, (v: any) => deref(env, v))
 }
+
+export function constructBearerTokenPath(property: string, token: string) {
+    const parts = property.split("^");
+    const pathValue = parts[1].slice(0, parts[1].length - 1);
+    const obj: any = {};
+    let current: any = obj;
+    let prev: any = current;
+    const dotNotationPath = pathValue.split(".");
+    for (let i = 0; i < dotNotationPath.length; i++) {
+        current[dotNotationPath[i]] = {};
+        prev = current;
+        current = current[dotNotationPath[i]]
+    }
+    prev[Object.keys(prev)[0]] = token;
+    return obj;
+}
