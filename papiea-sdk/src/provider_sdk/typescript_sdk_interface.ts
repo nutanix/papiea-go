@@ -2,6 +2,7 @@
 import { Kind_Builder } from "./typescript_sdk";
 import { Data_Description, Version, Status, Entity, Entity_Reference, Key } from "papiea-core";
 import { Request, Response } from "express";
+import { Actions } from "./typescript_sdk_context_impl";
 
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Providers-SDK-518][provider_sdk_ts_provider_interface]]
 // Api for the provider-sdk
@@ -67,8 +68,7 @@ export interface IntentfulCtx_Interface {
     update_progress(message:string, done_percent:number):boolean
     url_for(entity: Entity): string
     get_security_api(): SecurityApi
-    get_request(): Request
-    get_response(): Response
+    check_permission(entity_reference: Entity_Reference, action: Actions): Promise<boolean>
 }
 
 // For the time being these are equal. Later they may differ

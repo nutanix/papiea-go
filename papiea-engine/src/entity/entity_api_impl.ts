@@ -237,7 +237,7 @@ export class Entity_API_Impl implements Entity_API {
 
     async check_permissions(user: UserAuthInfo, prefix: string, version: Version, action: Action, entityRef: Entity_Reference): Promise<boolean> {
         const entity_ref: Entity_Reference = { kind: entityRef.kind, uuid: entityRef.uuid };
-        const [metadata, spec] = await this.spec_db.get_spec(entity_ref);
+        const [metadata, _] = await this.spec_db.get_spec(entity_ref);
         try {
             await this.authorizer.checkPermission(user, { "metadata": metadata }, action);
             return true;

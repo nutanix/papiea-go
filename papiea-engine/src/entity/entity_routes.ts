@@ -126,9 +126,8 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
         res.json(result);
     }));
 
-    // TODO: make an endpoint /services/:prefix/:version/.../check_permission
-    router.post("/:prefix/:version", asyncHandler(async (req, res) => {
-        const allowed: boolean = await entity_api.check_permissions(req.user, req.params.prefix, req.params.version, req.body.action, req.body.entity_ref)
+    router.post("/:prefix/:version/check_permission", asyncHandler(async (req, res) => {
+        const allowed: boolean = await entity_api.check_permissions(req.user, req.params.prefix, req.params.version, req.body.action, req.body.entity_ref);
         if (allowed) {
             res.json({"success": "Ok"})
         } else {

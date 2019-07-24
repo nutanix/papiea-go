@@ -10,33 +10,38 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
     provider_url: string;
     private readonly providerApiAxios: AxiosInstance;
     private readonly securityApi: SecurityApi;
-    private req: Request;
-    private res: Response;
+    private readonly headers: any;
 
 
-    constructor(provider_url:string, entity_url: string, provider_prefix: string, provider_version: string, providerApiAxios:AxiosInstance, securityApi:SecurityApi, req:Request, res:Response) {
+    constructor(provider_url:string, entity_url: string, provider_prefix: string, provider_version: string, providerApiAxios:AxiosInstance, securityApi:SecurityApi, headers: any) {
         this.provider_url = provider_url
         this.base_url = entity_url;
         this.provider_prefix = provider_prefix;
         this.provider_version = provider_version;
         this.providerApiAxios = providerApiAxios
         this.securityApi = securityApi
-        this.req = req
-        this.res = res
+        this.headers = headers;
     }
 
     url_for(entity: Entity): string {
         return `${this.base_url}/${this.provider_prefix}/${this.provider_version}/${entity.metadata.kind}/${entity.metadata.uuid}`
     }
 
-    // TODO: make functions for all actions
-    // TODO: make call to /services/check_permission with body {ref: entity_reference, action: update}
+    async check_permission(entity_reference: Entity_Reference, action: Actions): Promise<boolean> {
+        try {
+            const { data: { success } } = await axios.post(`${ this.base_url }/${ this.provider_prefix }/${ this.provider_version }/check_permission`,
+                {
+                    entity_ref: entity_reference,
+                    action: action
+                }, this.headers);
+            return success === "Ok";
+        } catch (e) {
+            return false;
+        }
+    }
 
 
-
-    // TODO: receive headers from request
     async update_status(entity_reference: Entity_Reference, status: Status): Promise<boolean> {
-        // TODO: propagate headers to make auth
         const res = await this.providerApiAxios.patch(`${this.provider_url}/update_status`,{
             entity_ref: entity_reference,
             status: status
@@ -55,10 +60,18 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
     get_security_api(): SecurityApi {
         return this.securityApi
     }
-    get_request(): Request {
-        return this.req
-    }
-    get_response(): Response {
-        return this.res
-    }
+}
+
+export enum Actions {
+    ReadAction = "read",
+    UpdateAction = "write",
+    CreateAction = "create",
+    DeleteAction = "delete",
+    RegisterProvider = "register_provider",
+    UnregsiterProvider = "unregister_provider",
+    ReadProvider = "read_provider",
+    UpdateAuth = "update_auth",
+    CreateS2SKey = "create_key",
+    ReadS2SKey = "read_key",
+    InactivateS2SKey = "inactive_key"
 }
