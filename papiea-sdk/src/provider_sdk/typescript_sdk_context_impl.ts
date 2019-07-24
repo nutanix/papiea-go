@@ -29,7 +29,14 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
         return `${this.base_url}/${this.provider_prefix}/${this.provider_version}/${entity.metadata.kind}/${entity.metadata.uuid}`
     }
 
+    // TODO: make functions for all actions
+    // TODO: make call to /services/check_permission with body {ref: entity_reference, action: update}
+
+
+
+    // TODO: receive headers from request
     async update_status(entity_reference: Entity_Reference, status: Status): Promise<boolean> {
+        // TODO: propagate headers to make auth
         const res = await this.providerApiAxios.patch(`${this.provider_url}/update_status`,{
             entity_ref: entity_reference,
             status: status

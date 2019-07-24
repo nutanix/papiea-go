@@ -3,6 +3,7 @@ import { Router } from "express";
 import { UserAuthInfo, asyncHandler } from '../auth/authn';
 import { processPaginationParams, processSortQuery } from "../utils/utils";
 import { SortParams } from "./entity_api_impl";
+import { PermissionDeniedError } from "../auth/authz";
 
 
 export function createEntityAPIRouter(entity_api: Entity_API): Router {
@@ -123,6 +124,16 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
     router.post("/:prefix/:version/procedure/:procedure_name", asyncHandler(async (req, res) => {
         const result: any = await entity_api.call_provider_procedure(req.user, req.params.prefix, req.params.version, req.params.procedure_name, req.body.input);
         res.json(result);
+    }));
+
+    // TODO: make an endpoint /services/:prefix/:version/.../check_permission
+    router.post("/:prefix/:version", asyncHandler(async (req, res) => {
+        const allowed: boolean = await entity_api.check_permissions(req.user, req.params.prefix, req.params.version, req.body.action, req.body.entity_ref)
+        if (allowed) {
+            res.json({"success": "Ok"})
+        } else {
+            throw new PermissionDeniedError()
+        }
     }));
 
     return router;

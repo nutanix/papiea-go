@@ -4,7 +4,7 @@ import { Spec_DB } from "../databases/spec_db_interface";
 import { Entity_API } from "./entity_api_interface";
 import { ValidationError, Validator } from "../validator";
 import * as uuid_validate from "uuid-validate";
-import { Authorizer, ReadAction, CreateAction, DeleteAction, UpdateAction } from "../auth/authz";
+import { Authorizer, ReadAction, CreateAction, DeleteAction, UpdateAction, Action } from "../auth/authz";
 import { UserAuthInfo } from "../auth/authn";
 import { Provider_API } from "../provider/provider_api_interface";
 import uuid = require("uuid");
@@ -233,5 +233,16 @@ export class Entity_API_Impl implements Entity_API {
         }
         const schemas: any = Object.assign({}, extension_structure);
         this.validator.validate(metadata.extension, Maybe.fromValue(Object.values(extension_structure)[0]), schemas);
+    }
+
+    async check_permissions(user: UserAuthInfo, prefix: string, version: Version, action: Action, entityRef: Entity_Reference): Promise<boolean> {
+        const entity_ref: Entity_Reference = { kind: entityRef.kind, uuid: entityRef.uuid };
+        const [metadata, spec] = await this.spec_db.get_spec(entity_ref);
+        try {
+            await this.authorizer.checkPermission(user, { "metadata": metadata }, action);
+            return true;
+        } catch (e) {
+            return false;
+        }
     }
 }

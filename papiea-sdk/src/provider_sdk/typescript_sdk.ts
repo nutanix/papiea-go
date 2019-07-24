@@ -405,6 +405,7 @@ export class Kind_Builder {
         const version = this.get_version();
         this.server_manager.register_handler(`/${this.kind.name}/${name}`, async (req, res) => {
             try {
+                // TODO: provider only headers instead of full 'req', 'res'?
                 const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version, this.providerApiAxios, this.securityApi, req, res), {
                     metadata: req.body.metadata,
                     spec: req.body.spec,

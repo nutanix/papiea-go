@@ -1,6 +1,8 @@
 import { UserAuthInfo } from "../auth/authn";
 import { Version, Spec, Metadata, uuid4, Status } from "papiea-core";
 import { SortParams } from "./entity_api_impl";
+import { Action } from "../auth/authz";
+import { Entity_Reference } from "papiea-core/build/core";
 
 export interface Entity_API {
     save_entity(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, spec_description: Spec, request_metadata: Metadata): Promise<[Metadata, Spec]>
@@ -22,4 +24,6 @@ export interface Entity_API {
     call_kind_procedure(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, procedure_name: string, input: any): Promise<any>
 
     call_provider_procedure(user: UserAuthInfo, prefix: string, version: Version, procedure_name: string, input: any): Promise<any>
+
+    check_permissions(user: UserAuthInfo, prefix: string, version: Version, action: Action, entityRef: Entity_Reference): Promise<boolean>
 }
