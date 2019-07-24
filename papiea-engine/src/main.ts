@@ -55,7 +55,7 @@ async function setUpApplication(): Promise<express.Express> {
     const validator = new Validator(disallowExtraProps);
     const providerApi = new Provider_API_Impl(providerDb, statusDb, s2skeyDb, validator, new AdminAuthorizer());
     const signature = new JWTHMAC(tokenSecret, tokenExpiresSeconds);
-    app.use(createAuthnRouter(adminKey, signature, s2skeyDb));
+    app.use(createAuthnRouter(adminKey, signature, s2skeyDb, providerDb));
     app.use(createOAuth2Router(oauth2RedirectUri, signature, providerDb));
     const entityApiAuthorizer: Authorizer = new PerProviderAuthorizer(providerApi, new ProviderCasbinAuthorizerFactory());
     app.use('/provider', createProviderAPIRouter(providerApi));

@@ -1,5 +1,5 @@
 import 'jest'
-import { deref, parseJwt } from '../src/auth/user_data_evaluator'
+import { constructBearerTokenPath, deref, parseJwt } from '../src/auth/user_data_evaluator'
 import * as _ from "lodash"
 import { loadYaml } from "./test_data_factory";
 import uuid = require("uuid");
@@ -215,6 +215,13 @@ describe("Test deref", () => {
         expect(deref(env, "$bearer(abcd)")).toEqual(`Bearer abcd`);
         done();
     });
+
+    test("Constructing object with Bearer token from the yaml file", done => {
+        expect(constructBearerTokenPath("$bearer(^token.id_token)", "sampleToken")).toEqual({token: {id_token: "sampleToken"}});
+        expect(constructBearerTokenPath("$bearer(^token.access_token)", "sampleToken")).toEqual({token: {access_token: "sampleToken"}});
+        expect(constructBearerTokenPath("$bearer(^token.access_token.some_field)", "sampleToken")).toEqual({token: {access_token: {some_field: "sampleToken"}}});
+        done();
+    })
 });
 
 describe("Evaluating a full yaml file", () => {
@@ -231,7 +238,6 @@ describe("Evaluating a full yaml file", () => {
 
             //evaluate headers
             const the_headers = _.mapValues(headers, (v: any) => deref(env, v));
-            delete the_headers["authorization"];
             expect(the_headers).toEqual(
                 {
                     "tenant-email": "alice@localhost",
@@ -239,6 +245,7 @@ describe("Evaluating a full yaml file", () => {
                     "tenant-fname": "Alice",
                     "tenant-lname": "Doe",
                     "tenant-role": "papiea-admin",
+                    "authorization": `Bearer ${ token.token.id_token }`,
                     "owner": "alice"
                 });
             done()

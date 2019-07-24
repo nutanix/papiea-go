@@ -35,7 +35,7 @@ function getOAuth2(provider: Provider) {
     return simpleOauthModule.create(converted_oauth);
 }
 
-function getUserInfoFromToken(token: any, provider: Provider): UserAuthInfo {
+export function getUserInfoFromToken(token: any, provider: Provider): UserAuthInfo {
 
     const extracted_headers = extract_property(token, provider.oauth2, "headers");
 
