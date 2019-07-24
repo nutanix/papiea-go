@@ -32,6 +32,15 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
         return {results: pageEntities, entity_count: totalEntities};
     };
 
+    router.post("/:prefix/:version/check_permission", asyncHandler(async (req, res) => {
+        const allowed: boolean = await entity_api.check_permissions(req.user, req.params.prefix, req.params.version, req.body.action, req.body.entity_ref);
+        if (allowed) {
+            res.json({"success": "Ok"})
+        } else {
+            throw new PermissionDeniedError()
+        }
+    }));
+
     router.get("/:prefix/:version/:kind", asyncHandler(async (req, res) => {
         const filter: any = {};
         const offset: undefined | number = req.query.offset;
@@ -124,15 +133,6 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
     router.post("/:prefix/:version/procedure/:procedure_name", asyncHandler(async (req, res) => {
         const result: any = await entity_api.call_provider_procedure(req.user, req.params.prefix, req.params.version, req.params.procedure_name, req.body.input);
         res.json(result);
-    }));
-
-    router.post("/:prefix/:version/check_permission", asyncHandler(async (req, res) => {
-        const allowed: boolean = await entity_api.check_permissions(req.user, req.params.prefix, req.params.version, req.body.action, req.body.entity_ref);
-        if (allowed) {
-            res.json({"success": "Ok"})
-        } else {
-            throw new PermissionDeniedError()
-        }
     }));
 
     return router;

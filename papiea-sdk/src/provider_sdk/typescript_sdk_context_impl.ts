@@ -1,7 +1,6 @@
 import { ProceduralCtx_Interface, SecurityApi } from "./typescript_sdk_interface";
-import { Entity, Status, Entity_Reference } from "papiea-core";
+import { Entity, Status, Entity_Reference, Version } from "papiea-core";
 import axios, { AxiosInstance } from "axios";
-import { Request, Response } from "express";
 
 export class ProceduralCtx implements ProceduralCtx_Interface {
     base_url: string;
@@ -27,7 +26,7 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
         return `${this.base_url}/${this.provider_prefix}/${this.provider_version}/${entity.metadata.kind}/${entity.metadata.uuid}`
     }
 
-    async check_permission(entity_reference: Entity_Reference, action: Actions): Promise<boolean> {
+    async check_permission(provider_prefix: string, provider_version: Version, entity_reference: Entity_Reference, action: Actions): Promise<boolean> {
         try {
             const { data: { success } } = await axios.post(`${ this.base_url }/${ this.provider_prefix }/${ this.provider_version }/check_permission`,
                 {

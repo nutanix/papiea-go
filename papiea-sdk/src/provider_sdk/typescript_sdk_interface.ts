@@ -68,7 +68,7 @@ export interface IntentfulCtx_Interface {
     update_progress(message:string, done_percent:number):boolean
     url_for(entity: Entity): string
     get_security_api(): SecurityApi
-    check_permission(entity_reference: Entity_Reference, action: Actions): Promise<boolean>
+    check_permission(provider_prefix: string, provider_version: Version, entity_reference: Entity_Reference, action: Actions): Promise<boolean>
 }
 
 // For the time being these are equal. Later they may differ
