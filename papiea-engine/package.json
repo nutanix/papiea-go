@@ -25,7 +25,11 @@
   "author": "Shlomi Vaknin",
   "license": "ISC",
   "dependencies": {
+    "@types/atob": "^2.1.2",
+    "@types/btoa": "^1.2.3",
+    "atob": "^2.1.2",
     "axios": "^0.18.0",
+    "btoa": "^1.2.1",
     "casbin": "^2.0.1",
     "express": "^4.16.4",
     "express-async-handler": "^1.1.4",
