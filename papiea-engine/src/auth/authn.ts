@@ -4,7 +4,6 @@ import { S2S_Key_DB } from "../databases/s2skey_db_interface";
 import { S2S_Key, Version, Provider } from "papiea-core";
 import { Provider_DB } from "../databases/provider_db_interface";
 import { getUserInfoFromToken } from "./oauth2";
-import atob = require("atob");
 import { constructBearerTokenPath } from "./user_data_evaluator";
 
 export class UnauthorizedError extends Error {
@@ -122,12 +121,9 @@ class AuthenticationContext {
     async getUserAuthInfo(): Promise<UserAuthInfo> {
         let userAuthInfo: UserAuthInfo | null = null;
         let i = 0;
-        console.log(this.authStrategies.length);
         while (userAuthInfo === null && i < this.authStrategies.length) {
             userAuthInfo = await this.authStrategies[i].getUserAuthInfo(this.token);
             i++;
-            console.log(i);
-            console.log(userAuthInfo);
         }
         if (userAuthInfo !== null) {
             return userAuthInfo;
