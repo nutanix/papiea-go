@@ -33,12 +33,22 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
     };
 
     router.post("/:prefix/:version/check_permission", asyncHandler(async (req, res) => {
-        const allowed: boolean = await entity_api.check_permissions(req.user, req.params.prefix, req.params.version, req.body.action, req.body.entity_ref);
+        const allowed: boolean = await entity_api.check_permission(req.user, req.params.prefix, req.params.version, req.body.action, req.body);
         if (allowed) {
             res.json({"success": "Ok"})
         } else {
             throw new PermissionDeniedError()
         }
+    }));
+
+    router.post("/:prefix/:version/check_permissions", asyncHandler(async (req, res) => {
+        const allowed: boolean = await entity_api.check_permissions(req.user, req.params.prefix, req.params.version, req.body.action, req.body);
+        if (allowed) {
+            res.json({"success": "Ok"})
+        } else {
+            throw new PermissionDeniedError()
+        }
+        console.log()
     }));
 
     router.get("/:prefix/:version/:kind", asyncHandler(async (req, res) => {

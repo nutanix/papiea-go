@@ -246,9 +246,45 @@ export class Entity_API_Impl implements Entity_API {
         this.validator.validate(metadata.extension, Maybe.fromValue(Object.values(extension_structure)[0]), schemas);
     }
 
-    async check_permissions(user: UserAuthInfo, prefix: string, version: Version, action: Actions, entityRef: Entity_Reference): Promise<boolean> {
-        const entity_ref: Entity_Reference = { kind: entityRef.kind, uuid: entityRef.uuid };
-        const [metadata, _] = await this.spec_db.get_spec(entity_ref);
+    async check_permission(user: UserAuthInfo, prefix: string, version: Version, action: Actions, requestParams: any): Promise<boolean> {
+        if (action === Actions.CreateAction) {
+            const metadata = requestParams.metadata;
+            return this.has_permission(user, metadata, action)
+        } else {
+            const entityRef = requestParams.entity_ref;
+            const [metadata, _] = await this.spec_db.get_spec(entityRef);
+            return this.has_permission(user, metadata, action)
+        }
+    }
+
+    async check_permissions(user: UserAuthInfo, prefix: string, version: Version, action: Actions, requestParams: any): Promise<boolean> {
+        if (action === Actions.CreateAction) {
+            const metadatas = requestParams.metadata;
+            if (metadatas.length && metadatas.length > 1) {
+                const metadataPromises: Promise<boolean>[] = [];
+                for (let meta of metadatas) {
+                    metadatas.push(this.has_permission(user, meta, action));
+                }
+                return (await Promise.all(metadataPromises)).every((val, index, arr) => val)
+            } else {
+                throw new Error("Please use /services/:prefix/:version/check_permission for single item check")
+            }
+        } else {
+            const entityRefs = requestParams.entity_ref;
+            if (entityRefs.length && entityRefs.length > 1) {
+                const refPromises: Promise<boolean>[] = [];
+                for (let ref of entityRefs) {
+                    const [metadata, _] = await this.spec_db.get_spec(ref);
+                    refPromises.push(this.has_permission(user, metadata, action));
+                }
+                return (await Promise.all(refPromises)).every((val, index, arr) => val)
+            } else {
+                throw new Error("Please use /services/:prefix/:version/check_permission for single item check")
+            }
+        }
+    }
+
+    async has_permission(user: UserAuthInfo, metadata: Metadata, action: Actions) {
         try {
             await this.authorizer.checkPermission(user, { "metadata": metadata }, action);
             return true;

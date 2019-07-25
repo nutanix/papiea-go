@@ -25,5 +25,7 @@ export interface Entity_API {
 
     call_provider_procedure(user: UserAuthInfo, prefix: string, version: Version, procedure_name: string, input: any): Promise<any>
 
-    check_permissions(user: UserAuthInfo, prefix: string, version: Version, action: Actions, entityRef: Entity_Reference): Promise<boolean>
+    check_permission(user: UserAuthInfo, prefix: string, version: Version, action: Actions, entityRef: Entity_Reference): Promise<boolean>
+
+    check_permissions(user: UserAuthInfo, prefix: string, version: Version, action: Actions, requestParams: any): Promise<boolean>
 }

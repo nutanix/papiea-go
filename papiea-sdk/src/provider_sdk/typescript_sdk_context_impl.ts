@@ -3,6 +3,8 @@ import { Entity, Status, Entity_Reference, Provider, Key } from "papiea-core";
 import axios, { AxiosInstance } from "axios";
 import { ProviderSdk, Version } from "./typescript_sdk";
 import { IncomingHttpHeaders } from "http";
+import { isEntityRef, isEntityRefArray, isMetadata, isMetadataArray } from "./typescript_sdk_utils";
+import * as assert from "assert";
 
 export class ProceduralCtx implements ProceduralCtx_Interface {
     base_url: string;
@@ -28,13 +30,33 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
         return `${this.base_url}/${this.provider_prefix}/${this.provider_version}/${entity.metadata.kind}/${entity.metadata.uuid}`
     }
 
-    async check_permission(provider_prefix: string, provider_version: Version, entity_reference: Entity_Reference, action: Actions): Promise<boolean> {
+    async check_permission(provider_prefix: string, provider_version: Version, entity: any, action: Actions): Promise<boolean> {
         try {
-            console.log(provider_prefix);
-            console.log(provider_version);
-            const { data: { success } } = await axios.post(`${ this.base_url }/${ provider_prefix }/${ provider_version }/check_permission`,
+            if (isMetadataArray(entity)) {
+                assert(action === Actions.CreateAction);
+                return this.try_check(provider_prefix, provider_version, entity, action, "metadata", true)
+            } else if (isEntityRefArray(entity)) {
+                return this.try_check(provider_prefix, provider_version, entity, action, "entity_ref", true)
+            } else if (isMetadata(entity)) {
+                assert(action === Actions.CreateAction);
+                return this.try_check(provider_prefix, provider_version, entity, action, "metadata")
+            } else if (isEntityRef(entity)) {
+                return this.try_check(provider_prefix, provider_version, entity, action, "entity_ref")
+            } else {
+                throw new Error(`Entity of unsupported type ${ typeof entity }`)
+            }
+        } catch (e) {
+            console.error(`Error: ${e} occurred while invoking permission check`);
+            throw e;
+        }
+    }
+
+    async try_check(provider_prefix: string, provider_version: Version, value: any, action: Actions, request_field: string, multiple: boolean = false) {
+        const url = multiple ? `${ this.base_url }/${ provider_prefix }/${ provider_version }/check_permissions` : `${ this.base_url }/${ provider_prefix }/${ provider_version }/check_permission`;
+        try {
+            const { data: { success } } = await axios.post(url,
                 {
-                    entity_ref: entity_reference,
+                    [request_field]: value,
                     action: action
                 }, { headers: this.headers });
             return success === "Ok";

@@ -35,12 +35,10 @@ class IdpAuthenticationStrategy implements AuthenticationStrategy {
             if (!this.provider_prefix || !this.provider_version) {
                 return null;
             }
-            console.log(JSON.parse(atob(token)));
             const provider: Provider = await this.providerDb.get_provider(this.provider_prefix, this.provider_version);
             const userInfo = getUserInfoFromToken(JSON.parse(atob(token)), provider);
             userInfo.provider_prefix = this.provider_prefix;
             userInfo.provider_version = this.provider_version;
-            console.log(userInfo.authorization);
             delete userInfo.is_admin;
             return userInfo;
         } catch (e) {
