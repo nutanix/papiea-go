@@ -1,7 +1,9 @@
 import { ProceduralCtx_Interface, SecurityApi } from "./typescript_sdk_interface";
-import { Entity, Status, Entity_Reference } from "papiea-core";
+import { Entity, Status, Entity_Reference, Provider, Key } from "papiea-core";
 import axios, { AxiosInstance } from "axios";
 import { Request, Response } from "express";
+import { ProviderSdk } from "./typescript_sdk";
+import { IncomingHttpHeaders } from "http";
 
 export class ProceduralCtx implements ProceduralCtx_Interface {
     base_url: string;
@@ -9,20 +11,18 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
     provider_version: string;
     provider_url: string;
     private readonly providerApiAxios: AxiosInstance;
-    private readonly securityApi: SecurityApi;
-    private req: Request;
-    private res: Response;
+    provider: ProviderSdk;
+    headers: IncomingHttpHeaders;
 
+    constructor(provider:ProviderSdk, provider_prefix: string, provider_version: string, headers: IncomingHttpHeaders) {
 
-    constructor(provider_url:string, entity_url: string, provider_prefix: string, provider_version: string, providerApiAxios:AxiosInstance, securityApi:SecurityApi, req:Request, res:Response) {
-        this.provider_url = provider_url
-        this.base_url = entity_url;
-        this.provider_prefix = provider_prefix;
+        this.provider_url = provider.provider_url
+        this.base_url = provider.entity_url;
+        this.provider_prefix = provider_prefix
         this.provider_version = provider_version;
-        this.providerApiAxios = providerApiAxios
-        this.securityApi = securityApi
-        this.req = req
-        this.res = res
+        this.providerApiAxios = provider.provider_api_axios
+        this.provider = provider
+        this.headers = headers
     }
 
     url_for(entity: Entity): string {
@@ -45,13 +45,21 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
         throw new Error("Unimplemented")
     }
 
-    get_security_api(): SecurityApi {
-        return this.securityApi
+    get_provider_security_api(): SecurityApi {
+        return this.provider.providerSecurityApi
     }
-    get_request(): Request {
-        return this.req
+    get_user_security_api(user_s2skey: Key): SecurityApi {
+        return this.provider.new_security_api(user_s2skey)
     }
-    get_response(): Response {
-        return this.res
+    get_headers(): IncomingHttpHeaders {
+        return this.headers 
+    }
+    get_invoking_token(): string {
+        if (this.headers.authorization) {
+            const parts = this.headers.authorization.split(' ')
+            if (parts[0] === 'Bearer') 
+                return parts[1]
+        }
+        throw new Error("No invoking user")
     }
 }
