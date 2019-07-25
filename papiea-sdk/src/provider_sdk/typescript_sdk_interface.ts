@@ -2,7 +2,6 @@
 import { Kind_Builder } from "./typescript_sdk";
 import { Data_Description, Version, Status, Entity, Entity_Reference, Key, S2S_Key, UserInfo } from "papiea-core";
 import { IncomingHttpHeaders } from "http";
-import { Data_Description, Version, Status, Entity, Entity_Reference, Key } from "papiea-core";
 import { Actions } from "./typescript_sdk_context_impl";
 
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Providers-SDK-518][provider_sdk_ts_provider_interface]]

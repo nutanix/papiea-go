@@ -3,15 +3,12 @@ import { load } from "js-yaml";
 import { resolve } from "path";
 import { Kind_Builder, ProviderSdk } from "papiea-sdk";
 import { plural } from "pluralize"
-import { loadYaml, ProviderBuilder } from "./test_data_factory";
+import { loadYaml, OAuth2Server, ProviderBuilder } from "./test_data_factory";
 import axios from "axios"
 import { readFileSync } from "fs";
 import { Procedural_Signature, Procedural_Execution_Strategy, Metadata, Spec, Provider } from "papiea-core";
-import * as http from "http";
 import uuid = require("uuid");
 import { Actions } from "papiea-sdk/build/provider_sdk/typescript_sdk_context_impl";
-const url = require("url");
-const queryString = require("query-string");
 
 declare var process: {
     env: {
@@ -39,16 +36,11 @@ const providerApiAdmin = axios.create({
     }
 });
 
-function base64UrlEncode(...parts: any[]): string {
-    function base64UrlEncodePart(data: any): string {
-        return Buffer.from(JSON.stringify(data))
-            .toString('base64')
-            .replace('+', '-')
-            .replace('/', '_')
-            .replace(/=+$/, '');
-    }
-    return parts.map(x => base64UrlEncodePart(x)).join('.');
-}
+const providerApi = axios.create({
+    baseURL: `http://127.0.0.1:${serverPort}/provider`,
+    timeout: 1000,
+    headers: { 'Content-Type': 'application/json' }
+});
 
 const entityApi = axios.create({
     baseURL: `http://127.0.0.1:${serverPort}/services`,
@@ -511,8 +503,6 @@ describe("Provider Sdk tests", () => {
 describe("Entity API auth tests", () => {
     const oauth2ServerHost = '127.0.0.1';
     const oauth2ServerPort = 9002;
-    let access_token: string;
-    let id_token: string;
     const pathToModel: string = resolve(__dirname, "../src/auth/provider_model_example.txt");
     const modelText: string = readFileSync(pathToModel).toString();
     const oauth = loadYaml("./auth.yaml");
@@ -523,108 +513,19 @@ describe("Entity API auth tests", () => {
     const provider: Provider = new ProviderBuilder()
         .withVersion("0.1.0")
         .withKinds()
+        .withOAuth2Description()
+        .withAuthModel()
         .build();
     const kind_name = provider.kinds[0].name;
     let entity_metadata: Metadata, entity_spec: Spec;
-
-    const oauth2Server = http.createServer((req, res) => {
-        if (req.method == 'GET') {
-            const params = queryString.parse(url.parse(req.url).query);
-            expect(params.client_id).toEqual('XXX');
-            expect(params.scope).toEqual('openid');
-            expect(params.response_type).toEqual('code');
-            // expect(params.prompt).toEqual('login');
-            const resp_query = queryString.stringify({
-                state: params.state,
-                code: 'ZZZ'
-            });
-            res.statusCode = 302;
-            res.setHeader('Location', params.redirect_uri + '?' + resp_query);
-            res.end();
-        } else if (req.method == 'POST') {
-            let body = '';
-            req.on('data', function (data) {
-                body += data;
-            });
-            req.on('end', function () {
-                const params = queryString.parse(body);
-                expect(params.client_id).toEqual('XXX');
-                expect(params.client_secret).toEqual('YYY');
-                expect(params.code).toEqual('ZZZ');
-                expect(params.grant_type).toEqual('authorization_code');
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                access_token = base64UrlEncode({
-                        "alg": "RS256"
-                    },
-                    {
-                        "created_by": "papiea",
-                        "azp": "EEE",
-                        "sub": "alice",
-                        "default_tenant": tenant_uuid,
-                        "iss": "https:\/\/127.0.0.1:9002\/oauth2\/token",
-                        "given_name": "Alice",
-                        "iat": 1555925532,
-                        "exp": 1555929132,
-                        "email": "alice@localhost",
-                        "last_name": "Doe",
-                        "aud": ["EEE"],
-                        "role": "COMMUNITY,Internal\/everyone",
-                        "jti": uuid(),
-                        "user_id": uuid()
-                    });
-                id_token = base64UrlEncode(
-                        {
-                            "alg": "RS256",
-                            "x5t": "AAA",
-                            "kid": "BBB"
-                        }, {
-                            "azp": "EEE",
-                            "sub": "alice",
-                            "at_hash": "DDD",
-                            "default_tenant": tenant_uuid,
-                            "iss": "https:\/\/127.0.0.1:9002\/oauth2\/token",
-                            "given_name": "Alice",
-                            "iat": 1555926264,
-                            "xi_role": base64UrlEncode([{
-                                "tenant-domain": tenant_uuid,
-                                "tenant-status": "PROVISIONED",
-                                "tenant-name": "someTenant",
-                                "roles": [{ "name": "account-admin" }, { "name": "papiea-admin" }],
-                                "tenant-owner-email": "someTenant@localhost",
-                                "account_approved": true,
-                                "tenant-properties": {
-                                    "sfdc-accountid": "xyztest",
-                                    "tenant-uuid": tenant_uuid
-                                }
-                            }]),
-                            "auth_time": 1555926264,
-                            "exp": 1555940664,
-                            "email": "alice@localhost",
-                            "aud": ["EEE"],
-                            "last_name": "Doe",
-                            "role": ["COMMUNITY", "Internal\/everyone"],
-                            "federated_idp": "local"
-                        });
-                res.end(JSON.stringify({
-                    scope: 'openid',
-                    token_type: 'Bearer',
-                    expires_in: 3167,
-                    refresh_token: uuid(),
-                    id_token: id_token,
-                    access_token: access_token
-
-                }));
-            });
-        }
-    });
+    const oauth2Server = OAuth2Server.createServer();
 
     beforeAll(async () => {
         await providerApiAdmin.post('/', provider);
         oauth2Server.listen(oauth2ServerPort, oauth2ServerHost, () => {
             console.log(`Server running at http://${oauth2ServerHost}:${oauth2ServerPort}/`);
         });
-        const { data: { metadata, spec } } = await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}`, {
+        const { data: { metadata, spec } } = await entityApi.post(`/${ provider.prefix }/${ provider.version }/${ kind_name }`, {
             metadata: {
                 extension: {
                     owner: "alice",
@@ -645,30 +546,30 @@ describe("Entity API auth tests", () => {
         oauth2Server.close();
     });
 
-    test("Procedure should succeed in checking permissions", async () => {
-        expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
-        const location = sdk.new_kind(location_yaml);
-        sdk.version(provider_version);
-        sdk.prefix("permissionless_provider");
-        sdk.provider_procedure("computeWithPermissionCheck",
-            {},
-            Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
-            {},
-            async (ctx, input) => {
-                // TODO: rebuild this
-                const allowed = await ctx.check_permission({uuid: entity_metadata.uuid, kind: kind_name}, Actions.ReadAction);
-                console.log(allowed)
-            }
-        );
-        try {
-            await sdk.register();
-            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { input: { "a": 5, "b": 5 } });
-        } finally {
-            sdk.server.close();
-        }
-    });
+    // test("Procedure should succeed in checking permissions", async () => {
+    //     expect.hasAssertions();
+    //     const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+    //     const location = sdk.new_kind(location_yaml);
+    //     sdk.version(provider_version);
+    //     sdk.prefix("permissionless_provider");
+    //     sdk.provider_procedure("computeWithPermissionCheck",
+    //         {},
+    //         Procedural_Execution_Strategy.Halt_Intentful,
+    //         loadYaml("./procedure_sum_input.yml"),
+    //         {},
+    //         async (ctx, input) => {
+    //             // TODO: rebuild this
+    //             const allowed = await ctx.check_permission({uuid: entity_metadata.uuid, kind: kind_name}, Actions.ReadAction);
+    //             console.log(allowed)
+    //         }
+    //     );
+    //     try {
+    //         await sdk.register();
+    //         const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { input: { "a": 5, "b": 5 } });
+    //     } finally {
+    //         sdk.server.close();
+    //     }
+    // });
 
     test.only("Procedure should check permissions", async () => {
         expect.hasAssertions();
@@ -682,16 +583,19 @@ describe("Entity API auth tests", () => {
             loadYaml("./procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
-                const allowed = await ctx.check_permission({uuid: entity_metadata.uuid, kind: kind_name}, Actions.ReadAction);
+                const allowed = await ctx.check_permission(provider.prefix, provider.version, { uuid: entity_metadata.uuid, kind: kind_name }, Actions.ReadAction);
                 console.log(allowed)
             }
         );
+        sdk.secure_with(oauth, modelText, "xxx");
+        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
         await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
-            policy: `p, bill, owner, ${ kind_name }, *, allow`
+            policy: `p, alice, owner, ${ kind_name }, *, allow`
         });
         try {
             await sdk.register();
-            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { input: { "a": 5, "b": 5 } });
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { input: { "a": 5, "b": 5 } },
+                { headers: { 'Authorization': `Bearer ${token}` }});
         } finally {
             sdk.server.close();
         }

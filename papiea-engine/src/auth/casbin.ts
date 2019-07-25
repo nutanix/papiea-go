@@ -1,5 +1,5 @@
 import { UserAuthInfo } from "./authn";
-import { Authorizer, PermissionDeniedError, Action, ProviderAuthorizerFactory } from "./authz";
+import { Authorizer, PermissionDeniedError, Actions, ProviderAuthorizerFactory } from "./authz";
 import { newEnforcer, newModel } from "casbin/lib/casbin";
 import { Adapter } from "casbin/lib/persist/adapter";
 import { Model } from "casbin/lib/model";
@@ -23,9 +23,9 @@ export class CasbinAuthorizer extends Authorizer {
         this.enforcer = await newEnforcer(model, policyAdapter);
     }
 
-    async checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void> {
+    async checkPermission(user: UserAuthInfo, object: any, action: Actions): Promise<void> {
         try {
-            if (!this.enforcer.enforce(user, object, action.getAction())) {
+            if (!this.enforcer.enforce(user, object, action)) {
                 throw new PermissionDeniedError();
             }
         } catch (e) {

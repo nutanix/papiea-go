@@ -1,8 +1,7 @@
 import { ProceduralCtx_Interface, SecurityApi } from "./typescript_sdk_interface";
 import { Entity, Status, Entity_Reference, Provider, Key } from "papiea-core";
 import axios, { AxiosInstance } from "axios";
-import { Request, Response } from "express";
-import { ProviderSdk } from "./typescript_sdk";
+import { ProviderSdk, Version } from "./typescript_sdk";
 import { IncomingHttpHeaders } from "http";
 
 export class ProceduralCtx implements ProceduralCtx_Interface {
@@ -16,12 +15,12 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
 
     constructor(provider:ProviderSdk, provider_prefix: string, provider_version: string, headers: IncomingHttpHeaders) {
 
-        this.provider_url = provider.provider_url
+        this.provider_url = provider.provider_url;
         this.base_url = provider.entity_url;
-        this.provider_prefix = provider_prefix
+        this.provider_prefix = provider_prefix;
         this.provider_version = provider_version;
-        this.providerApiAxios = provider.provider_api_axios
-        this.provider = provider
+        this.providerApiAxios = provider.provider_api_axios;
+        this.provider = provider;
         this.headers = headers
     }
 
@@ -31,11 +30,13 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
 
     async check_permission(provider_prefix: string, provider_version: Version, entity_reference: Entity_Reference, action: Actions): Promise<boolean> {
         try {
-            const { data: { success } } = await axios.post(`${ this.base_url }/${ this.provider_prefix }/${ this.provider_version }/check_permission`,
+            console.log(provider_prefix);
+            console.log(provider_version);
+            const { data: { success } } = await axios.post(`${ this.base_url }/${ provider_prefix }/${ provider_version }/check_permission`,
                 {
                     entity_ref: entity_reference,
                     action: action
-                }, this.headers);
+                }, { headers: this.headers });
             return success === "Ok";
         } catch (e) {
             return false;
@@ -47,9 +48,9 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
         const res = await this.providerApiAxios.patch(`${this.provider_url}/update_status`,{
             entity_ref: entity_reference,
             status: status
-        })
+        });
         if (res.status != 200) {
-            console.error("Could not update status:", entity_reference, status, res.status, res.data)
+            console.error("Could not update status:", entity_reference, status, res.status, res.data);
             return false
         }
         return true
@@ -70,7 +71,7 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
     }
     get_invoking_token(): string {
         if (this.headers.authorization) {
-            const parts = this.headers.authorization.split(' ')
+            const parts = this.headers.authorization.split(' ');
             if (parts[0] === 'Bearer')
                 return parts[1]
         }
@@ -84,7 +85,7 @@ export enum Actions {
     CreateAction = "create",
     DeleteAction = "delete",
     RegisterProvider = "register_provider",
-    UnregsiterProvider = "unregister_provider",
+    UnregisterProvider = "unregister_provider",
     ReadProvider = "read_provider",
     UpdateAuth = "update_auth",
     CreateS2SKey = "create_key",

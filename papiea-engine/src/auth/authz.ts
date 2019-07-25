@@ -9,30 +9,20 @@ export class PermissionDeniedError extends Error {
     }
 }
 
-export class Action {
-    private action: string;
-
-    constructor(action: string) {
-        this.action = action;
-    }
-
-    getAction(): string {
-        return this.action;
-    }
+export enum Actions {
+    ReadAction = "read",
+    UpdateAction = "write",
+    CreateAction = "create",
+    DeleteAction = "delete",
+    RegisterProvider = "register_provider",
+    UnregisterProvider = "unregister_provider",
+    ReadProvider = "read_provider",
+    UpdateAuth = "update_auth",
+    CreateS2SKey = "create_key",
+    ReadS2SKey = "read_key",
+    InactivateS2SKey = "inactive_key",
+    UpdateStatus = "update_status",
 }
-
-export const ReadAction = new Action('read'),
-    UpdateAction = new Action('write'),
-    CreateAction = new Action('create'),
-    DeleteAction = new Action('delete'),
-    RegisterProviderAction = new Action('register_provider'),
-    UnregisterProviderAction = new Action('unregister_provider'),
-    ReadProviderAction = new Action('read_provider'),
-    UpdateStatusAction = new Action('update_status'),
-    UpdateAuthAction = new Action('update_auth'),
-    CreateS2SKeyAction = new Action('create_key'),
-    ReadS2SKeyAction = new Action('read_key'),
-    InactivateS2SKeyAction = new Action('inactivate_key');
 
 function mapAsync<T, U>(array: T[], callbackfn: (value: T, index: number, array: T[]) => Promise<U>): Promise<U[]> {
     return Promise.all(array.map(callbackfn));
@@ -47,9 +37,9 @@ export abstract class Authorizer {
     constructor() {
     }
 
-    abstract checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void>;
+    abstract checkPermission(user: UserAuthInfo, object: any, action: Actions): Promise<void>;
 
-    async filter(user: UserAuthInfo, objectList: any[], action: Action, transformfn?: (object: any) => any): Promise<any[]> {
+    async filter(user: UserAuthInfo, objectList: any[], action: Actions, transformfn?: (object: any) => any): Promise<any[]> {
         return filterAsync(objectList, async (object) => {
             try {
                 if (transformfn) {
@@ -66,7 +56,7 @@ export abstract class Authorizer {
 }
 
 export class NoAuthAuthorizer extends Authorizer {
-    async checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void> {
+    async checkPermission(user: UserAuthInfo, object: any, action: Actions): Promise<void> {
     }
 }
 
@@ -129,7 +119,7 @@ export class PerProviderAuthorizer extends Authorizer {
         return authorizer;
     }
 
-    async checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void> {
+    async checkPermission(user: UserAuthInfo, object: any, action: Actions): Promise<void> {
         const authorizer: Authorizer | null = await this.getAuthorizerByObject(user, object);
         if (authorizer === null) {
             return;
@@ -153,8 +143,8 @@ export class PerProviderAuthorizer extends Authorizer {
 }
 
 export class AdminAuthorizer extends Authorizer {
-    async checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void> {
-        if (action === ReadProviderAction) {
+    async checkPermission(user: UserAuthInfo, object: any, action: Actions): Promise<void> {
+        if (action === Actions.ReadProvider) {
             return;
         }
         if (!user) {
@@ -163,7 +153,7 @@ export class AdminAuthorizer extends Authorizer {
         if (user.is_admin) {
             return;
         }
-        if (action === CreateS2SKeyAction) {
+        if (action === Actions.CreateS2SKey) {
             // object.extension contains UserInfo which will be used when s2s key is passed
             // check who can talk on behalf of whom
             if (object.owner !== user.owner
@@ -181,7 +171,7 @@ export class AdminAuthorizer extends Authorizer {
             }
             return;
         }
-        if (action === ReadS2SKeyAction || action === InactivateS2SKeyAction) {
+        if (action === Actions.ReadS2SKey || action === Actions.InactivateS2SKey) {
             if (object.owner !== user.owner || object.provider_prefix !== user.provider_prefix) {
                 throw new PermissionDeniedError();
             } else {

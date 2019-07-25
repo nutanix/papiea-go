@@ -164,7 +164,7 @@ export interface Procedural_Signature {
     // the duration of the procedural call
     execution_strategy: Procedural_Execution_Strategy;
 
-    // Action url into the provider
+    // Actions url into the provider
     procedure_callback: Provider_Callback_URL;
 }
 
