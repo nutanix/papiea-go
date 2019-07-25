@@ -4,7 +4,9 @@ import { S2S_Key_DB } from "../databases/s2skey_db_interface";
 import { S2S_Key, Version, Provider } from "papiea-core";
 import { Provider_DB } from "../databases/provider_db_interface";
 import { getUserInfoFromToken } from "./oauth2";
-import { constructBearerTokenPath } from "./user_data_evaluator";
+import atob = require("atob");
+
+
 
 export class UnauthorizedError extends Error {
     constructor() {
@@ -15,22 +17,6 @@ export class UnauthorizedError extends Error {
 
 interface AuthenticationStrategy {
     getUserAuthInfo(token: string): Promise<UserAuthInfo | null>
-}
-
-class PapieaAuthenticationStrategy implements AuthenticationStrategy {
-    private readonly sig: Signature;
-
-    constructor(sig: Signature) {
-        this.sig = sig;
-    }
-
-    async getUserAuthInfo(token: string): Promise<UserAuthInfo | null> {
-        try {
-            return await this.sig.verify(token);
-        } catch (e) {
-            return null;
-        }
-    }
 }
 
 class IdpAuthenticationStrategy implements AuthenticationStrategy {
@@ -49,18 +35,16 @@ class IdpAuthenticationStrategy implements AuthenticationStrategy {
             if (!this.provider_prefix || !this.provider_version) {
                 return null;
             }
+            console.log(JSON.parse(atob(token)));
             const provider: Provider = await this.providerDb.get_provider(this.provider_prefix, this.provider_version);
-            // TODO: I don't like this, should ask Shlomi
-            // This may be via API call with access token to IDP to get id_token.
-            // But how do we know that we need 'id_token'?
-            const bearerTokenField = provider.oauth2.oauth.user_info.headers.authorization;
-            const userInfo = getUserInfoFromToken(constructBearerTokenPath(bearerTokenField, token), provider);
+            const userInfo = getUserInfoFromToken(JSON.parse(atob(token)), provider);
             userInfo.provider_prefix = this.provider_prefix;
             userInfo.provider_version = this.provider_version;
+            console.log(userInfo.authorization);
             delete userInfo.is_admin;
             return userInfo;
         } catch (e) {
-            console.error(e);
+            console.error(`While trying to authenticate with IDP error: '${e}' occurred`);
             return null;
         }
     }
@@ -108,11 +92,10 @@ class AuthenticationContext {
 
 
     // TODO: I.Korotach maybe introduce a DI factory
-    constructor(token: string, adminKey: string, s2skeyDb: S2S_Key_DB, signature: Signature, providerDb: Provider_DB, provider_prefix: string, provider_version: Version) {
+    constructor(token: string, adminKey: string, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB, provider_prefix: string, provider_version: Version) {
         this.token = token;
         this.authStrategies = [
             new AdminAuthenticationStrategy(adminKey),
-            new PapieaAuthenticationStrategy(signature),
             new S2SKeyAuthenticationStrategy(s2skeyDb),
             new IdpAuthenticationStrategy(providerDb, provider_prefix, provider_version)
         ]
@@ -164,7 +147,7 @@ function getToken(req: any): string | null {
     return null;
 }
 
-export function createAuthnRouter(adminKey: string, signature: Signature, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB): Router {
+export function createAuthnRouter(adminKey: string, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB): Router {
 
     const router = Router();
 
@@ -176,7 +159,7 @@ export function createAuthnRouter(adminKey: string, signature: Signature, s2skey
         const urlParts = req.originalUrl.split('/');
         const provider_prefix: string | undefined = urlParts[2];
         const provider_version: Version | undefined = urlParts[3];
-        const AuthCtx = new AuthenticationContext(token, adminKey, s2skeyDb, signature, providerDb, provider_prefix, provider_version);
+        const AuthCtx = new AuthenticationContext(token, adminKey, s2skeyDb, providerDb, provider_prefix, provider_version);
 
         const userInfo = await AuthCtx.getUserAuthInfo();
 

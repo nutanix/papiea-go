@@ -43,4 +43,4 @@ oauth:
       # role will be populated by what `role` got resolved into in its section above
       tenant-role: ^role
       owner: ^id_token.sub
-      authorization: $bearer(^token.id_token)
+      authorization: $bearer(^token)

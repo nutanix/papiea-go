@@ -6,6 +6,7 @@ const queryString = require("query-string");
 import { ProviderBuilder } from "./test_data_factory";
 import uuid = require("uuid");
 import { Metadata, Spec, Provider } from "papiea-core";
+import btoa = require("btoa");
 
 
 declare var process: {
@@ -66,8 +67,7 @@ describe("Entity API auth tests", () => {
         .build();
     const kind_name = provider.kinds[0].name;
     let entity_metadata: Metadata, entity_spec: Spec;
-    let access_token: string;
-    let id_token: string;
+    let idp_token: string;
 
     const tenant_uuid = uuid();
     const oauth2Server = http.createServer((req, res) => {
@@ -97,7 +97,7 @@ describe("Entity API auth tests", () => {
                 expect(params.grant_type).toEqual('authorization_code');
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
-                access_token = base64UrlEncode({
+                const access_token = base64UrlEncode({
                         "alg": "RS256"
                     },
                     {
@@ -116,7 +116,7 @@ describe("Entity API auth tests", () => {
                         "jti": uuid(),
                         "user_id": uuid()
                     });
-                id_token = base64UrlEncode(
+                const id_token = base64UrlEncode(
                         {
                             "alg": "RS256",
                             "x5t": "AAA",
@@ -149,15 +149,16 @@ describe("Entity API auth tests", () => {
                             "role": ["COMMUNITY", "Internal\/everyone"],
                             "federated_idp": "local"
                         });
-                res.end(JSON.stringify({
+                idp_token = JSON.stringify({
                     scope: 'openid',
                     token_type: 'Bearer',
                     expires_in: 3167,
                     refresh_token: uuid(),
                     id_token: id_token,
-                    access_token: access_token
-
-                }));
+                    access_token: access_token,
+                    expires_at: "2019-07-24T19:50:43.823Z"
+                });
+                res.end(idp_token);
             });
         }
     });
@@ -310,7 +311,7 @@ describe("Entity API auth tests", () => {
         expect(headers['tenant-lname']).toEqual('Doe');
         expect(headers['tenant-role']).toEqual('papiea-admin');
         expect(headers['owner']).toEqual('alice');
-        expect(headers['authorization']).toBe(`Bearer ${id_token}`);
+        expect(headers['authorization']).toBe(`Bearer ${btoa(idp_token)}`);
     });
 
     test("Create, get and inacivate s2s key", async () => {

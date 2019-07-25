@@ -3,8 +3,7 @@ import {
     Provider as ProviderImpl,
     Provider_Power,
     IntentfulCtx_Interface,
-    SecurityApi,
-    UserInfo,
+    SecurityApi
 } from "./typescript_sdk_interface";
 import axios, { AxiosInstance } from "axios"
 import { plural } from "pluralize"
@@ -14,26 +13,79 @@ import { Express, RequestHandler } from "express";
 import { Server } from "http";
 import { ProceduralCtx } from "./typescript_sdk_context_impl";
 
-import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, S2S_Key, Key, uuid4 } from "papiea-core";
+import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, S2S_Key, Key, UserInfo } from "papiea-core";
 import { Validator } from "./typescript_sdk_validation";
 import { Maybe } from "./typescript_sdk_utils";
 import { InvocationError, ValidationError } from "./typescript_sdk_exceptions";
 
+class SecurityApiImpl implements SecurityApi {
+    readonly provider: ProviderSdk;
+    readonly s2s_key: string;
+    constructor (provider:ProviderSdk, s2s_key:Key) {
+        this.provider = provider
+        this.s2s_key = s2s_key
+    }
+    // Returns the user-info of user with s2skey or the current user
+    public async user_info(): Promise<UserInfo> {
+        try {
+            const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`
+            const {data: userInfo } = await this.provider.provider_api_axios.get(`${url}/auth/user_info`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}})
+            return userInfo
+        } catch (e) {
+            console.log("error getting user_info", e)
+            throw new Error("Cannot get user info" + e.message)
+        }
+    }
+
+    public async list_keys(): Promise<Key[]>{
+        try {
+            const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`
+            const {data: keys } = await this.provider.provider_api_axios.get(`${url}/s2skey`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}})
+            return keys
+        } catch (e) {
+            console.log("error getting s2skeys", e)
+            throw new Error("Cannot get s2skeys" + e.message)
+        }
+    }
+
+    public async create_key(new_key: Partial<S2S_Key>): Promise<S2S_Key> {
+        try {
+            const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`
+            const {data: s2skey } = await this.provider.provider_api_axios.post(`${url}/s2skey`, new_key, {headers: {'Authorization': `Bearer ${this.s2s_key}`}})
+            return s2skey
+        } catch (e) {
+            console.log("error getting s2skeys", e)
+            throw new Error("Cannot get s2skeys" + e.message)
+        }
+    }
+
+    public async deactivate_key(key_to_deactivate:Key) {
+        try {
+            const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`
+            const {data: r } = await this.provider.provider_api_axios.put(`${url}/s2skey`, {key: key_to_deactivate, active:false}, {headers: {'Authorization': `Bearer ${this.s2s_key}`}})
+            return r
+        } catch (e) {
+            console.log("error getting s2skeys", e)
+            throw new Error("Cannot get s2skeys" + e.message)
+        }
+    }
+}
 export class ProviderSdk implements ProviderImpl {
     protected readonly _kind: Kind[];
     protected readonly _procedures: { [key: string]: Procedural_Signature };
     protected readonly validator: Validator;
-    protected readonly server_manager: Provider_Server_Manager;
+    protected readonly _server_manager: Provider_Server_Manager;
     protected readonly providerApiAxios: AxiosInstance;
     protected _version: Version | null;
     protected _prefix: string | null;
     protected meta_ext: { [key: string]: string };
     protected _provider: Provider | null;
     protected readonly papiea_url: string;
-    protected readonly s2skey: string;
+    protected readonly _s2skey: Key;
     protected _policy: string | null = null;
     protected _oauth2: string | null = null;
     protected _authModel: any | null = null;
+    protected readonly _securityApi : SecurityApi;
 
     constructor(papiea_url: string, s2skey: string, server_manager?: Provider_Server_Manager, validator?: Validator) {
         this._version = null;
@@ -41,19 +93,20 @@ export class ProviderSdk implements ProviderImpl {
         this._kind = [];
         this._provider = null;
         this.papiea_url = papiea_url;
-        this.s2skey = s2skey;
-        this.server_manager = server_manager || new Provider_Server_Manager();
+        this._s2skey = s2skey;
+        this._server_manager = server_manager || new Provider_Server_Manager();
         this._procedures = {};
         this.meta_ext = {};
         this.validator = validator || new Validator(true);
         this.get_prefix = this.get_prefix.bind(this);
         this.get_version = this.get_version.bind(this);
+        this._securityApi = new SecurityApiImpl(this, s2skey)
         this.providerApiAxios = axios.create({
             baseURL: this.provider_url,
             timeout: 5000,
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.s2skey}`
+                'Authorization': `Bearer ${this._s2skey}`
             }
         });
     }
@@ -68,6 +121,10 @@ export class ProviderSdk implements ProviderImpl {
 
     get provider_url(): string {
         return `${ this.papiea_url }/provider`
+    }
+
+    get provider_api_axios() {
+        return this.providerApiAxios
     }
 
     get entity_url(): string {
@@ -91,7 +148,7 @@ export class ProviderSdk implements ProviderImpl {
     }
 
     get server(): Server {
-        return this.server_manager.server;
+        return this._server_manager.server;
     }
 
     new_kind(entity_description: Data_Description, validator?: Validator): Kind_Builder {
@@ -111,7 +168,7 @@ export class ProviderSdk implements ProviderImpl {
                     entity_procedures: {},
                     differ: undefined,
                 };
-                const kind_builder = new Kind_Builder(spec_only_kind, this.entity_url, this.provider_url, this.get_prefix, this.get_version, this.server_manager, this.providerApiAxios, this.securityApi, validator || this.validator);
+                const kind_builder = new Kind_Builder(spec_only_kind, this, validator || this.validator);
                 this._kind.push(spec_only_kind);
                 return kind_builder;
             } else {
@@ -126,7 +183,7 @@ export class ProviderSdk implements ProviderImpl {
     add_kind(kind: Kind): Kind_Builder | null {
         if (this._kind.indexOf(kind) === -1) {
             this._kind.push(kind);
-            const kind_builder = new Kind_Builder(kind, this.entity_url, this.provider_url, this.get_prefix, this.get_version, this.server_manager, this.providerApiAxios, this.securityApi);
+            const kind_builder = new Kind_Builder(kind, this);
             return kind_builder;
         } else {
             return null;
@@ -163,7 +220,7 @@ export class ProviderSdk implements ProviderImpl {
                        input_desc: any,
                        output_desc: any,
                        handler: (ctx: ProceduralCtx_Interface, input: any) => Promise<any>): ProviderSdk {
-        const callback_url = this.server_manager.callback_url(name);
+        const callback_url = this._server_manager.callback_url(name);
         const procedural_signature: Procedural_Signature = {
             name,
             argument: input_desc,
@@ -174,9 +231,9 @@ export class ProviderSdk implements ProviderImpl {
         this._procedures[name] = procedural_signature;
         const prefix = this.get_prefix();
         const version = this.get_version();
-        this.server_manager.register_handler("/" + name, async (req, res) => {
+        this._server_manager.register_handler("/" + name, async (req, res) => {
             try {
-                const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version, this.providerApiAxios, this.securityApi, req.headers), req.body.input);
+                const result = await handler(new ProceduralCtx(this, prefix, version, req.headers), req.body.input);
                 this.validator.validate(result, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc));
                 res.json(result);
             } catch (e) {
@@ -198,7 +255,6 @@ export class ProviderSdk implements ProviderImpl {
         return this
     }
 
-
     async register(): Promise<void> {
         if (this._prefix !== null && this._version !== null && this._kind.length !== 0) {
             this._provider = {
@@ -213,7 +269,7 @@ export class ProviderSdk implements ProviderImpl {
             };
             try {
                 await this.providerApiAxios.post('/', this._provider);
-                this.server_manager.startServer();
+                this._server_manager.startServer();
             } catch (err) {
                 throw err;
             }
@@ -246,71 +302,22 @@ export class ProviderSdk implements ProviderImpl {
         return this
     }
 
-    SecurityApi = class implements SecurityApi {
-        readonly provider: ProviderSdk;
-        constructor (provider:ProviderSdk) {
-            this.provider=provider
-        }
-        // Returns the user-info of user with s2skey or the current user 
-        public async user_info(other_s2skey?:Key): Promise<UserInfo> {
-            other_s2skey = other_s2skey || this.provider.s2skey
-            try {
-                const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`
-                const {data: userInfo } = await this.provider.providerApiAxios.get(`${url}/auth/user_info`, {headers: {'Authorization': `Bearer ${other_s2skey}`}})
-                return userInfo
-            } catch (e) {
-                console.log("error getting user_info", e)
-                throw new Error("Cannot get user info" + e.message)
-            }
-        }
-    
-        public async list_keys(other_s2skey?:Key): Promise<Key[]>{
-            other_s2skey = other_s2skey || this.provider.s2skey
-            try {
-                const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`
-                const {data: keys } = await this.provider.providerApiAxios.get(`${url}/s2skey`, {headers: {'Authorization': `Bearer ${other_s2skey}`}})
-                return keys
-            } catch (e) {
-                console.log("error getting s2skeys", e)
-                throw new Error("Cannot get s2skeys" + e.message)
-            }
-        }
-        
-        public async  create_key(new_key: Partial<UserInfo>, other_s2skey?:Key) {
-            other_s2skey = other_s2skey || this.provider.s2skey
-            try {
-                const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`
-                const {data: s2skey } = await this.provider.providerApiAxios.post(`${url}/s2skey`, new_key, {headers: {'Authorization': `Bearer ${other_s2skey}`}})
-                return s2skey
-            } catch (e) {
-                console.log("error getting s2skeys", e)
-                throw new Error("Cannot get s2skeys" + e.message)
-            }
-        }
-
-        public async deactivate_key(key_to_deactivate:Key, other_s2skey?:Key) {
-            other_s2skey = other_s2skey || this.provider.s2skey
-            
-            try {
-                const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`
-                const {data: r } = await this.provider.providerApiAxios.put(`${url}/s2skey`, {key: key_to_deactivate, active:false}, {headers: {'Authorization': `Bearer ${other_s2skey}`}})
-                return r
-            } catch (e) {
-                console.log("error getting s2skeys", e)
-                throw new Error("Cannot get s2skeys" + e.message)
-            }
-        }
+    public get server_manager() : Provider_Server_Manager{
+        return this._server_manager
     }
 
-    protected _securityApi = new this.SecurityApi(this)
-    
-    public get securityApi(): SecurityApi {
-        return this._securityApi
+    public get providerSecurityApi () : SecurityApi {
+        return this._securityApi;
+    }
+
+    public new_security_api(s2s_key:Key) {
+        return new SecurityApiImpl(this, s2s_key)
+    }
+
+    public get s2s_key() : Key {
+        return this._s2skey
     }
 }
-
-
-
 
 class Provider_Server_Manager {
     private readonly public_host: string;
@@ -372,19 +379,17 @@ export class Kind_Builder {
     private server_manager: Provider_Server_Manager;
     provider_url: string;
     private validator: Validator;
-    private readonly providerApiAxios: AxiosInstance;
-    private readonly securityApi: SecurityApi;
+    private readonly provider: ProviderSdk;
 
-    constructor(kind: Kind, entity_url: string, provider_url:string, get_prefix: () => string, get_version: () => string, server_manager: Provider_Server_Manager, providerApiAxios:AxiosInstance, securityApi:SecurityApi, validator?: Validator) {
-        this.server_manager = server_manager;
-        this.kind = kind;
-        this.entity_url = entity_url;
-        this.get_prefix = get_prefix;
-        this.get_version = get_version;
-        this.provider_url = provider_url;
-        this.providerApiAxios = providerApiAxios;
-        this.securityApi = securityApi
-        this.validator = validator || new Validator(true);
+    constructor (kind: Kind, provider: ProviderSdk, validator?: Validator) {
+        this.provider = provider
+        this.server_manager = provider.server_manager
+        this.kind = kind
+        this.entity_url = provider.entity_url
+        this.provider_url = provider.provider_url
+        this.get_prefix = provider.get_prefix
+        this.get_version = provider.get_version
+        this.validator = validator || new Validator(true)
     }
 
     entity_procedure(name: string, rbac: any,
@@ -405,7 +410,7 @@ export class Kind_Builder {
         const version = this.get_version();
         this.server_manager.register_handler(`/${this.kind.name}/${name}`, async (req, res) => {
             try {
-                const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version, this.providerApiAxios, this.securityApi, req.headers), {
+                const result = await handler(new ProceduralCtx(this.provider, prefix, version, req.headers), {
                     metadata: req.body.metadata,
                     spec: req.body.spec,
                     status: req.body.status
@@ -449,7 +454,7 @@ export class Kind_Builder {
         const version = this.get_version();
         this.server_manager.register_handler(`/${this.kind.name}/${name}`, async (req, res) => {
             try {
-                const result = await handler(new ProceduralCtx(this.provider_url, this.entity_url, prefix, version, this.providerApiAxios, this.securityApi, req.headers), req.body.input);
+                const result = await handler(new ProceduralCtx(this.provider, prefix, version, req.headers), req.body.input);
                 this.validator.validate(result, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc));
                 res.json(result);
             } catch (e) {
@@ -471,4 +476,4 @@ export class Kind_Builder {
         return this
     }
 }
-export {Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, ProceduralCtx_Interface, Provider_Power, IntentfulCtx_Interface}
+export {Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, ProceduralCtx_Interface, Provider_Power, IntentfulCtx_Interface, UserInfo, S2S_Key}

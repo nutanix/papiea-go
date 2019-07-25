@@ -1,7 +1,8 @@
 // [[file:~/work/papiea-js/Papiea-design.org::*Typescript:%20/src/provider_sdk/typescript_sdk_interface][Typescript: /src/provider_sdk/typescript_sdk_interface:1]]
 import { Kind_Builder } from "./typescript_sdk";
+import { Data_Description, Version, Status, Entity, Entity_Reference, Key, S2S_Key, UserInfo } from "papiea-core";
+import { IncomingHttpHeaders } from "http";
 import { Data_Description, Version, Status, Entity, Entity_Reference, Key } from "papiea-core";
-import { Request, Response } from "express";
 import { Actions } from "./typescript_sdk_context_impl";
 
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Providers-SDK-518][provider_sdk_ts_provider_interface]]
@@ -47,19 +48,12 @@ export interface Intentful_Handler {
 }
 // provider_sdk_ts_intentful_handler_interface ends here
 
-export interface UserInfo {
-    name?: string,
-    key: Key,
-    owner: string,
-    extension: any
-}
-
 export interface SecurityApi {
  // Returns the user-info of user with s2skey or the current user 
- user_info(other_s2skey?:Key): Promise<UserInfo>
- list_keys(other_s2skey?:Key): Promise<Key[]>
- create_key(new_key: {key:Key, extension:any}, other_s2skey?:Key):Promise<Key>
- deactivate_key(key_to_deactivate:Key, other_s2skey?:Key):Promise<Key>
+ user_info(): Promise<UserInfo>
+ list_keys(): Promise<Key[]>
+ create_key(new_key: Partial<S2S_Key>):Promise<S2S_Key>
+ deactivate_key(key_to_deactivate:Key):Promise<Key>
 }
 
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Providers-SDK-518][provider_sdk_ts_intentful_ctx_interface]]
@@ -67,7 +61,10 @@ export interface IntentfulCtx_Interface {
     update_status(entity_reference: Entity_Reference, status: Status):Promise<boolean>
     update_progress(message:string, done_percent:number):boolean
     url_for(entity: Entity): string
-    get_security_api(): SecurityApi
+    get_provider_security_api(): SecurityApi
+    get_user_security_api(user_s2skey:Key): SecurityApi
+    get_headers(): IncomingHttpHeaders
+    get_invoking_token(): Key
     check_permission(provider_prefix: string, provider_version: Version, entity_reference: Entity_Reference, action: Actions): Promise<boolean>
 }
 
