@@ -10,7 +10,6 @@ import { ValidationError, Validator } from "./validator";
 import { EntityNotFoundError } from "./databases/utils/errors";
 import { UnauthorizedError, createAuthnRouter } from "./auth/authn";
 import { createOAuth2Router } from "./auth/oauth2";
-import { JWTHMAC } from "./auth/crypto";
 import { Authorizer, AdminAuthorizer, PerProviderAuthorizer, PermissionDeniedError } from "./auth/authz";
 import { ProviderCasbinAuthorizerFactory } from "./auth/casbin";
 import morgan = require("morgan");
@@ -19,8 +18,6 @@ declare var process: {
     env: {
         SERVER_PORT: string,
         MONGO_DB: string,
-        TOKEN_SECRET: string,
-        TOKEN_EXPIRES_SECONDS: string,
         MONGO_HOST: string,
         MONGO_PORT: string
         PAPIEA_PUBLIC_ADDR: string,
@@ -32,9 +29,7 @@ declare var process: {
 };
 process.title = "papiea";
 const serverPort = parseInt(process.env.SERVER_PORT || "3000");
-const tokenSecret = process.env.TOKEN_SECRET || "secret";
 const debugLevel = process.env.DEBUG_LEVEL || "common";
-const tokenExpiresSeconds = parseInt(process.env.TOKEN_EXPIRES_SECONDS || (60 * 60 * 24 * 7).toString());
 const publicAddr: string = process.env.PAPIEA_PUBLIC_ADDR || "http://localhost:3000";
 const oauth2RedirectUri: string = publicAddr + "/provider/auth/callback";
 const mongoHost = process.env.MONGO_HOST || 'mongo';
@@ -54,9 +49,8 @@ async function setUpApplication(): Promise<express.Express> {
     const s2skeyDb = await mongoConnection.get_s2skey_db();
     const validator = new Validator(disallowExtraProps);
     const providerApi = new Provider_API_Impl(providerDb, statusDb, s2skeyDb, validator, new AdminAuthorizer());
-    const signature = new JWTHMAC(tokenSecret, tokenExpiresSeconds);
-    app.use(createAuthnRouter(adminKey, signature, s2skeyDb, providerDb));
-    app.use(createOAuth2Router(oauth2RedirectUri, signature, providerDb));
+    app.use(createAuthnRouter(adminKey, s2skeyDb, providerDb));
+    app.use(createOAuth2Router(oauth2RedirectUri, providerDb));
     const entityApiAuthorizer: Authorizer = new PerProviderAuthorizer(providerApi, new ProviderCasbinAuthorizerFactory());
     app.use('/provider', createProviderAPIRouter(providerApi));
     app.use('/services', createEntityAPIRouter(new Entity_API_Impl(statusDb, specDb, providerApi, validator, entityApiAuthorizer)));

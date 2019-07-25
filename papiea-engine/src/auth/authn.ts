@@ -44,7 +44,7 @@ class IdpAuthenticationStrategy implements AuthenticationStrategy {
             delete userInfo.is_admin;
             return userInfo;
         } catch (e) {
-            console.error(e);
+            console.error(`While trying to authenticate with IDP error: '${e}' occurred`);
             return null;
         }
     }
@@ -92,7 +92,7 @@ class AuthenticationContext {
 
 
     // TODO: I.Korotach maybe introduce a DI factory
-    constructor(token: string, adminKey: string, s2skeyDb: S2S_Key_DB, signature: Signature, providerDb: Provider_DB, provider_prefix: string, provider_version: Version) {
+    constructor(token: string, adminKey: string, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB, provider_prefix: string, provider_version: Version) {
         this.token = token;
         this.authStrategies = [
             new AdminAuthenticationStrategy(adminKey),
@@ -147,7 +147,7 @@ function getToken(req: any): string | null {
     return null;
 }
 
-export function createAuthnRouter(adminKey: string, signature: Signature, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB): Router {
+export function createAuthnRouter(adminKey: string, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB): Router {
 
     const router = Router();
 
@@ -159,7 +159,7 @@ export function createAuthnRouter(adminKey: string, signature: Signature, s2skey
         const urlParts = req.originalUrl.split('/');
         const provider_prefix: string | undefined = urlParts[2];
         const provider_version: Version | undefined = urlParts[3];
-        const AuthCtx = new AuthenticationContext(token, adminKey, s2skeyDb, signature, providerDb, provider_prefix, provider_version);
+        const AuthCtx = new AuthenticationContext(token, adminKey, s2skeyDb, providerDb, provider_prefix, provider_version);
 
         const userInfo = await AuthCtx.getUserAuthInfo();
 

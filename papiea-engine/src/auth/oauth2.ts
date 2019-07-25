@@ -45,7 +45,7 @@ export function getUserInfoFromToken(token: any, provider: Provider): UserAuthIn
     return userInfo;
 }
 
-export function createOAuth2Router(redirect_uri: string, signature: Signature, providerDb: Provider_DB): Router {
+export function createOAuth2Router(redirect_uri: string, providerDb: Provider_DB): Router {
     const router = Router();
 
     router.use('/provider/:prefix/:version/auth/login', asyncHandler(async (req, res) => {
