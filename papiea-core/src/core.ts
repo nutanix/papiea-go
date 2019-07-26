@@ -15,7 +15,7 @@ export type Version = string;
 // core-types ends here
 
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Metadata-350][metadata-struct]]
-export interface Metadata {
+export interface Metadata extends Entity_Reference {
     // Identity fields
     uuid: uuid4;
     kind: string;
@@ -204,4 +204,19 @@ export interface S2S_Key {
     created_at: Date
     deleted_at?: Date
     extension: UserInfo 
+}
+
+export enum Action {
+    Read = "read",
+    Update = "write",
+    Create = "create",
+    Delete = "delete",
+    RegisterProvider = "register_provider",
+    UnregisterProvider = "unregister_provider",
+    ReadProvider = "read_provider",
+    UpdateAuth = "update_auth",
+    CreateS2SKey = "create_key",
+    ReadS2SKey = "read_key",
+    InactivateS2SKey = "inactive_key",
+    UpdateStatus = "update_status",
 }

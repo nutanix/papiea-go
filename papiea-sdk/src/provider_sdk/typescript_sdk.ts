@@ -410,7 +410,6 @@ export class Kind_Builder {
         const version = this.get_version();
         this.server_manager.register_handler(`/${this.kind.name}/${name}`, async (req, res) => {
             try {
-                console.log(req.headers);
                 const result = await handler(new ProceduralCtx(this.provider, prefix, version, req.headers), {
                     metadata: req.body.metadata,
                     spec: req.body.spec,

@@ -3,8 +3,6 @@ import { Router } from "express";
 import { UserAuthInfo, asyncHandler } from '../auth/authn';
 import { processPaginationParams, processSortQuery } from "../utils/utils";
 import { SortParams } from "./entity_api_impl";
-import { PermissionDeniedError } from "../auth/authz";
-
 
 export function createEntityAPIRouter(entity_api: Entity_API): Router {
     const router = Router();
@@ -33,22 +31,7 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
     };
 
     router.post("/:prefix/:version/check_permission", asyncHandler(async (req, res) => {
-        const allowed: boolean = await entity_api.check_permission(req.user, req.params.prefix, req.params.version, req.body.action, req.body);
-        if (allowed) {
-            res.json({"success": "Ok"})
-        } else {
-            throw new PermissionDeniedError()
-        }
-    }));
-
-    router.post("/:prefix/:version/check_permissions", asyncHandler(async (req, res) => {
-        const allowed: boolean = await entity_api.check_permissions(req.user, req.params.prefix, req.params.version, req.body.action, req.body);
-        if (allowed) {
-            res.json({"success": "Ok"})
-        } else {
-            throw new PermissionDeniedError()
-        }
-        console.log()
+        res.json(await entity_api.check_permission(req.user, req.params.prefix, req.params.version, req.body))
     }));
 
     router.get("/:prefix/:version/:kind", asyncHandler(async (req, res) => {

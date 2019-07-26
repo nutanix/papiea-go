@@ -1,27 +1,12 @@
 import { UserAuthInfo, UnauthorizedError } from "./authn";
 import { Provider_API } from "../provider/provider_api_interface";
-import { Provider } from "papiea-core";
+import { Provider, Action } from "papiea-core";
 
 export class PermissionDeniedError extends Error {
     constructor() {
         super("Permission Denied");
         Object.setPrototypeOf(this, PermissionDeniedError.prototype);
     }
-}
-
-export enum Actions {
-    ReadAction = "read",
-    UpdateAction = "write",
-    CreateAction = "create",
-    DeleteAction = "delete",
-    RegisterProvider = "register_provider",
-    UnregisterProvider = "unregister_provider",
-    ReadProvider = "read_provider",
-    UpdateAuth = "update_auth",
-    CreateS2SKey = "create_key",
-    ReadS2SKey = "read_key",
-    InactivateS2SKey = "inactive_key",
-    UpdateStatus = "update_status",
 }
 
 function mapAsync<T, U>(array: T[], callbackfn: (value: T, index: number, array: T[]) => Promise<U>): Promise<U[]> {
@@ -37,9 +22,9 @@ export abstract class Authorizer {
     constructor() {
     }
 
-    abstract checkPermission(user: UserAuthInfo, object: any, action: Actions): Promise<void>;
+    abstract checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void>;
 
-    async filter(user: UserAuthInfo, objectList: any[], action: Actions, transformfn?: (object: any) => any): Promise<any[]> {
+    async filter(user: UserAuthInfo, objectList: any[], action: Action, transformfn?: (object: any) => any): Promise<any[]> {
         return filterAsync(objectList, async (object) => {
             try {
                 if (transformfn) {
@@ -56,7 +41,7 @@ export abstract class Authorizer {
 }
 
 export class NoAuthAuthorizer extends Authorizer {
-    async checkPermission(user: UserAuthInfo, object: any, action: Actions): Promise<void> {
+    async checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void> {
     }
 }
 
@@ -119,7 +104,7 @@ export class PerProviderAuthorizer extends Authorizer {
         return authorizer;
     }
 
-    async checkPermission(user: UserAuthInfo, object: any, action: Actions): Promise<void> {
+    async checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void> {
         const authorizer: Authorizer | null = await this.getAuthorizerByObject(user, object);
         if (authorizer === null) {
             return;
@@ -143,8 +128,8 @@ export class PerProviderAuthorizer extends Authorizer {
 }
 
 export class AdminAuthorizer extends Authorizer {
-    async checkPermission(user: UserAuthInfo, object: any, action: Actions): Promise<void> {
-        if (action === Actions.ReadProvider) {
+    async checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void> {
+        if (action === Action.ReadProvider) {
             return;
         }
         if (!user) {
@@ -153,7 +138,7 @@ export class AdminAuthorizer extends Authorizer {
         if (user.is_admin) {
             return;
         }
-        if (action === Actions.CreateS2SKey) {
+        if (action === Action.CreateS2SKey) {
             // object.extension contains UserInfo which will be used when s2s key is passed
             // check who can talk on behalf of whom
             if (object.owner !== user.owner
@@ -171,7 +156,7 @@ export class AdminAuthorizer extends Authorizer {
             }
             return;
         }
-        if (action === Actions.ReadS2SKey || action === Actions.InactivateS2SKey) {
+        if (action === Action.ReadS2SKey || action === Action.InactivateS2SKey) {
             if (object.owner !== user.owner || object.provider_prefix !== user.provider_prefix) {
                 throw new PermissionDeniedError();
             } else {

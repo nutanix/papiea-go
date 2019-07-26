@@ -1,9 +1,10 @@
 import "jest"
 import { UserAuthInfo } from "../src/auth/authn";
-import { Actions, PermissionDeniedError } from "../src/auth/authz";
+import { PermissionDeniedError } from "../src/auth/authz";
 import { CasbinAuthorizer } from "../src/auth/casbin";
 import { resolve } from "path";
 import { readFileSync } from "fs";
+import { Action } from "papiea-core";
 
 
 describe("Casbin authorizer tests", () => {
@@ -20,7 +21,7 @@ describe("Casbin authorizer tests", () => {
     afterAll(async () => {
     });
 
-    function actionShouldFail(user: UserAuthInfo, object: any, action: Actions, done: any) {
+    function actionShouldFail(user: UserAuthInfo, object: any, action: Action, done: any) {
         authorizer.checkPermission(user, object, action).then(_ => {
             done.fail();
         }).catch(e => {
@@ -32,7 +33,7 @@ describe("Casbin authorizer tests", () => {
         });
     }
 
-    function actionShouldSucceed(user: UserAuthInfo, object: any, action: Actions, done: any) {
+    function actionShouldSucceed(user: UserAuthInfo, object: any, action: Action, done: any) {
         authorizer.checkPermission(user, object, action).then(_ => {
             done();
         }).catch(e => {
@@ -44,7 +45,7 @@ describe("Casbin authorizer tests", () => {
         actionShouldFail(
             { "owner": "alice", "tenant": "1" },
             { "metadata": { "extension": { "owner": "1alice1" }, "kind": "kind_3" } },
-            Actions.CreateAction,
+            Action.Create,
             done
         );
     });
@@ -53,7 +54,7 @@ describe("Casbin authorizer tests", () => {
         actionShouldFail(
             { "owner": "alice", "tenant": "1" },
             { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_4" } },
-            Actions.DeleteAction,
+            Action.Delete,
             done
         );
     });
@@ -62,7 +63,7 @@ describe("Casbin authorizer tests", () => {
         actionShouldSucceed(
             { "owner": "alice", "tenant": "1" },
             { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_3" } },
-            Actions.ReadAction,
+            Action.Read,
             done
         );
     });
@@ -71,7 +72,7 @@ describe("Casbin authorizer tests", () => {
         actionShouldSucceed(
             { "owner": "bob", "tenant": "1" },
             { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_1" } },
-            Actions.ReadAction,
+            Action.Read,
             done
         );
     });
@@ -80,7 +81,7 @@ describe("Casbin authorizer tests", () => {
         actionShouldFail(
             { "owner": "bob", "tenant": "1" },
             { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_1" } },
-            Actions.DeleteAction,
+            Action.Delete,
             done
         );
     });
@@ -89,7 +90,7 @@ describe("Casbin authorizer tests", () => {
         actionShouldSucceed(
             { "owner": "alice", "tenant": "1" },
             { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_2" } },
-            Actions.ReadAction,
+            Action.Read,
             done
         );
     });
@@ -98,7 +99,7 @@ describe("Casbin authorizer tests", () => {
         actionShouldSucceed(
             { "owner": "bill", "tenant": "1" },
             { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_2" } },
-            Actions.ReadAction,
+            Action.Read,
             done
         );
     });
@@ -107,7 +108,7 @@ describe("Casbin authorizer tests", () => {
         actionShouldFail(
             { "owner": "bill", "tenant": "1" },
             { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_2" } },
-            Actions.DeleteAction,
+            Action.Delete,
             done
         );
     });
@@ -116,7 +117,7 @@ describe("Casbin authorizer tests", () => {
         actionShouldFail(
             { "owner": "bill", "tenant": "1" },
             { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_3" } },
-            Actions.DeleteAction,
+            Action.Delete,
             done
         );
     });
@@ -125,7 +126,7 @@ describe("Casbin authorizer tests", () => {
         actionShouldSucceed(
             { "owner": "bill", "tenant": "1" },
             { "metadata": { "extension": { "owner": "bill" }, "kind": "kind_3" } },
-            Actions.DeleteAction,
+            Action.Delete,
             done
         );
     });
@@ -134,7 +135,7 @@ describe("Casbin authorizer tests", () => {
         actionShouldFail(
             { "owner": "anonymous" },
             { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_2" } },
-            Actions.ReadAction,
+            Action.Read,
             done
         );
     });
@@ -143,7 +144,7 @@ describe("Casbin authorizer tests", () => {
         actionShouldSucceed(
             { "owner": "admin" },
             { "metadata": { "extension": { "owner": "alice" }, "kind": "kind_3" } },
-            Actions.DeleteAction,
+            Action.Delete,
             done
         );
     });
@@ -152,7 +153,7 @@ describe("Casbin authorizer tests", () => {
         actionShouldSucceed(
             { "owner": "rick", "tenant": "1" },
             { "metadata": { "extension": { "owner": "alice", "tenant_uuid": "1" }, "kind": "kind_3" } },
-            Actions.DeleteAction,
+            Action.Delete,
             done
         );
     });
@@ -161,7 +162,7 @@ describe("Casbin authorizer tests", () => {
         actionShouldFail(
             { "owner": "rick", "tenant": "1" },
             { "metadata": { "extension": { "owner": "alice", "tenant_uuid": "1" }, "kind": "kind_4" } },
-            Actions.DeleteAction,
+            Action.Delete,
             done
         );
     });
@@ -181,7 +182,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
     afterAll(async () => {
     });
 
-    function actionShouldFail(user: UserAuthInfo, object: any, action: Actions, done: any) {
+    function actionShouldFail(user: UserAuthInfo, object: any, action: Action, done: any) {
         authorizer.checkPermission(user, object, action).then(_ => {
             done.fail();
         }).catch(e => {
@@ -193,7 +194,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
         });
     }
 
-    function actionShouldSucceed(user: UserAuthInfo, object: any, action: Actions, done: any) {
+    function actionShouldSucceed(user: UserAuthInfo, object: any, action: Action, done: any) {
         authorizer.checkPermission(user, object, action).then(_ => {
             done();
         }).catch(e => {
@@ -209,7 +210,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                     actionShouldSucceed(
                         { owner: 'admin' },
                         { metadata: { extension: { owner: 'alice' }, kind } },
-                        Actions.ReadAction,
+                        Action.Read,
                         done
                     )
                 });
@@ -217,7 +218,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                     actionShouldSucceed(
                         { owner: 'admin' },
                         { metadata: { extension: { owner: 'alice' }, kind } },
-                        Actions.CreateAction,
+                        Action.Create,
                         done
                     )
                 });
@@ -225,7 +226,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                     actionShouldSucceed(
                         { owner: 'admin' },
                         { metadata: { extension: { owner: 'alice' }, kind } },
-                        Actions.UpdateAction,
+                        Action.Update,
                         done
                     )
                 });
@@ -233,7 +234,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                     actionShouldSucceed(
                         { owner: 'admin' },
                         { metadata: { extension: { owner: 'alice' }, kind } },
-                        Actions.DeleteAction,
+                        Action.Delete,
                         done
                     )
                 })
@@ -250,7 +251,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                         actionShouldFail(
                             { owner: 'anonymous' },
                             { metadata: { extension: { owner: 'anonymous' }, kind } },
-                            Actions.ReadAction,
+                            Action.Read,
                             done
                         )
                     });
@@ -258,7 +259,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                         actionShouldFail(
                             { owner: 'anonymous' },
                             { metadata: { extension: { owner: 'anonymous' }, kind } },
-                            Actions.CreateAction,
+                            Action.Create,
                             done
                         )
                     });
@@ -266,7 +267,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                         actionShouldFail(
                             { owner: 'anonymous' },
                             { metadata: { extension: { owner: 'anonymous' }, kind } },
-                            Actions.UpdateAction,
+                            Action.Update,
                             done
                         )
                     });
@@ -274,7 +275,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                         actionShouldFail(
                             { owner: 'anonymous' },
                             { metadata: { extension: { owner: 'anonymous' }, kind } },
-                            Actions.DeleteAction,
+                            Action.Delete,
                             done
                         )
                     })
@@ -287,7 +288,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                         actionShouldFail(
                             { owner: 'anonymous' },
                             { metadata: { extension: { owner: 'alice' }, kind } },
-                            Actions.ReadAction,
+                            Action.Read,
                             done
                         )
                     });
@@ -295,7 +296,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                         actionShouldFail(
                             { owner: 'anonymous' },
                             { metadata: { extension: { owner: 'alice' }, kind } },
-                            Actions.CreateAction,
+                            Action.Create,
                             done
                         )
                     });
@@ -303,7 +304,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                         actionShouldFail(
                             { owner: 'anonymous' },
                             { metadata: { extension: { owner: 'alice' }, kind } },
-                            Actions.UpdateAction,
+                            Action.Update,
                             done
                         )
                     });
@@ -311,7 +312,7 @@ describe("Casbin authorizer tests for default provider policy", () => {
                         actionShouldFail(
                             { owner: 'anonymous' },
                             { metadata: { extension: { owner: 'alice' }, kind } },
-                            Actions.DeleteAction,
+                            Action.Delete,
                             done
                         )
                     })

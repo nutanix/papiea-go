@@ -1,9 +1,7 @@
 // [[file:~/work/papiea-js/Papiea-design.org::*Typescript:%20/src/provider_sdk/typescript_sdk_interface][Typescript: /src/provider_sdk/typescript_sdk_interface:1]]
 import { Kind_Builder } from "./typescript_sdk";
-import { Data_Description, Version, Status, Entity, Entity_Reference, Key, S2S_Key, UserInfo } from "papiea-core";
+import { Data_Description, Version, Status, Entity, Entity_Reference, Key, S2S_Key, UserInfo, Action } from "papiea-core";
 import { IncomingHttpHeaders } from "http";
-import { Actions } from "./typescript_sdk_context_impl";
-import { Metadata } from "papiea-core/build/core";
 
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Providers-SDK-518][provider_sdk_ts_provider_interface]]
 // Api for the provider-sdk
@@ -65,7 +63,7 @@ export interface IntentfulCtx_Interface {
     get_user_security_api(user_s2skey:Key): SecurityApi
     get_headers(): IncomingHttpHeaders
     get_invoking_token(): Key
-    check_permission(provider_prefix: string, provider_version: Version, entity: any, action: Actions): Promise<boolean>
+    check_permission(entityAction: [Action, Entity_Reference][], provider_prefix: string, provider_version: Version): Promise<boolean>
 }
 
 // For the time being these are equal. Later they may differ

@@ -1,10 +1,8 @@
 import { ProceduralCtx_Interface, SecurityApi } from "./typescript_sdk_interface";
-import { Entity, Status, Entity_Reference, Provider, Key } from "papiea-core";
+import { Entity, Status, Entity_Reference, Provider, Key, Action } from "papiea-core";
 import axios, { AxiosInstance } from "axios";
 import { ProviderSdk, Version } from "./typescript_sdk";
 import { IncomingHttpHeaders } from "http";
-import { isEntityRef, isEntityRefArray, isMetadata, isMetadataArray } from "./typescript_sdk_utils";
-import * as assert from "assert";
 
 export class ProceduralCtx implements ProceduralCtx_Interface {
     base_url: string;
@@ -30,35 +28,19 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
         return `${this.base_url}/${this.provider_prefix}/${this.provider_version}/${entity.metadata.kind}/${entity.metadata.uuid}`
     }
 
-    async check_permission(provider_prefix: string, provider_version: Version, entity: any, action: Actions): Promise<boolean> {
+    async check_permission(entityAction: [Action, Entity_Reference][], provider_prefix: string = this.provider_prefix, provider_version: Version = this.provider_version): Promise<boolean> {
         try {
-            if (isMetadataArray(entity)) {
-                assert(action === Actions.CreateAction);
-                return this.try_check(provider_prefix, provider_version, entity, action, "metadata", true)
-            } else if (isEntityRefArray(entity)) {
-                return this.try_check(provider_prefix, provider_version, entity, action, "entity_ref", true)
-            } else if (isMetadata(entity)) {
-                assert(action === Actions.CreateAction);
-                return this.try_check(provider_prefix, provider_version, entity, action, "metadata")
-            } else if (isEntityRef(entity)) {
-                return this.try_check(provider_prefix, provider_version, entity, action, "entity_ref")
-            } else {
-                throw new Error(`Entity of unsupported type ${ typeof entity }`)
-            }
+            return this.try_check(provider_prefix, provider_version, entityAction)
         } catch (e) {
             console.error(`Error: ${e} occurred while invoking permission check`);
             throw e;
         }
     }
 
-    async try_check(provider_prefix: string, provider_version: Version, value: any, action: Actions, request_field: string, multiple: boolean = false) {
-        const url = multiple ? `${ this.base_url }/${ provider_prefix }/${ provider_version }/check_permissions` : `${ this.base_url }/${ provider_prefix }/${ provider_version }/check_permission`;
+    async try_check(provider_prefix: string, provider_version: Version, entityAction: [Action, Entity_Reference][]) {
         try {
-            const { data: { success } } = await axios.post(url,
-                {
-                    [request_field]: value,
-                    action: action
-                }, { headers: this.headers });
+            const { data: { success } } = await axios.post(`${ this.base_url }/${ provider_prefix }/${ provider_version }/check_permissions`,
+                entityAction, { headers: this.headers });
             return success === "Ok";
         } catch (e) {
             return false;
@@ -99,18 +81,4 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
         }
         throw new Error("No invoking user")
     }
-}
-
-export enum Actions {
-    ReadAction = "read",
-    UpdateAction = "write",
-    CreateAction = "create",
-    DeleteAction = "delete",
-    RegisterProvider = "register_provider",
-    UnregisterProvider = "unregister_provider",
-    ReadProvider = "read_provider",
-    UpdateAuth = "update_auth",
-    CreateS2SKey = "create_key",
-    ReadS2SKey = "read_key",
-    InactivateS2SKey = "inactive_key"
 }

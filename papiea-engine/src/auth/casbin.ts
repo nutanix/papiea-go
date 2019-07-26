@@ -1,10 +1,10 @@
 import { UserAuthInfo } from "./authn";
-import { Authorizer, PermissionDeniedError, Actions, ProviderAuthorizerFactory } from "./authz";
+import { Authorizer, PermissionDeniedError, ProviderAuthorizerFactory } from "./authz";
 import { newEnforcer, newModel } from "casbin/lib/casbin";
 import { Adapter } from "casbin/lib/persist/adapter";
 import { Model } from "casbin/lib/model";
 import { Helper } from "casbin/lib/persist/helper";
-import { Provider } from "papiea-core";
+import { Provider, Action } from "papiea-core";
 
 export class CasbinAuthorizer extends Authorizer {
     private modelText: string;
@@ -23,7 +23,7 @@ export class CasbinAuthorizer extends Authorizer {
         this.enforcer = await newEnforcer(model, policyAdapter);
     }
 
-    async checkPermission(user: UserAuthInfo, object: any, action: Actions): Promise<void> {
+    async checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void> {
         try {
             if (!this.enforcer.enforce(user, object, action)) {
                 throw new PermissionDeniedError();

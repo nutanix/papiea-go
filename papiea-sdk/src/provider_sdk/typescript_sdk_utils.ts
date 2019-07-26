@@ -1,6 +1,3 @@
-import { Metadata } from "papiea-core";
-import { Entity_Reference } from "papiea-core/build/core";
-
 export class Maybe<T> {
     private constructor(private value: T | null) {}
 
@@ -34,23 +31,4 @@ export function isEmpty(obj: any) {
             return false;
     }
     return true;
-}
-
-export function isMetadataArray(entity: any): entity is Metadata[] {
-    // @ts-ignore
-    return Array.isArray(entity) && entity[0].spec_version !== undefined;
-}
-
-export function isEntityRefArray(entity: any): entity is Entity_Reference[] {
-    return Array.isArray(entity) && entity[0].uuid !== undefined;
-}
-
-export function isEntityRef(entity: any): entity is Entity_Reference[] {
-    // @ts-ignore
-    return entity.uuid !== undefined;
-}
-
-export function isMetadata(entity: any): entity is Entity_Reference[] {
-    // @ts-ignore
-    return entity.spec_version !== undefined;
 }
