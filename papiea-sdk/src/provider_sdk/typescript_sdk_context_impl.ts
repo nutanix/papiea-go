@@ -29,17 +29,12 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
     }
 
     async check_permission(entityAction: [Action, Entity_Reference][], provider_prefix: string = this.provider_prefix, provider_version: Version = this.provider_version): Promise<boolean> {
-        try {
-            return this.try_check(provider_prefix, provider_version, entityAction)
-        } catch (e) {
-            console.error(`Error: ${e} occurred while invoking permission check`);
-            throw e;
-        }
+        return this.try_check(provider_prefix, provider_version, entityAction)
     }
 
     async try_check(provider_prefix: string, provider_version: Version, entityAction: [Action, Entity_Reference][]) {
         try {
-            const { data: { success } } = await axios.post(`${ this.base_url }/${ provider_prefix }/${ provider_version }/check_permissions`,
+            const { data: { success } } = await axios.post(`${ this.base_url }/${ provider_prefix }/${ provider_version }/check_permission`,
                 entityAction, { headers: this.headers });
             return success === "Ok";
         } catch (e) {

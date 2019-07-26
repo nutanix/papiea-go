@@ -258,7 +258,7 @@ export class Entity_API_Impl implements Entity_API {
     async check_single_permission(user: UserAuthInfo, prefix: string, version: Version, entityAction: [Action, Entity_Reference]): Promise<OperationSuccess> {
         const [action, entityRef] = entityAction;
         if (action === Action.Create) {
-            const has_perm = this.has_permission(user, entityRef as Metadata, action)
+            const has_perm = await this.has_permission(user, entityRef as Metadata, action)
             if (has_perm) {
                 return {"success": "Ok"}
             } else {
@@ -266,7 +266,7 @@ export class Entity_API_Impl implements Entity_API {
             }
         } else {
             const [metadata, _] = await this.spec_db.get_spec(entityRef);
-            const has_perm = this.has_permission(user, metadata, action)
+            const has_perm = await this.has_permission(user, metadata, action)
             if (has_perm) {
                 return {"success": "Ok"}
             } else {
