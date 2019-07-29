@@ -240,16 +240,10 @@ export class ProviderSdk implements ProviderImpl {
                 if (e instanceof ValidationError) {
                     return res.status(422).json(e.mapErr(() => `Provider procedure ${name} didn't return correct value`))
                 } else if (e instanceof InvocationError) {
-                    return res.status(e.status_code).json({
-                        message: e.message,
-                        stacktrace: e.stack
-                    })
+                    return res.status(e.status_code).json(e.toResponse())
                 }
-                const errors = InvocationError.fromError(500, e);
-                res.status(500).json({
-                    message: errors.message,
-                    stacktrace: errors.stack
-                })
+                const error = InvocationError.fromError(500, e);
+                res.status(500).json(error.toResponse())
             }
         });
         return this
@@ -421,16 +415,10 @@ export class Kind_Builder {
                 if (e instanceof ValidationError) {
                     return res.status(422).json(e.mapErr(() => `Entity procedure ${name} didn't return correct value`))
                 } else if (e instanceof InvocationError) {
-                    return res.status(e.status_code).json({
-                        message: e.message,
-                        stacktrace: e.stack
-                    })
+                    return res.status(e.status_code).json(e.toResponse())
                 }
-                const errors = InvocationError.fromError(500, e);
-                res.status(500).json({
-                    message: errors.message,
-                    stacktrace: errors.stack
-                })
+                const error = InvocationError.fromError(500, e);
+                res.status(500).json(error.toResponse())
             }
         });
         return this
@@ -461,16 +449,10 @@ export class Kind_Builder {
                 if (e instanceof ValidationError) {
                     return res.status(422).json(e.mapErr(() => `Kind procedure ${name} didn't return correct value`))
                 } else if (e instanceof InvocationError) {
-                    return res.status(e.status_code).json({
-                        message: e.message,
-                        stacktrace: e.stack
-                    })
+                    return res.status(e.status_code).json(e.toResponse())
                 }
-                const errors = InvocationError.fromError(500, e);
-                res.status(500).json({
-                    message: errors.message,
-                    stacktrace: errors.stack
-                })
+                const error = InvocationError.fromError(500, e);
+                res.status(500).json(error.toResponse())
             }
         });
         return this

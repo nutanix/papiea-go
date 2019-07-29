@@ -1,5 +1,5 @@
 import { Maybe } from "../utils/utils";
-import { ValidationError } from "validation_error.ts";
+import { ValidationError } from "../errors/validation_error";
 
 const SwaggerModelValidator = require('swagger-model-validator');
 

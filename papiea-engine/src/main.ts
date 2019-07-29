@@ -7,16 +7,12 @@ import { MongoConnection } from "./databases/mongo";
 import { createEntityAPIRouter } from "./entity/entity_routes";
 import { Entity_API_Impl} from "./entity/entity_api_impl";
 import { Validator } from "./validator";
-import { EntityNotFoundError } from "./databases/utils/errors";
 import { createAuthnRouter } from "./auth/authn";
 import { createOAuth2Router } from "./auth/oauth2";
 import { Authorizer, AdminAuthorizer, PerProviderAuthorizer} from "./auth/authz";
 import { ProviderCasbinAuthorizerFactory } from "./auth/casbin";
 import morgan = require("morgan");
 import { PapieaErrorImpl } from "./errors/papiea_error_impl";
-import { ValidationError } from "./errors/validation_error";
-import { ProcedureInvocationError } from "./errors/procedure_invocation_error";
-import { PermissionDeniedError, UnauthorizedError } from "./errors/permission_error";
 
 declare var process: {
     env: {

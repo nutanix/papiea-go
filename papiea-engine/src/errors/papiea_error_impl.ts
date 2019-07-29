@@ -47,13 +47,10 @@ export class PapieaErrorImpl implements PapieaError {
                 })
                 return new PapieaErrorImpl(400, "Validation failed.", errorPayload)
             case ProcedureInvocationError:
-                errorPayload = (err as ValidationError).errors.map(description => {
-                    return { message: description }
-                })
-                return new PapieaErrorImpl((err as ProcedureInvocationError).status, "Procedure invocation failed.", errorPayload)
+                return new PapieaErrorImpl((err as ProcedureInvocationError).status, "Procedure invocation failed.", (err as ProcedureInvocationError).errors)
             case EntityNotFoundError:
                 return new PapieaErrorImpl(
-                    (err as ProcedureInvocationError).status,
+                    404,
                     "Entity not found.",
                     [{ message: `Entity with kind: ${(err as EntityNotFoundError).kind}, uuid: ${(err as EntityNotFoundError).uuid} not found` }]
                 )

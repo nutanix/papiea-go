@@ -395,8 +395,8 @@ describe("Provider Sdk tests", () => {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { input: { "a": 5, "b": 5 } });
         } catch (e) {
-            expect(e.response.data.errors[0].msg).toBe('Provider procedure computeSum didn\'t return correct value');
-            expect(e.response.data.errors[0].errors).not.toBeUndefined();
+            expect(e.response.data.error.errors[0].message).toBe('Provider procedure computeSum didn\'t return correct value');
+            expect(e.response.data.error.errors[0].reason).not.toBeUndefined();
         } finally {
             sdk.server.close();
         }
@@ -442,7 +442,8 @@ describe("Provider Sdk tests", () => {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumWithNoValidation`, { input: { "a": 5, "b": 5 } });
         } catch (e) {
-            expect(e.response.data.errors[0]).toBe('Function was expecting output of type void');
+            console.dir(e.response.data)
+            expect(e.response.data.error.errors[0].message).toBe('Function was expecting output of type void');
         } finally {
             sdk.server.close();
         }
@@ -467,8 +468,8 @@ describe("Provider Sdk tests", () => {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumThrowsError`, { input: { "a": 5, "b": 5 } });
         } catch (e) {
-            expect(e.response.data.errors[0].message).toBe("My custom error");
-            expect(e.response.data.errors[0].stacktrace).not.toBeUndefined();
+            expect(e.response.data.error.errors[0].message).toBe("My custom error");
+            expect(e.response.data.error.errors[0].stacktrace).not.toBeUndefined();
         } finally {
             sdk.server.close();
         }
