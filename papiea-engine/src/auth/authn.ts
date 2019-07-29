@@ -1,19 +1,11 @@
-import { Request, Response, NextFunction, Router } from "express";
-import { Signature } from "./crypto";
+import { NextFunction, Request, Response, Router } from "express";
 import { S2S_Key_DB } from "../databases/s2skey_db_interface";
-import { S2S_Key, Version, Provider } from "papiea-core";
+import { Provider, S2S_Key, Version } from "papiea-core";
 import { Provider_DB } from "../databases/provider_db_interface";
 import { getUserInfoFromToken } from "./oauth2";
+import { UnauthorizedError } from "../errors/permission_error";
 import atob = require("atob");
 
-
-
-export class UnauthorizedError extends Error {
-    constructor() {
-        super("Unauthorized");
-        Object.setPrototypeOf(this, UnauthorizedError.prototype);
-    }
-}
 
 interface AuthenticationStrategy {
     getUserAuthInfo(token: string): Promise<UserAuthInfo | null>

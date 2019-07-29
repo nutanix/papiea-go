@@ -2,26 +2,27 @@ import axios from "axios"
 import { Status_DB } from "../databases/status_db_interface";
 import { Spec_DB } from "../databases/spec_db_interface";
 import { Entity_API } from "./entity_api_interface";
-import { ValidationError, Validator } from "../validator";
+import { Validator } from "../validator";
 import * as uuid_validate from "uuid-validate";
-import { Authorizer, ReadAction, CreateAction, DeleteAction, UpdateAction } from "../auth/authz";
+import { Authorizer, CreateAction, DeleteAction, ReadAction, UpdateAction } from "../auth/authz";
 import { UserAuthInfo } from "../auth/authn";
 import { Provider_API } from "../provider/provider_api_interface";
-import uuid = require("uuid");
-import { Version, Spec, Metadata, uuid4, Entity_Reference, Status, Data_Description, Provider, Kind, Procedural_Signature } from "papiea-core";
+import {
+    Data_Description,
+    Entity_Reference,
+    Kind,
+    Metadata,
+    Procedural_Signature,
+    Provider,
+    Spec,
+    Status,
+    uuid4,
+    Version
+} from "papiea-core";
 import { isEmpty, Maybe } from "../utils/utils";
-
-export class ProcedureInvocationError extends Error {
-    errors: string[];
-    status: number;
-
-    constructor(errors: string[], status: number) {
-        super(JSON.stringify(errors));
-        Object.setPrototypeOf(this, ProcedureInvocationError.prototype);
-        this.errors = errors;
-        this.status = status;
-    }
-}
+import { ValidationError } from "../errors/validation_error";
+import { ProcedureInvocationError } from "../errors/procedure_invocation_error";
+import uuid = require("uuid");
 
 export type SortParams = { [key: string]: number };
 

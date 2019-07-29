@@ -1,13 +1,7 @@
-import { UserAuthInfo, UnauthorizedError } from "./authn";
+import { UserAuthInfo } from "./authn";
 import { Provider_API } from "../provider/provider_api_interface";
 import { Provider } from "papiea-core";
-
-export class PermissionDeniedError extends Error {
-    constructor() {
-        super("Permission Denied");
-        Object.setPrototypeOf(this, PermissionDeniedError.prototype);
-    }
-}
+import { PermissionDeniedError, UnauthorizedError } from "../errors/permission_error";
 
 export class Action {
     private action: string;

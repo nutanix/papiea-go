@@ -1,7 +1,6 @@
 import { ProceduralCtx_Interface, SecurityApi } from "./typescript_sdk_interface";
 import { Entity, Status, Entity_Reference, Provider, Key } from "papiea-core";
-import axios, { AxiosInstance } from "axios";
-import { Request, Response } from "express";
+import { AxiosInstance } from "axios";
 import { ProviderSdk } from "./typescript_sdk";
 import { IncomingHttpHeaders } from "http";
 

@@ -205,3 +205,13 @@ export interface S2S_Key {
     deleted_at?: Date
     extension: UserInfo 
 }
+
+
+// Modeled after https://developers.google.com/drive/api/v3/handle-errors
+export interface PapieaError {
+    error: {
+        errors: { [key: string]: any }[],
+        code: number
+        message: string
+    }
+}

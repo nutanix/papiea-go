@@ -1,5 +1,5 @@
-import { ValidationError } from "../validator";
 import { SortParams } from "../entity/entity_api_impl";
+import { ValidationError } from "validation_error.ts";
 
 export class Maybe<T> {
     private constructor(private value: T | null) {}

@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { asyncHandler, UserAuthInfo } from "./authn";
-import { Signature } from "./crypto";
 import { Provider_DB } from "../databases/provider_db_interface";
 import { extract_property } from "./user_data_evaluator";
 import { Provider } from "papiea-core";
