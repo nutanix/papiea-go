@@ -262,17 +262,18 @@ describe("MongoDb tests", () => {
             name: uuid4(),
             owner: uuid4(),
             uuid: uuid4(),
-            provider_prefix: "test_provider",
             key: uuid4(),
             created_at: new Date(),
             deleted_at: undefined,
-            extension: {}
+            extension: {
+                provider_prefix: "test_provider"
+            }
         };
         await s2skeyDb.create_key(s2skey);
         const res: S2S_Key = await s2skeyDb.get_key(s2skey.uuid);
         expect(res.name).toEqual(s2skey.name);
         expect(res.owner).toEqual(s2skey.owner);
-        expect(res.provider_prefix).toEqual(s2skey.provider_prefix);
+        expect(res.extension.provider_prefix).toEqual(s2skey.extension.provider_prefix);
         expect(res.key).toEqual(s2skey.key);
         expect(res.deleted_at).toBeFalsy();
     });
@@ -284,11 +285,12 @@ describe("MongoDb tests", () => {
             name: uuid4(),
             owner: uuid4(),
             uuid: uuid4(),
-            provider_prefix: "test_provider",
             key: uuid4(),
             created_at: new Date(),
             deleted_at: undefined,
-            extension: {}
+            extension: {
+                provider_prefix: "test_provider"
+            }
         };
         await s2skeyDb.create_key(s2skey);
         try {
@@ -305,20 +307,23 @@ describe("MongoDb tests", () => {
             name: uuid4(),
             owner: uuid4(),
             uuid: uuid4(),
-            provider_prefix: "test_provider",
             key: uuid4(),
             created_at: new Date(),
             deleted_at: undefined,
-            extension: {}
+            extension: {
+                provider_prefix: "test_provider"
+            }
         };
         await s2skeyDb.create_key(s2skey);
         const res: S2S_Key = (await s2skeyDb.list_keys({
             owner: s2skey.owner,
-            provider_prefix: s2skey.provider_prefix
+            extension: {
+                provider_prefix: s2skey.extension.provider_prefix
+            }
         }))[0];
         expect(res.name).toEqual(s2skey.name);
         expect(res.owner).toEqual(s2skey.owner);
-        expect(res.provider_prefix).toEqual(s2skey.provider_prefix);
+        expect(res.extension.provider_prefix).toEqual(s2skey.extension.provider_prefix);
         expect(res.key).toEqual(s2skey.key);
         expect(res.deleted_at).toBeFalsy();
     });
@@ -330,11 +335,12 @@ describe("MongoDb tests", () => {
             name: uuid4(),
             owner: uuid4(),
             uuid: uuid4(),
-            provider_prefix: "test_provider",
             key: uuid4(),
             created_at: new Date(),
             deleted_at: undefined,
-            extension: {}
+            extension: {
+                provider_prefix: "test_provider"
+            }
         };
         await s2skeyDb.create_key(s2skey);
         await s2skeyDb.inactivate_key(s2skey.uuid);
