@@ -320,13 +320,17 @@ describe("Entity API auth tests", () => {
         const { data: userInfo } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
+        console.log("POSTING S2S KEY");
         const { data: s2skey } = await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
                 owner: userInfo.owner,
-                provider_prefix: userInfo.provider_prefix
+                userInfo: {
+                    provider_prefix: userInfo.provider_prefix
+                }
             },
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
+        console.log("GETTING S2S KEY");
         const { data: s2skeys } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/s2skey`,
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
@@ -430,7 +434,7 @@ describe("Entity API auth tests", () => {
             await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
                 {
                     owner: "another_owner",
-                    extension: {
+                    userInfo: {
                         provider_prefix: userInfo.provider_prefix
                     }
                 },
@@ -443,7 +447,7 @@ describe("Entity API auth tests", () => {
             await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
                 {
                     owner: userInfo.owner,
-                    extension: {
+                    userInfo: {
                         provider_prefix: "another_provider"
                     }
                 },

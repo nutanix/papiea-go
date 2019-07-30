@@ -150,7 +150,7 @@ export class AdminAuthorizer extends Authorizer {
             return;
         }
         if (action === Action.ReadS2SKey || action === Action.InactivateS2SKey) {
-            if (object.owner !== user.owner || object.extension.provider_prefix !== user.provider_prefix) {
+            if (object.owner !== user.owner || object.userInfo.provider_prefix !== user.provider_prefix) {
                 throw new PermissionDeniedError();
             } else {
                 return;
