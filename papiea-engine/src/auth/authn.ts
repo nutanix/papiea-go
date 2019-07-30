@@ -155,6 +155,9 @@ export function createAuthnRouter(adminKey: string, s2skeyDb: S2S_Key_DB, provid
 
         const userInfo = await AuthCtx.getUserAuthInfo();
 
+        console.log(userInfo.provider_prefix)
+        console.log(provider_prefix)
+        console.dir(userInfo)
         if (urlParts.length > 1) {
             if (provider_prefix
                 // TODO: probably need to change /provider/update_status to /provider/:prefix/:version/update_status

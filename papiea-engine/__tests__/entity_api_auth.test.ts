@@ -659,7 +659,7 @@ describe("Entity API auth tests", () => {
         );
     });
 
-    test.only("Call kind procedure by provider-admin of different provider should fail", async () => {
+    test("Call kind procedure by provider-admin of different provider should fail", async () => {
         expect.hasAssertions();
         try {
             // There should be some policy in place
