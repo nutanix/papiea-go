@@ -158,10 +158,6 @@ export class PerProviderAuthorizer extends Authorizer {
 
 export class AdminAuthorizer extends Authorizer {
     async checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void> {
-        console.log("CHECKING PERMISSION");
-        console.dir(user);
-        console.dir(object);
-        console.dir(action);
         if (action === ReadProviderAction) {
             return;
         }
