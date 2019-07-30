@@ -196,7 +196,6 @@ export interface UserInfo {
 export interface S2S_Key {
     name?: string
     owner: string
-    provider_prefix: string
     key: string
     uuid: string;
 
