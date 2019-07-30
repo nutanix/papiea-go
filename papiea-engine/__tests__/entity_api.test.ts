@@ -548,7 +548,6 @@ describe("Pagination tests", () => {
     const locationDataDescription = getLocationDataDescription();
     const kind_name = Object.keys(locationDataDescription)[0];
     beforeAll(async () => {
-        jest.setTimeout(5000);
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         sdk.new_kind(locationDataDescription);
         sdk.version(providerVersion);
@@ -562,6 +561,7 @@ describe("Pagination tests", () => {
 
     let uuids: string[] = [];
     test("Create multiple entities", async () => {
+        jest.setTimeout(5000);
         expect.assertions(1);
         const entityPromises: Promise<any>[] = [];
         for (let i = 0; i < 70; i++) {
@@ -680,6 +680,7 @@ describe("Pagination tests", () => {
     });
 
     test("Delete multiple entities", async () => {
+        jest.setTimeout(5000);
         expect.assertions(1);
         const deletePromises: Promise<any>[] = [];
         uuids.forEach(uuid => {

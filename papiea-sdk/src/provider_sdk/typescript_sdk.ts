@@ -168,7 +168,7 @@ export class ProviderSdk implements ProviderImpl {
                     entity_procedures: {},
                     differ: undefined,
                 };
-                const kind_builder = new Kind_Builder(spec_only_kind, this, validator || this.validator);
+                const kind_builder = new Kind_Builder(spec_only_kind, this, this.allowExtraProps);
                 this._kind.push(spec_only_kind);
                 return kind_builder;
             } else {
@@ -183,7 +183,7 @@ export class ProviderSdk implements ProviderImpl {
     add_kind(kind: Kind): Kind_Builder | null {
         if (this._kind.indexOf(kind) === -1) {
             this._kind.push(kind);
-            const kind_builder = new Kind_Builder(kind, this);
+            const kind_builder = new Kind_Builder(kind, this, this.allowExtraProps);
             return kind_builder;
         } else {
             return null;
@@ -234,7 +234,7 @@ export class ProviderSdk implements ProviderImpl {
         this._server_manager.register_handler("/" + name, async (req, res) => {
             try {
                 const result = await handler(new ProceduralCtx(this, prefix, version, req.headers), req.body.input);
-                Validator.validate(result, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc));
+                Validator.validate(result, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc), this.allowExtraProps);
                 res.json(result);
             } catch (e) {
                 if (e instanceof ValidationError) {
@@ -373,12 +373,10 @@ export class Kind_Builder {
     get_version: () => string;
     private server_manager: Provider_Server_Manager;
     provider_url: string;
-    private readonly providerApiAxios: AxiosInstance;
-    private readonly securityApi: SecurityApi;
     private readonly allowExtraProps: boolean;
     private readonly provider: ProviderSdk;
 
-    constructor (kind: Kind, provider: ProviderSdk) {
+    constructor (kind: Kind, provider: ProviderSdk, allowExtraProps: boolean) {
         this.provider = provider;
         this.server_manager = provider.server_manager;
         this.kind = kind;
@@ -446,7 +444,7 @@ export class Kind_Builder {
         this.server_manager.register_handler(`/${this.kind.name}/${name}`, async (req, res) => {
             try {
                 const result = await handler(new ProceduralCtx(this.provider, prefix, version, req.headers), req.body.input);
-                Validator.validate(result, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc));
+                Validator.validate(result, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc), this.allowExtraProps);
                 res.json(result);
             } catch (e) {
                 if (e instanceof ValidationError) {
