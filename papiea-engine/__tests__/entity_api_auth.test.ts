@@ -572,7 +572,7 @@ describe("Entity API auth tests", () => {
         });
         const { data: s2skey } = await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
-                extension: {
+                userInfo: {
                     provider_prefix: provider.prefix,
                     is_provider_admin: true
                 }
@@ -643,7 +643,7 @@ describe("Entity API auth tests", () => {
         });
         const { data: s2skey } = await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
-                extension: {
+                userInfo: {
                     provider_prefix: provider.prefix,
                     is_provider_admin: true
                 }
@@ -659,7 +659,7 @@ describe("Entity API auth tests", () => {
         );
     });
 
-    test("Call kind procedure by provider-admin of different provider should fail", async () => {
+    test.only("Call kind procedure by provider-admin of different provider should fail", async () => {
         expect.hasAssertions();
         try {
             // There should be some policy in place
@@ -668,13 +668,13 @@ describe("Entity API auth tests", () => {
             });
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
-                    extension: {
+                    userInfo: {
                         provider_prefix: provider.prefix + "1",
                         is_provider_admin: true
                     }
                 }
             );
-            await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/moveX`, { input: 5 },
+            await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/computeGeolocation`, { input: "5" },
                 { headers: { 'Authorization': 'Bearer ' + s2skey.key } }
             );
             throw new Error("Call procedure without permission should fail");

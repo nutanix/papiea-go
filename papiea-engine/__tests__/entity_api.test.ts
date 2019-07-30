@@ -407,7 +407,7 @@ describe("Entity API tests", () => {
             }
         });
         expect(res.data.results.length).toBe(0);
-        ["papiea_one_hour_ago", "papiea_one_day_ago"].forEach(async deleted_at => {
+        for (const deleted_at of ["papiea_one_hour_ago", "papiea_one_day_ago"]) {
             let res = await entityApi.post(`${ providerPrefix }/${ providerVersion }/${ kind_name }/filter`, {
                 metadata: {
                     uuid: metadata.uuid,
@@ -417,7 +417,7 @@ describe("Entity API tests", () => {
             expect(res.data.results.length).toBe(1);
             expect(res.data.results[0].spec).toEqual(spec);
             expect(res.data.results[0].status).toEqual(spec);
-        });
+        }
     });
 });
 

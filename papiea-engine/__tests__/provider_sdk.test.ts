@@ -442,7 +442,6 @@ describe("Provider Sdk tests", () => {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumWithNoValidation`, { input: { "a": 5, "b": 5 } });
         } catch (e) {
-            console.dir(e.response.data)
             expect(e.response.data.error.errors[0].message).toBe('Function was expecting output of type void');
         } finally {
             sdk.server.close();
