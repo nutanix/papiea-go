@@ -1,5 +1,5 @@
 import { S2S_Key_DB } from "./s2skey_db_interface";
-import { S2S_Key, Key } from "papiea-core";
+import { S2S_Key } from "papiea-core";
 import { Collection, Db } from "mongodb";
 import { datestringToFilter } from "./utils/date";
 
@@ -47,9 +47,9 @@ export class S2S_Key_DB_Mongo implements S2S_Key_DB {
         return result;
     }
 
-    async get_key_by_secret(key: Key): Promise<S2S_Key> {
+    async get_key_by_secret(secret: string): Promise<S2S_Key> {
         const result: S2S_Key | null = await this.collection.findOne({
-            "key": key,
+            "key": secret,
             "deleted_at": null
         });
         if (result === null) {

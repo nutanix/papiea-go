@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Metadata, Spec, Entity_Reference, Entity, EntitySpec, Key } from "papiea-core";
+import { Metadata, Spec, Entity_Reference, Entity, EntitySpec } from "papiea-core";
 
 async function create_entity(provider: string, kind: string, version: string, request_spec: Spec, papiea_url: string,meta_extension:any, s2skey: string): Promise<EntitySpec> {
     const payload = {
@@ -63,7 +63,7 @@ export interface ProviderClient {
     invoke_procedure(procedure_name: string, input: any): Promise<any>
 }
 
-export function provider_client(papiea_url: string, provider: string, version: string, s2skey?: Key, meta_extension?: (s2skey:Key)=>any) : ProviderClient {
+export function provider_client(papiea_url: string, provider: string, version: string, s2skey?: string, meta_extension?: (s2skey: string)=>any) : ProviderClient {
     const the_s2skey = s2skey || 'anonymous'
     return <ProviderClient> {
         get_kind: (kind: string)=> kind_client(papiea_url, provider, kind, version, the_s2skey, meta_extension),
@@ -83,7 +83,7 @@ export interface EntityCRUD {
     invoke_kind_procedure(procedure_name: string, input: any): Promise<any>
 }
 
-export function kind_client(papiea_url: string, provider: string, kind: string, version: string, s2skey?: string, meta_extension?: (s2skey:Key)=>any): EntityCRUD {
+export function kind_client(papiea_url: string, provider: string, kind: string, version: string, s2skey?: string, meta_extension?: (s2skey: string)=>any): EntityCRUD {
     const the_s2skey = s2skey || 'anonymous'
     const crudder: EntityCRUD = {
         get: (entity_reference: Entity_Reference) => get_entity(provider, kind, version, entity_reference, papiea_url, the_s2skey),

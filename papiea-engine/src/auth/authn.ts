@@ -67,7 +67,7 @@ class S2SKeyAuthenticationStrategy implements AuthenticationStrategy {
 
     async getUserAuthInfo(token: string): Promise<UserAuthInfo | null> {
         try {
-            const s2skey: S2S_Key = await this.s2skeyDb.get_key(token);
+            const s2skey: S2S_Key = await this.s2skeyDb.get_key_by_secret(token);
             const userInfo = s2skey.userInfo;
             userInfo.authorization = 'Bearer ' + s2skey.key;
             return userInfo;
@@ -155,9 +155,6 @@ export function createAuthnRouter(adminKey: string, s2skeyDb: S2S_Key_DB, provid
 
         const userInfo = await AuthCtx.getUserAuthInfo();
 
-        console.log(userInfo.provider_prefix)
-        console.log(provider_prefix)
-        console.dir(userInfo)
         if (urlParts.length > 1) {
             if (provider_prefix
                 // TODO: probably need to change /provider/update_status to /provider/:prefix/:version/update_status

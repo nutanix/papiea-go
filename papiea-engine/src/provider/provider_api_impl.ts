@@ -11,7 +11,7 @@ import {
 import { UserAuthInfo } from "../auth/authn";
 import { createHash } from "../auth/crypto";
 import { EventEmitter } from "events";
-import { Entity_Reference, Version, Status, Provider, Kind, S2S_Key, Key } from "papiea-core";
+import { Entity_Reference, Version, Status, Provider, Kind, S2S_Key } from "papiea-core";
 import { Maybe } from "../utils/utils";
 import uuid = require("uuid");
 

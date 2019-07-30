@@ -1,5 +1,5 @@
 import { UserAuthInfo } from "../auth/authn";
-import { Provider, Version, Entity_Reference, Status, S2S_Key, Key } from "papiea-core";
+import { Provider, Version, Entity_Reference, Status, S2S_Key } from "papiea-core";
 
 
 // This will be provided using REST APIs. 

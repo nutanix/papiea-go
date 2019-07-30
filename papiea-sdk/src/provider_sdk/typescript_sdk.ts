@@ -13,7 +13,7 @@ import { Express, RequestHandler } from "express";
 import { Server } from "http";
 import { ProceduralCtx } from "./typescript_sdk_context_impl";
 
-import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, S2S_Key, Key, UserInfo } from "papiea-core";
+import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, S2S_Key, UserInfo } from "papiea-core";
 import { Validator } from "./typescript_sdk_validation";
 import { Maybe } from "./typescript_sdk_utils";
 import { InvocationError, ValidationError } from "./typescript_sdk_exceptions";
@@ -21,7 +21,7 @@ import { InvocationError, ValidationError } from "./typescript_sdk_exceptions";
 class SecurityApiImpl implements SecurityApi {
     readonly provider: ProviderSdk;
     readonly s2s_key: string;
-    constructor (provider:ProviderSdk, s2s_key:Key) {
+    constructor (provider: ProviderSdk, s2s_key: string) {
         this.provider = provider
         this.s2s_key = s2s_key
     }
@@ -37,7 +37,7 @@ class SecurityApiImpl implements SecurityApi {
         }
     }
 
-    public async list_keys(): Promise<Key[]>{
+    public async list_keys(): Promise<string[]>{
         try {
             const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`
             const {data: keys } = await this.provider.provider_api_axios.get(`${url}/s2skey`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}})
@@ -59,7 +59,7 @@ class SecurityApiImpl implements SecurityApi {
         }
     }
 
-    public async deactivate_key(key_to_deactivate:Key) {
+    public async deactivate_key(key_to_deactivate: string) {
         try {
             const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`
             const {data: r } = await this.provider.provider_api_axios.put(`${url}/s2skey`, {key: key_to_deactivate, active:false}, {headers: {'Authorization': `Bearer ${this.s2s_key}`}})
@@ -81,7 +81,7 @@ export class ProviderSdk implements ProviderImpl {
     protected meta_ext: { [key: string]: string };
     protected _provider: Provider | null;
     protected readonly papiea_url: string;
-    protected readonly _s2skey: Key;
+    protected readonly _s2skey: string;
     protected _policy: string | null = null;
     protected _oauth2: string | null = null;
     protected _authModel: any | null = null;
@@ -304,11 +304,11 @@ export class ProviderSdk implements ProviderImpl {
         return this._securityApi;
     }
 
-    public new_security_api(s2s_key:Key) {
+    public new_security_api(s2s_key: string) {
         return new SecurityApiImpl(this, s2s_key)
     }
 
-    public get s2s_key() : Key {
+    public get s2s_key(): string {
         return this._s2skey
     }
 }
