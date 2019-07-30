@@ -793,7 +793,7 @@ describe("Provider with additional props tests", () => {
     });
 
 
-    test("Create spec-only entity with additional props", async () => {
+    test("Create spec-only entity with additional props set to 'true' should succeed", async () => {
         const { data: { metadata, spec } } = await entityApi.post(`/${ providerPrefix }/${ providerVersion }/${ kind_name }`, {
             spec: {
                 x: 10,
@@ -804,7 +804,7 @@ describe("Provider with additional props tests", () => {
         });
         entity_metadata = metadata;
         entity_spec = spec;
+        expect(metadata).toBeDefined()
+        expect(spec).toBeDefined()
     });
-
-
 });
