@@ -158,6 +158,10 @@ export class PerProviderAuthorizer extends Authorizer {
 
 export class AdminAuthorizer extends Authorizer {
     async checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void> {
+        console.log("CHECKING PERMISSION");
+        console.dir(user);
+        console.dir(object);
+        console.dir(action);
         if (action === ReadProviderAction) {
             return;
         }
@@ -171,7 +175,6 @@ export class AdminAuthorizer extends Authorizer {
             // object.extension contains UserInfo which will be used when s2s key is passed
             // check who can talk on behalf of whom
             if (object.owner !== user.owner
-                || object.provider_prefix !== user.provider_prefix
                 || object.extension.provider_prefix !== user.provider_prefix
                 || object.extension.is_admin) {
                 throw new PermissionDeniedError();
@@ -186,7 +189,7 @@ export class AdminAuthorizer extends Authorizer {
             return;
         }
         if (action === ReadS2SKeyAction || action === InactivateS2SKeyAction) {
-            if (object.owner !== user.owner || object.provider_prefix !== user.provider_prefix) {
+            if (object.owner !== user.owner || object.extension.provider_prefix !== user.provider_prefix) {
                 throw new PermissionDeniedError();
             } else {
                 return;
