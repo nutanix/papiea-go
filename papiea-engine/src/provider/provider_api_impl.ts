@@ -13,6 +13,7 @@ import { createHash } from "../auth/crypto";
 import { EventEmitter } from "events";
 import { Entity_Reference, Version, Status, Provider, Kind, S2S_Key, Key } from "papiea-core";
 import { Maybe } from "../utils/utils";
+import uuid = require("uuid");
 
 export class Provider_API_Impl implements Provider_API {
     private providerDb: Provider_DB;
@@ -128,6 +129,7 @@ export class Provider_API_Impl implements Provider_API {
         // All rules who can talk on behalf of whom are defined in AdminAuthorizer
         const s2skey: S2S_Key = {
             name: name,
+            uuid: uuid(),
             owner: owner,
             provider_prefix: provider_prefix,
             key: "",
@@ -138,23 +140,28 @@ export class Provider_API_Impl implements Provider_API {
         s2skey.key = key ? key : createHash(s2skey);
         await this.authorizer.checkPermission(user, s2skey, CreateS2SKeyAction);
         await this.s2skeyDb.create_key(s2skey);
-        return this.s2skeyDb.get_key(s2skey.key);
+        return this.s2skeyDb.get_key(s2skey.uuid);
     }
 
-    async get_key(user: UserAuthInfo, key: Key): Promise<S2S_Key> {
-        const s2skey = await this.s2skeyDb.get_key(key);
+    async get_key(user: UserAuthInfo, uuid: string): Promise<S2S_Key> {
+        const s2skey = await this.s2skeyDb.get_key(uuid);
         await this.authorizer.checkPermission(user, s2skey, ReadS2SKeyAction);
         return s2skey;
     }
 
     async list_keys(user: UserAuthInfo, fields_map: any): Promise<S2S_Key[]> {
         const res = await this.s2skeyDb.list_keys(fields_map);
+        let secret;
+        for (let s2s_key of res) {
+            secret = s2s_key.key;
+            s2s_key.key = secret.slice(0, 2) + "*****" + secret.slice(-2);
+        }
         return this.authorizer.filter(user, res, ReadS2SKeyAction);
     }
 
-    async inactivate_key(user: UserAuthInfo, key: Key): Promise<void> {
-        const s2skey = await this.s2skeyDb.get_key(key);
+    async inactivate_key(user: UserAuthInfo, uuid: string): Promise<void> {
+        const s2skey: S2S_Key = await this.s2skeyDb.get_key(uuid);
         await this.authorizer.checkPermission(user, s2skey, InactivateS2SKeyAction);
-        await this.s2skeyDb.inactivate_key(key);
+        await this.s2skeyDb.inactivate_key(s2skey.uuid);
     }
 }

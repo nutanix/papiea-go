@@ -199,6 +199,7 @@ export interface S2S_Key {
     owner: string
     provider_prefix: string
     key: Key
+    uuid: string;
 
     // Additional fields
     created_at: Date

@@ -20,6 +20,10 @@ export class S2S_Key_DB_Mongo implements S2S_Key_DB {
                 { "owner": 1, "provider_prefix": 1 },
                 { name: "user_provider_keys", unique: false },
             );
+            await this.collection.createIndex(
+                { "uuid": 1 },
+                { name: "uuid", unique: true },
+            )
         } catch (err) {
             throw err
         }
@@ -32,7 +36,18 @@ export class S2S_Key_DB_Mongo implements S2S_Key_DB {
         return;
     }
 
-    async get_key(key: Key): Promise<S2S_Key> {
+    async get_key(uuid: string): Promise<S2S_Key> {
+        const result: S2S_Key | null = await this.collection.findOne({
+            "uuid": uuid,
+            "deleted_at": null
+        });
+        if (result === null) {
+            throw new Error("key not found");
+        }
+        return result;
+    }
+
+    async get_key_by_secret(key: Key): Promise<S2S_Key> {
         const result: S2S_Key | null = await this.collection.findOne({
             "key": key,
             "deleted_at": null
@@ -43,6 +58,7 @@ export class S2S_Key_DB_Mongo implements S2S_Key_DB {
         return result;
     }
 
+
     async list_keys(fields_map: any): Promise<S2S_Key[]> {
         const filter: any = Object.assign({}, fields_map);
         filter["deleted_at"] = datestringToFilter(fields_map.deleted_at);
@@ -50,9 +66,9 @@ export class S2S_Key_DB_Mongo implements S2S_Key_DB {
         return result;
     }
 
-    async inactivate_key(key: Key): Promise<void> {
+    async inactivate_key(uuid: string): Promise<void> {
         const result = await this.collection.updateOne({
-            "key": key
+            "uuid": uuid
         }, {
                 $set: {
                     "deleted_at": new Date()

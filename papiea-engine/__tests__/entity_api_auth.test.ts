@@ -331,7 +331,7 @@ describe("Entity API auth tests", () => {
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
         expect(s2skeys.length).toEqual(1);
-        expect(s2skeys[0].key).toEqual(s2skey.key);
+        expect(s2skeys[0].key).toEqual(s2skey.key.slice(0, 2) + "*****" + s2skey.key.slice(-2));
         const { data } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
             { headers: { 'Authorization': 'Bearer ' + s2skey.key } }
         );
@@ -340,7 +340,7 @@ describe("Entity API auth tests", () => {
         expect(data.provider_prefix).toEqual(provider.prefix);
         await providerApi.put(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
-                key: s2skey.key,
+                uuid: s2skey.uuid,
                 active: false
             },
             { headers: { 'Authorization': 'Bearer ' + token } }

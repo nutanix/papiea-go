@@ -53,7 +53,7 @@ export default function createProviderAPIRouter(providerApi: Provider_API) {
     }));
 
     providerApiRouter.get('/:prefix/:version/s2skey', asyncHandler(async (req, res) => {
-        const s2skeys = await providerApi.list_keys(req.user, {});
+        const s2skeys = await providerApi.list_keys(req.user, {"deleted_at": req.query.deleted});
         res.json(s2skeys);
     }));
 

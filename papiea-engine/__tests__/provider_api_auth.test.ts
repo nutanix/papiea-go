@@ -164,6 +164,7 @@ describe("Provider API auth tests", () => {
         try {
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
+                    name: "ProviderAdminStatus",
                     userInfo: {
                         provider_prefix: provider.prefix,
                         is_provider_admin: true
