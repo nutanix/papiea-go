@@ -1,10 +1,12 @@
 import axios from "axios";
 import { Metadata, Spec, Entity_Reference, Entity, EntitySpec } from "papiea-core";
 
-async function create_entity(provider: string, kind: string, version: string, request_spec: Spec, papiea_url: string, s2skey: string): Promise<EntitySpec> {
-    const { data: { metadata, spec } } = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}`, {
-        spec: request_spec
-    }, {headers:{"Authorization": `Bearer ${s2skey}`}});
+async function create_entity(provider: string, kind: string, version: string, request_spec: Spec, papiea_url: string,meta_extension:any, s2skey: string): Promise<EntitySpec> {
+    const payload = {
+        spec: request_spec,
+        ...(meta_extension) && {metadata: {extension: meta_extension}}
+    }
+    const { data: { metadata, spec } } = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}`, payload, {headers:{"Authorization": `Bearer ${s2skey}`}});
     return { metadata, spec };
 }
 
@@ -61,10 +63,10 @@ export interface ProviderClient {
     invoke_procedure(procedure_name: string, input: any): Promise<any>
 }
 
-export function provider_client(papiea_url: string, provider: string, version: string, s2skey?: string) : ProviderClient {
+export function provider_client(papiea_url: string, provider: string, version: string, s2skey?: string, meta_extension?: (s2skey: string)=>any) : ProviderClient {
     const the_s2skey = s2skey || 'anonymous'
     return <ProviderClient> {
-        get_kind: (kind: string)=> kind_client(papiea_url, provider, kind, version, the_s2skey),
+        get_kind: (kind: string)=> kind_client(papiea_url, provider, kind, version, the_s2skey, meta_extension),
         invoke_procedure: (proc_name: string, input: any)=> invoke_provider_procedure(provider, version, proc_name, input, papiea_url, the_s2skey)
     }
 }
@@ -81,11 +83,11 @@ export interface EntityCRUD {
     invoke_kind_procedure(procedure_name: string, input: any): Promise<any>
 }
 
-export function kind_client(papiea_url: string, provider: string, kind: string, version: string, s2skey?: string): EntityCRUD {
+export function kind_client(papiea_url: string, provider: string, kind: string, version: string, s2skey?: string, meta_extension?: (s2skey: string)=>any): EntityCRUD {
     const the_s2skey = s2skey || 'anonymous'
     const crudder: EntityCRUD = {
         get: (entity_reference: Entity_Reference) => get_entity(provider, kind, version, entity_reference, papiea_url, the_s2skey),
-        create: (spec: Spec) => create_entity(provider, kind, version, spec, papiea_url, the_s2skey),
+        create: (spec: Spec) => create_entity(provider, kind, version, spec, papiea_url, meta_extension ? meta_extension(the_s2skey):undefined, the_s2skey),
         create_with_meta: (meta: Partial<Metadata>, spec: Spec) => create_entity_with_meta(provider,kind, version, meta, spec, papiea_url, the_s2skey),
         update: (metadata: Metadata, spec: Spec) => update_entity(provider, kind, version, spec, metadata, papiea_url, the_s2skey),
         delete: (entity_reference: Entity_Reference) => delete_entity(provider, kind, version, entity_reference, papiea_url, the_s2skey),

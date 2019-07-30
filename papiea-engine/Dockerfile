@@ -36,4 +36,4 @@ EXPOSE 3000
 
 WORKDIR /code/papiea-engine
 
-CMD /bin/bash ./start.sh
+CMD /bin/bash start.sh

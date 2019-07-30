@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Papiea meta module",
   "main": "index.js",
-  "author":"Shlomi Vaknin",
+  "author": "Shlomi Vaknin",
   "scripts": {
     "clean-all": "npm --prefix papiea-core run clean &&  npm --prefix papiea-engine run clean && npm --prefix papiea-sdk run clean && npm --prefix papiea-client run clean",
     "build-all": "npm --prefix papiea-core run build &&  npm --prefix papiea-engine run build && npm --prefix papiea-sdk run build && npm --prefix papiea-client run build",

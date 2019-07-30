@@ -18,6 +18,13 @@ export class InvocationError extends Error {
         }
         return new InvocationError(status_code, e.message, e.stack)
     }
+
+    toResponse() {
+        return [{
+            message: this.message,
+            stacktrace: this.stack
+        }]
+    }
 }
 
 export class ValidationError extends Error {
@@ -33,9 +40,11 @@ export class ValidationError extends Error {
     mapErr(fn: (e: string[]) => string) {
         const error_msg = fn(this.errors);
         console.error(error_msg);
-        return {
-            msg: error_msg,
-            errors: this.errors
-        }
+        return this.errors.map(e => {
+            return {
+                message: error_msg,
+                reason: e
+            }
+        })
     }
 }

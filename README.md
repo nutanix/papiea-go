@@ -40,8 +40,6 @@ A set of these variables might be used to tweak the default papiea-engine config
 * `MONGO_PORT` - mongo port (default `27017`)
 * `PAPIEA_PUBLIC_ADDR` - external papiea address (default `"http://localhost:3000"`)
 * `HOT_RELOAD` - use nodemon to autoreload papiea on code changes (default `false`)
-* `TOKEN_SECRET` - secret for papiea JWT HMAC
-* `TOKEN_EXPIRES_SECONDS` - token expiration time in seconds (default `604800` 1 week)
 * `DEBUG_LEVEL` - log level for [morgan](https://github.com/expressjs/morgan) logging (default `common`)
 * `DISALLOW_EXTRA_PROPERTIES` - prohibit usage of props not specified in yaml structure (default `true`)
 * `PAPIEA_ADMIN_S2S_KEY` - papiea admin's s2s key

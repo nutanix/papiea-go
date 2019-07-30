@@ -1,5 +1,4 @@
 import { kind_client, objectify } from './entity_client'
-import axios from 'axios'
 
 async function main() {
 

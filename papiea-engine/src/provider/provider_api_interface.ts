@@ -1,5 +1,5 @@
 import { UserAuthInfo } from "../auth/authn";
-import { Provider, Version, Entity_Reference, Status, S2S_Key, Key } from "papiea-core";
+import { Provider, Version, Entity_Reference, Status, S2S_Key } from "papiea-core";
 
 
 // This will be provided using REST APIs. 
@@ -43,10 +43,10 @@ export interface Provider_API {
 
     create_key(user: UserAuthInfo, name: string, owner: string, provider_prefix: string, extension?: any, key?: string): Promise<S2S_Key>;
 
-    get_key(user: UserAuthInfo, key: Key): Promise<S2S_Key>;
+    get_key(user: UserAuthInfo, uuid: string): Promise<S2S_Key>;
 
     list_keys(user: UserAuthInfo, fields_map: any): Promise<S2S_Key[]>;
 
-    inactivate_key(user: UserAuthInfo, key: Key): Promise<void>;
+    inactivate_key(user: UserAuthInfo, uuid: string): Promise<void>;
 
 }
