@@ -189,18 +189,29 @@ export type Partial<T> = {
     [P in keyof T]?: T[P];
 };
 
-export type Key = string;
+export interface UserInfo {
+    [key: string]: any;
+}
 
 export interface S2S_Key {
-    name: string;
-    owner: string;
+    name?: string
+    owner: string
+    provider_prefix: string
+    key: string
     uuid: string;
-    key: Key;
 
     // Additional fields
-    created_at: Date;
-    deleted_at?: Date;
-    extension: {
-        [key: string]: any;
-    };
+    created_at: Date
+    deleted_at?: Date
+    userInfo: UserInfo
+}
+
+
+// Modeled after https://developers.google.com/drive/api/v3/handle-errors
+export interface PapieaError {
+    error: {
+        errors: { [key: string]: any }[],
+        code: number
+        message: string
+    }
 }

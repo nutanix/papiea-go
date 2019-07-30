@@ -11,7 +11,7 @@ import {
 import { UserAuthInfo } from "../auth/authn";
 import { createHash } from "../auth/crypto";
 import { EventEmitter } from "events";
-import { Entity_Reference, Version, Status, Provider, Kind, S2S_Key, Key } from "papiea-core";
+import { Entity_Reference, Version, Status, Provider, Kind, S2S_Key } from "papiea-core";
 import { Maybe } from "../utils/utils";
 import uuid = require("uuid");
 
@@ -115,7 +115,7 @@ export class Provider_API_Impl implements Provider_API {
         this.eventEmitter.on('authChange', callbackfn);
     }
 
-    async create_key(user: UserAuthInfo, name: string, owner: string, extension?: any, key?: string): Promise<S2S_Key> {
+    async create_key(user: UserAuthInfo, name: string, owner: string, userInfo?: any, key?: string): Promise<S2S_Key> {
         // - name is not mandatory, displayed in UI
         // - owner is the owner of the key (usually email),
         // it is not unique, different providers may have same owner
@@ -134,7 +134,7 @@ export class Provider_API_Impl implements Provider_API {
             key: "",
             created_at: new Date(),
             deleted_at: undefined,
-            extension: extension ? extension : user
+            userInfo: userInfo ? userInfo : user
         };
         s2skey.key = key ? key : createHash(s2skey);
         await this.authorizer.checkPermission(user, s2skey, CreateS2SKeyAction);

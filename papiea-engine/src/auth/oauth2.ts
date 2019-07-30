@@ -1,12 +1,9 @@
 import { Router } from "express";
 import { asyncHandler, UserAuthInfo } from "./authn";
-import { Signature } from "./crypto";
 import { Provider_DB } from "../databases/provider_db_interface";
 import { extract_property } from "./user_data_evaluator";
 import { Provider } from "papiea-core";
-import Axios from "axios";
-const querystring = require('querystring');
-import { access } from "fs";
+import btoa = require("btoa");
 
 const simpleOauthModule = require("simple-oauth2"),
     queryString = require("query-string"),
@@ -38,16 +35,16 @@ function getOAuth2(provider: Provider) {
     return simpleOauthModule.create(converted_oauth);
 }
 
-function getUserInfoFromToken(token: any, provider: Provider): UserAuthInfo {
+export function getUserInfoFromToken(token: any, provider: Provider): UserAuthInfo {
 
-    const extracted_headers = extract_property(token, provider.oauth2, "headers");
+    const extracted_headers = extract_property({ token }, provider.oauth2, "headers");
 
     const userInfo: UserAuthInfo = {...extracted_headers};
 
     return userInfo;
 }
 
-export function createOAuth2Router(redirect_uri: string, signature: Signature, providerDb: Provider_DB): Router {
+export function createOAuth2Router(redirect_uri: string, providerDb: Provider_DB): Router {
     const router = Router();
 
     router.use('/provider/:prefix/:version/auth/login', asyncHandler(async (req, res) => {
@@ -74,7 +71,6 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
         try {
             await token.revoke('access_token');
         } catch (e) {
-            console.dir(e)
             return res.status(400).json("failed");
         }
         return res.status(200).json("OK");
@@ -91,17 +87,13 @@ export function createOAuth2Router(redirect_uri: string, signature: Signature, p
                 redirect_uri
             });
             const token = oauth2.accessToken.create(result);
-            const userInfo = getUserInfoFromToken(token, provider);
-            userInfo.provider_prefix = state.provider_prefix;
-            userInfo.provider_version = state.provider_version;
-            delete userInfo.is_admin;
-            const newSignedToken = await signature.sign(userInfo);
+            const base64Token = btoa(JSON.stringify(token.token));
             if (state.redirect_uri) {
                 const client_url = new url.URL(state.redirect_uri);
-                client_url.searchParams.append("token", newSignedToken);
+                client_url.searchParams.append("token", base64Token);
                 return res.redirect(client_url.toString());
             } else {
-                return res.status(200).json({ token: newSignedToken });
+                return res.status(200).json({ token: base64Token });
             }
         } catch (error) {
             console.error('Access Token Error', error.message);

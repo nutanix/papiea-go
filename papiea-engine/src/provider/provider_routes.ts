@@ -59,12 +59,12 @@ export default function createProviderAPIRouter(providerApi: Provider_API) {
 
     providerApiRouter.post('/:prefix/:version/s2skey', asyncHandler(async (req, res) => {
         const s2skey = await providerApi.create_key(req.user, req.body.name, req.body.owner,
-            req.body.extension, req.body.key);
+            req.body.userInfo, req.body.key);
         res.json(s2skey);
     }));
 
     providerApiRouter.put('/:prefix/:version/s2skey', asyncHandler(async (req, res) => {
-        if (req.body.active === false) {
+        if (!req.body.active) {
             await providerApi.inactivate_key(req.user, req.body.uuid);
         }
         res.json("OK");

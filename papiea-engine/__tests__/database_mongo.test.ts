@@ -265,7 +265,7 @@ describe("MongoDb tests", () => {
             key: uuid4(),
             created_at: new Date(),
             deleted_at: undefined,
-            extension: {
+            userInfo: {
                 provider_prefix: "test_provider"
             }
         };
@@ -288,7 +288,7 @@ describe("MongoDb tests", () => {
             key: uuid4(),
             created_at: new Date(),
             deleted_at: undefined,
-            extension: {
+            userInfo: {
                 provider_prefix: "test_provider"
             }
         };
@@ -310,7 +310,7 @@ describe("MongoDb tests", () => {
             key: uuid4(),
             created_at: new Date(),
             deleted_at: undefined,
-            extension: {
+            userInfo: {
                 provider_prefix: "test_provider"
             }
         };
@@ -338,7 +338,7 @@ describe("MongoDb tests", () => {
             key: uuid4(),
             created_at: new Date(),
             deleted_at: undefined,
-            extension: {
+            userInfo: {
                 provider_prefix: "test_provider"
             }
         };

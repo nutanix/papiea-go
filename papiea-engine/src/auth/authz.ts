@@ -1,13 +1,7 @@
-import { UserAuthInfo, UnauthorizedError } from "./authn";
+import { UserAuthInfo } from "./authn";
 import { Provider_API } from "../provider/provider_api_interface";
 import { Provider } from "papiea-core";
-
-export class PermissionDeniedError extends Error {
-    constructor() {
-        super("Permission Denied");
-        Object.setPrototypeOf(this, PermissionDeniedError.prototype);
-    }
-}
+import { PermissionDeniedError, UnauthorizedError } from "../errors/permission_error";
 
 export class Action {
     private action: string;
@@ -33,10 +27,6 @@ export const ReadAction = new Action('read'),
     CreateS2SKeyAction = new Action('create_key'),
     ReadS2SKeyAction = new Action('read_key'),
     InactivateS2SKeyAction = new Action('inactivate_key');
-
-export function CallProcedureByNameAction(procedureName: string) {
-    return new Action('call_' + procedureName.toLowerCase());
-}
 
 function mapAsync<T, U>(array: T[], callbackfn: (value: T, index: number, array: T[]) => Promise<U>): Promise<U[]> {
     return Promise.all(array.map(callbackfn));
@@ -171,15 +161,15 @@ export class AdminAuthorizer extends Authorizer {
             // object.extension contains UserInfo which will be used when s2s key is passed
             // check who can talk on behalf of whom
             if (object.owner !== user.owner
-                || object.extension.provider_prefix !== user.provider_prefix
-                || object.extension.is_admin) {
+                || object.userInfo.provider_prefix !== user.provider_prefix
+                || object.userInfo.is_admin) {
                 throw new PermissionDeniedError();
             }
             if (user.is_provider_admin) {
                 return;
             }
-            if (object.extension.is_provider_admin
-                || object.extension.owner !== user.owner) {
+            if (object.userInfo.is_provider_admin
+                || object.userInfo.owner !== user.owner) {
                 throw new PermissionDeniedError();
             }
             return;

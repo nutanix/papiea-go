@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import btoa = require("btoa");
 
 // Taken from https://git.coolaj86.com/coolaj86/atob.js/src/branch/master/node-atob.js#L3-L5
 export function atob(str: string) {
@@ -71,7 +72,7 @@ function invoke_function(env: any, part: any) {
             if (!matches)
                 throw Error("no params found for 'bearer' function");
             if (is_reference(matches[2])) {
-                return `Bearer ${deref(env, matches[2])}`
+                return `Bearer ${btoa(JSON.stringify(deref(env, matches[2])))}`
             } else {
                 return `Bearer ${matches[2]}`
             }
