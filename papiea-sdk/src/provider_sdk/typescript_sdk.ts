@@ -25,47 +25,47 @@ class SecurityApiImpl implements SecurityApi {
         this.provider = provider
         this.s2s_key = s2s_key
     }
-    // Returns the user-info of user with s2skey or the current user 
+    // Returns the user-info of user with s2skey or the current user
     public async user_info(): Promise<UserInfo> {
         try {
-            const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`
-            const {data: userInfo } = await this.provider.provider_api_axios.get(`${url}/auth/user_info`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}})
+            const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`;
+            const {data: userInfo } = await this.provider.provider_api_axios.get(`${url}/auth/user_info`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return userInfo
         } catch (e) {
-            console.log("error getting user_info", e)
+            console.log("error getting user_info", e);
             throw new Error("Cannot get user info" + e.message)
         }
     }
 
     public async list_keys(): Promise<string[]>{
         try {
-            const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`
-            const {data: keys } = await this.provider.provider_api_axios.get(`${url}/s2skey`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}})
+            const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`;
+            const {data: keys } = await this.provider.provider_api_axios.get(`${url}/s2skey`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return keys
         } catch (e) {
-            console.log("error getting s2skeys", e)
+            console.log("error getting s2skeys", e);
             throw new Error("Cannot get s2skeys" + e.message)
         }
     }
-    
+
     public async create_key(new_key: Partial<S2S_Key>): Promise<S2S_Key> {
         try {
-            const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`
-            const {data: s2skey } = await this.provider.provider_api_axios.post(`${url}/s2skey`, new_key, {headers: {'Authorization': `Bearer ${this.s2s_key}`}})
+            const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`;
+            const {data: s2skey } = await this.provider.provider_api_axios.post(`${url}/s2skey`, new_key, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return s2skey
         } catch (e) {
-            console.log("error getting s2skeys", e)
+            console.log("error getting s2skeys", e);
             throw new Error("Cannot get s2skeys" + e.message)
         }
     }
 
     public async deactivate_key(key_to_deactivate: string) {
         try {
-            const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`
-            const {data: r } = await this.provider.provider_api_axios.put(`${url}/s2skey`, {key: key_to_deactivate, active:false}, {headers: {'Authorization': `Bearer ${this.s2s_key}`}})
+            const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`;
+            const {data: r } = await this.provider.provider_api_axios.put(`${url}/s2skey`, {key: key_to_deactivate, active:false}, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return r
         } catch (e) {
-            console.log("error getting s2skeys", e)
+            console.log("error getting s2skeys", e);
             throw new Error("Cannot get s2skeys" + e.message)
         }
     }
@@ -100,7 +100,7 @@ export class ProviderSdk implements ProviderImpl {
         this.validator = validator || new Validator(true);
         this.get_prefix = this.get_prefix.bind(this);
         this.get_version = this.get_version.bind(this);
-        this._securityApi = new SecurityApiImpl(this, s2skey)
+        this._securityApi = new SecurityApiImpl(this, s2skey);
         this.providerApiAxios = axios.create({
             baseURL: this.provider_url,
             timeout: 5000,
@@ -290,9 +290,9 @@ export class ProviderSdk implements ProviderImpl {
     }
 
     public secure_with(oauth_config: any, casbin_model: string, casbin_initial_policy: string) : ProviderSdk {
-        this._oauth2=oauth_config
-        this._authModel=casbin_model
-        this._policy=casbin_initial_policy
+        this._oauth2=oauth_config;
+        this._authModel=casbin_model;
+        this._policy=casbin_initial_policy;
         return this
     }
 
@@ -374,15 +374,15 @@ export class Kind_Builder {
     provider_url: string;
     private validator: Validator;
     private readonly provider: ProviderSdk;
-  
+
     constructor (kind: Kind, provider: ProviderSdk, validator?: Validator) {
-        this.provider = provider
-        this.server_manager = provider.server_manager
-        this.kind = kind
-        this.entity_url = provider.entity_url
-        this.provider_url = provider.provider_url
-        this.get_prefix = provider.get_prefix
-        this.get_version = provider.get_version
+        this.provider = provider;
+        this.server_manager = provider.server_manager;
+        this.kind = kind;
+        this.entity_url = provider.entity_url;
+        this.provider_url = provider.provider_url;
+        this.get_prefix = provider.get_prefix;
+        this.get_version = provider.get_version;
         this.validator = validator || new Validator(true)
     }
 

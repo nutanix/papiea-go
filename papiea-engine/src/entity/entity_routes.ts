@@ -4,7 +4,6 @@ import { UserAuthInfo, asyncHandler } from '../auth/authn';
 import { processPaginationParams, processSortQuery } from "../utils/utils";
 import { SortParams } from "./entity_api_impl";
 
-
 export function createEntityAPIRouter(entity_api: Entity_API): Router {
     const router = Router();
 
@@ -30,6 +29,10 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
 
         return {results: pageEntities, entity_count: totalEntities};
     };
+
+    router.post("/:prefix/:version/check_permission", asyncHandler(async (req, res) => {
+        res.json(await entity_api.check_permission(req.user, req.params.prefix, req.params.version, req.body))
+    }));
 
     router.get("/:prefix/:version/:kind", asyncHandler(async (req, res) => {
         const filter: any = {};

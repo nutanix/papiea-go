@@ -3,15 +3,11 @@ import { Provider_DB } from "../databases/provider_db_interface";
 import { Status_DB } from "../databases/status_db_interface";
 import { S2S_Key_DB } from "../databases/s2skey_db_interface";
 import { Validator } from "../validator";
-import {
-    Authorizer, RegisterProviderAction, UnregisterProviderAction,
-    ReadProviderAction, UpdateStatusAction, UpdateAuthAction, CreateS2SKeyAction,
-    ReadS2SKeyAction, InactivateS2SKeyAction
-} from "../auth/authz";
+import { Authorizer } from "../auth/authz";
 import { UserAuthInfo } from "../auth/authn";
 import { createHash } from "../auth/crypto";
 import { EventEmitter } from "events";
-import { Entity_Reference, Version, Status, Provider, Kind, S2S_Key } from "papiea-core";
+import { Entity_Reference, Version, Status, Provider, Kind, S2S_Key, Action } from "papiea-core";
 import { Maybe } from "../utils/utils";
 import uuid = require("uuid");
 
@@ -33,25 +29,25 @@ export class Provider_API_Impl implements Provider_API {
     }
 
     async register_provider(user: UserAuthInfo, provider: Provider): Promise<void> {
-        await this.authorizer.checkPermission(user, provider, RegisterProviderAction);
+        await this.authorizer.checkPermission(user, provider, Action.RegisterProvider);
         return this.providerDb.save_provider(provider);
     }
 
     async unregister_provider(user: UserAuthInfo, provider_prefix: string, version: Version): Promise<void> {
-        await this.authorizer.checkPermission(user, { prefix: provider_prefix }, UnregisterProviderAction);
+        await this.authorizer.checkPermission(user, { prefix: provider_prefix }, Action.UnregisterProvider);
         return this.providerDb.delete_provider(provider_prefix, version);
     }
 
     async replace_status(user: UserAuthInfo, context: any, entity_ref: Entity_Reference, status: Status): Promise<void> {
         const provider: Provider = await this.get_latest_provider_by_kind(user, entity_ref.kind);
-        await this.authorizer.checkPermission(user, provider, UpdateStatusAction);
+        await this.authorizer.checkPermission(user, provider, Action.UpdateStatus);
         await this.validate_status(provider, entity_ref, status);
         return this.statusDb.replace_status(entity_ref, status);
     }
 
     async update_status(user: UserAuthInfo, context: any, entity_ref: Entity_Reference, status: Status): Promise<void> {
         const provider: Provider = await this.get_latest_provider_by_kind(user, entity_ref.kind);
-        await this.authorizer.checkPermission(user, provider, UpdateStatusAction);
+        await this.authorizer.checkPermission(user, provider, Action.UpdateStatus);
         return this.statusDb.update_status(entity_ref, status);
     }
 
@@ -66,23 +62,23 @@ export class Provider_API_Impl implements Provider_API {
     }
 
     async get_provider(user: UserAuthInfo, provider_prefix: string, provider_version: Version): Promise<Provider> {
-        await this.authorizer.checkPermission(user, { prefix: provider_prefix }, ReadProviderAction);
+        await this.authorizer.checkPermission(user, { prefix: provider_prefix }, Action.ReadProvider);
         return this.providerDb.get_provider(provider_prefix, provider_version);
     }
 
     async list_providers_by_prefix(user: UserAuthInfo, provider_prefix: string): Promise<Provider[]> {
         const res = await this.providerDb.find_providers(provider_prefix);
-        return this.authorizer.filter(user, res, ReadProviderAction);
+        return this.authorizer.filter(user, res, Action.ReadProvider);
     }
 
     async get_latest_provider(user: UserAuthInfo, provider_prefix: string): Promise<Provider> {
-        await this.authorizer.checkPermission(user, { prefix: provider_prefix }, ReadProviderAction);
+        await this.authorizer.checkPermission(user, { prefix: provider_prefix }, Action.ReadProvider);
         return this.providerDb.get_latest_provider(provider_prefix);
     }
 
     async get_latest_provider_by_kind(user: UserAuthInfo, kind_name: string): Promise<Provider> {
         const res = await this.providerDb.get_latest_provider_by_kind(kind_name);
-        await this.authorizer.checkPermission(user, res, ReadProviderAction);
+        await this.authorizer.checkPermission(user, res, Action.ReadProvider);
         return res;
     }
 
@@ -97,7 +93,7 @@ export class Provider_API_Impl implements Provider_API {
 
     async update_auth(user: UserAuthInfo, provider_prefix: string, provider_version: Version, auth: any): Promise<void> {
         const provider: Provider = await this.get_provider(user, provider_prefix, provider_version);
-        await this.authorizer.checkPermission(user, provider, UpdateAuthAction);
+        await this.authorizer.checkPermission(user, provider, Action.UpdateAuth);
         if (auth.authModel !== undefined) {
             provider.authModel = auth.authModel;
         }
@@ -138,14 +134,14 @@ export class Provider_API_Impl implements Provider_API {
             userInfo: userInfo ? userInfo : user
         };
         s2skey.key = key ? key : createHash(s2skey);
-        await this.authorizer.checkPermission(user, s2skey, CreateS2SKeyAction);
+        await this.authorizer.checkPermission(user, s2skey, Action.CreateS2SKey);
         await this.s2skeyDb.create_key(s2skey);
         return this.s2skeyDb.get_key(s2skey.uuid);
     }
 
     async get_key(user: UserAuthInfo, uuid: string): Promise<S2S_Key> {
         const s2skey = await this.s2skeyDb.get_key(uuid);
-        await this.authorizer.checkPermission(user, s2skey, ReadS2SKeyAction);
+        await this.authorizer.checkPermission(user, s2skey, Action.ReadS2SKey);
         return s2skey;
     }
 
@@ -156,12 +152,12 @@ export class Provider_API_Impl implements Provider_API {
             secret = s2s_key.key;
             s2s_key.key = secret.slice(0, 2) + "*****" + secret.slice(-2);
         }
-        return this.authorizer.filter(user, res, ReadS2SKeyAction);
+        return this.authorizer.filter(user, res, Action.ReadS2SKey);
     }
 
     async inactivate_key(user: UserAuthInfo, uuid: string): Promise<void> {
         const s2skey: S2S_Key = await this.s2skeyDb.get_key(uuid);
-        await this.authorizer.checkPermission(user, s2skey, InactivateS2SKeyAction);
+        await this.authorizer.checkPermission(user, s2skey, Action.InactivateS2SKey);
         await this.s2skeyDb.inactivate_key(s2skey.uuid);
     }
 }
