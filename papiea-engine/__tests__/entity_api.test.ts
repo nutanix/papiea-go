@@ -1,11 +1,11 @@
 import "jest"
 import axios from "axios"
 import { ProviderSdk } from "papiea-sdk";
-import { Metadata, Spec } from "papiea-core";
+import { Metadata, Spec, Action } from "papiea-core";
 import { getLocationDataDescription, getMetadataDescription } from "./test_data_factory";
 import { stringify } from "querystring"
 import uuid = require("uuid");
-import { Action, Authorizer } from "../src/auth/authz";
+import { Authorizer } from "../src/auth/authz";
 import { UserAuthInfo } from "../src/auth/authn";
 
 declare var process: {
@@ -750,7 +750,6 @@ describe("Pagination tests", () => {
                     y: 11
                 }
             });
-            console.log(data.results[0]);
             expect(data.results[0].spec.x).toBe(0);
             done();
         } catch (e) {
