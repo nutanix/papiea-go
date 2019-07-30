@@ -323,10 +323,7 @@ describe("Entity API auth tests", () => {
         console.log("POSTING S2S KEY");
         const { data: s2skey } = await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
-                owner: userInfo.owner,
-                userInfo: {
-                    provider_prefix: userInfo.provider_prefix
-                }
+                owner: userInfo.owner
             },
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
