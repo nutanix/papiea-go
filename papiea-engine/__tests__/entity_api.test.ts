@@ -750,7 +750,6 @@ describe("Pagination tests", () => {
                     y: 11
                 }
             });
-            console.log(data.results[0]);
             expect(data.results[0].spec.x).toBe(0);
             done();
         } catch (e) {

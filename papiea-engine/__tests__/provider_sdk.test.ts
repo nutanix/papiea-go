@@ -202,7 +202,6 @@ describe("Provider Sdk tests", () => {
             });
             await sdk.register();
             const kind_name = sdk.provider.kinds[0].name;
-            console.log(kind_name);
             const { data: { metadata, spec } } = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}`, {
                 spec: {
                     x: 10,
