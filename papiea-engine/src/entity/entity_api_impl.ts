@@ -4,7 +4,7 @@ import { Spec_DB } from "../databases/spec_db_interface";
 import { Entity_API, OperationSuccess } from "./entity_api_interface";
 import { Validator } from "../validator";
 import * as uuid_validate from "uuid-validate";
-import { Authorizer, ReadAction, CreateAction, DeleteAction, UpdateAction } from "../auth/authz";
+import { Authorizer } from "../auth/authz";
 import { UserAuthInfo } from "../auth/authn";
 import { Provider_API } from "../provider/provider_api_interface";
 import {
@@ -24,6 +24,7 @@ import { isEmpty, Maybe } from "../utils/utils";
 import { ValidationError } from "../errors/validation_error";
 import { ProcedureInvocationError } from "../errors/procedure_invocation_error";
 import uuid = require("uuid");
+import { PermissionDeniedError } from "../errors/permission_error";
 
 export type SortParams = { [key: string]: number };
 

@@ -1,6 +1,5 @@
 import "jest"
 import { UserAuthInfo } from "../src/auth/authn";
-import { ReadAction, CreateAction, UpdateAction, DeleteAction } from "../src/auth/authz";
 import { CasbinAuthorizer } from "../src/auth/casbin";
 import { resolve } from "path";
 import { readFileSync } from "fs";
