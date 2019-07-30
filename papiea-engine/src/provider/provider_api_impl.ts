@@ -131,12 +131,12 @@ export class Provider_API_Impl implements Provider_API {
             name: name,
             uuid: uuid(),
             owner: owner,
-            provider_prefix: provider_prefix,
             key: "",
             created_at: new Date(),
             deleted_at: undefined,
             extension: extension ? extension : user
         };
+        s2skey.extension.provider_prefix = provider_prefix;
         s2skey.key = key ? key : createHash(s2skey);
         await this.authorizer.checkPermission(user, s2skey, CreateS2SKeyAction);
         await this.s2skeyDb.create_key(s2skey);

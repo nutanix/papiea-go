@@ -195,7 +195,6 @@ export interface S2S_Key {
     name: string;
     owner: string;
     uuid: string;
-    provider_prefix: string;
     key: Key;
 
     // Additional fields
