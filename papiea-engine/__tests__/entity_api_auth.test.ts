@@ -385,7 +385,9 @@ describe("Entity API auth tests", () => {
             await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
                 {
                     owner: "another_owner",
-                    provider_prefix: userInfo.provider_prefix
+                    extension: {
+                        provider_prefix: userInfo.provider_prefix
+                    }
                 },
                 { headers: { 'Authorization': 'Bearer ' + token } }
             );
@@ -396,7 +398,9 @@ describe("Entity API auth tests", () => {
             await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
                 {
                     owner: userInfo.owner,
-                    provider_prefix: "another_provider"
+                    extension: {
+                        provider_prefix: "another_provider"
+                    }
                 },
                 { headers: { 'Authorization': 'Bearer ' + token } }
             );
