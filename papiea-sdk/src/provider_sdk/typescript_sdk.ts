@@ -13,7 +13,7 @@ import { Express, RequestHandler } from "express";
 import { Server } from "http";
 import { ProceduralCtx } from "./typescript_sdk_context_impl";
 
-import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, S2S_Key, Key, UserInfo } from "papiea-core";
+import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, S2S_Key, UserInfo } from "papiea-core";
 import { Validator } from "./typescript_sdk_validation";
 import { Maybe } from "./typescript_sdk_utils";
 import { InvocationError, ValidationError } from "./typescript_sdk_exceptions";
@@ -21,8 +21,8 @@ import { InvocationError, ValidationError } from "./typescript_sdk_exceptions";
 class SecurityApiImpl implements SecurityApi {
     readonly provider: ProviderSdk;
     readonly s2s_key: string;
-    constructor (provider:ProviderSdk, s2s_key:Key) {
-        this.provider = provider;
+    constructor (provider: ProviderSdk, s2s_key: string) {
+        this.provider = provider
         this.s2s_key = s2s_key
     }
     // Returns the user-info of user with s2skey or the current user
@@ -37,7 +37,7 @@ class SecurityApiImpl implements SecurityApi {
         }
     }
 
-    public async list_keys(): Promise<Key[]>{
+    public async list_keys(): Promise<string[]>{
         try {
             const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`;
             const {data: keys } = await this.provider.provider_api_axios.get(`${url}/s2skey`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
@@ -59,7 +59,7 @@ class SecurityApiImpl implements SecurityApi {
         }
     }
 
-    public async deactivate_key(key_to_deactivate:Key) {
+    public async deactivate_key(key_to_deactivate: string) {
         try {
             const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`;
             const {data: r } = await this.provider.provider_api_axios.put(`${url}/s2skey`, {key: key_to_deactivate, active:false}, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
@@ -81,7 +81,7 @@ export class ProviderSdk implements ProviderImpl {
     protected meta_ext: { [key: string]: string };
     protected _provider: Provider | null;
     protected readonly papiea_url: string;
-    protected readonly _s2skey: Key;
+    protected readonly _s2skey: string;
     protected _policy: string | null = null;
     protected _oauth2: string | null = null;
     protected _authModel: any | null = null;
@@ -240,16 +240,10 @@ export class ProviderSdk implements ProviderImpl {
                 if (e instanceof ValidationError) {
                     return res.status(422).json(e.mapErr(() => `Provider procedure ${name} didn't return correct value`))
                 } else if (e instanceof InvocationError) {
-                    return res.status(e.status_code).json({
-                        message: e.message,
-                        stacktrace: e.stack
-                    })
+                    return res.status(e.status_code).json(e.toResponse())
                 }
-                const errors = InvocationError.fromError(500, e);
-                res.status(500).json({
-                    message: errors.message,
-                    stacktrace: errors.stack
-                })
+                const error = InvocationError.fromError(500, e);
+                res.status(500).json(error.toResponse())
             }
         });
         return this
@@ -310,11 +304,11 @@ export class ProviderSdk implements ProviderImpl {
         return this._securityApi;
     }
 
-    public new_security_api(s2s_key:Key) {
+    public new_security_api(s2s_key: string) {
         return new SecurityApiImpl(this, s2s_key)
     }
 
-    public get s2s_key() : Key {
+    public get s2s_key(): string {
         return this._s2skey
     }
 }
@@ -421,16 +415,10 @@ export class Kind_Builder {
                 if (e instanceof ValidationError) {
                     return res.status(422).json(e.mapErr(() => `Entity procedure ${name} didn't return correct value`))
                 } else if (e instanceof InvocationError) {
-                    return res.status(e.status_code).json({
-                        message: e.message,
-                        stacktrace: e.stack
-                    })
+                    return res.status(e.status_code).json(e.toResponse())
                 }
-                const errors = InvocationError.fromError(500, e);
-                res.status(500).json({
-                    message: errors.message,
-                    stacktrace: errors.stack
-                })
+                const error = InvocationError.fromError(500, e);
+                res.status(500).json(error.toResponse())
             }
         });
         return this
@@ -454,7 +442,6 @@ export class Kind_Builder {
         const version = this.get_version();
         this.server_manager.register_handler(`/${this.kind.name}/${name}`, async (req, res) => {
             try {
-                console.log(req.headers);
                 const result = await handler(new ProceduralCtx(this.provider, prefix, version, req.headers), req.body.input);
                 this.validator.validate(result, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc));
                 res.json(result);
@@ -462,16 +449,10 @@ export class Kind_Builder {
                 if (e instanceof ValidationError) {
                     return res.status(422).json(e.mapErr(() => `Kind procedure ${name} didn't return correct value`))
                 } else if (e instanceof InvocationError) {
-                    return res.status(e.status_code).json({
-                        message: e.message,
-                        stacktrace: e.stack
-                    })
+                    return res.status(e.status_code).json(e.toResponse())
                 }
-                const errors = InvocationError.fromError(500, e);
-                res.status(500).json({
-                    message: errors.message,
-                    stacktrace: errors.stack
-                })
+                const error = InvocationError.fromError(500, e);
+                res.status(500).json(error.toResponse())
             }
         });
         return this

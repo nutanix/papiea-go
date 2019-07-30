@@ -84,7 +84,7 @@ describe("Entity API tests", () => {
         } catch (err) {
             const res = err.response;
             expect(res.status).toEqual(400);
-            expect(res.data.errors.length).toEqual(1);
+            expect(res.data.error.errors.length).toEqual(1);
         }
     });
 
@@ -344,7 +344,7 @@ describe("Entity API tests", () => {
         } catch (err) {
             const res = err.response;
             expect(res.status).toEqual(400);
-            expect(res.data.errors.length).toEqual(1);
+            expect(res.data.error.errors.length).toEqual(1);
         }
     });
 
@@ -407,7 +407,7 @@ describe("Entity API tests", () => {
             }
         });
         expect(res.data.results.length).toBe(0);
-        ["papiea_one_hour_ago", "papiea_one_day_ago"].forEach(async deleted_at => {
+        for (const deleted_at of ["papiea_one_hour_ago", "papiea_one_day_ago"]) {
             let res = await entityApi.post(`${ providerPrefix }/${ providerVersion }/${ kind_name }/filter`, {
                 metadata: {
                     uuid: metadata.uuid,
@@ -417,7 +417,7 @@ describe("Entity API tests", () => {
             expect(res.data.results.length).toBe(1);
             expect(res.data.results[0].spec).toEqual(spec);
             expect(res.data.results[0].status).toEqual(spec);
-        });
+        }
     });
 });
 
@@ -458,7 +458,7 @@ describe("Entity API with metadata extension tests", () => {
         } catch (err) {
             const res = err.response;
             expect(res.status).toEqual(400);
-            expect(res.data.errors.length).toEqual(1);
+            expect(res.data.error.errors.length).toEqual(1);
 
         }
     });
@@ -508,7 +508,7 @@ describe("Entity API with metadata extension tests", () => {
         } catch (err) {
             const res = err.response;
             expect(res.status).toEqual(400);
-            expect(res.data.errors.length).toEqual(1);
+            expect(res.data.error.errors.length).toEqual(1);
         }
     });
 
@@ -535,8 +535,8 @@ describe("Entity API with metadata extension tests", () => {
         } catch (err) {
             const res = err.response;
             expect(res.status).toEqual(400);
-            expect(res.data.errors.length).toEqual(1);
-            expect(res.data.errors[0]).toEqual("Metadata extension is not specified");
+            expect(res.data.error.errors.length).toEqual(1);
+            expect(res.data.error.errors[0].message).toEqual("Metadata extension is not specified");
         }
     });
 });
@@ -633,7 +633,7 @@ describe("Pagination tests", () => {
                 }
             });
         } catch (e) {
-            expect(e.response.data.errors[0]).toBe("Limit should not be less or equal to zero");
+            expect(e.response.data.error.errors[0].message).toBe("Limit should not be less or equal to zero");
         }
     });
 
@@ -647,7 +647,7 @@ describe("Pagination tests", () => {
                 }
             });
         } catch (e) {
-            expect(e.response.data.errors[0]).toBe("Offset should not be less or equal to zero");
+            expect(e.response.data.error.errors[0].message).toBe("Offset should not be less or equal to zero");
         }
     });
 
@@ -661,7 +661,7 @@ describe("Pagination tests", () => {
                 }
             });
         } catch (e) {
-            expect(e.response.data.errors[0]).toBe("Offset should not be less or equal to zero");
+            expect(e.response.data.error.errors[0].message).toBe("Offset should not be less or equal to zero");
         }
     });
 
@@ -675,7 +675,7 @@ describe("Pagination tests", () => {
                 }
             });
         } catch (e) {
-            expect(e.response.data.errors[0]).toBe("Limit should not be less or equal to zero");
+            expect(e.response.data.error.errors[0].message).toBe("Limit should not be less or equal to zero");
         }
     });
 

@@ -1,10 +1,11 @@
 import { UserAuthInfo } from "./authn";
-import { Authorizer, PermissionDeniedError, ProviderAuthorizerFactory } from "./authz";
+import { Authorizer, ProviderAuthorizerFactory } from "./authz";
 import { newEnforcer, newModel } from "casbin/lib/casbin";
 import { Adapter } from "casbin/lib/persist/adapter";
 import { Model } from "casbin/lib/model";
 import { Helper } from "casbin/lib/persist/helper";
 import { Provider, Action } from "papiea-core";
+import { PermissionDeniedError } from "../errors/permission_error";
 
 export class CasbinAuthorizer extends Authorizer {
     private modelText: string;

@@ -2,9 +2,9 @@ import axios from "axios"
 import { Status_DB } from "../databases/status_db_interface";
 import { Spec_DB } from "../databases/spec_db_interface";
 import { Entity_API, OperationSuccess } from "./entity_api_interface";
-import { ValidationError, Validator } from "../validator";
+import { Validator } from "../validator";
 import * as uuid_validate from "uuid-validate";
-import { Authorizer, PermissionDeniedError } from "../auth/authz";
+import { Authorizer, ReadAction, CreateAction, DeleteAction, UpdateAction } from "../auth/authz";
 import { UserAuthInfo } from "../auth/authn";
 import { Provider_API } from "../provider/provider_api_interface";
 import {
@@ -21,19 +21,9 @@ import {
     Action
 } from "papiea-core";
 import { isEmpty, Maybe } from "../utils/utils";
+import { ValidationError } from "../errors/validation_error";
+import { ProcedureInvocationError } from "../errors/procedure_invocation_error";
 import uuid = require("uuid");
-
-export class ProcedureInvocationError extends Error {
-    errors: string[];
-    status: number;
-
-    constructor(errors: string[], status: number) {
-        super(JSON.stringify(errors));
-        Object.setPrototypeOf(this, ProcedureInvocationError.prototype);
-        this.errors = errors;
-        this.status = status;
-    }
-}
 
 export type SortParams = { [key: string]: number };
 
@@ -160,9 +150,11 @@ export class Entity_API_Impl implements Entity_API {
             return data;
         } catch (err) {
             if (err instanceof ValidationError) {
-                throw new ProcedureInvocationError(err.errors, 400);
+                throw new ProcedureInvocationError(err.errors.map(e => {
+                    return { message: e }
+                }), 400);
             } else if (err.response) {
-                throw new ProcedureInvocationError([err.response.data], err.response.status)
+                throw new ProcedureInvocationError(err.response.data, err.response.status)
             } else {
                 throw err;
             }
@@ -193,9 +185,11 @@ export class Entity_API_Impl implements Entity_API {
             return data;
         } catch (err) {
             if (err instanceof ValidationError) {
-                throw new ProcedureInvocationError(err.errors, 400);
+                throw new ProcedureInvocationError(err.errors.map(e => {
+                    return { message: e }
+                }), 400);
             } else {
-                throw new ProcedureInvocationError([err.response.data], err.response.status)
+                throw new ProcedureInvocationError(err.response.data, err.response.status)
             }
         }
     }
@@ -221,9 +215,11 @@ export class Entity_API_Impl implements Entity_API {
             return data;
         } catch (err) {
             if (err instanceof ValidationError) {
-                throw new ProcedureInvocationError(err.errors, 400);
+                throw new ProcedureInvocationError(err.errors.map(e => {
+                    return { message: e }
+                }), 400);
             } else {
-                throw new ProcedureInvocationError([err.response.data], err.response.status)
+                throw new ProcedureInvocationError(err.response.data, err.response.status)
             }
         }
     }

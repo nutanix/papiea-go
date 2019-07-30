@@ -5,14 +5,14 @@ import createProviderAPIRouter from "./provider/provider_routes";
 import { Provider_API_Impl } from "./provider/provider_api_impl";
 import { MongoConnection } from "./databases/mongo";
 import { createEntityAPIRouter } from "./entity/entity_routes";
-import { Entity_API_Impl, ProcedureInvocationError } from "./entity/entity_api_impl";
-import { ValidationError, Validator } from "./validator";
-import { EntityNotFoundError } from "./databases/utils/errors";
-import { UnauthorizedError, createAuthnRouter } from "./auth/authn";
+import { Entity_API_Impl} from "./entity/entity_api_impl";
+import { Validator } from "./validator";
+import { createAuthnRouter } from "./auth/authn";
 import { createOAuth2Router } from "./auth/oauth2";
-import { Authorizer, AdminAuthorizer, PerProviderAuthorizer, PermissionDeniedError } from "./auth/authz";
+import { Authorizer, AdminAuthorizer, PerProviderAuthorizer} from "./auth/authz";
 import { ProviderCasbinAuthorizerFactory } from "./auth/casbin";
 import morgan = require("morgan");
+import { PapieaErrorImpl } from "./errors/papiea_error_impl";
 
 declare var process: {
     env: {
@@ -59,32 +59,9 @@ async function setUpApplication(): Promise<express.Express> {
         if (res.headersSent) {
             return next(err);
         }
-        switch (err.constructor) {
-            case ValidationError:
-                res.status(400);
-                res.json({ errors: err.errors });
-                return;
-            case ProcedureInvocationError:
-                res.status(err.status);
-                res.json({ errors: err.errors });
-                return;
-            case EntityNotFoundError:
-                res.status(404);
-                res.json({ error: `Entity with kind: ${err.kind}, uuid: ${err.uuid} not found` });
-                return;
-            case UnauthorizedError:
-                res.status(401);
-                res.json({ error: 'Unauthorized' });
-                return;
-            case PermissionDeniedError:
-                res.status(403);
-                res.json({ error: 'Forbidden' });
-                return;
-            default:
-                res.status(500);
-                console.error(err);
-                res.json({ error: `${err}` });
-        }
+        const papieaError = PapieaErrorImpl.create(err);
+        res.status(papieaError.status)
+        res.json(papieaError.toResponse())
     });
     return app;
 }

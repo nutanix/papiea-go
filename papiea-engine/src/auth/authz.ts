@@ -1,13 +1,7 @@
-import { UserAuthInfo, UnauthorizedError } from "./authn";
+import { UserAuthInfo } from "./authn";
 import { Provider_API } from "../provider/provider_api_interface";
 import { Provider, Action } from "papiea-core";
-
-export class PermissionDeniedError extends Error {
-    constructor() {
-        super("Permission Denied");
-        Object.setPrototypeOf(this, PermissionDeniedError.prototype);
-    }
-}
+import { PermissionDeniedError, UnauthorizedError } from "../errors/permission_error";
 
 function mapAsync<T, U>(array: T[], callbackfn: (value: T, index: number, array: T[]) => Promise<U>): Promise<U[]> {
     return Promise.all(array.map(callbackfn));
@@ -143,15 +137,15 @@ export class AdminAuthorizer extends Authorizer {
             // check who can talk on behalf of whom
             if (object.owner !== user.owner
                 || object.provider_prefix !== user.provider_prefix
-                || object.extension.provider_prefix !== user.provider_prefix
-                || object.extension.is_admin) {
+                || object.userInfo.provider_prefix !== user.provider_prefix
+                || object.userInfo.is_admin) {
                 throw new PermissionDeniedError();
             }
             if (user.is_provider_admin) {
                 return;
             }
-            if (object.extension.is_provider_admin
-                || object.extension.owner !== user.owner) {
+            if (object.userInfo.is_provider_admin
+                || object.userInfo.owner !== user.owner) {
                 throw new PermissionDeniedError();
             }
             return;

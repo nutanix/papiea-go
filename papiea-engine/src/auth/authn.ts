@@ -1,19 +1,11 @@
-import { Request, Response, NextFunction, Router } from "express";
-import { Signature } from "./crypto";
+import { NextFunction, Request, Response, Router } from "express";
 import { S2S_Key_DB } from "../databases/s2skey_db_interface";
-import { S2S_Key, Version, Provider } from "papiea-core";
+import { Provider, S2S_Key, Version } from "papiea-core";
 import { Provider_DB } from "../databases/provider_db_interface";
 import { getUserInfoFromToken } from "./oauth2";
+import { UnauthorizedError } from "../errors/permission_error";
 import atob = require("atob");
 
-
-
-export class UnauthorizedError extends Error {
-    constructor() {
-        super("Unauthorized");
-        Object.setPrototypeOf(this, UnauthorizedError.prototype);
-    }
-}
 
 interface AuthenticationStrategy {
     getUserAuthInfo(token: string): Promise<UserAuthInfo | null>
@@ -73,8 +65,8 @@ class S2SKeyAuthenticationStrategy implements AuthenticationStrategy {
 
     async getUserAuthInfo(token: string): Promise<UserAuthInfo | null> {
         try {
-            const s2skey: S2S_Key = await this.s2skeyDb.get_key(token);
-            const userInfo = s2skey.extension;
+            const s2skey: S2S_Key = await this.s2skeyDb.get_key_by_secret(token);
+            const userInfo = s2skey.userInfo;
             userInfo.authorization = 'Bearer ' + s2skey.key;
             return userInfo;
         } catch (e) {
