@@ -41,7 +41,7 @@ export interface Provider_API {
     // POST "/provider/update_status"
     update_status(user: UserAuthInfo, context: any, entity_ref: Entity_Reference, status: Status): Promise<void>;
 
-    create_key(user: UserAuthInfo, name: string, owner: string, provider_prefix: string, extension?: any, key?: string): Promise<S2S_Key>;
+    create_key(user: UserAuthInfo, name: string, owner: string, provider_prefix: string, extension?: any, key?: string, is_admin?: boolean, is_provider_admin?: boolean): Promise<S2S_Key>;
 
     get_key(user: UserAuthInfo, uuid: string): Promise<S2S_Key>;
 
