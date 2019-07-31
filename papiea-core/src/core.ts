@@ -200,6 +200,8 @@ export interface S2S_Key {
     provider_prefix: string
     key: string
     uuid: string;
+    is_admin: boolean;
+    is_provider_admin: boolean;
 
     // Additional fields
     created_at: Date
