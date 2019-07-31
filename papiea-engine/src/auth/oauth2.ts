@@ -41,9 +41,6 @@ export function getUserInfoFromToken(token: any, provider: Provider): UserAuthIn
 
     const userInfo: UserAuthInfo = {...extracted_headers};
 
-    console.log("PRINTING USERINFO");
-    console.dir(userInfo);
-
     return userInfo;
 }
 
