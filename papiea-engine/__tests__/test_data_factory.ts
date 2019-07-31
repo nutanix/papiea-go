@@ -11,6 +11,10 @@ import {
     Provider,
     Procedural_Execution_Strategy
 } from "papiea-core";
+import * as http from "http";
+import uuid = require("uuid");
+const url = require("url");
+const queryString = require("query-string");
 
 function randomString(len: number) {
     const charSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -71,6 +75,7 @@ export class ProviderBuilder {
     private _policy: any;
     private _callback: string = `http://${ default_hostname }:${ port }/`;
     private _authModel: any;
+    private _allowExtraProps: boolean = false;
 
     constructor(prefix?: string) {
         if (prefix !== undefined) {
@@ -90,7 +95,8 @@ export class ProviderBuilder {
             procedures: this._procedures,
             extension_structure: this._extension_structure,
             policy: this._policy,
-            authModel: this._authModel
+            authModel: this._authModel,
+            allowExtraProps: this._allowExtraProps
         };
         return provider;
     }
@@ -105,6 +111,14 @@ export class ProviderBuilder {
 
     get policy(): any {
         return this._policy
+    }
+
+    get allowExtraProps(): boolean {
+        return this._allowExtraProps
+    }
+
+    public withAllowExtraProps(allowExtraProps: boolean) {
+        this._allowExtraProps = allowExtraProps
     }
 
     public withCallback(address: string) {
@@ -269,7 +283,7 @@ export class ValidationBuilder {
             if (shouldFail) {
                 try {
                     func();
-                    done.fail();
+                    done.fail(new Error("Falsely validated function"));
                 } catch (e) {
                     done();
                 }
@@ -279,9 +293,113 @@ export class ValidationBuilder {
                     done();
                 } catch (e) {
                     console.error(e);
-                    done.fail();
+                    done.fail(e);
                 }
             }
         }
     };
+}
+
+function base64UrlEncode(...parts: any[]): string {
+    function base64UrlEncodePart(data: any): string {
+        return Buffer.from(JSON.stringify(data))
+            .toString('base64')
+            .replace('+', '-')
+            .replace('/', '_')
+            .replace(/=+$/, '');
+    }
+    return parts.map(x => base64UrlEncodePart(x)).join('.');
+}
+
+export class OAuth2Server {
+    static tenant_uuid = uuid();
+
+    static access_token = base64UrlEncode({
+            "alg": "RS256"
+        },
+        {
+            "created_by": "papiea",
+            "azp": "EEE",
+            "sub": "alice",
+            "default_tenant": OAuth2Server.tenant_uuid,
+            "iss": "https:\/\/127.0.0.1:9002\/oauth2\/token",
+            "given_name": "Alice",
+            "iat": 1555925532,
+            "exp": 1555929132,
+            "email": "alice@localhost",
+            "last_name": "Doe",
+            "aud": ["EEE"],
+            "role": "COMMUNITY,Internal\/everyone",
+            "jti": uuid(),
+            "user_id": uuid()
+        });
+
+    static id_token = base64UrlEncode(
+        {
+            "alg": "RS256",
+            "x5t": "AAA",
+            "kid": "BBB"
+        }, {
+            "azp": "EEE",
+            "sub": "alice",
+            "at_hash": "DDD",
+            "default_tenant": OAuth2Server.tenant_uuid,
+            "iss": "https:\/\/127.0.0.1:9002\/oauth2\/token",
+            "given_name": "Alice",
+            "iat": 1555926264,
+            "xi_role": base64UrlEncode([{
+                "tenant-domain": OAuth2Server.tenant_uuid,
+                "tenant-status": "PROVISIONED",
+                "tenant-name": "someTenant",
+                "roles": [{ "name": "account-admin" }, { "name": "papiea-admin" }],
+                "tenant-owner-email": "someTenant@localhost",
+                "account_approved": true,
+                "tenant-properties": {
+                    "sfdc-accountid": "xyztest",
+                    "tenant-uuid": OAuth2Server.tenant_uuid
+                }
+            }]),
+            "auth_time": 1555926264,
+            "exp": 1555940664,
+            "email": "alice@localhost",
+            "aud": ["EEE"],
+            "last_name": "Doe",
+            "role": ["COMMUNITY", "Internal\/everyone"],
+            "federated_idp": "local"
+        });
+
+    static idp_token = JSON.stringify({
+        scope: 'openid',
+        token_type: 'Bearer',
+        expires_in: 3167,
+        refresh_token: uuid(),
+        id_token: OAuth2Server.id_token,
+        access_token: OAuth2Server.access_token
+    });
+
+    static createServer() {
+        return http.createServer((req, res) => {
+            if (req.method == 'GET') {
+                const params = queryString.parse(url.parse(req.url).query);
+                const resp_query = queryString.stringify({
+                    state: params.state,
+                    code: 'ZZZ'
+                });
+                res.statusCode = 302;
+                res.setHeader('Location', params.redirect_uri + '?' + resp_query);
+                res.end();
+            } else if (req.method == 'POST') {
+                let body = '';
+                req.on('data', function (data) {
+                    body += data;
+                });
+                req.on('end', function () {
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(OAuth2Server.idp_token);
+                });
+            }
+        });
+    }
+
 }

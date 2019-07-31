@@ -15,7 +15,7 @@ export type Version = string;
 // core-types ends here
 
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Metadata-350][metadata-struct]]
-export interface Metadata {
+export interface Metadata extends Entity_Reference {
     // Identity fields
     uuid: uuid4;
     kind: string;
@@ -164,7 +164,7 @@ export interface Procedural_Signature {
     // the duration of the procedural call
     execution_strategy: Procedural_Execution_Strategy;
 
-    // Action url into the provider
+    // Actions url into the provider
     procedure_callback: Provider_Callback_URL;
 }
 
@@ -182,6 +182,7 @@ export interface Provider {
     policy?: string;
     oauth2?: any;
     authModel?: string;
+    allowExtraProps: boolean;
 }
 
 // Add support for partial types where relevant
@@ -189,18 +190,44 @@ export type Partial<T> = {
     [P in keyof T]?: T[P];
 };
 
-export type Key = string;
+export interface UserInfo {
+    [key: string]: any;
+}
 
 export interface S2S_Key {
-    name: string;
-    owner: string;
-    provider_prefix: string;
-    key: Key;
+    name?: string
+    owner: string
+    provider_prefix: string
+    key: string
+    uuid: string;
 
     // Additional fields
-    created_at: Date;
-    deleted_at?: Date;
-    extension: {
-        [key: string]: any;
+    created_at: Date
+    deleted_at?: Date
+    userInfo: UserInfo
+}
+
+
+// Modeled after https://developers.google.com/drive/api/v3/handle-errors
+export interface PapieaError {
+    error: {
+        errors: { [key: string]: any }[],
+        code: number
+        message: string
     }
+}
+
+export enum Action {
+    Read = "read",
+    Update = "write",
+    Create = "create",
+    Delete = "delete",
+    RegisterProvider = "register_provider",
+    UnregisterProvider = "unregister_provider",
+    ReadProvider = "read_provider",
+    UpdateAuth = "update_auth",
+    CreateS2SKey = "create_key",
+    ReadS2SKey = "read_key",
+    InactivateS2SKey = "inactive_key",
+    UpdateStatus = "update_status",
 }

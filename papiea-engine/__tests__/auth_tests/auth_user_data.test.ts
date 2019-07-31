@@ -3,6 +3,7 @@ import { deref, parseJwt } from '../../src/auth/user_data_evaluator'
 import * as _ from "lodash"
 import { loadYaml } from "../test_data_factory";
 import uuid = require("uuid");
+import btoa = require("btoa");
 
 function base64UrlEncode(...parts: any[]): string {
     function base64UrlEncodePart(data: any): string {
@@ -206,7 +207,7 @@ describe("Test deref", () => {
 
     test("deref on function first with ref as parameter", done => {
         let env = { token: token.token };
-        expect(deref(env, "$bearer(^token.access_token)")).toEqual(`Bearer ${ token.token.access_token }`);
+        expect(deref(env, "$bearer(^token.access_token)")).toEqual(`Bearer ${ btoa(JSON.stringify(token.token.access_token)) }`);
         done();
     });
 
@@ -215,6 +216,18 @@ describe("Test deref", () => {
         expect(deref(env, "$bearer(abcd)")).toEqual(`Bearer abcd`);
         done();
     });
+
+    test("deref a reference without nested path", done => {
+        let env = { token: token.token };
+        expect(deref(env, "^token")).toEqual(token.token);
+        done();
+    });
+
+    test("deref a reference without nested path with bearer function", done => {
+        let env = { token: token.token };
+        expect(deref(env, "$bearer(^token)")).toEqual(`Bearer ${btoa(JSON.stringify(token.token))}`);
+        done();
+    })
 });
 
 describe("Evaluating a full yaml file", () => {
@@ -238,7 +251,7 @@ describe("Evaluating a full yaml file", () => {
                     "tenant-fname": "Alice",
                     "tenant-lname": "Doe",
                     "tenant-role": "papiea-admin",
-                    "authorization": `Bearer ${ token.token.access_token }`,
+                    "authorization": `Bearer ${ btoa(JSON.stringify(token.token)) }`,
                     "owner": "alice"
                 });
             done()

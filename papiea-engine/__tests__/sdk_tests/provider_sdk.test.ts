@@ -3,16 +3,19 @@ import { load } from "js-yaml";
 import { resolve } from "path";
 import { Kind_Builder, ProviderSdk } from "papiea-sdk";
 import { plural } from "pluralize"
-import { loadYaml } from "../test_data_factory";
+import { loadYaml, OAuth2Server, ProviderBuilder } from "../test_data_factory";
 import axios from "axios"
 import { readFileSync } from "fs";
-import { Procedural_Signature, Procedural_Execution_Strategy } from "papiea-core";
+import { Metadata, Procedural_Execution_Strategy, Provider, Spec, Action } from "papiea-core";
+import uuid = require("uuid");
 
 declare var process: {
     env: {
+        SERVER_PORT: string,
         ADMIN_S2S_KEY: string
     }
 };
+const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 const adminKey = process.env.ADMIN_S2S_KEY || '';
 const papieaUrl = 'http://127.0.0.1:3000';
 
@@ -22,6 +25,27 @@ const server_config = {
     host: "127.0.0.1",
     port: 9000
 };
+
+const providerApiAdmin = axios.create({
+    baseURL: `http://127.0.0.1:${serverPort}/provider`,
+    timeout: 1000,
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminKey}`
+    }
+});
+
+const providerApi = axios.create({
+    baseURL: `http://127.0.0.1:${serverPort}/provider`,
+    timeout: 1000,
+    headers: { 'Content-Type': 'application/json' }
+});
+
+const entityApi = axios.create({
+    baseURL: `http://127.0.0.1:${serverPort}/services`,
+    timeout: 1000,
+    headers: { 'Content-Type': 'application/json' }
+});
 
 describe("Provider Sdk tests", () => {
     test("Pluralize works for 'test' & 'provider' words used", (done) => {
@@ -395,8 +419,8 @@ describe("Provider Sdk tests", () => {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { input: { "a": 5, "b": 5 } });
         } catch (e) {
-            expect(e.response.data.errors[0].msg).toBe('Provider procedure computeSum didn\'t return correct value');
-            expect(e.response.data.errors[0].errors).not.toBeUndefined();
+            expect(e.response.data.error.errors[0].message).toBe('Provider procedure computeSum didn\'t return correct value');
+            expect(e.response.data.error.errors[0].reason).not.toBeUndefined();
         } finally {
             sdk.server.close();
         }
@@ -442,7 +466,7 @@ describe("Provider Sdk tests", () => {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumWithNoValidation`, { input: { "a": 5, "b": 5 } });
         } catch (e) {
-            expect(e.response.data.errors[0]).toBe('Function was expecting output of type void');
+            expect(e.response.data.error.errors[0].message).toBe('Function was expecting output of type void');
         } finally {
             sdk.server.close();
         }
@@ -467,10 +491,368 @@ describe("Provider Sdk tests", () => {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumThrowsError`, { input: { "a": 5, "b": 5 } });
         } catch (e) {
-            expect(e.response.data.errors[0].message).toBe("My custom error");
-            expect(e.response.data.errors[0].stacktrace).not.toBeUndefined();
+            expect(e.response.data.error.errors[0].message).toBe("My custom error");
+            expect(e.response.data.error.errors[0].stacktrace).not.toBeUndefined();
         } finally {
             sdk.server.close();
+        }
+    });
+});
+
+describe("SDK security tests", () => {
+    const oauth2ServerHost = '127.0.0.1';
+    const oauth2ServerPort = 9002;
+    const pathToModel: string = resolve(__dirname, "../src/auth/provider_model_example.txt");
+    const modelText: string = readFileSync(pathToModel).toString();
+    const oauth = loadYaml("./auth.yaml");
+    const provider_version = "0.1.0";
+    const location_yaml = load(readFileSync(resolve(__dirname, "./location_kind_test_data.yml"), "utf-8"));
+    const tenant_uuid = uuid();
+
+    const provider: Provider = new ProviderBuilder()
+        .withVersion("0.1.0")
+        .withKinds()
+        .withOAuth2Description()
+        .withAuthModel()
+        .build();
+    const kind_name = provider.kinds[0].name;
+    let entity_metadata: Metadata, entity_spec: Spec;
+    const oauth2Server = OAuth2Server.createServer();
+
+    beforeAll(async () => {
+        await providerApiAdmin.post('/', provider);
+        oauth2Server.listen(oauth2ServerPort, oauth2ServerHost, () => {
+            console.log(`Server running at http://${oauth2ServerHost}:${oauth2ServerPort}/`);
+        });
+        const { data: { metadata, spec } } = await entityApi.post(`/${ provider.prefix }/${ provider.version }/${ kind_name }`, {
+            metadata: {
+                extension: {
+                    owner: "alice",
+                    tenant_uuid: tenant_uuid
+                }
+            },
+            spec: {
+                x: 10,
+                y: 11
+            }
+        });
+        entity_metadata = metadata;
+        entity_spec = spec;
+    });
+
+    afterAll(async () => {
+        await entityApi.delete(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}`);
+        await providerApiAdmin.delete(`/${provider.prefix}/${provider.version}`);
+        oauth2Server.close();
+    });
+
+
+    test("Procedure check permission read should fail", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        sdk.version(provider_version);
+        sdk.prefix("permissioned_provider_read_fail");
+        sdk.provider_procedure("computeWithPermissionCheck",
+            {},
+            Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./procedure_sum_input.yml"),
+            {},
+            async (ctx, input) => {
+                const allowed = await ctx.check_permission([[Action.Read, { uuid: entity_metadata.uuid, kind: kind_name }]], provider.prefix, provider.version);
+                expect(allowed).toBeFalsy();
+            }
+        );
+        await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+            policy: `p, carol, owner, ${ kind_name }, *, allow`
+        });
+        sdk.secure_with(oauth, modelText, "xxx");
+        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+        try {
+            await sdk.register();
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { input: { "a": 5, "b": 5 } },
+                { headers: { 'Authorization': `Bearer ${token}` }});
+        } finally {
+            sdk.server.close();
+            await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+                policy: null
+            });
+        }
+    });
+
+    test("Procedure check permission read should succeed", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        sdk.version(provider_version);
+        sdk.prefix("permissioned_provider_read_success");
+        sdk.provider_procedure("computeWithPermissionCheck",
+            {},
+            Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./procedure_sum_input.yml"),
+            {},
+            async (ctx, input) => {
+                const allowed = await ctx.check_permission([[Action.Read, { uuid: entity_metadata.uuid, kind: kind_name }]], provider.prefix, provider.version);
+                expect(allowed).toBeTruthy();
+            }
+        );
+        sdk.secure_with(oauth, modelText, "xxx");
+        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+        await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+            policy: `p, alice, owner, ${ kind_name }, *, allow`
+        });
+        try {
+            await sdk.register();
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { input: { "a": 5, "b": 5 } },
+                { headers: { 'Authorization': `Bearer ${token}` }});
+        } finally {
+            sdk.server.close();
+            await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+                policy: null
+            });
+        }
+    });
+
+    test("Procedure check permission write should succeed", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        sdk.version(provider_version);
+        sdk.prefix("permissioned_provider_write_success");
+        sdk.provider_procedure("computeWithPermissionCheck",
+            {},
+            Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./procedure_sum_input.yml"),
+            {},
+            async (ctx, input) => {
+                const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]], provider.prefix, provider.version);
+                expect(allowed).toBeTruthy();
+            }
+        );
+        await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+            policy: `p, alice, owner, ${ kind_name }, *, allow`
+        });
+        sdk.secure_with(oauth, modelText, "xxx");
+        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+        try {
+            await sdk.register();
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { input: { "a": 5, "b": 5 } },
+                { headers: { 'Authorization': `Bearer ${token}` }});
+        } finally {
+            sdk.server.close();
+            await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+                policy: null
+            });
+        }
+    });
+
+    test("Procedure check permission write when read permission allowed should fail", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        sdk.version(provider_version);
+        sdk.prefix("permissioned_provider_write_success");
+        sdk.provider_procedure("computeWithPermissionCheck",
+            {},
+            Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./procedure_sum_input.yml"),
+            {},
+            async (ctx, input) => {
+                const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]], provider.prefix, provider.version);
+                expect(allowed).toBeFalsy();
+            }
+        );
+        await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+            policy: `p, alice, owner, ${ kind_name }, read, allow`
+        });
+        sdk.secure_with(oauth, modelText, "xxx");
+        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+        try {
+            await sdk.register();
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { input: { "a": 5, "b": 5 } },
+                { headers: { 'Authorization': `Bearer ${token}` }});
+        } finally {
+            sdk.server.close();
+            await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+                policy: null
+            });
+        }
+    });
+
+    test("Procedure check permission write should fail", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        sdk.version(provider_version);
+        sdk.prefix("permissioned_provider_write_fail");
+        sdk.provider_procedure("computeWithPermissionCheck",
+            {},
+            Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./procedure_sum_input.yml"),
+            {},
+            async (ctx, input) => {
+                const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]], provider.prefix, provider.version);
+                expect(allowed).toBeFalsy();
+            }
+        );
+        await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+            policy: `p, carol, owner, ${ kind_name }, *, allow`
+        });
+        sdk.secure_with(oauth, modelText, "xxx");
+        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+        try {
+            await sdk.register();
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { input: { "a": 5, "b": 5 } },
+                { headers: { 'Authorization': `Bearer ${token}` }});
+        } finally {
+            sdk.server.close();
+            await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+                policy: null
+            });
+        }
+    });
+
+    test("Procedure check permission write with array should fail", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        sdk.version(provider_version);
+        sdk.prefix("permissioned_provider_write_fail");
+        sdk.provider_procedure("computeWithPermissionCheck",
+            {},
+            Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./procedure_sum_input.yml"),
+            {},
+            async (ctx, input) => {
+                const allowed = await ctx.check_permission([
+                    [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata],
+                    [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "jane" }, created_at: {} as Date } as Metadata]
+                ], provider.prefix, provider.version);
+                expect(allowed).toBeFalsy();
+            }
+        );
+        await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+            policy: `p, alice, owner, ${ kind_name }, *, allow`
+        });
+        sdk.secure_with(oauth, modelText, "xxx");
+        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+        try {
+            await sdk.register();
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { input: { "a": 5, "b": 5 } },
+                { headers: { 'Authorization': `Bearer ${token}` }});
+        } finally {
+            sdk.server.close();
+            await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+                policy: null
+            });
+        }
+    });
+
+    test("Procedure check permission write with array should succeed", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        sdk.version(provider_version);
+        sdk.prefix("permissioned_provider_write_fail");
+        sdk.provider_procedure("computeWithPermissionCheck",
+            {},
+            Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./procedure_sum_input.yml"),
+            {},
+            async (ctx, input) => {
+                const allowed = await ctx.check_permission([
+                    [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata],
+                    [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]
+                ], provider.prefix, provider.version);
+                expect(allowed).toBeTruthy();
+            }
+        );
+        await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+            policy: `p, alice, owner, ${ kind_name }, *, allow`
+        });
+        sdk.secure_with(oauth, modelText, "xxx");
+        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+        try {
+            await sdk.register();
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { input: { "a": 5, "b": 5 } },
+                { headers: { 'Authorization': `Bearer ${token}` }});
+        } finally {
+            sdk.server.close();
+            await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+                policy: null
+            });
+        }
+    });
+
+    test("Procedure check permission write and read with array should succeed", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        sdk.version(provider_version);
+        sdk.prefix("permissioned_provider_write_fail");
+        sdk.provider_procedure("computeWithPermissionCheck",
+            {},
+            Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./procedure_sum_input.yml"),
+            {},
+            async (ctx, input) => {
+                const allowed = await ctx.check_permission([
+                    [Action.Read, { uuid: entity_metadata.uuid, kind: kind_name }],
+                    [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]
+                ], provider.prefix, provider.version);
+                expect(allowed).toBeTruthy();
+            }
+        );
+        await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+            policy: `p, alice, owner, ${ kind_name }, *, allow`
+        });
+        sdk.secure_with(oauth, modelText, "xxx");
+        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+        try {
+            await sdk.register();
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { input: { "a": 5, "b": 5 } },
+                { headers: { 'Authorization': `Bearer ${token}` }});
+        } finally {
+            sdk.server.close();
+            await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+                policy: null
+            });
+        }
+    });
+
+    test("Procedure check permission write and read with array should fail, read is denied", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        sdk.version(provider_version);
+        sdk.prefix("permissioned_provider_write_fail");
+        sdk.provider_procedure("computeWithPermissionCheck",
+            {},
+            Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./procedure_sum_input.yml"),
+            {},
+            async (ctx, input) => {
+                const allowed = await ctx.check_permission([
+                    [Action.Read, { uuid: entity_metadata.uuid, kind: kind_name }],
+                    [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]
+                ], provider.prefix, provider.version);
+                expect(allowed).toBeFalsy();
+            }
+        );
+        await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+            policy: `p, alice, owner, ${ kind_name }, create, allow`
+        });
+        sdk.secure_with(oauth, modelText, "xxx");
+        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+        try {
+            await sdk.register();
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { input: { "a": 5, "b": 5 } },
+                { headers: { 'Authorization': `Bearer ${token}` }});
+        } finally {
+            sdk.server.close();
+            await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+                policy: null
+            });
         }
     });
 });

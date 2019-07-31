@@ -17,9 +17,8 @@ describe("Validation tests", () => {
             }
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
-        const validator = new Validator(true);
         try_validate(() => {
-            validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription)
+            Validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
         })
     });
 
@@ -30,9 +29,8 @@ describe("Validation tests", () => {
             }
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
-        const validator = new Validator(true);
         try_validate(() => {
-            validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription)
+            Validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
         }, true)
     });
 
@@ -45,9 +43,8 @@ describe("Validation tests", () => {
             }
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
-        const validator = new Validator(true);
         try_validate(() => {
-            validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription)
+            Validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
         })
     });
 
@@ -60,9 +57,8 @@ describe("Validation tests", () => {
             }
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
-        const validator = new Validator(true);
         try_validate(() => {
-            validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription)
+            Validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
         }, true)
     });
 
@@ -74,9 +70,8 @@ describe("Validation tests", () => {
             }
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
-        const validator = new Validator(true);
         try_validate(() => {
-            validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription)
+            Validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
         }, true)
     });
 
@@ -91,9 +86,8 @@ describe("Validation tests", () => {
             }
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
-        const validator = new Validator(true);
         try_validate(() => {
-            validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription)
+            Validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
         })
     });
 
@@ -108,9 +102,8 @@ describe("Validation tests", () => {
             }
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
-        const validator = new Validator(true);
         try_validate(() => {
-            validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription)
+            Validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
         }, true)
     });
 
@@ -125,9 +118,8 @@ describe("Validation tests", () => {
             }
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
-        const validator = new Validator(true);
         try_validate(() => {
-            validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription)
+            Validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
         }, true)
     });
 
@@ -145,9 +137,8 @@ describe("Validation tests", () => {
             }
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
-        const validator = new Validator(true);
         try_validate(() => {
-            validator.validate(entity.spec, maybeLocationStringParam, trimmedLocationDataDescriptionStringParam)
+            Validator.validate(entity.spec, maybeLocationStringParam, trimmedLocationDataDescriptionStringParam, false)
         })
     });
 
@@ -159,9 +150,8 @@ describe("Validation tests", () => {
             }
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
-        const validator = new Validator(true);
         try_validate(() => {
-            validator.validate(entity.spec, maybeLocationStringParam, trimmedLocationDataDescriptionStringParam)
+            Validator.validate(entity.spec, maybeLocationStringParam, trimmedLocationDataDescriptionStringParam, false)
         }, true)
     });
 });

@@ -36,7 +36,7 @@ describe("Provider API tests", () => {
     });
 
     test("Register provider", done => {
-        const provider: Provider = { prefix: providerPrefix, version: providerVersion, kinds: [], procedures: {}, extension_structure: {} };
+        const provider: Provider = { prefix: providerPrefix, version: providerVersion, kinds: [], procedures: {}, extension_structure: {}, allowExtraProps: false };
         providerApi.post('/', provider).then(() => done()).catch(done.fail);
     });
 
@@ -50,10 +50,10 @@ describe("Provider API tests", () => {
 
     test("Get multiple providers", async () => {
         const version1 = "1.0.0";
-        const provider1: Provider = { prefix: providerPrefix, version: version1, kinds: [], procedures: {}, extension_structure: {} };
+        const provider1: Provider = { prefix: providerPrefix, version: version1, kinds: [], procedures: {}, extension_structure: {}, allowExtraProps: false };
         await providerApi.post('/', provider1);
         const version2 = "2.0.0";
-        const provider2: Provider = { prefix: providerPrefix, version: version2, kinds: [], procedures: {}, extension_structure: {} };
+        const provider2: Provider = { prefix: providerPrefix, version: version2, kinds: [], procedures: {}, extension_structure: {}, allowExtraProps: false };
         await providerApi.post('/', provider2);
         const res = await providerApi.get(`/${providerPrefix}`);
         expect(res.data.length).toBeGreaterThanOrEqual(2);
@@ -167,7 +167,7 @@ describe("Provider API tests", () => {
 
     test("Register provider with extension structure", done => {
         const extension_desc = loadYaml("./test_data/metadata_extension.yml");
-        const provider: Provider = { prefix: providerPrefix, version: providerVersion, kinds: [], procedures: {}, extension_structure: extension_desc };
+        const provider: Provider = { prefix: providerPrefix, version: providerVersion, kinds: [], procedures: {}, extension_structure: extension_desc, allowExtraProps: false };
         providerApi.post('/', provider).then().catch(done.fail);
         providerApi.delete(`/${ providerPrefix }/${ providerVersion }`).then(() => done()).catch(done.fail);
     });

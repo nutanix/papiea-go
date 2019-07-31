@@ -1,11 +1,12 @@
-import { Action, Authorizer } from "../../src/auth/authz";
 import { UserAuthInfo } from "../../src/auth/authn";
 import axios from "axios";
-import { getLocationDataDescription } from "../test_data_factory";
 import { stringify } from "querystring";
 import { ProviderSdk } from "papiea-sdk";
-import { Metadata, Spec } from "papiea-core";
+import { Metadata, Spec, Action } from "papiea-core";
+import { getLocationDataDescription, getMetadataDescription } from "../test_data_factory";
+import { stringify } from "querystring"
 import uuid = require("uuid");
+import { Authorizer } from "../../src/auth/authz";
 
 declare var process: {
     env: {
@@ -83,7 +84,7 @@ describe("Entity API tests", () => {
         } catch (err) {
             const res = err.response;
             expect(res.status).toEqual(400);
-            expect(res.data.errors.length).toEqual(1);
+            expect(res.data.error.errors.length).toEqual(1);
         }
     });
 
@@ -343,7 +344,7 @@ describe("Entity API tests", () => {
         } catch (err) {
             const res = err.response;
             expect(res.status).toEqual(400);
-            expect(res.data.errors.length).toEqual(1);
+            expect(res.data.error.errors.length).toEqual(1);
         }
     });
 
@@ -406,7 +407,7 @@ describe("Entity API tests", () => {
             }
         });
         expect(res.data.results.length).toBe(0);
-        ["papiea_one_hour_ago", "papiea_one_day_ago"].forEach(async deleted_at => {
+        for (const deleted_at of ["papiea_one_hour_ago", "papiea_one_day_ago"]) {
             let res = await entityApi.post(`${ providerPrefix }/${ providerVersion }/${ kind_name }/filter`, {
                 metadata: {
                     uuid: metadata.uuid,
@@ -416,6 +417,394 @@ describe("Entity API tests", () => {
             expect(res.data.results.length).toBe(1);
             expect(res.data.results[0].spec).toEqual(spec);
             expect(res.data.results[0].status).toEqual(spec);
+        }
+    });
+});
+
+describe("Entity API with metadata extension tests", () => {
+    const providerPrefix = "test";
+    const providerVersion = "0.1.0";
+    const locationDataDescription = getLocationDataDescription();
+    const metadata_ext_description = getMetadataDescription();
+    const kind_name = Object.keys(locationDataDescription)[0];
+    const owner_name = "test@owner.com";
+    const tenant_id = "sample_id";
+
+    let entity_metadata: Metadata;
+    let entity_spec: Spec;
+
+    beforeAll(async () => {
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        sdk.new_kind(locationDataDescription);
+        sdk.version(providerVersion);
+        sdk.prefix(providerPrefix);
+        sdk.metadata_extension(metadata_ext_description);
+        await sdk.register();
+    });
+
+    afterAll(async () => {
+        await axios.delete(`http://127.0.0.1:${serverPort}/provider/${providerPrefix}/${providerVersion}`);
+    });
+
+    test("Create entity with missing metadata extension should fail validation", async () => {
+        expect.hasAssertions();
+        try {
+            await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
+                spec: {
+                    x: 100,
+                    y: 11
+                }
+            });
+        } catch (err) {
+            const res = err.response;
+            expect(res.status).toEqual(400);
+            expect(res.data.error.errors.length).toEqual(1);
+
+        }
+    });
+
+    test("Create entity with metadata extension", async () => {
+        expect.assertions(2);
+        const { data: { metadata, spec } } = await entityApi.post(`/${ providerPrefix }/${ providerVersion }/${ kind_name }`, {
+            spec: {
+                x: 100,
+                y: 11
+            },
+            metadata: {
+                extension: {
+                    "owner": owner_name,
+                    "tenant_id": tenant_id
+                }
+            }
         });
+        entity_metadata = metadata;
+        entity_spec = spec;
+        expect(spec).toBeDefined();
+        expect(metadata).toBeDefined();
+    });
+
+    test("Get spec-only entity with extension", async () => {
+        expect.assertions(2);
+        const res = await entityApi.get(`/${ providerPrefix }/${ providerVersion }/${ kind_name }/${ entity_metadata.uuid }`);
+        expect(res.data.spec).toEqual(entity_spec);
+        expect(res.data.status).toEqual(entity_spec);
+    });
+
+    test("Create entity with non-valid metadata extension", async () => {
+        expect.assertions(2);
+        try {
+            await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
+                spec: {
+                    x: 100,
+                    y: 11
+                },
+                metadata: {
+                    extension: {
+                        "owner": owner_name,
+                        "tenant_id": 123
+                    }
+                }
+            });
+        } catch (err) {
+            const res = err.response;
+            expect(res.status).toEqual(400);
+            expect(res.data.error.errors.length).toEqual(1);
+        }
+    });
+
+    test("Filter entity by extension", async () => {
+        expect.assertions(1);
+        const res = await entityApi.post(`/${ providerPrefix }/${ providerVersion }/${ kind_name }/filter`, {
+            metadata: {
+                "extension.owner": owner_name,
+                "extension.tenant_id": tenant_id
+            }
+        });
+        expect(res.data.results.length).toBe(1);
+    });
+
+    test("Create entity with no metadata extension should display a friendly error", async () => {
+        expect.assertions(3);
+        try {
+            await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
+                spec: {
+                    x: 100,
+                    y: 11
+                },
+            });
+        } catch (err) {
+            const res = err.response;
+            expect(res.status).toEqual(400);
+            expect(res.data.error.errors.length).toEqual(1);
+            expect(res.data.error.errors[0].message).toEqual("Metadata extension is not specified");
+        }
+    });
+});
+
+// TODO: rewrite the whole suite with fast check
+describe("Pagination tests", () => {
+    const providerPrefix = "test";
+    const providerVersion = "0.1.0";
+    const locationDataDescription = getLocationDataDescription();
+    const kind_name = Object.keys(locationDataDescription)[0];
+    beforeAll(async () => {
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        sdk.new_kind(locationDataDescription);
+        sdk.version(providerVersion);
+        sdk.prefix(providerPrefix);
+        await sdk.register();
+    });
+
+    afterAll(async () => {
+        await axios.delete(`http://127.0.0.1:${serverPort}/provider/${providerPrefix}/${providerVersion}`);
+    });
+
+    let uuids: string[] = [];
+    test("Create multiple entities", async () => {
+        jest.setTimeout(5000);
+        expect.assertions(1);
+        const entityPromises: Promise<any>[] = [];
+        for (let i = 0; i < 70; i++) {
+            entityPromises.push(entityApi.post(`/${ providerPrefix }/${ providerVersion }/${ kind_name }`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            }));
+        }
+        const entityResponses: any[] = await Promise.all(entityPromises);
+        uuids = entityResponses.map(entityResp => entityResp.data.metadata.uuid);
+        expect(entityResponses.length).toBe(70);
+    }, 5000);
+
+    test("Pagination test", async () => {
+        let res = await entityApi.post(`${ providerPrefix }/${ providerVersion }/${ kind_name }/filter`, {
+            spec: {
+                x: 10,
+                y: 11
+            }
+        });
+        expect(res.data.results.length).toBe(30);
+        expect(res.data.entity_count).toBe(70);
+    });
+
+    test("Pagination test with limit", async () => {
+        expect.assertions(2);
+        let res = await entityApi.post(`${ providerPrefix }/${ providerVersion }/${ kind_name }/filter?limit=10`, {
+            spec: {
+                x: 10,
+                y: 11
+            }
+        });
+        expect(res.data.results.length).toBe(10);
+        expect(res.data.entity_count).toBe(70);
+    });
+
+    test("Pagination test with offset", async () => {
+        expect.assertions(2);
+        let res = await entityApi.post(`${ providerPrefix }/${ providerVersion }/${ kind_name }/filter?offset=30`, {
+            spec: {
+                x: 10,
+                y: 11
+            }
+        });
+        expect(res.data.results.length).toBe(30);
+        expect(res.data.entity_count).toBe(70);
+    });
+
+    test("Pagination test with limit and offset", async () => {
+        let res = await entityApi.post(`${ providerPrefix }/${ providerVersion }/${ kind_name }/filter?offset=50&limit=40`, {
+            spec: {
+                x: 10,
+                y: 11
+            }
+        });
+        expect(res.data.results.length).toBe(20);
+        expect(res.data.entity_count).toBe(70);
+    });
+
+    test("Pagination limit should be positive", async () => {
+        expect.assertions(1);
+        try {
+            await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?limit=-1`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+        } catch (e) {
+            expect(e.response.data.error.errors[0].message).toBe("Limit should not be less or equal to zero");
+        }
+    });
+
+    test("Pagination offset should be positive", async () => {
+        expect.assertions(1);
+        try {
+            await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?offset=-1`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+        } catch (e) {
+            expect(e.response.data.error.errors[0].message).toBe("Offset should not be less or equal to zero");
+        }
+    });
+
+    test("Pagination test with offset equal to zero", async () => {
+        expect.assertions(1);
+        try {
+            await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?offset=0`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+        } catch (e) {
+            expect(e.response.data.error.errors[0].message).toBe("Offset should not be less or equal to zero");
+        }
+    });
+
+    test("Pagination test with limit equal to zero", async () => {
+        expect.assertions(1);
+        try {
+            await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?limit=0`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+        } catch (e) {
+            expect(e.response.data.error.errors[0].message).toBe("Limit should not be less or equal to zero");
+        }
+    });
+
+    test("Delete multiple entities", async () => {
+        jest.setTimeout(5000);
+        expect.assertions(1);
+        const deletePromises: Promise<any>[] = [];
+        uuids.forEach(uuid => {
+            deletePromises.push(entityApi.delete(`/${ providerPrefix }/${ providerVersion }/${ kind_name }/${ uuid }`));
+        });
+        await Promise.all(deletePromises);
+        let res = await entityApi.post(`${ providerPrefix }/${ providerVersion }/${ kind_name }/filter`, {
+            spec: {
+                x: 10,
+                y: 11
+            }
+        });
+        expect(res.data.results.length).toBe(0);
+    })
+
+});
+
+describe("Sorting tests", () => {
+    const providerPrefix = "test";
+    const providerVersion = "0.1.0";
+    const locationDataDescription = getLocationDataDescription();
+    const kind_name = Object.keys(locationDataDescription)[0];
+
+    let uuids: string[] = [];
+    const entityPromises: Promise<any>[] = [];
+
+    beforeAll(async () => {
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        sdk.new_kind(locationDataDescription);
+        sdk.version(providerVersion);
+        sdk.prefix(providerPrefix);
+        await sdk.register();
+
+        try {
+            for (let i = 0; i < 70; i++) {
+                entityPromises.push(entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
+                    spec: {
+                        x: i,
+                        y: 11
+                    }
+                }));
+            }
+            const entityResponses: any[] = await Promise.all(entityPromises);
+            uuids = entityResponses.map(entityResp => entityResp.data.metadata.uuid);
+            expect(entityResponses.length).toBe(70);
+        } catch (e) {
+            throw e;
+        }
+    }, 5000);
+
+    afterAll(async () => {
+        const deletePromises: Promise<any>[] = [];
+        await axios.delete(`http://127.0.0.1:${serverPort}/provider/${providerPrefix}/${providerVersion}`);
+        try {
+            uuids.forEach(uuid => {
+                deletePromises.push(entityApi.delete(`/${providerPrefix}/${providerVersion}/${kind_name}/${uuid}`));
+            });
+            await Promise.all(deletePromises);
+        } catch (e) {
+            throw e;
+        }
+    }, 5000);
+
+    test("Sorting with no explicit order should be ascending", async (done) => {
+        jest.setTimeout(5000);
+        try {
+            const { data } = await entityApi.post(`${providerPrefix}/${providerVersion}/${kind_name}/filter?sort=spec.x`, {
+                spec: {
+                    y: 11
+                }
+            });
+            expect(data.results[0].spec.x).toBe(0);
+            done();
+        } catch (e) {
+            done.fail(e);
+        }
+    });
+
+    test("Authorizer doesn't affect the order of sorting", async () => {
+        jest.setTimeout(5000);
+        const authorizer = new MockedAuthorizer();
+        const specs = [{spec: {x: 10, y: 11}}, {spec: {x: 18, y:27}}, {spec: {x: 22, y: 8}}, {spec: {x: 41, y: 50}}];
+        const res = await authorizer.filter({} as UserAuthInfo, specs, {} as Action);
+        for (let i = 0; i < res.length - 1; i++) {
+            expect(res[i+1].spec.x).toBeGreaterThan(res[i].spec.x)
+        }
+    })
+});
+
+describe("Provider with additional props tests", () => {
+    const providerPrefix = "test";
+    const providerVersion = "0.1.0";
+    const locationDataDescription = getLocationDataDescription();
+    const kind_name = Object.keys(locationDataDescription)[0];
+
+    beforeAll(async () => {
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, true);
+        sdk.new_kind(locationDataDescription);
+        sdk.version(providerVersion);
+        sdk.prefix(providerPrefix);
+        await sdk.register();
+    });
+
+    let entity_metadata: Metadata;
+    let entity_spec: Spec;
+
+    afterAll(async () => {
+        await entityApi.delete(`/${ providerPrefix }/${ providerVersion }/${ kind_name }/${ entity_metadata.uuid }`);
+        await axios.delete(`http://127.0.0.1:${serverPort}/provider/${providerPrefix}/${providerVersion}`);
+    });
+
+
+    test("Create spec-only entity with additional props set to 'true' should succeed", async () => {
+        const { data: { metadata, spec } } = await entityApi.post(`/${ providerPrefix }/${ providerVersion }/${ kind_name }`, {
+            spec: {
+                x: 10,
+                y: 11,
+                z: 100,
+                f: "Additional prop"
+            }
+        });
+        entity_metadata = metadata;
+        entity_spec = spec;
+        expect(metadata).toBeDefined()
+        expect(spec).toBeDefined()
     });
 });

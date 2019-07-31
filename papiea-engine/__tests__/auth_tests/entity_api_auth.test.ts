@@ -6,6 +6,7 @@ const queryString = require("query-string");
 import { ProviderBuilder } from "../test_data_factory";
 import uuid = require("uuid");
 import { Metadata, Spec, Provider } from "papiea-core";
+import btoa = require("btoa");
 
 
 declare var process: {
@@ -66,6 +67,7 @@ describe("Entity API auth tests", () => {
         .build();
     const kind_name = provider.kinds[0].name;
     let entity_metadata: Metadata, entity_spec: Spec;
+    let idp_token: string;
 
     const tenant_uuid = uuid();
     const oauth2Server = http.createServer((req, res) => {
@@ -95,12 +97,26 @@ describe("Entity API auth tests", () => {
                 expect(params.grant_type).toEqual('authorization_code');
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({
-                    scope: 'openid',
-                    token_type: 'Bearer',
-                    expires_in: 3167,
-                    refresh_token: uuid(),
-                    id_token: base64UrlEncode(
+                const access_token = base64UrlEncode({
+                        "alg": "RS256"
+                    },
+                    {
+                        "created_by": "papiea",
+                        "azp": "EEE",
+                        "sub": "alice",
+                        "default_tenant": tenant_uuid,
+                        "iss": "https:\/\/127.0.0.1:9002\/oauth2\/token",
+                        "given_name": "Alice",
+                        "iat": 1555925532,
+                        "exp": 1555929132,
+                        "email": "alice@localhost",
+                        "last_name": "Doe",
+                        "aud": ["EEE"],
+                        "role": "COMMUNITY,Internal\/everyone",
+                        "jti": uuid(),
+                        "user_id": uuid()
+                    });
+                const id_token = base64UrlEncode(
                         {
                             "alg": "RS256",
                             "x5t": "AAA",
@@ -132,30 +148,17 @@ describe("Entity API auth tests", () => {
                             "last_name": "Doe",
                             "role": ["COMMUNITY", "Internal\/everyone"],
                             "federated_idp": "local"
-                        }),
-                    access_token: base64UrlEncode(
-                        {
-                            "alg": "RS256"
-                        },
-                        {
-                            "created_by": "papiea",
-                            "azp": "EEE",
-                            "sub": "alice",
-                            "default_tenant": tenant_uuid,
-                            "iss": "https:\/\/127.0.0.1:9002\/oauth2\/token",
-                            "given_name": "Alice",
-                            "iat": 1555925532,
-                            "exp": 1555929132,
-                            "email": "alice@localhost",
-                            "last_name": "Doe",
-                            "aud": ["EEE"],
-                            "role": "COMMUNITY,Internal\/everyone",
-                            "jti": uuid(),
-                            "user_id": uuid()
-                        }
-                    )
-
-                }));
+                        });
+                idp_token = JSON.stringify({
+                    scope: 'openid',
+                    token_type: 'Bearer',
+                    expires_in: 3167,
+                    refresh_token: uuid(),
+                    id_token: id_token,
+                    access_token: access_token,
+                    expires_at: "2019-07-24T19:50:43.823Z"
+                });
+                res.end(idp_token);
             });
         }
     });
@@ -308,7 +311,7 @@ describe("Entity API auth tests", () => {
         expect(headers['tenant-lname']).toEqual('Doe');
         expect(headers['tenant-role']).toEqual('papiea-admin');
         expect(headers['owner']).toEqual('alice');
-        expect(headers['authorization']).toBeDefined();
+        expect(headers['authorization']).toBe(`Bearer ${btoa(idp_token)}`);
     });
 
     test("Create, get and inacivate s2s key", async () => {
@@ -328,7 +331,7 @@ describe("Entity API auth tests", () => {
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
         expect(s2skeys.length).toEqual(1);
-        expect(s2skeys[0].key).toEqual(s2skey.key);
+        expect(s2skeys[0].key).toEqual(s2skey.key.slice(0, 2) + "*****" + s2skey.key.slice(-2));
         const { data } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
             { headers: { 'Authorization': 'Bearer ' + s2skey.key } }
         );
@@ -337,7 +340,7 @@ describe("Entity API auth tests", () => {
         expect(data.provider_prefix).toEqual(provider.prefix);
         await providerApi.put(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
-                key: s2skey.key,
+                uuid: s2skey.uuid,
                 active: false
             },
             { headers: { 'Authorization': 'Bearer ' + token } }
@@ -375,6 +378,48 @@ describe("Entity API auth tests", () => {
         expect(spec).toEqual(entity_spec);
     });
 
+    test("Entity procedure should receive authorization header through s2s key", async () => {
+        let headers: any = {};
+        const server = http.createServer((req, res) => {
+            if (req.method == 'POST') {
+                Object.assign(headers, req.headers);
+                let body = '';
+                req.on('data', function (data) {
+                    body += data;
+                });
+                req.on('end', function () {
+                    const post = JSON.parse(body);
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'text/plain');
+                    res.end(JSON.stringify(post.spec));
+                    server.close();
+                });
+            }
+        });
+        server.listen(procedureCallbackPort, procedureCallbackHostname, () => {
+            console.log(`Server running at http://${ procedureCallbackHostname }:${ procedureCallbackPort }/`);
+        });
+        const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`);
+        await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+            policy: `p, alice, owner, ${ kind_name }, *, allow`
+        });
+        const { data: userInfo } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
+            { headers: { 'Authorization': 'Bearer ' + token } }
+        );
+        const { data: s2skey } = await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
+            {
+                owner: userInfo.owner,
+                provider_prefix: userInfo.provider_prefix
+            },
+            { headers: { 'Authorization': 'Bearer ' + token } }
+        );
+
+        await entityApi.post(`/${ provider.prefix }/${ provider.version }/${ kind_name }/${ entity_metadata.uuid }/procedure/moveX`, { input: 5 },
+            { headers: { 'Authorization': 'Bearer ' + s2skey.key } }
+        );
+        expect(headers['authorization']).toBe(`Bearer ${s2skey.key}`);
+    });
+
     test("Create s2s key with another owner or provider should fail", async () => {
         expect.assertions(2 + expectAssertionsFromOauth2Server);
         const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`);
@@ -406,7 +451,23 @@ describe("Entity API auth tests", () => {
     });
 
     test("Call entity procedure without permission should fail", async () => {
-        expect.hasAssertions();
+        const server = http.createServer((req, res) => {
+            if (req.method == 'POST') {
+                let body = '';
+                req.on('data', function (data) {
+                    body += data;
+                });
+                req.on('end', function () {
+                    // Some operation which causes forbidden
+                    res.statusCode = 403;
+                    res.end();
+                    server.close();
+                });
+            }
+        });
+        server.listen(procedureCallbackPort, procedureCallbackHostname, () => {
+            console.log(`Server running at http://${ procedureCallbackHostname }:${ procedureCallbackPort }/`);
+        });
         try {
             const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
             await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
@@ -422,7 +483,43 @@ describe("Entity API auth tests", () => {
     });
 
     test("Call entity procedure with permission should succeed", async () => {
-        expect.hasAssertions();
+        const server = http.createServer((req, res) => {
+            if (req.method == 'POST') {
+                let body = '';
+                req.on('data', function (data) {
+                    body += data;
+                });
+                req.on('end', function () {
+                    const post = JSON.parse(body);
+                    const authorization = req.headers['authorization'];
+                    entityApi.get(`/${ provider.prefix }/${ provider.version }/${ kind_name }/${ post.metadata.uuid }`,
+                        { headers: { 'Authorization': authorization } }
+                    ).then(response => {
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'text/plain');
+                        res.end(JSON.stringify(response.data.spec));
+                        server.close();
+                    }).catch(err => {
+                        res.statusCode = err.response.status;
+                        res.end();
+                        server.close();
+                    });
+                });
+            }
+        });
+        server.listen(procedureCallbackPort, procedureCallbackHostname, () => {
+            console.log(`Server running at http://${ procedureCallbackHostname }:${ procedureCallbackPort }/`);
+        });
+        const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`);
+        await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+            policy: `p, alice, owner, ${ kind_name }, read, allow`
+        });
+        await entityApi.post(`/${ provider.prefix }/${ provider.version }/${ kind_name }/${ entity_metadata.uuid }/procedure/moveX`, { input: 5 },
+            { headers: { 'Authorization': 'Bearer ' + token } }
+        );
+    });
+
+    test("Call kind procedure by provider-user should succeed", async () => {
         const server = http.createServer((req, res) => {
             if (req.method == 'POST') {
                 let body = '';
@@ -441,29 +538,13 @@ describe("Entity API auth tests", () => {
         server.listen(procedureCallbackPort, procedureCallbackHostname, () => {
             console.log(`Server running at http://${ procedureCallbackHostname }:${ procedureCallbackPort }/`);
         });
-        const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`);
-        await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
-            policy: `p, alice, owner, ${ kind_name }, read, allow\np, alice, owner, ${ kind_name }, call_movex, allow`
+        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+        await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
+            policy: `p, alice, owner, ${kind_name}, *, allow`
         });
-        await entityApi.post(`/${ provider.prefix }/${ provider.version }/${ kind_name }/${ entity_metadata.uuid }/procedure/moveX`, { input: 5 },
+        await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/computeGeolocation`, { input: "5" },
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
-    });
-
-    test("Call kind procedure by provider-user should fail", async () => {
-        expect.hasAssertions();
-        try {
-            const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
-            await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
-                policy: `p, alice, owner, ${kind_name}, *, allow`
-            });
-            await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/moveX`, { input: 5 },
-                { headers: { 'Authorization': 'Bearer ' + token } }
-            );
-            throw new Error("Call procedure without permission should fail");
-        } catch (e) {
-            expect(e.response.status).toEqual(403);
-        }
     });
 
     test("Call kind procedure by provider-admin should succeed", async () => {
@@ -491,7 +572,7 @@ describe("Entity API auth tests", () => {
         });
         const { data: s2skey } = await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
-                extension: {
+                userInfo: {
                     provider_prefix: provider.prefix,
                     is_provider_admin: true
                 }
@@ -502,25 +583,38 @@ describe("Entity API auth tests", () => {
         );
     });
 
-    test("Call provider procedure by provider-user should fail", async () => {
-        expect.hasAssertions();
-        try {
-            const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
-            await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
-                policy: `p, alice, owner, ${kind_name}, *, allow`
-            });
-            await entityApi.post(`/${provider.prefix}/${provider.version}/procedure/computeSum`, {
-                input: {
-                    "a": 5,
-                    "b": 5
-                }
-            },
-                { headers: { 'Authorization': 'Bearer ' + token } }
-            );
-            throw new Error("Call procedure without permission should fail");
-        } catch (e) {
-            expect(e.response.status).toEqual(403);
-        }
+    test("Call provider procedure by provider-user should succeed", async () => {
+        const server = http.createServer((req, res) => {
+            if (req.method == 'POST') {
+                let body = '';
+                req.on('data', function (data) {
+                    body += data;
+                });
+                req.on('end', function () {
+                    const post = JSON.parse(body);
+                    const sum = post.input.a + post.input.b;
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'text/plain');
+                    res.end(JSON.stringify(sum));
+                    server.close();
+                });
+            }
+        });
+        server.listen(procedureCallbackPort, procedureCallbackHostname, () => {
+            console.log(`Server running at http://${ procedureCallbackHostname }:${ procedureCallbackPort }/`);
+        });
+        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+        await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
+            policy: `p, alice, owner, ${kind_name}, *, allow`
+        });
+        await entityApi.post(`/${ provider.prefix }/${ provider.version }/procedure/computeSum`, {
+            input: {
+                "a": 5,
+                "b": 5
+            }
+        },
+            { headers: { 'Authorization': 'Bearer ' + token } }
+        );
     });
 
     test("Call provider procedure by provider-admin should succeed", async () => {
@@ -549,7 +643,7 @@ describe("Entity API auth tests", () => {
         });
         const { data: s2skey } = await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
-                extension: {
+                userInfo: {
                     provider_prefix: provider.prefix,
                     is_provider_admin: true
                 }
@@ -574,13 +668,13 @@ describe("Entity API auth tests", () => {
             });
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
-                    extension: {
+                    userInfo: {
                         provider_prefix: provider.prefix + "1",
                         is_provider_admin: true
                     }
                 }
             );
-            await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/moveX`, { input: 5 },
+            await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/computeGeolocation`, { input: "5" },
                 { headers: { 'Authorization': 'Bearer ' + s2skey.key } }
             );
             throw new Error("Call procedure without permission should fail");

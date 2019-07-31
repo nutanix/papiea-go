@@ -101,7 +101,7 @@ describe("Procedures tests", () => {
         } catch (err) {
             const res = err.response;
             expect(res.status).toEqual(400);
-            expect(res.data.errors.length).toEqual(1);
+            expect(res.data.error.errors.length).toEqual(1);
             return;
         }
     });
@@ -118,8 +118,8 @@ describe("Procedures tests", () => {
         } catch (err) {
             const res = err.response;
             expect(res.status).toEqual(400);
-            expect(res.data.errors.length).toEqual(1);
-            expect(res.data.errors[0].includes("undefined")).toBeTruthy();
+            expect(res.data.error.errors.length).toEqual(1);
+            expect(res.data.error.errors[0].message.includes("undefined")).toBeTruthy();
         }
     });
     test("Procedure result validation", async () => {
@@ -150,9 +150,11 @@ describe("Procedures tests", () => {
         } catch (err) {
             const res = err.response;
             expect(res.status).toEqual(400);
-            expect(res.data.errors.length).toEqual(2);
-            expect(res.data.errors[0]).toEqual("x is a required field");
-            expect(res.data.errors[1]).toEqual("y is a required field");
+            expect(res.data.error.errors.length).toEqual(2);
+            expect(res.data.error.message).toEqual("Procedure invocation failed.")
+            expect(res.data.error.code).toEqual(400)
+            expect(res.data.error.errors[0].message).toEqual("x is a required field");
+            expect(res.data.error.errors[1].message).toEqual("y is a required field");
         }
     });
 
