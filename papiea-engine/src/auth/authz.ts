@@ -138,14 +138,14 @@ export class AdminAuthorizer extends Authorizer {
             if (object.owner !== user.owner
                 || object.provider_prefix !== user.provider_prefix
                 || object.userInfo.provider_prefix !== user.provider_prefix
-                || object.userInfo.is_admin) {
+                || object.is_admin) {
                 throw new PermissionDeniedError();
             }
             if (user.is_provider_admin) {
                 return;
             }
-            if (object.userInfo.is_provider_admin
-                || object.userInfo.owner !== user.owner) {
+            if (object.is_provider_admin
+                || object.owner !== user.owner) {
                 throw new PermissionDeniedError();
             }
             return;
