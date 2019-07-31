@@ -2,10 +2,10 @@ import "jest"
 import { writeFileSync, unlinkSync } from "fs";
 import { validate } from "swagger-parser";
 import axios from "axios"
-import { loadYaml, ProviderBuilder } from "./test_data_factory";
-import { Provider_DB } from "../src/databases/provider_db_interface";
+import { loadYaml, ProviderBuilder } from "../test_data_factory";
+import { Provider_DB } from "../../src/databases/provider_db_interface";
 import { Provider, Version, Procedural_Signature, Procedural_Execution_Strategy } from "papiea-core";
-import ApiDocsGenerator from "../src/api_docs/api_docs_generator";
+import ApiDocsGenerator from "../../src/api_docs/api_docs_generator";
 
 declare var process: {
     env: {
@@ -134,8 +134,8 @@ describe("API docs test entity", () => {
         const procedure_id = "computeSumWithValidation";
         const proceduralSignatureForProvider: Procedural_Signature = {
             name: "computeSumWithValidation",
-            argument: loadYaml("./procedure_sum_input.yml"),
-            result: loadYaml("./procedure_sum_output.yml"),
+            argument: loadYaml("./test_data/procedure_sum_input.yml"),
+            result: loadYaml("./test_data/procedure_sum_output.yml"),
             execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
             procedure_callback: "127.0.0.1:9011"
         };

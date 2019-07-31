@@ -31,14 +31,14 @@ export function loadYaml(relativePath: string): any {
 }
 
 export function getLocationDataDescription(): Data_Description {
-    let locationDataDescription = loadYaml("./location_kind_test_data.yml");
+    let locationDataDescription = loadYaml("./test_data/location_kind_test_data.yml");
     let randomizedLocationDataDescription: any = {};
     randomizedLocationDataDescription["Location" + randomString(5)] = locationDataDescription["Location"];
     return randomizedLocationDataDescription;
 }
 
 export function getMetadataDescription(): Data_Description {
-    let MetadataDescription = loadYaml("./metadata_extension.yml");
+    let MetadataDescription = loadYaml("./test_data/metadata_extension.yml");
     return MetadataDescription;
 }
 
@@ -154,7 +154,7 @@ export class ProviderBuilder {
 
     public withOAuth2Description(value?: any) {
         if (value === undefined) {
-            this._oauth2 = loadYaml("./auth.yaml");
+            this._oauth2 = loadYaml("./test_data/auth.yaml");
         } else {
             this._oauth2 = value
         }
@@ -176,8 +176,8 @@ export class ProviderBuilder {
         if (value === undefined) {
             const proceduralSignatureForProvider: Procedural_Signature = {
                 name: "computeSum",
-                argument: loadYaml("./procedure_sum_input.yml"),
-                result: loadYaml("./procedure_sum_output.yml"),
+                argument: loadYaml("./test_data/procedure_sum_input.yml"),
+                result: loadYaml("./test_data/procedure_sum_output.yml"),
                 execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
                 procedure_callback: this._callback
             };
@@ -200,8 +200,8 @@ export class ProviderBuilder {
         if (value === undefined) {
             const geolocationComputeProceduralSignature: Procedural_Signature = {
                 name: "computeGeolocation",
-                argument: loadYaml("./procedure_geolocation_compute_input.yml"),
-                result: loadYaml("./procedure_geolocation_compute_input.yml"),
+                argument: loadYaml("./test_data/procedure_geolocation_compute_input.yml"),
+                result: loadYaml("./test_data/procedure_geolocation_compute_input.yml"),
                 execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
                 procedure_callback: this._callback
             };
@@ -228,8 +228,8 @@ export class ProviderBuilder {
         if (value === undefined) {
             const proceduralSignatureForKind: Procedural_Signature = {
                 name: "moveX",
-                argument: loadYaml("./procedure_move_input.yml"),
-                result: loadYaml("./location_kind_test_data.yml"),
+                argument: loadYaml("./test_data/procedure_move_input.yml"),
+                result: loadYaml("./test_data/location_kind_test_data.yml"),
                 execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
                 procedure_callback: this._callback
             };

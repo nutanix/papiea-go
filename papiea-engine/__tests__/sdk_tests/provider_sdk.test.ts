@@ -3,7 +3,7 @@ import { load } from "js-yaml";
 import { resolve } from "path";
 import { Kind_Builder, ProviderSdk } from "papiea-sdk";
 import { plural } from "pluralize"
-import { loadYaml, OAuth2Server, ProviderBuilder } from "./test_data_factory";
+import { loadYaml, OAuth2Server, ProviderBuilder } from "../test_data_factory";
 import axios from "axios"
 import { readFileSync } from "fs";
 import { Metadata, Procedural_Execution_Strategy, Provider, Spec, Action } from "papiea-core";
@@ -54,7 +54,7 @@ describe("Provider Sdk tests", () => {
         done();
     });
     const provider_version = "0.1.0";
-    const location_yaml = load(readFileSync(resolve(__dirname, "./location_kind_test_data.yml"), "utf-8"));
+    const location_yaml = load(readFileSync(resolve(__dirname, "../test_data/location_kind_test_data.yml"), "utf-8"));
     test("Yaml parses into walkable tree", (done) => {
         expect(location_yaml).not.toBeNull();
         expect(location_yaml.Location).not.toBeNull();
@@ -171,7 +171,7 @@ describe("Provider Sdk tests", () => {
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
-        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./procedure_move_input.yml"), loadYaml("./location_kind_test_data.yml"), async (ctx, entity, input) => {
+        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./test_data/procedure_move_input.yml"), loadYaml("./test_data/location_kind_test_data.yml"), async (ctx, entity, input) => {
             entity.spec.x += input;
             const res = await axios.put(ctx.url_for(entity), {
                 spec: entity.spec,
@@ -192,7 +192,7 @@ describe("Provider Sdk tests", () => {
             const location = sdk.new_kind(location_yaml);
             sdk.version(provider_version);
             sdk.prefix("location_provider");
-            location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./procedure_move_input.yml"), loadYaml("./location_kind_test_data.yml"), async (ctx, entity, input) => {
+            location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./test_data/procedure_move_input.yml"), loadYaml("./test_data/location_kind_test_data.yml"), async (ctx, entity, input) => {
                 entity.spec.x += input;
                 const res = await axios.put(ctx.url_for(entity), {
                     spec: entity.spec,
@@ -223,7 +223,7 @@ describe("Provider Sdk tests", () => {
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
-        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./procedure_move_input.yml"), loadYaml("./location_kind_test_data.yml"), async (ctx, entity, input) => {
+        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./test_data/procedure_move_input.yml"), loadYaml("./test_data/location_kind_test_data.yml"), async (ctx, entity, input) => {
 
             throw new Error("Malformed provider")
 
@@ -253,7 +253,7 @@ describe("Provider Sdk tests", () => {
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         try {
-            location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./procedure_move_input.yml"), loadYaml("./location_kind_test_data.yml"), async (ctx, entity, input) => {
+            location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./test_data/procedure_move_input.yml"), loadYaml("./test_data/location_kind_test_data.yml"), async (ctx, entity, input) => {
                 entity.spec.x += input;
                 const res = await axios.put(ctx.url_for(entity), {
                     spec: entity.spec,
@@ -271,7 +271,7 @@ describe("Provider Sdk tests", () => {
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
-        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./procedure_move_input.yml"), loadYaml("./location_kind_test_data.yml"), async (ctx, entity, input) => {
+        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./test_data/procedure_move_input.yml"), loadYaml("./test_data/location_kind_test_data.yml"), async (ctx, entity, input) => {
             entity.spec.x += input;
             const res = await axios.put(ctx.url_for(entity), {
                 spec: entity.spec,
@@ -282,8 +282,8 @@ describe("Provider Sdk tests", () => {
         location.kind_procedure(
             "computeGeolocation",
             {}, Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_geolocation_compute_input.yml"),
-            loadYaml("./procedure_geolocation_compute_input.yml"), async (ctx, input) => {
+            loadYaml("./test_data/procedure_geolocation_compute_input.yml"),
+            loadYaml("./test_data/procedure_geolocation_compute_input.yml"), async (ctx, input) => {
                 let cluster_location = "us.west.";
                 cluster_location += input;
                 return cluster_location
@@ -303,7 +303,7 @@ describe("Provider Sdk tests", () => {
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
-        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./procedure_move_input.yml"), loadYaml("./location_kind_test_data.yml"), async (ctx, entity, input) => {
+        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./test_data/procedure_move_input.yml"), loadYaml("./test_data/location_kind_test_data.yml"), async (ctx, entity, input) => {
             entity.spec.x += input;
             const res = await axios.put(ctx.url_for(entity), {
                 spec: entity.spec,
@@ -314,8 +314,8 @@ describe("Provider Sdk tests", () => {
         location.kind_procedure(
             "computeGeolocation",
             {}, Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_geolocation_compute_input.yml"),
-            loadYaml("./procedure_geolocation_compute_input.yml"), async (ctx, input) => {
+            loadYaml("./test_data/procedure_geolocation_compute_input.yml"),
+            loadYaml("./test_data/procedure_geolocation_compute_input.yml"), async (ctx, input) => {
                 let cluster_location = "us.west.";
                 cluster_location += input;
                 return cluster_location
@@ -336,7 +336,7 @@ describe("Provider Sdk tests", () => {
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
-        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./procedure_move_input.yml"), loadYaml("./location_kind_test_data.yml"), async (ctx, entity, input) => {
+        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./test_data/procedure_move_input.yml"), loadYaml("./test_data/location_kind_test_data.yml"), async (ctx, entity, input) => {
             entity.spec.x += input;
             const res = await axios.put(ctx.url_for(entity), {
                 spec: entity.spec,
@@ -347,8 +347,8 @@ describe("Provider Sdk tests", () => {
         sdk.provider_procedure("computeSum",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
-            loadYaml("./procedure_sum_output.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_output.yml"),
             async (ctx, input) => {
                 return input.a + input.b;
             }
@@ -366,7 +366,7 @@ describe("Provider Sdk tests", () => {
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
-        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./procedure_move_input.yml"), loadYaml("./location_kind_test_data.yml"), async (ctx, entity, input) => {
+        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./test_data/procedure_move_input.yml"), loadYaml("./test_data/location_kind_test_data.yml"), async (ctx, entity, input) => {
             entity.spec.x += input;
             const res = await axios.put(ctx.url_for(entity), {
                 spec: entity.spec,
@@ -377,8 +377,8 @@ describe("Provider Sdk tests", () => {
         sdk.provider_procedure("computeSum",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
-            loadYaml("./procedure_sum_output.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_output.yml"),
             async (ctx, input) => {
                 return input.a + input.b;
             }
@@ -398,7 +398,7 @@ describe("Provider Sdk tests", () => {
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
-        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./procedure_move_input.yml"), loadYaml("./location_kind_test_data.yml"), async (ctx, entity, input) => {
+        location.entity_procedure("moveX", {}, Procedural_Execution_Strategy.Halt_Intentful, loadYaml("./test_data/procedure_move_input.yml"), loadYaml("./test_data/location_kind_test_data.yml"), async (ctx, entity, input) => {
             entity.spec.x += input;
             const res = await axios.put(ctx.url_for(entity), {
                 spec: entity.spec,
@@ -409,8 +409,8 @@ describe("Provider Sdk tests", () => {
         sdk.provider_procedure("computeSum",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
-            loadYaml("./procedure_sum_output.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_output.yml"),
             async (ctx, input) => {
                 return "Totally not a number should fail provider-level validation";
             }
@@ -481,8 +481,8 @@ describe("Provider Sdk tests", () => {
         sdk.provider_procedure("computeSumThrowsError",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
-            loadYaml("./procedure_sum_output.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_output.yml"),
             async (ctx, input) => {
                 throw new Error("My custom error")
             }
@@ -502,11 +502,11 @@ describe("Provider Sdk tests", () => {
 describe("SDK security tests", () => {
     const oauth2ServerHost = '127.0.0.1';
     const oauth2ServerPort = 9002;
-    const pathToModel: string = resolve(__dirname, "../src/auth/provider_model_example.txt");
+    const pathToModel: string = resolve(__dirname, "../../src/auth/provider_model_example.txt");
     const modelText: string = readFileSync(pathToModel).toString();
-    const oauth = loadYaml("./auth.yaml");
+    const oauth = loadYaml("./test_data/auth.yaml");
     const provider_version = "0.1.0";
-    const location_yaml = load(readFileSync(resolve(__dirname, "./location_kind_test_data.yml"), "utf-8"));
+    const location_yaml = load(readFileSync(resolve(__dirname, "../test_data/location_kind_test_data.yml"), "utf-8"));
     const tenant_uuid = uuid();
 
     const provider: Provider = new ProviderBuilder()
@@ -556,7 +556,7 @@ describe("SDK security tests", () => {
         sdk.provider_procedure("computeWithPermissionCheck",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([[Action.Read, { uuid: entity_metadata.uuid, kind: kind_name }]], provider.prefix, provider.version);
@@ -589,7 +589,7 @@ describe("SDK security tests", () => {
         sdk.provider_procedure("computeWithPermissionCheck",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([[Action.Read, { uuid: entity_metadata.uuid, kind: kind_name }]], provider.prefix, provider.version);
@@ -622,7 +622,7 @@ describe("SDK security tests", () => {
         sdk.provider_procedure("computeWithPermissionCheck",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]], provider.prefix, provider.version);
@@ -655,7 +655,7 @@ describe("SDK security tests", () => {
         sdk.provider_procedure("computeWithPermissionCheck",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]], provider.prefix, provider.version);
@@ -688,7 +688,7 @@ describe("SDK security tests", () => {
         sdk.provider_procedure("computeWithPermissionCheck",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]], provider.prefix, provider.version);
@@ -721,7 +721,7 @@ describe("SDK security tests", () => {
         sdk.provider_procedure("computeWithPermissionCheck",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([
@@ -757,7 +757,7 @@ describe("SDK security tests", () => {
         sdk.provider_procedure("computeWithPermissionCheck",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([
@@ -793,7 +793,7 @@ describe("SDK security tests", () => {
         sdk.provider_procedure("computeWithPermissionCheck",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([
@@ -829,7 +829,7 @@ describe("SDK security tests", () => {
         sdk.provider_procedure("computeWithPermissionCheck",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([
