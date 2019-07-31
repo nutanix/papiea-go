@@ -1,7 +1,7 @@
 import "jest"
-import { Validator } from "../src/validator";
-import { getLocationDataDescription, ValidationBuilder } from "./test_data_factory";
-import { Maybe } from "../src/utils/utils";
+import { Validator } from "../../src/validator";
+import { getLocationDataDescription, ValidationBuilder } from "../test_data_factory";
+import { Maybe } from "../../src/utils/utils";
 
 describe("Validation tests", () => {
 

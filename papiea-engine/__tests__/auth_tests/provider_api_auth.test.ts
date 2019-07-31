@@ -1,6 +1,6 @@
 import "jest";
 import axios from "axios";
-import { ProviderBuilder } from "./test_data_factory";
+import { ProviderBuilder } from "../test_data_factory";
 import uuid = require("uuid");
 import { Metadata, Spec, Provider } from "papiea-core";
 
@@ -44,6 +44,7 @@ describe("Provider API auth tests", () => {
     const tenant_uuid = uuid();
 
     test("Admin should create s2s key for provider-admin", async () => {
+        jest.setTimeout(5000);
         expect.hasAssertions();
         const { data: s2skey } = await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
@@ -61,6 +62,7 @@ describe("Provider API auth tests", () => {
     });
 
     test("Admin should create s2s key for provider-admin with key provided", async () => {
+        jest.setTimeout(5000);
         expect.hasAssertions();
         const key = uuid();
         const { data: s2skey } = await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
