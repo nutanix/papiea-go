@@ -130,6 +130,8 @@ export class Provider_API_Impl implements Provider_API {
             key: "",
             created_at: new Date(),
             deleted_at: undefined,
+            is_admin: user.is_admin,
+            is_provider_admin: user.is_provider_admin,
             userInfo: userInfo ? userInfo : user
         };
         s2skey.key = key ? key : createHash(s2skey);
