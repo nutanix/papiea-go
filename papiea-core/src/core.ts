@@ -204,7 +204,7 @@ export interface S2S_Key {
     // Additional fields
     created_at: Date
     deleted_at?: Date
-    userInfo: UserInfo
+    user_info: UserInfo
 }
 
 

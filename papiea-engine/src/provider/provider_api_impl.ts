@@ -130,7 +130,7 @@ export class Provider_API_Impl implements Provider_API {
             key: "",
             created_at: new Date(),
             deleted_at: undefined,
-            userInfo: userInfo ? userInfo : user
+            user_info: userInfo ? userInfo : user
         };
         s2skey.key = key ? key : createHash(s2skey);
         await this.authorizer.checkPermission(user, s2skey, Action.CreateS2SKey);

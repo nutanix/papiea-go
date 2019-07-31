@@ -29,8 +29,8 @@ class SecurityApiImpl implements SecurityApi {
     public async user_info(): Promise<UserInfo> {
         try {
             const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`;
-            const {data: userInfo } = await this.provider.provider_api_axios.get(`${url}/auth/user_info`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
-            return userInfo
+            const {data: user_info } = await this.provider.provider_api_axios.get(`${url}/auth/user_info`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
+            return user_info
         } catch (e) {
             console.log("error getting user_info", e);
             throw new Error("Cannot get user info" + e.message)
