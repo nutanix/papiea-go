@@ -502,11 +502,11 @@ describe("Provider Sdk tests", () => {
 describe("SDK security tests", () => {
     const oauth2ServerHost = '127.0.0.1';
     const oauth2ServerPort = 9002;
-    const pathToModel: string = resolve(__dirname, "../src/auth/provider_model_example.txt");
+    const pathToModel: string = resolve(__dirname, "../../src/auth/provider_model_example.txt");
     const modelText: string = readFileSync(pathToModel).toString();
-    const oauth = loadYaml("./auth.yaml");
+    const oauth = loadYaml("./test_data/auth.yaml");
     const provider_version = "0.1.0";
-    const location_yaml = load(readFileSync(resolve(__dirname, "./location_kind_test_data.yml"), "utf-8"));
+    const location_yaml = load(readFileSync(resolve(__dirname, "../test_data/location_kind_test_data.yml"), "utf-8"));
     const tenant_uuid = uuid();
 
     const provider: Provider = new ProviderBuilder()
@@ -556,7 +556,7 @@ describe("SDK security tests", () => {
         sdk.provider_procedure("computeWithPermissionCheck",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([[Action.Read, { uuid: entity_metadata.uuid, kind: kind_name }]], provider.prefix, provider.version);
@@ -589,7 +589,7 @@ describe("SDK security tests", () => {
         sdk.provider_procedure("computeWithPermissionCheck",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([[Action.Read, { uuid: entity_metadata.uuid, kind: kind_name }]], provider.prefix, provider.version);
@@ -622,7 +622,7 @@ describe("SDK security tests", () => {
         sdk.provider_procedure("computeWithPermissionCheck",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]], provider.prefix, provider.version);
@@ -655,7 +655,7 @@ describe("SDK security tests", () => {
         sdk.provider_procedure("computeWithPermissionCheck",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]], provider.prefix, provider.version);
@@ -688,7 +688,7 @@ describe("SDK security tests", () => {
         sdk.provider_procedure("computeWithPermissionCheck",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]], provider.prefix, provider.version);
@@ -721,7 +721,7 @@ describe("SDK security tests", () => {
         sdk.provider_procedure("computeWithPermissionCheck",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([
@@ -757,7 +757,7 @@ describe("SDK security tests", () => {
         sdk.provider_procedure("computeWithPermissionCheck",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([
@@ -793,7 +793,7 @@ describe("SDK security tests", () => {
         sdk.provider_procedure("computeWithPermissionCheck",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([
@@ -829,7 +829,7 @@ describe("SDK security tests", () => {
         sdk.provider_procedure("computeWithPermissionCheck",
             {},
             Procedural_Execution_Strategy.Halt_Intentful,
-            loadYaml("./procedure_sum_input.yml"),
+            loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([

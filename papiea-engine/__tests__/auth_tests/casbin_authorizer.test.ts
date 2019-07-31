@@ -3,8 +3,8 @@ import { UserAuthInfo } from "../../src/auth/authn";
 import { CasbinAuthorizer } from "../../src/auth/casbin";
 import { resolve } from "path";
 import { readFileSync } from "fs";
-import { PermissionDeniedError } from "../src/errors/permission_error";
 import { Action } from "papiea-core";
+import { PermissionDeniedError } from "../../src/errors/permission_error";
 
 
 describe("Casbin authorizer tests", () => {

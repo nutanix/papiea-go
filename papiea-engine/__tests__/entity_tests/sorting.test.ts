@@ -1,8 +1,10 @@
 import { getLocationDataDescription } from "../test_data_factory";
 import axios from "axios";
 import { UserAuthInfo } from "../../src/auth/authn";
-import { Action, Authorizer } from "../../src/auth/authz";
+import { Authorizer } from "../../src/auth/authz";
 import { ProviderSdk } from "papiea-sdk";
+import { Action } from "papiea-core";
+
 
 declare var process: {
     env: {

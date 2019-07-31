@@ -114,7 +114,7 @@ describe("Pagination tests", () => {
                 }
             });
         } catch (e) {
-            expect(e.response.data.errors[0]).toBe("Limit should not be less or equal to zero");
+            expect(e.response.data.error.errors[0].message).toBe("Limit should not be less or equal to zero");
         }
     });
 
@@ -128,7 +128,7 @@ describe("Pagination tests", () => {
                 }
             });
         } catch (e) {
-            expect(e.response.data.errors[0]).toBe("Offset should not be less or equal to zero");
+            expect(e.response.data.error.errors[0].message).toBe("Offset should not be less or equal to zero");
         }
     });
 
@@ -142,7 +142,7 @@ describe("Pagination tests", () => {
                 }
             });
         } catch (e) {
-            expect(e.response.data.errors[0]).toBe("Offset should not be less or equal to zero");
+            expect(e.response.data.error.errors[0].message).toBe("Offset should not be less or equal to zero");
         }
     });
 
@@ -156,7 +156,7 @@ describe("Pagination tests", () => {
                 }
             });
         } catch (e) {
-            expect(e.response.data.errors[0]).toBe("Limit should not be less or equal to zero");
+            expect(e.response.data.error.errors[0].message).toBe("Limit should not be less or equal to zero");
         }
     });
 
