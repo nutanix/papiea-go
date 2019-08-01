@@ -14,5 +14,6 @@ services:
                         - ADMIN_S2S_KEY=${PAPIEA_ADMIN_S2S_KEY}
                         - PAPIEA_PUBLIC_ADDR=${PAPIEA_PUBLIC_ADDR}
                         - HOT_RELOAD=${HOT_RELOAD:-false}
+                        - LOGGING_LEVEL=${LOGGING_LEVEL:info}
         mongo:
                 image: mongo:4.1

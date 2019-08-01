@@ -5,8 +5,17 @@ import { NextFunction, Request, Response } from "express";
 
 let logger: winston.Logger;
 
-export async function createLogger(logLevel: string): Promise<void> {
-    logger = winston.createLogger({
+export async function createDefaultLogger(logLevel: string): Promise<void> {
+    if (!logger) {
+        logger = await createLogger(logLevel);
+    } else {
+        logger.warn("Logger already created");
+        throw new Error("Logger already created");
+    }
+}
+
+export async function createLogger(logLevel: string): Promise<winston.Logger> {
+    return winston.createLogger({
         level: logLevel,
         exitOnError: false,
         format: winston.format.json(),
@@ -36,9 +45,9 @@ export async function loggingMiddleware(req: Request, res: Response, next: NextF
     next();
 }
 
-export async function getDefaultLogger(logLevel: string): Promise<winston.Logger> {
+export function getDefaultLogger(): winston.Logger {
     if (!logger) {
-        await createLogger(logLevel);
-    }
+        throw new Error("Logger has not been created. Please, use createDefaultLogger");
+    }  
     return logger;
 }
