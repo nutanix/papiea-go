@@ -1,6 +1,6 @@
 import * as winston from 'winston';
 import { resolve } from "path";
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Request } from "express";
 
 
 let logger: winston.Logger;
