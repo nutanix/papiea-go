@@ -14,13 +14,15 @@ export async function createDefaultLogger(logLevel: string): Promise<void> {
     }
 }
 
-export async function createLogger(logLevel: string): Promise<winston.Logger> {
+export async function createLogger(logLevel: string, logFile?: string): Promise<winston.Logger> {
     return winston.createLogger({
         level: logLevel,
         exitOnError: false,
         format: winston.format.json(),
         transports: [
-            new winston.transports.File({ filename: resolve(__dirname, `./logs/papiea_${logLevel}.log`) }),
+            new winston.transports.File({ filename: logFile ?
+                resolve(__dirname, `./logs/${logFile}`) :
+                resolve(__dirname, `./logs/papiea_${logLevel}.log`) }),
             new winston.transports.Console()
         ],
     });
