@@ -27,7 +27,15 @@ export async function createLogger(logLevel: string): Promise<winston.Logger> {
 }
 
 
-export async function loggingMiddleware(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function loggingMiddleware(req: Request, res: any, next: NextFunction): Promise<void> {
+    let end = res.end;
+    (<any>res).end = (chunk: any, encoding?: string) => {
+        res.end = end;
+        res.end(chunk, encoding);
+        if (chunk) {
+            res.body = chunk && chunk.toString();
+        }
+    };
     res.on("finish", () => {
         const logmsg: { [key: string]: any }  = {
             'Request IP': req.ip,
@@ -35,6 +43,7 @@ export async function loggingMiddleware(req: Request, res: Response, next: NextF
             'URL': req.originalUrl,
             'Headers': req.headers,
             'Status code': res.statusCode,
+            'Response body': res.body,
             'Time': new Date(),
         };
         if (req.method !== "GET") {
