@@ -6,13 +6,13 @@ import { Provider_API_Impl } from "./provider/provider_api_impl";
 import { MongoConnection } from "./databases/mongo";
 import { createEntityAPIRouter } from "./entity/entity_routes";
 import { Entity_API_Impl} from "./entity/entity_api_impl";
-import { Validator } from "./validator";
 import { createAuthnRouter } from "./auth/authn";
 import { createOAuth2Router } from "./auth/oauth2";
 import { Authorizer, AdminAuthorizer, PerProviderAuthorizer} from "./auth/authz";
 import { ProviderCasbinAuthorizerFactory } from "./auth/casbin";
-import morgan = require("morgan");
 import { PapieaErrorImpl } from "./errors/papiea_error_impl";
+import { loggingMiddleware } from "./logger";
+
 
 declare var process: {
     env: {
@@ -23,7 +23,8 @@ declare var process: {
         PAPIEA_PUBLIC_ADDR: string,
         DEBUG_LEVEL: string,
         ADMIN_S2S_KEY: string,
-        DISALLOW_EXTRA_PROPERTIES: string
+        DISALLOW_EXTRA_PROPERTIES: string,
+        LOGGING_LEVEL: string,
     },
     title: string;
 };
@@ -36,11 +37,13 @@ const mongoHost = process.env.MONGO_HOST || 'mongo';
 const mongoPort = process.env.MONGO_PORT || '27017';
 const adminKey = process.env.ADMIN_S2S_KEY || '';
 const disallowExtraProps = process.env.DISALLOW_EXTRA_PROPERTIES !== "false";
+// const loggingLevel = process.env.LOGGING_LEVEL || 'info';
 
 async function setUpApplication(): Promise<express.Express> {
+    // const defaultLogger = await getDefaultLogger(loggingLevel);
     const app = express();
     app.use(express.json());
-    app.use(morgan(debugLevel));
+    app.use(loggingMiddleware);
     const mongoConnection: MongoConnection = new MongoConnection(`mongodb://${mongoHost}:${mongoPort}`, process.env.MONGO_DB || 'papiea');
     await mongoConnection.connect();
     const providerDb = await mongoConnection.get_provider_db();
