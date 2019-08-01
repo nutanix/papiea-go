@@ -13,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.18.0",
+    "axios": "^0.18.1",
     "express": "^4.17.0",
     "express-async-handler": "^1.1.4",
     "papiea-core": "file:../papiea-core",
