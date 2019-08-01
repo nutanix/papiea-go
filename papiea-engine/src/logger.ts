@@ -35,7 +35,8 @@ export async function loggingMiddleware(req: Request, res: any, next: NextFuncti
         res.end = end;
         res.end(chunk, encoding);
         if (chunk) {
-            res.body = chunk && chunk.toString();
+            const stringChunk = chunk && chunk.toString();
+            res.body = (safeJSONParse(chunk) || stringChunk);
         }
     };
     res.on("finish", () => {
@@ -54,6 +55,14 @@ export async function loggingMiddleware(req: Request, res: any, next: NextFuncti
         logger.info(logmsg);
     });
     next();
+}
+
+function safeJSONParse(chunk: string) {
+    try {
+        return JSON.parse(chunk);
+    } catch (e) {
+        return undefined;
+    }
 }
 
 export function getDefaultLogger(): winston.Logger {
