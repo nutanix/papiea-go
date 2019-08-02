@@ -56,5 +56,5 @@ jobs:
           destination: coverage
       
       - store_artifacts:
-          path: src/logs
+          path: logs
           destination: logs
