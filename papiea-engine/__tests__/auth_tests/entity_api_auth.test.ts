@@ -321,8 +321,7 @@ describe("Entity API auth tests", () => {
         );
         const { data: s2skey } = await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
-                owner: userInfo.owner,
-                provider_prefix: userInfo.provider_prefix
+                owner: userInfo.owner
             },
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
@@ -365,8 +364,7 @@ describe("Entity API auth tests", () => {
         );
         const { data: s2skey } = await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
-                owner: userInfo.owner,
-                provider_prefix: userInfo.provider_prefix
+                owner: userInfo.owner
             },
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
@@ -407,8 +405,7 @@ describe("Entity API auth tests", () => {
         );
         const { data: s2skey } = await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
-                owner: userInfo.owner,
-                provider_prefix: userInfo.provider_prefix
+                owner: userInfo.owner
             },
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
@@ -428,8 +425,7 @@ describe("Entity API auth tests", () => {
         try {
             await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
                 {
-                    owner: "another_owner",
-                    provider_prefix: userInfo.provider_prefix
+                    owner: "another_owner"
                 },
                 { headers: { 'Authorization': 'Bearer ' + token } }
             );
@@ -561,7 +557,6 @@ describe("Entity API auth tests", () => {
         const { data: s2skey } = await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
                 userInfo: {
-                    provider_prefix: provider.prefix,
                     is_provider_admin: true
                 }
             }
@@ -632,7 +627,6 @@ describe("Entity API auth tests", () => {
         const { data: s2skey } = await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
                 userInfo: {
-                    provider_prefix: provider.prefix,
                     is_provider_admin: true
                 }
             }
@@ -654,10 +648,9 @@ describe("Entity API auth tests", () => {
             await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
                 policy: `p, alice, owner, ${kind_name}, *, allow`
             });
-            const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
+            const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix + "1"}/${provider.version}/s2skey`,
                 {
                     userInfo: {
-                        provider_prefix: provider.prefix + "1",
                         is_provider_admin: true
                     }
                 }
