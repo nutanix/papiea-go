@@ -211,7 +211,6 @@ describe("Entity API auth tests", () => {
         );
         expect(data.owner).toEqual("alice");
         expect(data.tenant).toEqual(tenant_uuid);
-        expect(data.provider_prefix).toEqual(provider.prefix);
     });
 
     test("Login from SPA", async () => {
@@ -420,8 +419,8 @@ describe("Entity API auth tests", () => {
         expect(headers['authorization']).toBe(`Bearer ${s2skey.key}`);
     });
 
-    test("Create s2s key with another owner or provider should fail", async () => {
-        expect.assertions(2 + expectAssertionsFromOauth2Server);
+    test("Create s2s key with another owner should fail", async () => {
+        expect.assertions(1 + expectAssertionsFromOauth2Server);
         const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`);
         const { data: userInfo } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
             { headers: { 'Authorization': 'Bearer ' + token } }
@@ -431,17 +430,6 @@ describe("Entity API auth tests", () => {
                 {
                     owner: "another_owner",
                     provider_prefix: userInfo.provider_prefix
-                },
-                { headers: { 'Authorization': 'Bearer ' + token } }
-            );
-        } catch (e) {
-            expect(e.response.status).toEqual(403);
-        }
-        try {
-            await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
-                {
-                    owner: userInfo.owner,
-                    provider_prefix: "another_provider"
                 },
                 { headers: { 'Authorization': 'Bearer ' + token } }
             );

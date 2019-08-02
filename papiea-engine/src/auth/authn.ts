@@ -29,8 +29,6 @@ class IdpAuthenticationStrategy implements AuthenticationStrategy {
             }
             const provider: Provider = await this.providerDb.get_provider(this.provider_prefix, this.provider_version);
             const userInfo = getUserInfoFromToken(JSON.parse(atob(token)), provider);
-            userInfo.provider_prefix = this.provider_prefix;
-            userInfo.provider_version = this.provider_version;
             delete userInfo.is_admin;
             return userInfo;
         } catch (e) {
@@ -157,7 +155,7 @@ export function createAuthnRouter(adminKey: string, s2skeyDb: S2S_Key_DB, provid
             if (provider_prefix
                 // TODO: probably need to change /provider/update_status to /provider/:prefix/:version/update_status
                 && provider_prefix !== "update_status"
-                && userInfo.provider_prefix !== provider_prefix
+                && (userInfo.provider_prefix !== undefined && userInfo.provider_prefix !== provider_prefix)
                 && !userInfo.is_admin) {
                 throw new UnauthorizedError();
             }

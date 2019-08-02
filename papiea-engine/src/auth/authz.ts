@@ -111,6 +111,7 @@ export class PerProviderAuthorizer extends Authorizer {
         }
         if (user.is_provider_admin) {
             const providerPrefix = await this.getProviderPrefixByObject(user, object);
+            // For provider-admin provider_prefix must be set
             if (user.provider_prefix === providerPrefix) {
                 return;
             } else {
@@ -133,12 +134,14 @@ export class AdminAuthorizer extends Authorizer {
             return;
         }
         if (action === Action.CreateS2SKey) {
-            // object.extension contains UserInfo which will be used when s2s key is passed
+            // object.userInfo contains UserInfo which will be used when s2s key is passed
             // check who can talk on behalf of whom
-            if (object.owner !== user.owner
-                || object.provider_prefix !== user.provider_prefix
-                || object.userInfo.provider_prefix !== user.provider_prefix
-                || object.userInfo.is_admin) {
+            if (object.owner !== user.owner || object.userInfo.is_admin) {
+                throw new PermissionDeniedError();
+            }
+            if (user.provider_prefix !== undefined
+                && (object.provider_prefix !== user.provider_prefix
+                    || object.userInfo.provider_prefix !== user.provider_prefix)) {
                 throw new PermissionDeniedError();
             }
             if (user.is_provider_admin) {
@@ -151,7 +154,8 @@ export class AdminAuthorizer extends Authorizer {
             return;
         }
         if (action === Action.ReadS2SKey || action === Action.InactivateS2SKey) {
-            if (object.owner !== user.owner || object.provider_prefix !== user.provider_prefix) {
+            if (object.owner !== user.owner
+                || (user.provider_prefix !== undefined && object.provider_prefix !== user.provider_prefix)) {
                 throw new PermissionDeniedError();
             } else {
                 return;
