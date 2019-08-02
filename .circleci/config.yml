@@ -38,7 +38,7 @@ jobs:
             docker-compose exec papiea-engine npm run test-ci
             docker cp papiea-engine:/code/papiea-engine/reports . || echo .
             docker cp papiea-engine:/code/papiea-engine/coverage . || echo .
-            docker cp papiea-engine:/code/papiea-engine/logs . || echo .
+            docker cp papiea-engine:/code/papiea-engine/src/logs . || echo .
 
       - run: ./papiea-engine/publish-images.py
 
@@ -56,5 +56,5 @@ jobs:
           destination: coverage
       
       - store_artifacts:
-          path: logs
+          path: src/logs
           destination: logs
