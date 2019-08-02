@@ -10,6 +10,8 @@ import { EventEmitter } from "events";
 import { Entity_Reference, Version, Status, Provider, Kind, S2S_Key, Action } from "papiea-core";
 import { Maybe } from "../utils/utils";
 import uuid = require("uuid");
+import { getDefaultLogger } from "./../logger";
+import * as winston from "winston";
 
 export class Provider_API_Impl implements Provider_API {
     private providerDb: Provider_DB;
@@ -17,13 +19,15 @@ export class Provider_API_Impl implements Provider_API {
     private s2skeyDb: S2S_Key_DB;
     private authorizer: Authorizer;
     private eventEmitter: EventEmitter;
+    private logger: winston.Logger;
 
-    constructor(providerDb: Provider_DB, statusDb: Status_DB, s2skeyDb: S2S_Key_DB, authorizer: Authorizer) {
+    constructor(providerDb: Provider_DB, statusDb: Status_DB, s2skeyDb: S2S_Key_DB, authorizer: Authorizer, logger?: winston.Logger) {
         this.providerDb = providerDb;
         this.statusDb = statusDb;
         this.s2skeyDb = s2skeyDb;
         this.authorizer = authorizer;
         this.eventEmitter = new EventEmitter();
+        this.logger = logger ? logger : getDefaultLogger();
     }
 
     async register_provider(user: UserAuthInfo, provider: Provider): Promise<void> {

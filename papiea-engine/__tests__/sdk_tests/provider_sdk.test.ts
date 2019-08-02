@@ -8,6 +8,9 @@ import axios from "axios"
 import { readFileSync } from "fs";
 import { Metadata, Procedural_Execution_Strategy, Provider, Spec, Action } from "papiea-core";
 import uuid = require("uuid");
+import { createLogger } from "../../src/logger";
+import * as winston from "winston";
+
 
 declare var process: {
     env: {
@@ -48,6 +51,10 @@ const entityApi = axios.create({
 });
 
 describe("Provider Sdk tests", () => {
+
+    beforeAll(async () => {
+    });
+
     test("Pluralize works for 'test' & 'provider' words used", (done) => {
         expect(plural("test")).toBe("tests");
         expect(plural("provider")).toBe("providers");
@@ -518,11 +525,13 @@ describe("SDK security tests", () => {
     const kind_name = provider.kinds[0].name;
     let entity_metadata: Metadata, entity_spec: Spec;
     const oauth2Server = OAuth2Server.createServer();
+    let providerSDKTestLogger: winston.Logger;
 
     beforeAll(async () => {
         await providerApiAdmin.post('/', provider);
+        providerSDKTestLogger = await createLogger("info", "provider_sdk_test.log");
         oauth2Server.listen(oauth2ServerPort, oauth2ServerHost, () => {
-            console.log(`Server running at http://${oauth2ServerHost}:${oauth2ServerPort}/`);
+            providerSDKTestLogger.info(`Server running at http://${oauth2ServerHost}:${oauth2ServerPort}/`);
         });
         const { data: { metadata, spec } } = await entityApi.post(`/${ provider.prefix }/${ provider.version }/${ kind_name }`, {
             metadata: {

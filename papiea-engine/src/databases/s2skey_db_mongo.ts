@@ -2,12 +2,16 @@ import { S2S_Key_DB } from "./s2skey_db_interface";
 import { S2S_Key } from "papiea-core";
 import { Collection, Db } from "mongodb";
 import { datestringToFilter } from "./utils/date";
+import { getDefaultLogger } from "./../logger";
+import * as winston from "winston";
 
 export class S2S_Key_DB_Mongo implements S2S_Key_DB {
     collection: Collection;
+    logger: winston.Logger;
 
-    constructor(db: Db) {
+    constructor(db: Db, logger?: winston.Logger) {
         this.collection = db.collection("s2skey");
+        this.logger = logger ? logger : getDefaultLogger();
     }
 
     async init(): Promise<void> {

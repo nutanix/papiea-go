@@ -4,12 +4,16 @@ import { datestringToFilter } from "./utils/date";
 import { encode } from "mongo-dot-notation-tool"
 import { Entity_Reference, Status, Metadata, Entity } from "papiea-core";
 import { SortParams } from "../entity/entity_api_impl";
+import { getDefaultLogger } from "./../logger";
+import * as winston from "winston";
 
 export class Status_DB_Mongo implements Status_DB {
     collection: Collection;
+    logger: winston.Logger
 
-    constructor(db: Db) {
+    constructor(db: Db, logger?: winston.Logger) {
         this.collection = db.collection("entity");
+        this.logger = logger ? logger : getDefaultLogger();
     }
 
     async init(): Promise<void> {

@@ -5,13 +5,14 @@ import { NextFunction, Request } from "express";
 
 let logger: winston.Logger;
 
-export async function createDefaultLogger(logLevel: string): Promise<void> {
+export async function createDefaultLogger(logLevel: string): Promise<winston.Logger> {
     if (!logger) {
         logger = await createLogger(logLevel);
     } else {
         logger.warn("Logger already created");
         throw new Error("Logger already created");
     }
+    return logger;
 }
 
 export async function createLogger(logLevel: string, logFile?: string): Promise<winston.Logger> {

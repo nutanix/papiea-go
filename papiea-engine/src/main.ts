@@ -39,7 +39,7 @@ const disallowExtraProps = process.env.DISALLOW_EXTRA_PROPERTIES !== "false";
 const loggingLevel = process.env.LOGGING_LEVEL || 'info';
 
 async function setUpApplication(): Promise<express.Express> {
-    await createDefaultLogger(loggingLevel);
+    const logger = await createDefaultLogger(loggingLevel);
     const app = express();
     app.use(express.json());
     app.use(loggingMiddleware);

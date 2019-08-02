@@ -3,7 +3,7 @@ import { Spec_DB_Mongo } from "./spec_db_mongo";
 import { Status_DB_Mongo } from "./status_db_mongo";
 import { Provider_DB_Mongo } from "./provider_db_mongo";
 import { S2S_Key_DB_Mongo } from "./s2skey_db_mongo";
-
+import * as winston from "winston";
 export class MongoConnection {
     url: string;
     dbName: string;
@@ -38,42 +38,42 @@ export class MongoConnection {
         return this.client.close(true);
     }
 
-    async get_spec_db(): Promise<Spec_DB_Mongo> {
+    async get_spec_db(logger?: winston.Logger): Promise<Spec_DB_Mongo> {
         if (this.specDb !== undefined)
             return this.specDb;
         if (this.db === undefined)
             throw new Error("Not connected");
-        this.specDb = new Spec_DB_Mongo(this.db);
+        this.specDb = new Spec_DB_Mongo(this.db, logger);
         await this.specDb.init();
         return this.specDb;
     }
 
-    async get_provider_db(): Promise<Provider_DB_Mongo> {
+    async get_provider_db(logger?: winston.Logger): Promise<Provider_DB_Mongo> {
         if (this.providerDb !== undefined)
             return this.providerDb;
         if (this.db === undefined)
             throw new Error("Not connected");
-        this.providerDb = new Provider_DB_Mongo(this.db);
+        this.providerDb = new Provider_DB_Mongo(this.db, logger);
         await this.providerDb.init();
         return this.providerDb;
     }
 
-    async get_status_db(): Promise<Status_DB_Mongo> {
+    async get_status_db(logger?: winston.Logger): Promise<Status_DB_Mongo> {
         if (this.statusDb !== undefined)
             return this.statusDb;
         if (this.db === undefined)
             throw new Error("Not connected");
-        this.statusDb = new Status_DB_Mongo(this.db);
+        this.statusDb = new Status_DB_Mongo(this.db, logger);
         await this.statusDb.init();
         return this.statusDb;
     }
 
-    async get_s2skey_db(): Promise<S2S_Key_DB_Mongo> {
+    async get_s2skey_db(logger?: winston.Logger): Promise<S2S_Key_DB_Mongo> {
         if (this.s2skeyDb !== undefined)
             return this.s2skeyDb;
         if (this.db === undefined)
             throw new Error("Not connected");
-        this.s2skeyDb = new S2S_Key_DB_Mongo(this.db);
+        this.s2skeyDb = new S2S_Key_DB_Mongo(this.db, logger);
         await this.s2skeyDb.init();
         return this.s2skeyDb;
     }

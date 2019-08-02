@@ -5,6 +5,8 @@ import { Provider_DB } from "../databases/provider_db_interface";
 import { getUserInfoFromToken } from "./oauth2";
 import { UnauthorizedError } from "../errors/permission_error";
 import atob = require("atob");
+import { getDefaultLogger } from "./../logger";
+import * as winston from "winston";
 
 
 interface AuthenticationStrategy {
@@ -15,11 +17,13 @@ class IdpAuthenticationStrategy implements AuthenticationStrategy {
     private readonly providerDb: Provider_DB;
     private readonly provider_prefix?: string;
     private readonly provider_version?: Version;
+    private logger: winston.Logger;
 
-    constructor(providerDb: Provider_DB, provider_prefix?: string, provider_version?: string) {
+    constructor(providerDb: Provider_DB, provider_prefix?: string, provider_version?: string, logger?: winston.Logger) {
         this.providerDb = providerDb;
         this.provider_prefix = provider_prefix;
         this.provider_version = provider_version;
+        this.logger = logger ? logger : getDefaultLogger();
     }
 
     async getUserAuthInfo(token: string): Promise<UserAuthInfo | null> {
@@ -34,7 +38,7 @@ class IdpAuthenticationStrategy implements AuthenticationStrategy {
             delete userInfo.is_admin;
             return userInfo;
         } catch (e) {
-            console.error(`While trying to authenticate with IDP error: '${e}' occurred`);
+            this.logger.error(`While trying to authenticate with IDP error: '${e}' occurred`);
             return null;
         }
     }
@@ -42,8 +46,10 @@ class IdpAuthenticationStrategy implements AuthenticationStrategy {
 
 class AdminAuthenticationStrategy implements AuthenticationStrategy {
     private readonly adminKey: string;
+    private logger: winston.Logger;
 
-    constructor(adminKey: string) {
+    constructor(adminKey: string, logger?: winston.Logger) {
+        this.logger = logger ? logger : getDefaultLogger();        
         this.adminKey = adminKey;
     }
 
@@ -58,8 +64,10 @@ class AdminAuthenticationStrategy implements AuthenticationStrategy {
 
 class S2SKeyAuthenticationStrategy implements AuthenticationStrategy {
     private readonly s2skeyDb: S2S_Key_DB;
+    private logger: winston.Logger;
 
-    constructor(s2skeyDb: S2S_Key_DB) {
+    constructor(s2skeyDb: S2S_Key_DB, logger?: winston.Logger) {
+        this.logger = logger ? logger : getDefaultLogger();        
         this.s2skeyDb = s2skeyDb;
     }
 
@@ -79,10 +87,12 @@ class S2SKeyAuthenticationStrategy implements AuthenticationStrategy {
 class AuthenticationContext {
     private authStrategies: AuthenticationStrategy[] = [];
     protected token: string;
+    private logger: winston.Logger;
 
 
     // TODO: I.Korotach maybe introduce a DI factory
-    constructor(token: string, adminKey: string, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB, provider_prefix: string, provider_version: Version) {
+    constructor(token: string, adminKey: string, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB, provider_prefix: string, provider_version: Version, logger?: winston.Logger) {
+        this.logger = logger ? logger : getDefaultLogger();        
         this.token = token;
         this.authStrategies = [
             new AdminAuthenticationStrategy(adminKey),
@@ -137,9 +147,12 @@ function getToken(req: any): string | null {
     return null;
 }
 
-export function createAuthnRouter(adminKey: string, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB): Router {
+export function createAuthnRouter(adminKey: string, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB, logger?: winston.Logger): Router {
 
     const router = Router();
+    if (!logger) {
+        logger = getDefaultLogger();
+    }
 
     async function injectUserInfo(req: UserAuthInfoRequest, res: Response, next: NextFunction): Promise<void> {
         const token = getToken(req);

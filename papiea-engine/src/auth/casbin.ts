@@ -6,16 +6,21 @@ import { Model } from "casbin/lib/model";
 import { Helper } from "casbin/lib/persist/helper";
 import { Provider, Action } from "papiea-core";
 import { PermissionDeniedError } from "../errors/permission_error";
+import { getDefaultLogger } from "./../logger";
+import * as winston from "winston";
+
 
 export class CasbinAuthorizer extends Authorizer {
     private modelText: string;
     private policyText: string;
     private enforcer: any;
+    private logger: winston.Logger
 
-    constructor(modelText: string, policyText: string) {
+    constructor(modelText: string, policyText: string, logger?: winston.Logger) {
         super();
         this.modelText = modelText;
         this.policyText = policyText;
+        this.logger = logger ? logger : getDefaultLogger();
     }
 
     async init() {
@@ -30,7 +35,7 @@ export class CasbinAuthorizer extends Authorizer {
                 throw new PermissionDeniedError();
             }
         } catch (e) {
-            console.error("CasbinAuthorizer checkPermission error", e);
+            this.logger.error("CasbinAuthorizer checkPermission error", e);
             throw new PermissionDeniedError();
         }
     }
