@@ -1,13 +1,45 @@
 import { Router } from "express";
-import { asyncHandler, UserAuthInfo } from "./authn";
+import { asyncHandler, UserAuthInfo, UserAuthInfoExtractor } from "./authn";
 import { Provider_DB } from "../databases/provider_db_interface";
 import { extract_property } from "./user_data_evaluator";
 import { Provider } from "papiea-core";
 import btoa = require("btoa");
+import atob = require("atob");
 
 const simpleOauthModule = require("simple-oauth2"),
     queryString = require("query-string"),
     url = require("url");
+
+
+export class IdpUserAuthInfoExtractor implements UserAuthInfoExtractor {
+    private readonly providerDb: Provider_DB;
+
+    constructor(providerDb: Provider_DB) {
+        this.providerDb = providerDb;
+    }
+
+    getUserInfoFromToken(token: any, provider: Provider): UserAuthInfo {
+        const extracted_headers = extract_property({ token }, provider.oauth2, "headers");
+        const userInfo: UserAuthInfo = { ...extracted_headers };
+        return userInfo;
+    }
+
+    async getUserAuthInfo(token: string, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null> {
+        try {
+            if (!provider_prefix || !provider_version) {
+                return null;
+            }
+            const provider: Provider = await this.providerDb.get_provider(provider_prefix, provider_version);
+            const userInfo = this.getUserInfoFromToken(JSON.parse(atob(token)), provider);
+            delete userInfo.is_admin;
+            return userInfo;
+        } catch (e) {
+            console.error(`While trying to authenticate with IDP error: '${e}' occurred`);
+            return null;
+        }
+    }
+}
+
 
 function convertToSimpleOauth2(description: any) {
     const oauth = description.oauth;
@@ -35,14 +67,6 @@ function getOAuth2(provider: Provider) {
     return simpleOauthModule.create(converted_oauth);
 }
 
-export function getUserInfoFromToken(token: any, provider: Provider): UserAuthInfo {
-
-    const extracted_headers = extract_property({ token }, provider.oauth2, "headers");
-
-    const userInfo: UserAuthInfo = {...extracted_headers};
-
-    return userInfo;
-}
 
 export function createOAuth2Router(redirect_uri: string, providerDb: Provider_DB): Router {
     const router = Router();

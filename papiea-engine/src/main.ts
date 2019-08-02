@@ -5,11 +5,14 @@ import createProviderAPIRouter from "./provider/provider_routes";
 import { Provider_API_Impl } from "./provider/provider_api_impl";
 import { MongoConnection } from "./databases/mongo";
 import { createEntityAPIRouter } from "./entity/entity_routes";
-import { Entity_API_Impl} from "./entity/entity_api_impl";
-import { Validator } from "./validator";
-import { createAuthnRouter } from "./auth/authn";
-import { createOAuth2Router } from "./auth/oauth2";
-import { Authorizer, AdminAuthorizer, PerProviderAuthorizer} from "./auth/authz";
+import { Entity_API_Impl } from "./entity/entity_api_impl";
+import {
+    createAuthnRouter, UserAuthInfoExtractor,
+    CompositeUserAuthInfoExtractor, AdminUserAuthInfoExtractor
+} from "./auth/authn";
+import { createOAuth2Router, IdpUserAuthInfoExtractor } from "./auth/oauth2";
+import { S2SKeyUserAuthInfoExtractor } from "./auth/s2s";
+import { Authorizer, AdminAuthorizer, PerProviderAuthorizer } from "./auth/authz";
 import { ProviderCasbinAuthorizerFactory } from "./auth/casbin";
 import morgan = require("morgan");
 import { PapieaErrorImpl } from "./errors/papiea_error_impl";
@@ -22,8 +25,7 @@ declare var process: {
         MONGO_PORT: string
         PAPIEA_PUBLIC_ADDR: string,
         DEBUG_LEVEL: string,
-        ADMIN_S2S_KEY: string,
-        DISALLOW_EXTRA_PROPERTIES: string
+        ADMIN_S2S_KEY: string
     },
     title: string;
 };
@@ -35,7 +37,6 @@ const oauth2RedirectUri: string = publicAddr + "/provider/auth/callback";
 const mongoHost = process.env.MONGO_HOST || 'mongo';
 const mongoPort = process.env.MONGO_PORT || '27017';
 const adminKey = process.env.ADMIN_S2S_KEY || '';
-const disallowExtraProps = process.env.DISALLOW_EXTRA_PROPERTIES !== "false";
 
 async function setUpApplication(): Promise<express.Express> {
     const app = express();
@@ -48,7 +49,12 @@ async function setUpApplication(): Promise<express.Express> {
     const statusDb = await mongoConnection.get_status_db();
     const s2skeyDb = await mongoConnection.get_s2skey_db();
     const providerApi = new Provider_API_Impl(providerDb, statusDb, s2skeyDb, new AdminAuthorizer());
-    app.use(createAuthnRouter(adminKey, s2skeyDb, providerDb));
+    const userAuthInfoExtractor = new CompositeUserAuthInfoExtractor([
+        new AdminUserAuthInfoExtractor(adminKey),
+        new S2SKeyUserAuthInfoExtractor(s2skeyDb),
+        new IdpUserAuthInfoExtractor(providerDb)
+    ]);
+    app.use(createAuthnRouter(userAuthInfoExtractor));
     app.use(createOAuth2Router(oauth2RedirectUri, providerDb));
     const entityApiAuthorizer: Authorizer = new PerProviderAuthorizer(providerApi, new ProviderCasbinAuthorizerFactory());
     app.use('/provider', createProviderAPIRouter(providerApi));

@@ -1,51 +1,38 @@
 import { NextFunction, Request, Response, Router } from "express";
-import { S2S_Key_DB } from "../databases/s2skey_db_interface";
-import { Provider, S2S_Key, Version } from "papiea-core";
-import { Provider_DB } from "../databases/provider_db_interface";
-import { getUserInfoFromToken } from "./oauth2";
 import { UnauthorizedError } from "../errors/permission_error";
-import atob = require("atob");
 
 
-interface AuthenticationStrategy {
-    getUserAuthInfo(token: string): Promise<UserAuthInfo | null>
+export interface UserAuthInfoExtractor {
+    getUserAuthInfo(token: string, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null>
 }
 
-class IdpAuthenticationStrategy implements AuthenticationStrategy {
-    private readonly providerDb: Provider_DB;
-    private readonly provider_prefix?: string;
-    private readonly provider_version?: Version;
+export class CompositeUserAuthInfoExtractor implements UserAuthInfoExtractor {
+    private readonly extractors: UserAuthInfoExtractor[];
 
-    constructor(providerDb: Provider_DB, provider_prefix?: string, provider_version?: string) {
-        this.providerDb = providerDb;
-        this.provider_prefix = provider_prefix;
-        this.provider_version = provider_version;
+    constructor(extractors: UserAuthInfoExtractor[]) {
+        this.extractors = extractors;
     }
 
-    async getUserAuthInfo(token: string): Promise<UserAuthInfo | null> {
-        try {
-            if (!this.provider_prefix || !this.provider_version) {
-                return null;
-            }
-            const provider: Provider = await this.providerDb.get_provider(this.provider_prefix, this.provider_version);
-            const userInfo = getUserInfoFromToken(JSON.parse(atob(token)), provider);
-            delete userInfo.is_admin;
-            return userInfo;
-        } catch (e) {
-            console.error(`While trying to authenticate with IDP error: '${e}' occurred`);
-            return null;
+    async getUserAuthInfo(token: string, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null> {
+        let userAuthInfo: UserAuthInfo | null = null;
+        let i = 0;
+        while (userAuthInfo === null && i < this.extractors.length) {
+            userAuthInfo = await this.extractors[i].getUserAuthInfo(token, provider_prefix, provider_version);
+            i++;
         }
+        return userAuthInfo;
     }
 }
 
-class AdminAuthenticationStrategy implements AuthenticationStrategy {
+
+export class AdminUserAuthInfoExtractor implements UserAuthInfoExtractor {
     private readonly adminKey: string;
 
     constructor(adminKey: string) {
         this.adminKey = adminKey;
     }
 
-    async getUserAuthInfo(token: string): Promise<UserAuthInfo | null> {
+    async getUserAuthInfo(token: string, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null> {
         if (token === this.adminKey) {
             return { is_admin: true }
         } else {
@@ -54,56 +41,6 @@ class AdminAuthenticationStrategy implements AuthenticationStrategy {
     }
 }
 
-class S2SKeyAuthenticationStrategy implements AuthenticationStrategy {
-    private readonly s2skeyDb: S2S_Key_DB;
-
-    constructor(s2skeyDb: S2S_Key_DB) {
-        this.s2skeyDb = s2skeyDb;
-    }
-
-    async getUserAuthInfo(token: string): Promise<UserAuthInfo | null> {
-        try {
-            const s2skey: S2S_Key = await this.s2skeyDb.get_key_by_secret(token);
-            const userInfo = s2skey.userInfo;
-            userInfo.authorization = 'Bearer ' + s2skey.key;
-            return userInfo;
-        } catch (e) {
-            return null;
-        }
-    }
-}
-
-
-class AuthenticationContext {
-    private authStrategies: AuthenticationStrategy[] = [];
-    protected token: string;
-
-
-    // TODO: I.Korotach maybe introduce a DI factory
-    constructor(token: string, adminKey: string, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB, provider_prefix: string, provider_version: Version) {
-        this.token = token;
-        this.authStrategies = [
-            new AdminAuthenticationStrategy(adminKey),
-            new S2SKeyAuthenticationStrategy(s2skeyDb),
-            new IdpAuthenticationStrategy(providerDb, provider_prefix, provider_version)
-        ]
-    }
-
-    async getUserAuthInfo(): Promise<UserAuthInfo> {
-        let userAuthInfo: UserAuthInfo | null = null;
-        let i = 0;
-        while (userAuthInfo === null && i < this.authStrategies.length) {
-            userAuthInfo = await this.authStrategies[i].getUserAuthInfo(this.token);
-            i++;
-        }
-        if (userAuthInfo !== null) {
-            return userAuthInfo;
-        } else {
-            throw new UnauthorizedError();
-        }
-    }
-
-}
 
 export interface UserAuthInfoRequest extends Request {
     user: UserAuthInfo
@@ -135,7 +72,7 @@ function getToken(req: any): string | null {
     return null;
 }
 
-export function createAuthnRouter(adminKey: string, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB): Router {
+export function createAuthnRouter(userAuthInfoExtractor: UserAuthInfoExtractor): Router {
 
     const router = Router();
 
@@ -146,10 +83,12 @@ export function createAuthnRouter(adminKey: string, s2skeyDb: S2S_Key_DB, provid
         }
         const urlParts = req.originalUrl.split('/');
         const provider_prefix: string | undefined = urlParts[2];
-        const provider_version: Version | undefined = urlParts[3];
-        const AuthCtx = new AuthenticationContext(token, adminKey, s2skeyDb, providerDb, provider_prefix, provider_version);
-
-        const userInfo = await AuthCtx.getUserAuthInfo();
+        const provider_version: string | undefined = urlParts[3];
+        
+        const userInfo = await userAuthInfoExtractor.getUserAuthInfo(token, provider_prefix, provider_version);
+        if (userInfo === null) {
+            throw new UnauthorizedError();
+        }
 
         if (urlParts.length > 1) {
             if (provider_prefix
