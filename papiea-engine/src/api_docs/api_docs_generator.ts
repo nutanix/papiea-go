@@ -541,16 +541,30 @@ export default class ApiDocsGenerator {
                 "schemas": {
                     "Error": {
                         "required": [
-                            "code",
-                            "message"
+                            "error",
                         ],
                         "properties": {
-                            "code": {
-                                "type": "integer",
-                                "format": "int32"
-                            },
-                            "message": {
-                                "type": "string"
+                            "error": {
+                                "type": "object",
+                                "required": [
+                                    "errors",
+                                    "code",
+                                    "message"
+                                ],
+                                "properties": {
+                                    "errors": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "code": {
+                                        "type": "integer"
+                                    },
+                                    "message": {
+                                        "type": "string"
+                                    }
+                                }
                             }
                         }
                     },
