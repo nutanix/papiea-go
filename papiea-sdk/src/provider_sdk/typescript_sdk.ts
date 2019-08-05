@@ -14,9 +14,7 @@ import { Server } from "http";
 import { ProceduralCtx } from "./typescript_sdk_context_impl";
 
 import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, S2S_Key, UserInfo } from "papiea-core";
-import { Validator } from "./typescript_sdk_validation";
-import { Maybe } from "./typescript_sdk_utils";
-import { InvocationError, ValidationError } from "./typescript_sdk_exceptions";
+import { InvocationError } from "./typescript_sdk_exceptions";
 
 class SecurityApiImpl implements SecurityApi {
     readonly provider: ProviderSdk;
@@ -234,12 +232,9 @@ export class ProviderSdk implements ProviderImpl {
         this._server_manager.register_handler("/" + name, async (req, res) => {
             try {
                 const result = await handler(new ProceduralCtx(this, prefix, version, req.headers), req.body.input);
-                Validator.validate(result, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc), this.allowExtraProps);
                 res.json(result);
             } catch (e) {
-                if (e instanceof ValidationError) {
-                    return res.status(422).json(e.mapErr(() => `Provider procedure ${name} didn't return correct value`))
-                } else if (e instanceof InvocationError) {
+                if (e instanceof InvocationError) {
                     return res.status(e.status_code).json(e.toResponse())
                 }
                 const error = InvocationError.fromError(500, e);
@@ -410,12 +405,9 @@ export class Kind_Builder {
                     spec: req.body.spec,
                     status: req.body.status
                 }, req.body.input);
-                Validator.validate(result, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc), this.allowExtraProps);
                 res.json(result);
             } catch (e) {
-                if (e instanceof ValidationError) {
-                    return res.status(422).json(e.mapErr(() => `Entity procedure ${name} didn't return correct value`))
-                } else if (e instanceof InvocationError) {
+                if (e instanceof InvocationError) {
                     return res.status(e.status_code).json(e.toResponse())
                 }
                 const error = InvocationError.fromError(500, e);
@@ -444,12 +436,9 @@ export class Kind_Builder {
         this.server_manager.register_handler(`/${this.kind.name}/${name}`, async (req, res) => {
             try {
                 const result = await handler(new ProceduralCtx(this.provider, prefix, version, req.headers), req.body.input);
-                Validator.validate(result, Maybe.fromValue(Object.values(output_desc)[0]), Validator.build_schemas(input_desc, output_desc), this.allowExtraProps);
                 res.json(result);
             } catch (e) {
-                if (e instanceof ValidationError) {
-                    return res.status(422).json(e.mapErr(() => `Kind procedure ${name} didn't return correct value`))
-                } else if (e instanceof InvocationError) {
+                if (e instanceof InvocationError) {
                     return res.status(e.status_code).json(e.toResponse())
                 }
                 const error = InvocationError.fromError(500, e);

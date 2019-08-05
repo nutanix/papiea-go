@@ -1,13 +1,13 @@
 import "jest"
-import { Validator } from "../../src/validator";
+import { ValidatorImpl } from "../../src/validator";
 import { getLocationDataDescription, ValidationBuilder } from "../test_data_factory";
-import { Maybe } from "../../src/utils/utils";
 
 describe("Validation tests", () => {
 
     const locationDataDescription = getLocationDataDescription();
     const trimmedLocationDataDescription = Object.assign({}, locationDataDescription);
-    const maybeLocation = Maybe.fromValue(Object.values(locationDataDescription)[0]);
+    const maybeLocation = Object.values(locationDataDescription)[0];
+    const validator = new ValidatorImpl()
 
     test("Basic validation should succeed", (done) => {
         const entity = {
@@ -18,7 +18,7 @@ describe("Validation tests", () => {
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
         try_validate(() => {
-            Validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
+            validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
         })
     });
 
@@ -30,7 +30,7 @@ describe("Validation tests", () => {
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
         try_validate(() => {
-            Validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
+            validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
         }, true)
     });
 
@@ -44,7 +44,7 @@ describe("Validation tests", () => {
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
         try_validate(() => {
-            Validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
+            validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
         })
     });
 
@@ -58,7 +58,7 @@ describe("Validation tests", () => {
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
         try_validate(() => {
-            Validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
+            validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
         }, true)
     });
 
@@ -71,7 +71,7 @@ describe("Validation tests", () => {
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
         try_validate(() => {
-            Validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
+            validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
         }, true)
     });
 
@@ -87,7 +87,7 @@ describe("Validation tests", () => {
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
         try_validate(() => {
-            Validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
+            validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
         })
     });
 
@@ -103,7 +103,7 @@ describe("Validation tests", () => {
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
         try_validate(() => {
-            Validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
+            validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
         }, true)
     });
 
@@ -119,7 +119,7 @@ describe("Validation tests", () => {
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
         try_validate(() => {
-            Validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
+            validator.validate(entity.spec, maybeLocation, trimmedLocationDataDescription, false)
         }, true)
     });
 
@@ -127,7 +127,7 @@ describe("Validation tests", () => {
     const edited_kind_name = Object.keys(locationDataDescriptionStringParam)[0];
     locationDataDescriptionStringParam[edited_kind_name].properties.x.type = "string";
     const trimmedLocationDataDescriptionStringParam = Object.assign({}, locationDataDescription);
-    const maybeLocationStringParam = Maybe.fromValue(Object.values(locationDataDescriptionStringParam)[0]);
+    const maybeLocationStringParam = Object.values(locationDataDescriptionStringParam)[0];
 
     test("Basic validation with string param should succeed", (done) => {
         const entity = {
@@ -138,7 +138,7 @@ describe("Validation tests", () => {
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
         try_validate(() => {
-            Validator.validate(entity.spec, maybeLocationStringParam, trimmedLocationDataDescriptionStringParam, false)
+            validator.validate(entity.spec, maybeLocationStringParam, trimmedLocationDataDescriptionStringParam, false)
         })
     });
 
@@ -151,7 +151,7 @@ describe("Validation tests", () => {
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
         try_validate(() => {
-            Validator.validate(entity.spec, maybeLocationStringParam, trimmedLocationDataDescriptionStringParam, false)
+            validator.validate(entity.spec, maybeLocationStringParam, trimmedLocationDataDescriptionStringParam, false)
         }, true)
     });
 });

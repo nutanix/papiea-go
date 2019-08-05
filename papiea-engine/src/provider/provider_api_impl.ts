@@ -8,7 +8,6 @@ import { UserAuthInfo } from "../auth/authn";
 import { createHash } from "../auth/crypto";
 import { EventEmitter } from "events";
 import { Entity_Reference, Version, Status, Provider, Kind, S2S_Key, Action } from "papiea-core";
-import { Maybe } from "../utils/utils";
 import uuid = require("uuid");
 
 export class Provider_API_Impl implements Provider_API {
@@ -17,13 +16,15 @@ export class Provider_API_Impl implements Provider_API {
     private s2skeyDb: S2S_Key_DB;
     private authorizer: Authorizer;
     private eventEmitter: EventEmitter;
+    private validator: Validator
 
-    constructor(providerDb: Provider_DB, statusDb: Status_DB, s2skeyDb: S2S_Key_DB, authorizer: Authorizer) {
+    constructor(providerDb: Provider_DB, statusDb: Status_DB, s2skeyDb: S2S_Key_DB, authorizer: Authorizer, validator: Validator) {
         this.providerDb = providerDb;
         this.statusDb = statusDb;
         this.s2skeyDb = s2skeyDb;
         this.authorizer = authorizer;
         this.eventEmitter = new EventEmitter();
+        this.validator = validator
     }
 
     async register_provider(user: UserAuthInfo, provider: Provider): Promise<void> {
@@ -87,7 +88,7 @@ export class Provider_API_Impl implements Provider_API {
             throw new Error("Kind not found");
         }
         const schemas: any = Object.assign({}, kind.kind_structure);
-        Validator.validate(status, Maybe.fromValue(Object.values(kind.kind_structure)[0]), schemas, allowExtraProps);
+        this.validator.validate(status, Object.values(kind.kind_structure)[0], schemas, allowExtraProps);
     }
 
     async update_auth(user: UserAuthInfo, provider_prefix: string, provider_version: Version, auth: any): Promise<void> {

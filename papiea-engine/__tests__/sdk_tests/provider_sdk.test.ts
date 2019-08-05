@@ -419,8 +419,7 @@ describe("Provider Sdk tests", () => {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { input: { "a": 5, "b": 5 } });
         } catch (e) {
-            expect(e.response.data.error.errors[0].message).toBe('Provider procedure computeSum didn\'t return correct value');
-            expect(e.response.data.error.errors[0].reason).not.toBeUndefined();
+            expect(e.response.data.error.errors[0].message).toBe("Unable to validate a model with a type: string, expected: number");
         } finally {
             sdk.server.close();
         }

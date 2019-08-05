@@ -6,7 +6,7 @@ import { Provider_API_Impl } from "./provider/provider_api_impl";
 import { MongoConnection } from "./databases/mongo";
 import { createEntityAPIRouter } from "./entity/entity_routes";
 import { Entity_API_Impl} from "./entity/entity_api_impl";
-import { Validator } from "./validator";
+import { ValidatorImpl } from "./validator";
 import { createAuthnRouter } from "./auth/authn";
 import { createOAuth2Router } from "./auth/oauth2";
 import { Authorizer, AdminAuthorizer, PerProviderAuthorizer} from "./auth/authz";
@@ -47,12 +47,13 @@ async function setUpApplication(): Promise<express.Express> {
     const specDb = await mongoConnection.get_spec_db();
     const statusDb = await mongoConnection.get_status_db();
     const s2skeyDb = await mongoConnection.get_s2skey_db();
-    const providerApi = new Provider_API_Impl(providerDb, statusDb, s2skeyDb, new AdminAuthorizer());
+    const validator = new ValidatorImpl()
+    const providerApi = new Provider_API_Impl(providerDb, statusDb, s2skeyDb, new AdminAuthorizer(), validator);
     app.use(createAuthnRouter(adminKey, s2skeyDb, providerDb));
     app.use(createOAuth2Router(oauth2RedirectUri, providerDb));
     const entityApiAuthorizer: Authorizer = new PerProviderAuthorizer(providerApi, new ProviderCasbinAuthorizerFactory());
     app.use('/provider', createProviderAPIRouter(providerApi));
-    app.use('/services', createEntityAPIRouter(new Entity_API_Impl(statusDb, specDb, providerApi, entityApiAuthorizer)));
+    app.use('/services', createEntityAPIRouter(new Entity_API_Impl(statusDb, specDb, providerApi, entityApiAuthorizer, validator)));
     app.use('/api-docs', createAPIDocsRouter('/api-docs', new ApiDocsGenerator(providerDb)));
     app.use(function (err: any, req: any, res: any, next: any) {
         if (res.headersSent) {
