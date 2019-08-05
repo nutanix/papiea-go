@@ -94,9 +94,10 @@ describe("API Docs Tests", () => {
         expect.hasAssertions();
         const apiDoc = await apiDocsGenerator.getApiDocs();
         const entityName = providerDbMock.provider.kinds[0].name;
-        expect(Object.keys(apiDoc.components.schemas)).toContain(entityName);
-        const entitySchema = apiDoc.components.schemas[entityName];
-        expect(entitySchema).toEqual({
+        expect(Object.keys(apiDoc.components.schemas)).toContain(`${entityName}-Spec`);
+        expect(Object.keys(apiDoc.components.schemas)).toContain(`${entityName}-Status`);
+        const entitySchemaSpec = apiDoc.components.schemas[`${entityName}-Spec`];
+        expect(entitySchemaSpec).toEqual({
             "type": "object",
             "title": "X\/Y Location",
             "description": "Stores an XY location of something",
@@ -107,6 +108,37 @@ describe("API Docs Tests", () => {
                     "type": "number"
                 },
                 "y": {
+                    "type": "number",
+                },
+                "v": {
+                    "type": "object",
+                    "properties": {
+                        "d": {
+                            "type": "number"
+                        },
+                        "e": {
+                            "type": "number"
+                        }
+                    }
+                }
+            }
+        });
+        const entitySchemaStatus = apiDoc.components.schemas[`${entityName}-Status`];
+        expect(entitySchemaStatus).toEqual({
+            "type": "object",
+            "title": "X\/Y Location",
+            "description": "Stores an XY location of something",
+            "x-papiea-entity": "spec-only",
+            "required": ["x", "y"],
+            "properties": {
+                "x": {
+                    "type": "number"
+                },
+                "y": {
+                    "type": "number"
+                },
+                "z": {
+                    "x-papiea": "status-only",
                     "type": "number"
                 },
                 "v": {
@@ -178,7 +210,7 @@ describe("API docs test entity", () => {
         delete structure.properties.z["x-papiea"];
 
         const apiDoc = await apiDocsGenerator.getApiDocs();
-        const entityName = kind_name;
+        const entityName = kind_name + "-Spec";
         expect(Object.keys(apiDoc.components.schemas)).toContain(entityName);
         const entitySchema = apiDoc.components.schemas[entityName];
         expect(entitySchema).toEqual({
