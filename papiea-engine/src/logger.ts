@@ -1,6 +1,7 @@
 import * as winston from 'winston';
 import { resolve } from "path";
 import { NextFunction, Request } from "express";
+import Logger from './logger_interface';
 
 export function getLoggingMiddleware(logger: Logger) {
     return async (req: Request, res: any, next: NextFunction): Promise<void> => {
@@ -40,7 +41,7 @@ function safeJSONParse(chunk: string) {
     }
 }
 
-export class Logger {
+export class WinstonLogger implements Logger {
     private logger: winston.Logger;
     private readonly logLevels = ["emerg", "alert", "crit", "error", "warning", "notice", "info", "debug"];
 

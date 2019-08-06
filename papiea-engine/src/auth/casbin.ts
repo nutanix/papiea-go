@@ -6,7 +6,7 @@ import { Model } from "casbin/lib/model";
 import { Helper } from "casbin/lib/persist/helper";
 import { Provider, Action } from "papiea-core";
 import { PermissionDeniedError } from "../errors/permission_error";
-import { Logger } from "./../logger";
+import Logger from "./../logger_interface";
 
 
 export class CasbinAuthorizer extends Authorizer {

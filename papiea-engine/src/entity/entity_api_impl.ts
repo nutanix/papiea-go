@@ -25,7 +25,7 @@ import { ValidationError } from "../errors/validation_error";
 import { ProcedureInvocationError } from "../errors/procedure_invocation_error";
 import uuid = require("uuid");
 import { PermissionDeniedError } from "../errors/permission_error";
-import { Logger } from "./../logger";
+import Logger from "./../logger_interface";
 
 export type SortParams = { [key: string]: number };
 

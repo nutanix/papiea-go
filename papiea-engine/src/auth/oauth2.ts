@@ -4,7 +4,7 @@ import { Provider_DB } from "../databases/provider_db_interface";
 import { extract_property } from "./user_data_evaluator";
 import { Provider } from "papiea-core";
 import btoa = require("btoa");
-import { Logger } from "./../logger";
+import Logger from "./../logger_interface";
 
 const simpleOauthModule = require("simple-oauth2"),
     queryString = require("query-string"),

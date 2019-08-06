@@ -1,7 +1,7 @@
 import { Provider_DB } from "./provider_db_interface";
 import { Db, Collection } from "mongodb"
 import { Version, Provider } from "papiea-core";
-import { Logger } from "./../logger";
+import Logger from "./../logger_interface";
 
 export class Provider_DB_Mongo implements Provider_DB {
     collection: Collection;

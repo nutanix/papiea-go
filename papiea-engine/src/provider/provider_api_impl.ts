@@ -9,7 +9,7 @@ import { createHash } from "../auth/crypto";
 import { EventEmitter } from "events";
 import { Entity_Reference, Version, Status, Provider, Kind, S2S_Key, Action } from "papiea-core";
 import uuid = require("uuid");
-import { Logger } from "./../logger";
+import Logger from "./../logger_interface";
 
 export class Provider_API_Impl implements Provider_API {
     private providerDb: Provider_DB;

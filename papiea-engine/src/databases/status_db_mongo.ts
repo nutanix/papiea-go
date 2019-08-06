@@ -4,7 +4,7 @@ import { datestringToFilter } from "./utils/date";
 import { encode } from "mongo-dot-notation-tool"
 import { Entity_Reference, Status, Metadata, Entity } from "papiea-core";
 import { SortParams } from "../entity/entity_api_impl";
-import { Logger } from "./../logger";
+import Logger from "./../logger_interface";
 
 export class Status_DB_Mongo implements Status_DB {
     collection: Collection;

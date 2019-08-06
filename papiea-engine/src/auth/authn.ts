@@ -5,7 +5,7 @@ import { Provider_DB } from "../databases/provider_db_interface";
 import { getUserInfoFromToken } from "./oauth2";
 import { UnauthorizedError } from "../errors/permission_error";
 import atob = require("atob");
-import { Logger } from "./../logger";
+import Logger from "./../logger_interface";
 
 
 interface AuthenticationStrategy {

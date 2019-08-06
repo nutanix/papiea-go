@@ -4,7 +4,8 @@ import { Spec_DB } from "../../src/databases/spec_db_interface";
 import { Status_DB } from "../../src/databases/status_db_interface";
 import { Provider_DB } from "../../src/databases/provider_db_interface";
 import { S2S_Key_DB } from "../../src/databases/s2skey_db_interface";
-import { Logger } from "../../src/logger";
+import { WinstonLogger } from "../../src/logger";
+import Logger from "../../src/logger_interface";
 import { v4 as uuid4 } from 'uuid';
 import { ConflictingEntityError } from "../../src/databases/utils/errors";
 import { Metadata, Spec, Entity_Reference, Status, Kind, Provider, S2S_Key } from "papiea-core";
@@ -21,7 +22,7 @@ const mongoPort = process.env.MONGO_PORT || '27017';
 
 describe("MongoDb tests", () => {
     const connection: MongoConnection = new MongoConnection(`mongodb://${mongoHost}:${mongoPort}`, process.env.MONGO_DB || 'papiea');
-    const logger: Logger = new Logger("info", "database_mongo_test.log");
+    const logger: Logger = new WinstonLogger("info", "database_mongo_test.log");
 
     beforeEach(() => {
         jest.setTimeout(50000);

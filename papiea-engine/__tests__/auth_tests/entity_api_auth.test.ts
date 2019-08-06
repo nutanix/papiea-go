@@ -7,7 +7,8 @@ import { ProviderBuilder } from "../test_data_factory";
 import uuid = require("uuid");
 import { Metadata, Spec, Provider } from "papiea-core";
 import btoa = require("btoa");
-import { Logger } from "../../src/logger";
+import { WinstonLogger } from "../../src/logger";
+import Logger from "../../src/logger_interface";
 
 declare var process: {
     env: {
@@ -68,7 +69,7 @@ describe("Entity API auth tests", () => {
     const kind_name = provider.kinds[0].name;
     let entity_metadata: Metadata, entity_spec: Spec;
     let idp_token: string;
-    const entityApiAuthTestLogger: Logger = new Logger("info", "entity_api_auth_test.log");
+    const entityApiAuthTestLogger: Logger = new WinstonLogger("info", "entity_api_auth_test.log");
 
     const tenant_uuid = uuid();
     const oauth2Server = http.createServer((req, res) => {
