@@ -3,8 +3,7 @@ import * as http from "http"
 import axios from "axios"
 import { ProviderBuilder } from "../test_data_factory"
 import { Provider } from "papiea-core"
-import { createLogger } from "../../src/logger";
-import * as winston from "winston";
+import { Logger } from "../../src/logger";
 
 declare var process: {
     env: {
@@ -42,10 +41,9 @@ describe("Procedures tests", () => {
         .withProviderProcedures()
         .build();
     const kind_name = provider.kinds[0].name;
-    let providerApiTestLogger: winston.Logger;
+    const providerApiTestLogger: Logger = new Logger("info", "provider_api_test.log");
 
     beforeAll(async () => {
-        providerApiTestLogger = await createLogger("info", "provider_api_test.log");
         await providerApi.post('/', provider);
     });
 

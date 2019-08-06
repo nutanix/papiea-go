@@ -5,8 +5,7 @@ import { Provider_DB } from "../databases/provider_db_interface";
 import { getUserInfoFromToken } from "./oauth2";
 import { UnauthorizedError } from "../errors/permission_error";
 import atob = require("atob");
-import { getDefaultLogger } from "./../logger";
-import * as winston from "winston";
+import { Logger } from "./../logger";
 
 
 interface AuthenticationStrategy {
@@ -17,13 +16,13 @@ class IdpAuthenticationStrategy implements AuthenticationStrategy {
     private readonly providerDb: Provider_DB;
     private readonly provider_prefix?: string;
     private readonly provider_version?: Version;
-    private logger: winston.Logger;
+    private logger: Logger;
 
-    constructor(providerDb: Provider_DB, provider_prefix?: string, provider_version?: string, logger?: winston.Logger) {
+    constructor(providerDb: Provider_DB, logger: Logger, provider_prefix?: string, provider_version?: string) {
         this.providerDb = providerDb;
         this.provider_prefix = provider_prefix;
         this.provider_version = provider_version;
-        this.logger = logger ? logger : getDefaultLogger();
+        this.logger = logger;
     }
 
     async getUserAuthInfo(token: string): Promise<UserAuthInfo | null> {
@@ -46,10 +45,10 @@ class IdpAuthenticationStrategy implements AuthenticationStrategy {
 
 class AdminAuthenticationStrategy implements AuthenticationStrategy {
     private readonly adminKey: string;
-    private logger: winston.Logger;
+    private logger: Logger;
 
-    constructor(adminKey: string, logger?: winston.Logger) {
-        this.logger = logger ? logger : getDefaultLogger();        
+    constructor(adminKey: string, logger: Logger) {
+        this.logger = logger;        
         this.adminKey = adminKey;
     }
 
@@ -64,10 +63,10 @@ class AdminAuthenticationStrategy implements AuthenticationStrategy {
 
 class S2SKeyAuthenticationStrategy implements AuthenticationStrategy {
     private readonly s2skeyDb: S2S_Key_DB;
-    private logger: winston.Logger;
+    private logger: Logger;
 
-    constructor(s2skeyDb: S2S_Key_DB, logger?: winston.Logger) {
-        this.logger = logger ? logger : getDefaultLogger();        
+    constructor(s2skeyDb: S2S_Key_DB, logger: Logger) {
+        this.logger = logger;        
         this.s2skeyDb = s2skeyDb;
     }
 
@@ -87,17 +86,17 @@ class S2SKeyAuthenticationStrategy implements AuthenticationStrategy {
 class AuthenticationContext {
     private authStrategies: AuthenticationStrategy[] = [];
     protected token: string;
-    private logger: winston.Logger;
+    private logger: Logger;
 
 
     // TODO: I.Korotach maybe introduce a DI factory
-    constructor(token: string, adminKey: string, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB, provider_prefix: string, provider_version: Version, logger?: winston.Logger) {
-        this.logger = logger ? logger : getDefaultLogger();        
+    constructor(token: string, adminKey: string, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB, provider_prefix: string, provider_version: Version, logger: Logger) {
+        this.logger = logger;        
         this.token = token;
         this.authStrategies = [
-            new AdminAuthenticationStrategy(adminKey),
-            new S2SKeyAuthenticationStrategy(s2skeyDb),
-            new IdpAuthenticationStrategy(providerDb, provider_prefix, provider_version)
+            new AdminAuthenticationStrategy(adminKey, logger),
+            new S2SKeyAuthenticationStrategy(s2skeyDb, logger),
+            new IdpAuthenticationStrategy(providerDb, logger, provider_prefix, provider_version)
         ]
     }
 
@@ -147,12 +146,9 @@ function getToken(req: any): string | null {
     return null;
 }
 
-export function createAuthnRouter(adminKey: string, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB, logger?: winston.Logger): Router {
+export function createAuthnRouter(adminKey: string, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB, logger: Logger): Router {
 
     const router = Router();
-    if (!logger) {
-        logger = getDefaultLogger();
-    }
 
     async function injectUserInfo(req: UserAuthInfoRequest, res: Response, next: NextFunction): Promise<void> {
         const token = getToken(req);
@@ -162,7 +158,7 @@ export function createAuthnRouter(adminKey: string, s2skeyDb: S2S_Key_DB, provid
         const urlParts = req.originalUrl.split('/');
         const provider_prefix: string | undefined = urlParts[2];
         const provider_version: Version | undefined = urlParts[3];
-        const AuthCtx = new AuthenticationContext(token, adminKey, s2skeyDb, providerDb, provider_prefix, provider_version);
+        const AuthCtx = new AuthenticationContext(token, adminKey, s2skeyDb, providerDb, provider_prefix, provider_version, logger);
 
         const userInfo = await AuthCtx.getUserAuthInfo();
 

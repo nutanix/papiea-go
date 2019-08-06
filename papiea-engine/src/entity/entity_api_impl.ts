@@ -25,8 +25,7 @@ import { ValidationError } from "../errors/validation_error";
 import { ProcedureInvocationError } from "../errors/procedure_invocation_error";
 import uuid = require("uuid");
 import { PermissionDeniedError } from "../errors/permission_error";
-import { getDefaultLogger } from "./../logger";
-import * as winston from "winston";
+import { Logger } from "./../logger";
 
 export type SortParams = { [key: string]: number };
 
@@ -35,15 +34,15 @@ export class Entity_API_Impl implements Entity_API {
     private spec_db: Spec_DB;
     private provider_api: Provider_API;
     private authorizer: Authorizer;
-    private logger: winston.Logger;
+    private logger: Logger;
     private validator: Validator
 
-    constructor(status_db: Status_DB, spec_db: Spec_DB, provider_api: Provider_API, authorizer: Authorizer, validator: Validator, logger?: winston.Logger) {
+    constructor(status_db: Status_DB, spec_db: Spec_DB, provider_api: Provider_API, authorizer: Authorizer, validator: Validator, logger: Logger) {
         this.status_db = status_db;
         this.spec_db = spec_db;
         this.provider_api = provider_api;
         this.authorizer = authorizer;
-        this.logger = logger ? logger : getDefaultLogger();
+        this.logger = logger;
         this.validator = validator;
     }
 

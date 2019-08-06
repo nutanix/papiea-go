@@ -4,8 +4,7 @@ import { UserAuthInfo } from "../../src/auth/authn";
 import { Authorizer } from "../../src/auth/authz";
 import { ProviderSdk } from "papiea-sdk";
 import { Action } from "papiea-core";
-import { createLogger } from "../../src/logger";
-import * as winston from "winston";
+import { Logger } from "../../src/logger";
 
 
 declare var process: {
@@ -46,10 +45,9 @@ describe("Pagination tests", () => {
 
     let uuids: string[] = [];
     const entityPromises: Promise<any>[] = [];
-    let sortingTestLogger: winston.Logger;
+    const sortingTestLogger: Logger = new Logger("info", "sorting_test.log");
 
     beforeAll(async () => {
-        sortingTestLogger = await createLogger("info", "sorting_test.log");
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         sdk.new_kind(locationDataDescription);
         sdk.version(providerVersion);

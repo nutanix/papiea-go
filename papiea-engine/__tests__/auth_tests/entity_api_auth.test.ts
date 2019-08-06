@@ -7,8 +7,7 @@ import { ProviderBuilder } from "../test_data_factory";
 import uuid = require("uuid");
 import { Metadata, Spec, Provider } from "papiea-core";
 import btoa = require("btoa");
-import { createLogger } from "../../src/logger";
-import * as winston from "winston";
+import { Logger } from "../../src/logger";
 
 declare var process: {
     env: {
@@ -69,7 +68,7 @@ describe("Entity API auth tests", () => {
     const kind_name = provider.kinds[0].name;
     let entity_metadata: Metadata, entity_spec: Spec;
     let idp_token: string;
-    let entityApiAuthTestLogger: winston.Logger;
+    const entityApiAuthTestLogger: Logger = new Logger("info", "entity_api_auth_test.log");
 
     const tenant_uuid = uuid();
     const oauth2Server = http.createServer((req, res) => {
@@ -167,7 +166,6 @@ describe("Entity API auth tests", () => {
     const expectAssertionsFromOauth2Server = 7;
 
     beforeAll(async () => {
-        entityApiAuthTestLogger = await createLogger("info", "entity_api_auth_test.log");
         await providerApiAdmin.post('/', provider);
         oauth2Server.listen(oauth2ServerPort, oauth2ServerHost, () => {
             entityApiAuthTestLogger.info(`Server running at http://${oauth2ServerHost}:${oauth2ServerPort}/`);
