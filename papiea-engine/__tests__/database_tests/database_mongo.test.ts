@@ -270,7 +270,7 @@ describe("MongoDb tests", () => {
             key: uuid4(),
             created_at: new Date(),
             deleted_at: undefined,
-            userInfo: {}
+            user_info: {}
         };
         await s2skeyDb.create_key(s2skey);
         const res: S2S_Key = await s2skeyDb.get_key(s2skey.uuid);
@@ -292,7 +292,7 @@ describe("MongoDb tests", () => {
             key: uuid4(),
             created_at: new Date(),
             deleted_at: undefined,
-            userInfo: {}
+            user_info: {}
         };
         await s2skeyDb.create_key(s2skey);
         try {
@@ -313,7 +313,7 @@ describe("MongoDb tests", () => {
             key: uuid4(),
             created_at: new Date(),
             deleted_at: undefined,
-            userInfo: {}
+            user_info: {}
         };
         await s2skeyDb.create_key(s2skey);
         const res: S2S_Key = (await s2skeyDb.list_keys({
@@ -338,7 +338,7 @@ describe("MongoDb tests", () => {
             key: uuid4(),
             created_at: new Date(),
             deleted_at: undefined,
-            userInfo: {}
+            user_info: {}
         };
         await s2skeyDb.create_key(s2skey);
         await s2skeyDb.inactivate_key(s2skey.uuid);

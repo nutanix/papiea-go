@@ -320,13 +320,13 @@ describe("Entity API auth tests", () => {
     test("Create, get and inacivate s2s key", async () => {
         expect.hasAssertions();
         const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`);
-        const { data: userInfo } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
+        const { data: user_info } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
         const { data: s2skey } = await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
-                owner: userInfo.owner,
-                provider_prefix: userInfo.provider_prefix
+                owner: user_info.owner,
+                provider_prefix: user_info.provider_prefix
             },
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
@@ -364,13 +364,13 @@ describe("Entity API auth tests", () => {
         await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
             policy: `p, alice, owner, ${ kind_name }, *, allow`
         });
-        const { data: userInfo } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
+        const { data: user_info } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
         const { data: s2skey } = await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
-                owner: userInfo.owner,
-                provider_prefix: userInfo.provider_prefix
+                owner: user_info.owner,
+                provider_prefix: user_info.provider_prefix
             },
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
@@ -406,13 +406,13 @@ describe("Entity API auth tests", () => {
         await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
             policy: `p, alice, owner, ${ kind_name }, *, allow`
         });
-        const { data: userInfo } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
+        const { data: user_info } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
         const { data: s2skey } = await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
-                owner: userInfo.owner,
-                provider_prefix: userInfo.provider_prefix
+                owner: user_info.owner,
+                provider_prefix: user_info.provider_prefix
             },
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
@@ -426,14 +426,14 @@ describe("Entity API auth tests", () => {
     test("Create s2s key with another owner or provider should fail", async () => {
         expect.assertions(2 + expectAssertionsFromOauth2Server);
         const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`);
-        const { data: userInfo } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
+        const { data: user_info } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
         try {
             await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
                 {
                     owner: "another_owner",
-                    provider_prefix: userInfo.provider_prefix
+                    provider_prefix: user_info.provider_prefix
                 },
                 { headers: { 'Authorization': 'Bearer ' + token } }
             );
@@ -443,7 +443,7 @@ describe("Entity API auth tests", () => {
         try {
             await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
                 {
-                    owner: userInfo.owner,
+                    owner: user_info.owner,
                     provider_prefix: "another_provider"
                 },
                 { headers: { 'Authorization': 'Bearer ' + token } }
@@ -575,7 +575,7 @@ describe("Entity API auth tests", () => {
         });
         const { data: s2skey } = await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
-                userInfo: {
+                user_info: {
                     provider_prefix: provider.prefix,
                     is_provider_admin: true
                 }
@@ -646,7 +646,7 @@ describe("Entity API auth tests", () => {
         });
         const { data: s2skey } = await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
-                userInfo: {
+                user_info: {
                     provider_prefix: provider.prefix,
                     is_provider_admin: true
                 }
@@ -671,7 +671,7 @@ describe("Entity API auth tests", () => {
             });
             const { data: s2skey } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
-                    userInfo: {
+                    user_info: {
                         provider_prefix: provider.prefix + "1",
                         is_provider_admin: true
                     }

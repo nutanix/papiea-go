@@ -8,7 +8,6 @@ import { UserAuthInfo } from "../auth/authn";
 import { createHash } from "../auth/crypto";
 import { EventEmitter } from "events";
 import { Entity_Reference, Version, Status, Provider, Kind, S2S_Key, Action } from "papiea-core";
-import { Maybe } from "../utils/utils";
 import uuid = require("uuid");
 import { getDefaultLogger } from "./../logger";
 import * as winston from "winston";
@@ -20,14 +19,16 @@ export class Provider_API_Impl implements Provider_API {
     private authorizer: Authorizer;
     private eventEmitter: EventEmitter;
     private logger: winston.Logger;
+    private validator: Validator
 
-    constructor(providerDb: Provider_DB, statusDb: Status_DB, s2skeyDb: S2S_Key_DB, authorizer: Authorizer, logger?: winston.Logger) {
+    constructor(providerDb: Provider_DB, statusDb: Status_DB, s2skeyDb: S2S_Key_DB, authorizer: Authorizer, validator: Validator, logger?: winston.Logger) {
         this.providerDb = providerDb;
         this.statusDb = statusDb;
         this.s2skeyDb = s2skeyDb;
         this.authorizer = authorizer;
         this.eventEmitter = new EventEmitter();
         this.logger = logger ? logger : getDefaultLogger();
+        this.validator = validator
     }
 
     async register_provider(user: UserAuthInfo, provider: Provider): Promise<void> {
@@ -91,7 +92,7 @@ export class Provider_API_Impl implements Provider_API {
             throw new Error("Kind not found");
         }
         const schemas: any = Object.assign({}, kind.kind_structure);
-        Validator.validate(status, Maybe.fromValue(Object.values(kind.kind_structure)[0]), schemas, allowExtraProps);
+        this.validator.validate(status, Object.values(kind.kind_structure)[0], schemas, allowExtraProps);
     }
 
     async update_auth(user: UserAuthInfo, provider_prefix: string, provider_version: Version, auth: any): Promise<void> {
@@ -134,7 +135,7 @@ export class Provider_API_Impl implements Provider_API {
             key: "",
             created_at: new Date(),
             deleted_at: undefined,
-            userInfo: userInfo ? userInfo : user
+            user_info: userInfo ? userInfo : user
         };
         s2skey.key = key ? key : createHash(s2skey);
         await this.authorizer.checkPermission(user, s2skey, Action.CreateS2SKey);
