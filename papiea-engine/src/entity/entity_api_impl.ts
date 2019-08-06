@@ -20,7 +20,7 @@ import {
     Version,
     Action
 } from "papiea-core";
-import { isEmpty, Maybe } from "../utils/utils";
+import { isEmpty } from "../utils/utils";
 import { ValidationError } from "../errors/validation_error";
 import { ProcedureInvocationError } from "../errors/procedure_invocation_error";
 import uuid = require("uuid");
@@ -33,12 +33,14 @@ export class Entity_API_Impl implements Entity_API {
     private spec_db: Spec_DB;
     private provider_api: Provider_API;
     private authorizer: Authorizer;
+    private validator: Validator
 
-    constructor(status_db: Status_DB, spec_db: Spec_DB, provider_api: Provider_API, authorizer: Authorizer) {
+    constructor(status_db: Status_DB, spec_db: Spec_DB, provider_api: Provider_API, authorizer: Authorizer, validator: Validator) {
         this.status_db = status_db;
         this.spec_db = spec_db;
         this.provider_api = provider_api;
         this.authorizer = authorizer;
+        this.validator = validator;
     }
 
     private async get_kind(user: UserAuthInfo, prefix: string, kind_name: string, version: Version): Promise<Kind> {
@@ -141,7 +143,7 @@ export class Entity_API_Impl implements Entity_API {
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
         try {
-            Validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas, provider.allowExtraProps);
+            this.validator.validate(input, Object.values(procedure.argument)[0], schemas, provider.allowExtraProps);
             const { data } = await axios.post(procedure.procedure_callback,
                 {
                     metadata: entity_spec[0],
@@ -151,7 +153,7 @@ export class Entity_API_Impl implements Entity_API {
                 }, {
                     headers: user
                 });
-            Validator.validate(data, Maybe.fromValue(Object.values(procedure.result)[0]), schemas, provider.allowExtraProps);
+            this.validator.validate(data, Object.values(procedure.result)[0], schemas, provider.allowExtraProps);
             return data;
         } catch (err) {
             if (err instanceof ValidationError) {
@@ -179,14 +181,14 @@ export class Entity_API_Impl implements Entity_API {
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
         try {
-            Validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas, provider.allowExtraProps);
+            this.validator.validate(input, Object.values(procedure.argument)[0], schemas, provider.allowExtraProps);
             const { data } = await axios.post(procedure.procedure_callback,
                 {
                     input: input
                 }, {
                     headers: user
                 });
-            Validator.validate(data, Maybe.fromValue(Object.values(procedure.result)[0]), schemas, provider.allowExtraProps);
+            this.validator.validate(data, Object.values(procedure.result)[0], schemas, provider.allowExtraProps);
             return data;
         } catch (err) {
             if (err instanceof ValidationError) {
@@ -210,14 +212,14 @@ export class Entity_API_Impl implements Entity_API {
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
         try {
-            Validator.validate(input, Maybe.fromValue(Object.values(procedure.argument)[0]), schemas, provider.allowExtraProps);
+            this.validator.validate(input, Object.values(procedure.argument)[0], schemas, provider.allowExtraProps);
             const { data } = await axios.post(procedure.procedure_callback,
                 {
                     input: input
                 }, {
                     headers: user
                 });
-            Validator.validate(data, Maybe.fromValue(Object.values(procedure.result)[0]), schemas, provider.allowExtraProps);
+            this.validator.validate(data, Object.values(procedure.result)[0], schemas, provider.allowExtraProps);
             return data;
         } catch (err) {
             if (err instanceof ValidationError) {
@@ -232,7 +234,7 @@ export class Entity_API_Impl implements Entity_API {
 
     private validate_spec(spec: Spec, kind: Kind, allowExtraProps: boolean) {
         const schemas: any = Object.assign({}, kind.kind_structure);
-        Validator.validate(spec, Maybe.fromValue(Object.values(kind.kind_structure)[0]), schemas, allowExtraProps);
+        this.validator.validate(spec, Object.values(kind.kind_structure)[0], schemas, allowExtraProps);
     }
 
     private validate_metadata_extension(extension_structure: Data_Description, metadata: Metadata | undefined, allowExtraProps: boolean) {
@@ -246,7 +248,7 @@ export class Entity_API_Impl implements Entity_API {
             throw new ValidationError([{"name": "Error", message: "Metadata extension is not specified"}])
         }
         const schemas: any = Object.assign({}, extension_structure);
-        Validator.validate(metadata.extension, Maybe.fromValue(Object.values(extension_structure)[0]), schemas, false);
+        this.validator.validate(metadata.extension, Object.values(extension_structure)[0], schemas, allowExtraProps);
     }
 
     async check_permission(user: UserAuthInfo, prefix: string, version: Version, entityAction: [Action, Entity_Reference][]): Promise<OperationSuccess> {

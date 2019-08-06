@@ -7,12 +7,12 @@ import { MongoConnection } from "./databases/mongo";
 import { createEntityAPIRouter } from "./entity/entity_routes";
 import { Entity_API_Impl } from "./entity/entity_api_impl";
 import {
-    createAuthnRouter, UserAuthInfoExtractor,
-    CompositeUserAuthInfoExtractor, AdminUserAuthInfoExtractor
+    createAuthnRouter, CompositeUserAuthInfoExtractor, AdminUserAuthInfoExtractor
 } from "./auth/authn";
 import { createOAuth2Router, IdpUserAuthInfoExtractor } from "./auth/oauth2";
 import { S2SKeyUserAuthInfoExtractor } from "./auth/s2s";
 import { Authorizer, AdminAuthorizer, PerProviderAuthorizer } from "./auth/authz";
+import { ValidatorImpl } from "./validator";
 import { ProviderCasbinAuthorizerFactory } from "./auth/casbin";
 import morgan = require("morgan");
 import { PapieaErrorImpl } from "./errors/papiea_error_impl";
@@ -48,7 +48,8 @@ async function setUpApplication(): Promise<express.Express> {
     const specDb = await mongoConnection.get_spec_db();
     const statusDb = await mongoConnection.get_status_db();
     const s2skeyDb = await mongoConnection.get_s2skey_db();
-    const providerApi = new Provider_API_Impl(providerDb, statusDb, s2skeyDb, new AdminAuthorizer());
+    const validator = new ValidatorImpl()
+    const providerApi = new Provider_API_Impl(providerDb, statusDb, s2skeyDb, new AdminAuthorizer(), validator);
     const userAuthInfoExtractor = new CompositeUserAuthInfoExtractor([
         new AdminUserAuthInfoExtractor(adminKey),
         new S2SKeyUserAuthInfoExtractor(s2skeyDb),
@@ -58,7 +59,7 @@ async function setUpApplication(): Promise<express.Express> {
     app.use(createOAuth2Router(oauth2RedirectUri, providerDb));
     const entityApiAuthorizer: Authorizer = new PerProviderAuthorizer(providerApi, new ProviderCasbinAuthorizerFactory());
     app.use('/provider', createProviderAPIRouter(providerApi));
-    app.use('/services', createEntityAPIRouter(new Entity_API_Impl(statusDb, specDb, providerApi, entityApiAuthorizer)));
+    app.use('/services', createEntityAPIRouter(new Entity_API_Impl(statusDb, specDb, providerApi, entityApiAuthorizer, validator)));
     app.use('/api-docs', createAPIDocsRouter('/api-docs', new ApiDocsGenerator(providerDb)));
     app.use(function (err: any, req: any, res: any, next: any) {
         if (res.headersSent) {

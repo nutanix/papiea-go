@@ -84,9 +84,9 @@ export function createAuthnRouter(userAuthInfoExtractor: UserAuthInfoExtractor):
         const urlParts = req.originalUrl.split('/');
         const provider_prefix: string | undefined = urlParts[2];
         const provider_version: string | undefined = urlParts[3];
-        
-        const userInfo = await userAuthInfoExtractor.getUserAuthInfo(token, provider_prefix, provider_version);
-        if (userInfo === null) {
+
+        const user_info = await userAuthInfoExtractor.getUserAuthInfo(token, provider_prefix, provider_version);
+        if (user_info === null) {
             throw new UnauthorizedError();
         }
 
@@ -94,12 +94,12 @@ export function createAuthnRouter(userAuthInfoExtractor: UserAuthInfoExtractor):
             if (provider_prefix
                 // TODO: probably need to change /provider/update_status to /provider/:prefix/:version/update_status
                 && provider_prefix !== "update_status"
-                && (userInfo.provider_prefix !== undefined && userInfo.provider_prefix !== provider_prefix)
-                && !userInfo.is_admin) {
+                && (user_info.provider_prefix !== undefined && user_info.provider_prefix !== provider_prefix)
+                && !user_info.is_admin) {
                 throw new UnauthorizedError();
             }
         }
-        req.user = userInfo;
+        req.user = user_info;
         next();
     }
 

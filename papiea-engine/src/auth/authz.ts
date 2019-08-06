@@ -134,21 +134,21 @@ export class AdminAuthorizer extends Authorizer {
             return;
         }
         if (action === Action.CreateS2SKey) {
-            // object.userInfo contains UserInfo which will be used when s2s key is passed
+            // object.user_info contains UserInfo which will be used when s2s key is passed
             // check who can talk on behalf of whom
-            if (object.owner !== user.owner || object.userInfo.is_admin) {
+            if (object.owner !== user.owner || object.user_info.is_admin) {
                 throw new PermissionDeniedError();
             }
             if (user.provider_prefix !== undefined
                 && (object.provider_prefix !== user.provider_prefix
-                    || object.userInfo.provider_prefix !== user.provider_prefix)) {
+                    || object.user_info.provider_prefix !== user.provider_prefix)) {
                 throw new PermissionDeniedError();
             }
             if (user.is_provider_admin) {
                 return;
             }
-            if (object.userInfo.is_provider_admin
-                || object.userInfo.owner !== user.owner) {
+            if (object.user_info.is_provider_admin
+                || object.user_info.owner !== user.owner) {
                 throw new PermissionDeniedError();
             }
             return;

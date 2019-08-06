@@ -20,8 +20,8 @@ export class IdpUserAuthInfoExtractor implements UserAuthInfoExtractor {
 
     getUserInfoFromToken(token: any, provider: Provider): UserAuthInfo {
         const extracted_headers = extract_property({ token }, provider.oauth2, "headers");
-        const userInfo: UserAuthInfo = { ...extracted_headers };
-        return userInfo;
+        const user_info: UserAuthInfo = { ...extracted_headers };
+        return user_info;
     }
 
     async getUserAuthInfo(token: string, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null> {
@@ -30,9 +30,9 @@ export class IdpUserAuthInfoExtractor implements UserAuthInfoExtractor {
                 return null;
             }
             const provider: Provider = await this.providerDb.get_provider(provider_prefix, provider_version);
-            const userInfo = this.getUserInfoFromToken(JSON.parse(atob(token)), provider);
-            delete userInfo.is_admin;
-            return userInfo;
+            const user_info = this.getUserInfoFromToken(JSON.parse(atob(token)), provider);
+            delete user_info.is_admin;
+            return user_info;
         } catch (e) {
             console.error(`While trying to authenticate with IDP error: '${e}' occurred`);
             return null;

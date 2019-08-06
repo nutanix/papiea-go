@@ -13,9 +13,9 @@ export class S2SKeyUserAuthInfoExtractor implements UserAuthInfoExtractor {
     async getUserAuthInfo(token: string, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null> {
         try {
             const s2skey: S2S_Key = await this.s2skeyDb.get_key_by_secret(token);
-            const userInfo = s2skey.userInfo;
-            userInfo.authorization = 'Bearer ' + s2skey.key;
-            return userInfo;
+            const user_info = s2skey.user_info;
+            user_info.authorization = 'Bearer ' + s2skey.key;
+            return user_info;
         } catch (e) {
             return null;
         }
