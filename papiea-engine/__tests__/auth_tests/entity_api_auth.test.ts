@@ -216,6 +216,16 @@ describe("Entity API auth tests", () => {
         expect(data.provider_prefix).toEqual(provider.prefix);
     });
 
+    test("Get user info via cookie", async () => {
+        expect.hasAssertions();
+        const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`);
+        const { data } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
+            { headers: { 'Cookie': 'token=' + token } }
+        );
+        expect(data.owner).toEqual("alice");
+        expect(data.tenant).toEqual(tenant_uuid);
+    });
+
     test("Login from SPA", async () => {
         expect.hasAssertions();
         const hostname = "127.0.0.1";

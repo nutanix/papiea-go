@@ -13,6 +13,7 @@ import { Authorizer, AdminAuthorizer, PerProviderAuthorizer} from "./auth/authz"
 import { ProviderCasbinAuthorizerFactory } from "./auth/casbin";
 import { PapieaErrorImpl } from "./errors/papiea_error_impl";
 import { WinstonLogger, getLoggingMiddleware } from './logger';
+const cookieParser = require('cookie-parser');
 
 
 declare var process: {
@@ -42,6 +43,7 @@ const loggingLevel = process.env.LOGGING_LEVEL || 'info';
 async function setUpApplication(): Promise<express.Express> {
     const logger = new WinstonLogger(loggingLevel);
     const app = express();
+    app.use(cookieParser());
     app.use(express.json());
     app.use(getLoggingMiddleware(logger));
     const mongoConnection: MongoConnection = new MongoConnection(`mongodb://${mongoHost}:${mongoPort}`, process.env.MONGO_DB || 'papiea');
