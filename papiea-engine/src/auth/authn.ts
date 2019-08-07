@@ -18,7 +18,7 @@ class IdpAuthenticationStrategy implements AuthenticationStrategy {
     private readonly provider_version?: Version;
     private logger: Logger;
 
-    constructor(providerDb: Provider_DB, logger: Logger, provider_prefix?: string, provider_version?: string) {
+    constructor(logger: Logger, providerDb: Provider_DB, provider_prefix?: string, provider_version?: string) {
         this.providerDb = providerDb;
         this.provider_prefix = provider_prefix;
         this.provider_version = provider_version;
@@ -47,7 +47,7 @@ class AdminAuthenticationStrategy implements AuthenticationStrategy {
     private readonly adminKey: string;
     private logger: Logger;
 
-    constructor(adminKey: string, logger: Logger) {
+    constructor(logger: Logger, adminKey: string) {
         this.logger = logger;        
         this.adminKey = adminKey;
     }
@@ -65,7 +65,7 @@ class S2SKeyAuthenticationStrategy implements AuthenticationStrategy {
     private readonly s2skeyDb: S2S_Key_DB;
     private logger: Logger;
 
-    constructor(s2skeyDb: S2S_Key_DB, logger: Logger) {
+    constructor(logger: Logger, s2skeyDb: S2S_Key_DB) {
         this.logger = logger;        
         this.s2skeyDb = s2skeyDb;
     }
@@ -90,13 +90,13 @@ class AuthenticationContext {
 
 
     // TODO: I.Korotach maybe introduce a DI factory
-    constructor(token: string, adminKey: string, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB, provider_prefix: string, provider_version: Version, logger: Logger) {
+    constructor(logger: Logger, token: string, adminKey: string, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB, provider_prefix: string, provider_version: Version) {
         this.logger = logger;        
         this.token = token;
         this.authStrategies = [
-            new AdminAuthenticationStrategy(adminKey, logger),
-            new S2SKeyAuthenticationStrategy(s2skeyDb, logger),
-            new IdpAuthenticationStrategy(providerDb, logger, provider_prefix, provider_version)
+            new AdminAuthenticationStrategy(logger, adminKey),
+            new S2SKeyAuthenticationStrategy(logger, s2skeyDb),
+            new IdpAuthenticationStrategy(logger, providerDb, provider_prefix, provider_version)
         ]
     }
 
@@ -146,7 +146,7 @@ function getToken(req: any): string | null {
     return null;
 }
 
-export function createAuthnRouter(adminKey: string, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB, logger: Logger): Router {
+export function createAuthnRouter(logger: Logger, adminKey: string, s2skeyDb: S2S_Key_DB, providerDb: Provider_DB): Router {
 
     const router = Router();
 
@@ -158,7 +158,7 @@ export function createAuthnRouter(adminKey: string, s2skeyDb: S2S_Key_DB, provid
         const urlParts = req.originalUrl.split('/');
         const provider_prefix: string | undefined = urlParts[2];
         const provider_version: Version | undefined = urlParts[3];
-        const AuthCtx = new AuthenticationContext(token, adminKey, s2skeyDb, providerDb, provider_prefix, provider_version, logger);
+        const AuthCtx = new AuthenticationContext(logger, token, adminKey, s2skeyDb, providerDb, provider_prefix, provider_version);
 
         const userInfo = await AuthCtx.getUserAuthInfo();
 

@@ -37,7 +37,7 @@ export class Entity_API_Impl implements Entity_API {
     private logger: Logger;
     private validator: Validator
 
-    constructor(status_db: Status_DB, spec_db: Spec_DB, provider_api: Provider_API, authorizer: Authorizer, validator: Validator, logger: Logger) {
+    constructor(logger: Logger, status_db: Status_DB, spec_db: Spec_DB, provider_api: Provider_API, authorizer: Authorizer, validator: Validator) {
         this.status_db = status_db;
         this.spec_db = spec_db;
         this.provider_api = provider_api;

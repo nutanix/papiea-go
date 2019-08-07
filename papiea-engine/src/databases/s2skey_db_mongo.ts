@@ -8,7 +8,7 @@ export class S2S_Key_DB_Mongo implements S2S_Key_DB {
     collection: Collection;
     logger: Logger;
 
-    constructor(db: Db, logger: Logger) {
+    constructor(logger: Logger, db: Db) {
         this.collection = db.collection("s2skey");
         this.logger = logger;
     }

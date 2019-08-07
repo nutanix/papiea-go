@@ -15,7 +15,7 @@ export class CasbinAuthorizer extends Authorizer {
     private enforcer: any;
     private logger: Logger
 
-    constructor(modelText: string, policyText: string, logger: Logger) {
+    constructor(logger: Logger, modelText: string, policyText: string) {
         super();
         this.modelText = modelText;
         this.policyText = policyText;
@@ -93,7 +93,7 @@ export class ProviderCasbinAuthorizerFactory implements ProviderAuthorizerFactor
         if (!provider || !provider.authModel || !provider.policy) {
             throw new PermissionDeniedError();
         }
-        const authorizer = new CasbinAuthorizer(provider.authModel, provider.policy, this.logger);
+        const authorizer = new CasbinAuthorizer(this.logger, provider.authModel, provider.policy);
         await authorizer.init();
         return authorizer;
     }

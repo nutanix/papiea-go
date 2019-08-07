@@ -11,7 +11,7 @@ export class Spec_DB_Mongo implements Spec_DB {
     collection: Collection;
     logger: Logger;
 
-    constructor(db: Db, logger: Logger) {
+    constructor(logger: Logger, db: Db) {
         this.collection = db.collection("entity");
         this.logger = logger;
     }

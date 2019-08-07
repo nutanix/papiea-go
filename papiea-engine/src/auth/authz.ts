@@ -51,7 +51,7 @@ export class PerProviderAuthorizer extends Authorizer {
     private providerAuthorizerFactory: ProviderAuthorizerFactory;
     private logger: Logger;
 
-    constructor(providerApi: Provider_API, providerAuthorizerFactory: ProviderAuthorizerFactory, logger: Logger) {
+    constructor(logger: Logger, providerApi: Provider_API, providerAuthorizerFactory: ProviderAuthorizerFactory) {
         super();
         this.providerApi = providerApi;
         providerApi.on_auth_change((provider: Provider) => {

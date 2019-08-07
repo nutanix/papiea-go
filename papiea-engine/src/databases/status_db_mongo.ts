@@ -10,7 +10,7 @@ export class Status_DB_Mongo implements Status_DB {
     collection: Collection;
     logger: Logger
 
-    constructor(db: Db, logger: Logger) {
+    constructor(logger: Logger, db: Db) {
         this.collection = db.collection("entity");
         this.logger = logger;
     }

@@ -7,7 +7,7 @@ export class Provider_DB_Mongo implements Provider_DB {
     collection: Collection;
     logger: Logger
 
-    constructor(db: Db, logger: Logger) {
+    constructor(logger: Logger, db: Db) {
         this.collection = db.collection("provider");
         this.logger = logger;
     }

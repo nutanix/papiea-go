@@ -44,7 +44,7 @@ export class MongoConnection {
             return this.specDb;
         if (this.db === undefined)
             throw new Error("Not connected");
-        this.specDb = new Spec_DB_Mongo(this.db, logger);
+        this.specDb = new Spec_DB_Mongo(logger, this.db);
         await this.specDb.init();
         return this.specDb;
     }
@@ -54,7 +54,7 @@ export class MongoConnection {
             return this.providerDb;
         if (this.db === undefined)
             throw new Error("Not connected");
-        this.providerDb = new Provider_DB_Mongo(this.db, logger);
+        this.providerDb = new Provider_DB_Mongo(logger, this.db);
         await this.providerDb.init();
         return this.providerDb;
     }
@@ -64,7 +64,7 @@ export class MongoConnection {
             return this.statusDb;
         if (this.db === undefined)
             throw new Error("Not connected");
-        this.statusDb = new Status_DB_Mongo(this.db, logger);
+        this.statusDb = new Status_DB_Mongo(logger, this.db);
         await this.statusDb.init();
         return this.statusDb;
     }
@@ -74,7 +74,7 @@ export class MongoConnection {
             return this.s2skeyDb;
         if (this.db === undefined)
             throw new Error("Not connected");
-        this.s2skeyDb = new S2S_Key_DB_Mongo(this.db, logger);
+        this.s2skeyDb = new S2S_Key_DB_Mongo(logger, this.db);
         await this.s2skeyDb.init();
         return this.s2skeyDb;
     }
