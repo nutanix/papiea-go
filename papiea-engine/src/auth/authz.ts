@@ -143,8 +143,7 @@ export class AdminAuthorizer extends Authorizer {
                 throw new PermissionDeniedError();
             }
             if (user.provider_prefix !== undefined
-                && (object.provider_prefix !== user.provider_prefix
-                    || object.user_info.provider_prefix !== user.provider_prefix)) {
+                && object.provider_prefix !== user.provider_prefix) {
                 throw new PermissionDeniedError();
             }
             if (user.is_provider_admin) {

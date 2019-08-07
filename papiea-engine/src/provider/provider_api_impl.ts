@@ -134,9 +134,8 @@ export class Provider_API_Impl implements Provider_API {
             key: "",
             created_at: new Date(),
             deleted_at: undefined,
-            user_info: {"provider_prefix": provider_prefix}
+            user_info: Object.assign({}, user_info ? user_info : user)
         };
-        Object.assign(s2skey.user_info, user_info ? user_info : user);
         s2skey.key = key ? key : createHash(s2skey);
         await this.authorizer.checkPermission(user, s2skey, Action.CreateS2SKey);
         await this.s2skeyDb.create_key(s2skey);
