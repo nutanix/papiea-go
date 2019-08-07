@@ -1,10 +1,8 @@
 import * as express from "express";
 import * as swaggerUi from "swagger-ui-express";
-// import ApiDocsGenerator from "./api_docs_generator";
 import ApiDocsGenerator from "./api_docs_provider_generator";
 import { Provider_DB } from "../databases/provider_db_interface";
 import { Provider } from "papiea-core";
-// const swaggerUi = require("express-swaggerize-ui");
 
 async function swaggerSetupWrapper(req: express.Request, apiDocsGenerator: ApiDocsGenerator, providerDb: Provider_DB) {
     const provider: Provider = await providerDb.get_provider(req.params.provider, req.params.version);
@@ -15,12 +13,6 @@ async function swaggerSetupWrapper(req: express.Request, apiDocsGenerator: ApiDo
 export default function createAPIDocsRouter(urlPrefix: string, apiDocsGenerator: ApiDocsGenerator, providerDb: Provider_DB) {
     const apiDocsRouter = express.Router();
 
-    // apiDocsRouter.get('/api-docs.json', function (req, res, next) {
-    //     apiDocsGenerator.getApiDocs().then(result => {
-    //         res.json(result);
-    //     }).catch(next);
-    // });
-    // apiDocsRouter.use('/', swaggerUi({ route: urlPrefix, docs: urlPrefix + '/api-docs.json' }));
     apiDocsRouter.use('/', swaggerUi.serve);
     apiDocsRouter.get('/:provider/:version', async (req, res, next) => {
         const swaggerSetup = await swaggerSetupWrapper(req, apiDocsGenerator, providerDb);
