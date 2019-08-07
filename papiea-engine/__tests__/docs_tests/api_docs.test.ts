@@ -164,6 +164,42 @@ describe("API docs test entity", () => {
             .responses["200"]
             .content["application/json"]
             .schema["$ref"]).toEqual(`#/components/schemas/SumOutput`);
+
+        expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
+            .post
+            .responses["default"]
+            .content["application/json"]
+            .schema["$ref"]).toEqual(`#/components/schemas/Error`);
+
+        expect(apiDoc.components.schemas["Error"]).toEqual({
+            "required": [
+                "error",
+            ],
+            "properties": {
+                "error": {
+                    "type": "object",
+                    "required": [
+                        "errors",
+                        "code",
+                        "message"
+                    ],
+                    "properties": {
+                        "errors": {
+                            "type": "array",
+                            "items": {
+                                "type": "object"
+                            }
+                        },
+                        "code": {
+                            "type": "integer"
+                        },
+                        "message": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        })
     });
 
     test("Provider with procedures generates correct openAPI emitting all variables without 'x-papiea' - 'status_only' property", async () => {

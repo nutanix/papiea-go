@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response, Router } from "express";
 import { UnauthorizedError } from "../errors/permission_error";
+import Logger from "../logger_interface";
 
 
 export interface UserAuthInfoExtractor {
@@ -72,7 +73,7 @@ function getToken(req: any): string | null {
     return null;
 }
 
-export function createAuthnRouter(userAuthInfoExtractor: UserAuthInfoExtractor): Router {
+export function createAuthnRouter(logger: Logger, userAuthInfoExtractor: UserAuthInfoExtractor): Router {
 
     const router = Router();
 

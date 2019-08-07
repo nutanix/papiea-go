@@ -9,6 +9,7 @@ import { createHash } from "../auth/crypto";
 import { EventEmitter } from "events";
 import { Entity_Reference, Version, Status, Provider, Kind, S2S_Key, Action } from "papiea-core";
 import uuid = require("uuid");
+import Logger from "../logger_interface";
 
 export class Provider_API_Impl implements Provider_API {
     private providerDb: Provider_DB;
@@ -16,14 +17,16 @@ export class Provider_API_Impl implements Provider_API {
     private s2skeyDb: S2S_Key_DB;
     private authorizer: Authorizer;
     private eventEmitter: EventEmitter;
+    private logger: Logger;
     private validator: Validator
 
-    constructor(providerDb: Provider_DB, statusDb: Status_DB, s2skeyDb: S2S_Key_DB, authorizer: Authorizer, validator: Validator) {
+    constructor(logger: Logger, providerDb: Provider_DB, statusDb: Status_DB, s2skeyDb: S2S_Key_DB, authorizer: Authorizer, validator: Validator) {
         this.providerDb = providerDb;
         this.statusDb = statusDb;
         this.s2skeyDb = s2skeyDb;
         this.authorizer = authorizer;
         this.eventEmitter = new EventEmitter();
+        this.logger = logger;
         this.validator = validator
     }
 

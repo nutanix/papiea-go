@@ -8,6 +8,9 @@ import axios from "axios"
 import { readFileSync } from "fs";
 import { Metadata, Procedural_Execution_Strategy, Provider, Spec, Action } from "papiea-core";
 import uuid = require("uuid");
+import { WinstonLogger } from "../../src/logger";
+import Logger from "../../src/logger_interface";
+
 
 declare var process: {
     env: {
@@ -517,11 +520,12 @@ describe("SDK security tests", () => {
     const kind_name = provider.kinds[0].name;
     let entity_metadata: Metadata, entity_spec: Spec;
     const oauth2Server = OAuth2Server.createServer();
+    const providerSDKTestLogger: Logger = new WinstonLogger("info", "provider_sdk_test.log");
 
     beforeAll(async () => {
         await providerApiAdmin.post('/', provider);
         oauth2Server.listen(oauth2ServerPort, oauth2ServerHost, () => {
-            console.log(`Server running at http://${oauth2ServerHost}:${oauth2ServerPort}/`);
+            providerSDKTestLogger.info(`Server running at http://${oauth2ServerHost}:${oauth2ServerPort}/`);
         });
         const { data: { metadata, spec } } = await entityApi.post(`/${ provider.prefix }/${ provider.version }/${ kind_name }`, {
             metadata: {

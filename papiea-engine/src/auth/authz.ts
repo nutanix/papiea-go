@@ -2,6 +2,7 @@ import { UserAuthInfo } from "./authn";
 import { Provider_API } from "../provider/provider_api_interface";
 import { Provider, Action } from "papiea-core";
 import { PermissionDeniedError, UnauthorizedError } from "../errors/permission_error";
+import Logger from "../logger_interface";
 
 function mapAsync<T, U>(array: T[], callbackfn: (value: T, index: number, array: T[]) => Promise<U>): Promise<U[]> {
     return Promise.all(array.map(callbackfn));
@@ -48,8 +49,9 @@ export class PerProviderAuthorizer extends Authorizer {
     private providerToAuthorizer: { [key: string]: Authorizer | null; };
     private kindToProviderPrefix: { [key: string]: string; };
     private providerAuthorizerFactory: ProviderAuthorizerFactory;
+    private logger: Logger;
 
-    constructor(providerApi: Provider_API, providerAuthorizerFactory: ProviderAuthorizerFactory) {
+    constructor(logger: Logger, providerApi: Provider_API, providerAuthorizerFactory: ProviderAuthorizerFactory) {
         super();
         this.providerApi = providerApi;
         providerApi.on_auth_change((provider: Provider) => {
@@ -58,6 +60,7 @@ export class PerProviderAuthorizer extends Authorizer {
         this.providerToAuthorizer = {};
         this.kindToProviderPrefix = {};
         this.providerAuthorizerFactory = providerAuthorizerFactory;
+        this.logger = logger;
     }
 
     private async getProviderPrefixByKindName(user: UserAuthInfo, kind_name: string): Promise<string> {

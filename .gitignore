@@ -26,3 +26,6 @@ papiea-engine/papiea-lib-clj/target/
 
 # backups
 package.json.backup
+
+# logs
+logs/

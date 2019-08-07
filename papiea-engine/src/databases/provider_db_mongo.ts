@@ -1,12 +1,15 @@
 import { Provider_DB } from "./provider_db_interface";
 import { Db, Collection } from "mongodb"
 import { Version, Provider } from "papiea-core";
+import Logger from "../logger_interface";
 
 export class Provider_DB_Mongo implements Provider_DB {
     collection: Collection;
+    logger: Logger
 
-    constructor(db: Db) {
+    constructor(logger: Logger, db: Db) {
         this.collection = db.collection("provider");
+        this.logger = logger;
     }
 
     async init(): Promise<void> {

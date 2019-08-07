@@ -6,16 +6,20 @@ import { Model } from "casbin/lib/model";
 import { Helper } from "casbin/lib/persist/helper";
 import { Provider, Action } from "papiea-core";
 import { PermissionDeniedError } from "../errors/permission_error";
+import Logger from "../logger_interface";
+
 
 export class CasbinAuthorizer extends Authorizer {
     private modelText: string;
     private policyText: string;
     private enforcer: any;
+    private logger: Logger
 
-    constructor(modelText: string, policyText: string) {
+    constructor(logger: Logger, modelText: string, policyText: string) {
         super();
         this.modelText = modelText;
         this.policyText = policyText;
+        this.logger = logger;
     }
 
     async init() {
@@ -30,7 +34,7 @@ export class CasbinAuthorizer extends Authorizer {
                 throw new PermissionDeniedError();
             }
         } catch (e) {
-            console.error("CasbinAuthorizer checkPermission error", e);
+            this.logger.error("CasbinAuthorizer checkPermission error", e);
             throw new PermissionDeniedError();
         }
     }
@@ -79,14 +83,17 @@ class CasbinMemoryAdapter implements Adapter {
 }
 
 export class ProviderCasbinAuthorizerFactory implements ProviderAuthorizerFactory {
-    constructor() {
+    private logger: Logger;
+
+    constructor(logger: Logger) {
+        this.logger = logger;
     }
 
     async createAuthorizer(provider: Provider): Promise<Authorizer> {
         if (!provider || !provider.authModel || !provider.policy) {
             throw new PermissionDeniedError();
         }
-        const authorizer = new CasbinAuthorizer(provider.authModel, provider.policy);
+        const authorizer = new CasbinAuthorizer(this.logger, provider.authModel, provider.policy);
         await authorizer.init();
         return authorizer;
     }

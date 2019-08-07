@@ -5,12 +5,15 @@ import { datestringToFilter } from "./utils/date";
 import { encode } from "mongo-dot-notation-tool";
 import { Entity_Reference, Metadata, Spec, Entity } from "papiea-core";
 import { SortParams } from "../entity/entity_api_impl";
+import Logger from "../logger_interface";
 
 export class Spec_DB_Mongo implements Spec_DB {
     collection: Collection;
+    logger: Logger;
 
-    constructor(db: Db) {
+    constructor(logger: Logger, db: Db) {
         this.collection = db.collection("entity");
+        this.logger = logger;
     }
 
     async init(): Promise<void> {

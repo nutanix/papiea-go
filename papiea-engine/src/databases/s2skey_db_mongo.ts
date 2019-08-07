@@ -2,12 +2,15 @@ import { S2S_Key_DB } from "./s2skey_db_interface";
 import { S2S_Key } from "papiea-core";
 import { Collection, Db } from "mongodb";
 import { datestringToFilter } from "./utils/date";
+import Logger from "../logger_interface";
 
 export class S2S_Key_DB_Mongo implements S2S_Key_DB {
     collection: Collection;
+    logger: Logger;
 
-    constructor(db: Db) {
+    constructor(logger: Logger, db: Db) {
         this.collection = db.collection("s2skey");
+        this.logger = logger;
     }
 
     async init(): Promise<void> {
