@@ -1,8 +1,7 @@
 import { SessionKeyDb } from "../databases/session_key_db_interface"
 import { UserAuthInfo, UserAuthInfoExtractor } from "./authn"
 import { SessionKey } from "papiea-core"
-import { atob, parseJwt } from "./user_data_evaluator"
-import uuid = require("uuid")
+import { parseJwt } from "./user_data_evaluator"
 
 export class SessionKeyAPI {
     private readonly sessionKeyDb: SessionKeyDb
@@ -11,11 +10,11 @@ export class SessionKeyAPI {
         this.sessionKeyDb = sessionKeyDb
     }
 
-    async createKey(userInfo: UserAuthInfo, token: any): Promise<SessionKey> {
+    async createKey(userInfo: UserAuthInfo, token: any, key: string): Promise<SessionKey> {
         const parsedToken = parseJwt(token.token.access_token)
         const exp = parsedToken.content.exp
         const sessionKey: SessionKey = {
-            key: uuid(),
+            key: key,
             expireAt: new Date(exp * 1000),
             user_info: userInfo
         }

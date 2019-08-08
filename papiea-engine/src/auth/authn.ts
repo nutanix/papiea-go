@@ -90,7 +90,6 @@ export function createAuthnRouter(logger: Logger, userAuthInfoExtractor: UserAut
         if (user_info === null) {
             throw new UnauthorizedError();
         }
-
         if (urlParts.length > 1) {
             if (provider_prefix
                 // TODO: probably need to change /provider/update_status to /provider/:prefix/:version/update_status

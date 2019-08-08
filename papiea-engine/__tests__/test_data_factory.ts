@@ -311,6 +311,12 @@ function base64UrlEncode(...parts: any[]): string {
     return parts.map(x => base64UrlEncodePart(x)).join('.');
 }
 
+const timestampDate = new Date().getTime()
+const timestamp = timestampDate / 1000
+const expirationDate = new Date(timestampDate)
+expirationDate.setHours(expirationDate.getHours() + 2)
+const expiration = expirationDate.getTime() / 1000
+
 export class OAuth2Server {
     static tenant_uuid = uuid();
 
@@ -324,8 +330,8 @@ export class OAuth2Server {
             "default_tenant": OAuth2Server.tenant_uuid,
             "iss": "https:\/\/127.0.0.1:9002\/oauth2\/token",
             "given_name": "Alice",
-            "iat": 1555925532,
-            "exp": 1555929132,
+            "iat": timestamp,
+            "exp": expiration,
             "email": "alice@localhost",
             "last_name": "Doe",
             "aud": ["EEE"],
@@ -346,7 +352,7 @@ export class OAuth2Server {
             "default_tenant": OAuth2Server.tenant_uuid,
             "iss": "https:\/\/127.0.0.1:9002\/oauth2\/token",
             "given_name": "Alice",
-            "iat": 1555926264,
+            "iat": timestamp,
             "xi_role": base64UrlEncode([{
                 "tenant-domain": OAuth2Server.tenant_uuid,
                 "tenant-status": "PROVISIONED",
@@ -359,8 +365,8 @@ export class OAuth2Server {
                     "tenant-uuid": OAuth2Server.tenant_uuid
                 }
             }]),
-            "auth_time": 1555926264,
-            "exp": 1555940664,
+            "auth_time": timestamp,
+            "exp": expiration,
             "email": "alice@localhost",
             "aud": ["EEE"],
             "last_name": "Doe",
@@ -371,7 +377,7 @@ export class OAuth2Server {
     static idp_token = JSON.stringify({
         scope: 'openid',
         token_type: 'Bearer',
-        expires_in: 3167,
+        expires_in: expiration - timestamp,
         refresh_token: uuid(),
         id_token: OAuth2Server.id_token,
         access_token: OAuth2Server.access_token

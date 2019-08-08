@@ -5,6 +5,7 @@ import { atob, extract_property } from "./user_data_evaluator"
 import { Provider } from "papiea-core"
 import Logger from "../logger_interface"
 import { SessionKeyAPI, SessionKeyUserAuthInfoExtractor } from "./session_key"
+import uuid = require("uuid")
 
 const simpleOauthModule = require("simple-oauth2"),
     queryString = require("query-string"),
@@ -95,8 +96,10 @@ export function createOAuth2Router(logger: Logger, redirect_uri: string, provide
                 redirect_uri
             });
             const token = oauth2.accessToken.create(result);
+            const key = uuid()
             const userInfo = getUserInfoFromToken(token.token, provider)
-            const sessionKey = await sessionKeyAPI.createKey(userInfo, token)
+            userInfo.authorization = `Bearer ${key}`
+            const sessionKey = await sessionKeyAPI.createKey(userInfo, token, key)
             if (state.redirect_uri) {
                 const client_url = new url.URL(state.redirect_uri);
                 client_url.searchParams.append("token", sessionKey.key);

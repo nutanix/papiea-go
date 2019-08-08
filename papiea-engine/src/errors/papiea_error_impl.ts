@@ -62,7 +62,7 @@ export class PapieaErrorImpl implements PapieaError {
             case UnauthorizedError:
                 return new PapieaErrorImpl(401, "Unauthorized.")
             case PermissionDeniedError:
-                return new PapieaErrorImpl(403, "Unauthorized.")
+                return new PapieaErrorImpl(403, "Permission denied.")
             default:
                 return new PapieaErrorImpl(500, `${err}.`)
         }

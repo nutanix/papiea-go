@@ -16,6 +16,12 @@ function base64UrlEncode(...parts: any[]): string {
     return parts.map(x => base64UrlEncodePart(x)).join('.');
 }
 
+let timestampDate = new Date().getTime()
+const timestamp = timestampDate / 1000
+const expirationDate = new Date(timestampDate)
+expirationDate.setHours(expirationDate.getHours() + 2)
+const expiration = expirationDate.getTime() / 1000
+
 const tenant_uuid = uuid();
 
 const id_token = base64UrlEncode(
@@ -30,7 +36,7 @@ const id_token = base64UrlEncode(
         "default_tenant": tenant_uuid,
         "iss": "https:\/\/127.0.0.1:9002\/oauth2\/token",
         "given_name": "Alice",
-        "iat": 1555926264,
+        "iat": timestamp,
         "xi_role": base64UrlEncode([{
             "tenant-domain": tenant_uuid,
             "tenant-status": "PROVISIONED",
@@ -43,8 +49,8 @@ const id_token = base64UrlEncode(
                 "tenant-uuid": tenant_uuid
             }
         }]),
-        "auth_time": 1555926264,
-        "exp": 1555940664,
+        "auth_time": timestamp,
+        "exp": expiration,
         "email": "alice@localhost",
         "aud": ["EEE"],
         "last_name": "Doe",
@@ -59,8 +65,8 @@ const access_token_identity_part = {
         "default_tenant": tenant_uuid,
         "iss": "https:\/\/127.0.0.1:9002\/oauth2\/token",
         "given_name": "Alice",
-        "iat": 1555925532,
-        "exp": 1555929132,
+        "iat": timestamp,
+        "exp": expiration,
         "email": "alice@localhost",
         "last_name": "Doe",
         "aud": ["EEE"],
@@ -82,7 +88,7 @@ const token =
             {
                 scope: 'openid',
                 token_type: 'Bearer',
-                expires_in: 3600,
+                expires_in: expiration - timestamp,
                 refresh_token: '93b3ebdc-8ac6-3181-ab78-42c22a48e345',
                 id_token: id_token,
                 access_token: access_token,
@@ -251,7 +257,6 @@ describe("Evaluating a full yaml file", () => {
                     "tenant-fname": "Alice",
                     "tenant-lname": "Doe",
                     "tenant-role": "papiea-admin",
-                    "authorization": `Bearer ${ btoa(JSON.stringify(token.token)) }`,
                     "owner": "alice"
                 });
             done()
