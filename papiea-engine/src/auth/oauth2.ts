@@ -45,16 +45,6 @@ function getOAuth2(provider: Provider) {
     return simpleOauthModule.create(converted_oauth);
 }
 
-function parseJwt(token: string) {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-
-    return JSON.parse(jsonPayload);
-}
-
 
 export function createOAuth2Router(logger: Logger, redirect_uri: string, providerDb: Provider_DB, sessionKeyAPI: SessionKeyAPI): Router {
     const router = Router();
@@ -77,8 +67,14 @@ export function createOAuth2Router(logger: Logger, redirect_uri: string, provide
     }));
 
     router.use('/provider/:prefix/:version/auth/logout', asyncHandler(async (req, res) => {
+        const provider: Provider = await providerDb.get_provider(req.params.prefix, req.params.version);
+        const oauth2 = getOAuth2(provider);
+        const token = req.user.authorization.split(' ')[1]
+        const sessionKey = await sessionKeyAPI.getKey(token)
+        const idpToken = oauth2.accessToken.create({ "access_token": sessionKey.idpToken.access_token });
         try {
-            await sessionKeyAPI.inActivateKey(req.user.authorization.split(' ')[1])
+            await sessionKeyAPI.inActivateKey(sessionKey.key)
+            await idpToken.revoke('access_token');
         } catch (e) {
             return res.status(400).json("failed");
         }

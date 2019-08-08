@@ -9,6 +9,9 @@ import Logger from "../../src/logger_interface";
 import { v4 as uuid4 } from 'uuid';
 import { ConflictingEntityError } from "../../src/databases/utils/errors";
 import { Metadata, Spec, Entity_Reference, Status, Kind, Provider, S2S_Key } from "papiea-core";
+import { SessionKeyDb } from "../../src/databases/session_key_db_interface"
+import { SessionKey } from "papiea-core/build/core"
+import uuid = require("uuid")
 
 declare var process: {
     env: {
@@ -345,6 +348,61 @@ describe("MongoDb tests", () => {
             await s2skeyDb.get_key(s2skey.uuid);
         } catch(e) {
             expect(e).toBeDefined();
+        }
+    });
+
+    test("Create and get session key", async () => {
+        const sessionKeyDb: SessionKeyDb = await connection.get_session_key_db(logger);
+        const sessionKey: SessionKey = {
+            key: uuid(),
+            user_info: {
+                owner: "test"
+            },
+            expireAt: new Date(),
+            idpToken: {}
+        };
+        await sessionKeyDb.create_key(sessionKey);
+        const res: SessionKey = await sessionKeyDb.get_key(sessionKey.key);
+        expect(res.user_info.owner).toEqual(sessionKey.user_info.owner);
+        expect(res.expireAt).toBeDefined()
+    });
+
+    test("Duplicate s2s key shoud throw an error", async () => {
+        expect.assertions(1);
+        const sessionKeyDb: SessionKeyDb = await connection.get_session_key_db(logger);
+        const sessionKey: SessionKey = {
+            key: uuid(),
+            user_info: {
+                owner: "test"
+            },
+            expireAt: new Date(),
+            idpToken: {}
+        };
+        await sessionKeyDb.create_key(sessionKey);
+        try {
+            await sessionKeyDb.create_key(sessionKey);
+        } catch (e) {
+            expect(e).toBeDefined()
+        }
+    });
+
+    test("Inactivate s2s key", async () => {
+        expect.assertions(1);
+        const sessionKeyDb: SessionKeyDb = await connection.get_session_key_db(logger);
+        const sessionKey: SessionKey = {
+            key: uuid(),
+            user_info: {
+                owner: "test"
+            },
+            expireAt: new Date(),
+            idpToken: {}
+        };
+        await sessionKeyDb.create_key(sessionKey);
+        await sessionKeyDb.inactivate_key(sessionKey.key);
+        try {
+            await sessionKeyDb.get_key(sessionKey.key)
+        } catch (e) {
+            expect(e).toBeDefined()
         }
     });
 });

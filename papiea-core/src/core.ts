@@ -212,6 +212,7 @@ export interface SessionKey {
     expireAt: Date
 
     user_info: UserInfo
+    idpToken: any
 }
 
 

@@ -16,7 +16,8 @@ export class SessionKeyAPI {
         const sessionKey: SessionKey = {
             key: key,
             expireAt: new Date(exp * 1000),
-            user_info: userInfo
+            user_info: userInfo,
+            idpToken: token
         }
         if (SessionKeyAPI.isExpired(sessionKey)) {
             throw new Error("Access token expired")
