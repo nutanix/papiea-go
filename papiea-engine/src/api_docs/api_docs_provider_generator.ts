@@ -519,7 +519,7 @@ export default class ApiDocsGenerator {
         }
     }
 
-    async getApiDocs(provider: Provider, version?: string): Promise<any> {
+    async getApiDocs(provider: Provider): Promise<any> {
         const root: any = {
             "openapi": "3.0.0",
             "info": {

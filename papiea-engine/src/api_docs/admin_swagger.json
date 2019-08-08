@@ -1,0 +1,267 @@
+{
+            "openapi": "3.0.0",
+            "info": {
+                "version": "1.0.0",
+                "title": "Swagger Papiea",
+                "description": "An API specification of Papiea-JS",
+                "license": {
+                    "name": "LICENSE",
+                    "url": "https://github.com/nutanix/papiea-js/blob/master/LICENSE"
+                }
+            },
+            "servers": [
+                {
+                    "url": "/"
+                }
+            ],
+            "paths": {
+                "/provider/": {
+                    "post": {
+                        "description": "Creates a new provider",
+                        "operationId": "addprovider",
+                        "tags": ["/provider"],
+                        "requestBody": {
+                            "description": "provider to add",
+                            "required": true,
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "properties": {
+                                            "provider": {
+                                                "$ref": "#/components/schemas/Provider"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "/provider/:prefix/:version": {
+                    "post": {
+
+                    },
+                    "get": {
+
+                    }
+                },
+                "/provider/:prefix": {
+                    "get": {
+
+                    }
+                },
+                "/provider/update_status": {
+                    "post": {
+                        "description": "Set entity status",
+                        "operationId": "setentitystatus",
+                        "tags": ["/provider/update_status"],
+                        "requestBody": {
+                            "description": "Entity and status to set",
+                            "required": true,
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "properties": {
+                                            "entity_ref": {
+                                                "$ref": "#/components/schemas/EntityReference"
+                                            },
+                                            "status": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "patch": {
+                        "description": "Update entity status",
+                        "operationId": "updateentitystatus",
+                        "tags": ["/provider/update_status"],
+                        "requestBody": {
+                            "description": "Entity and status to update",
+                            "required": true,
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "properties": {
+                                            "entity_ref": {
+                                                "$ref": "#/components/schemas/EntityReference"
+                                            },
+                                            "status": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "/provider/update_progress": {
+                    "post": {
+
+                    }
+                },
+                "/provider/:prefix/:version/power": {
+                    "post": {
+
+                    }
+                },
+                "/provider/:prefix/:version/auth": {
+                    "post": {
+
+                    }
+                },
+                "/provider/:prefix/:version/s2skey": {
+                    "get": {
+                        
+                    },
+                    "post": {
+
+                    },
+                    "put": {
+
+                    }
+                }
+            },
+            "components": {
+                "schemas": {
+                    "Error": {
+                        "required": [
+                            "error"
+                        ],
+                        "properties": {
+                            "error": {
+                                "type": "object",
+                                "required": [
+                                    "errors",
+                                    "code",
+                                    "message"
+                                ],
+                                "properties": {
+                                    "errors": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "code": {
+                                        "type": "integer"
+                                    },
+                                    "message": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "Nothing": {
+                        "type": "object",
+                        "description": "Representation of a 'void' type"
+                    },
+                    "Provider": {
+                        "required": [
+                            "prefix",
+                            "version",
+                            "kinds",
+                            "procedures",
+                            "extension_structure",
+                            "authModel",
+                            "allowExtraProps"
+                        ],
+                        "properties": {
+                            "prefix": {
+                                "type": "string"
+                            },
+                            "version": {
+                                "type": "string"
+                            },
+                            "kinds": {
+                                "type": "array",
+                                "items": {
+                                    "type": {
+                                        "$ref": "#/components/schemas/kind"
+                                    }
+                                }
+                            },
+                            "procedures": {
+                                "type": "object"
+                            },
+                            "extension_structure": {
+                                "type": "object"
+                            },
+                            "created_at": {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "policy": {
+                                "type": "string"
+                            },
+                            "oauth2": {
+                                "type": "object"
+                            },
+                            "authModel": {
+                                "type": "string"
+                            },
+                            "allowExtraProps": {
+                                "type": "boolean"
+                            }
+                        }
+                    },
+                    "Kind": {
+                        "required": [
+                            "name",
+                            "kind_structure",
+                            "intentful_signatures",
+                            "dependency_tree",
+                            "entity_procedures",
+                            "kind_procedures"
+                        ],
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "name_plural": {
+                                "type": "string"
+                            },
+                            "kind_structure": {
+                                "type": "object"
+                            },
+                            "intentful_signatures": {
+                                "type": "object"
+                            },
+                            "dependency_tree": {
+                                "type": "object"
+                            },
+                            "entity_procedures": {
+                                "type": "object"
+                            },
+                            "kind_procedures": {
+                                "type": "object"
+                            },
+                            "differ": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "EntityReference": {
+                        "required": [
+                            "uuid",
+                            "kind"
+                        ],
+                        "properties": {
+                            "uuid": {
+                                "type": "string"
+                            },
+                            "kind": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
