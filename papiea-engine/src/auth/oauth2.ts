@@ -1,44 +1,20 @@
-import { Router } from "express";
-import { asyncHandler, UserAuthInfo, UserAuthInfoExtractor } from "./authn";
-import { Provider_DB } from "../databases/provider_db_interface";
-import { extract_property } from "./user_data_evaluator";
-import { Provider } from "papiea-core";
-import btoa = require("btoa");
-import atob = require("atob");
-import Logger from "../logger_interface";
+import { Router } from "express"
+import { asyncHandler, UserAuthInfo } from "./authn"
+import { Provider_DB } from "../databases/provider_db_interface"
+import { atob, extract_property } from "./user_data_evaluator"
+import { Provider } from "papiea-core"
+import Logger from "../logger_interface"
+import { SessionKeyAPI, SessionKeyUserAuthInfoExtractor } from "./session_key"
 
 const simpleOauthModule = require("simple-oauth2"),
     queryString = require("query-string"),
     url = require("url");
 
 
-export class IdpUserAuthInfoExtractor implements UserAuthInfoExtractor {
-    private readonly providerDb: Provider_DB;
-
-    constructor(providerDb: Provider_DB) {
-        this.providerDb = providerDb;
-    }
-
-    getUserInfoFromToken(token: any, provider: Provider): UserAuthInfo {
-        const extracted_headers = extract_property({ token }, provider.oauth2, "headers");
-        const user_info: UserAuthInfo = { ...extracted_headers };
-        return user_info;
-    }
-
-    async getUserAuthInfo(token: string, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null> {
-        try {
-            if (!provider_prefix || !provider_version) {
-                return null;
-            }
-            const provider: Provider = await this.providerDb.get_provider(provider_prefix, provider_version);
-            const user_info = this.getUserInfoFromToken(JSON.parse(atob(token)), provider);
-            delete user_info.is_admin;
-            return user_info;
-        } catch (e) {
-            console.error(`While trying to authenticate with IDP error: '${e}' occurred`);
-            return null;
-        }
-    }
+function getUserInfoFromToken(token: any, provider: Provider): UserAuthInfo {
+    const extracted_headers = extract_property({ token }, provider.oauth2, "headers")
+    const user_info: UserAuthInfo = { ...extracted_headers }
+    return user_info
 }
 
 
@@ -68,8 +44,18 @@ function getOAuth2(provider: Provider) {
     return simpleOauthModule.create(converted_oauth);
 }
 
+function parseJwt(token: string) {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
 
-export function createOAuth2Router(logger: Logger, redirect_uri: string, providerDb: Provider_DB): Router {
+    return JSON.parse(jsonPayload);
+}
+
+
+export function createOAuth2Router(logger: Logger, redirect_uri: string, providerDb: Provider_DB, sessionKeyAPI: SessionKeyAPI): Router {
     const router = Router();
 
     router.use('/provider/:prefix/:version/auth/login', asyncHandler(async (req, res) => {
@@ -90,11 +76,8 @@ export function createOAuth2Router(logger: Logger, redirect_uri: string, provide
     }));
 
     router.use('/provider/:prefix/:version/auth/logout', asyncHandler(async (req, res) => {
-        const provider: Provider = await providerDb.get_provider(req.params.prefix, req.params.version);
-        const oauth2 = getOAuth2(provider);
-        const token = oauth2.accessToken.create({ "access_token": req.user.authorization.split(' ')[1] });
         try {
-            await token.revoke('access_token');
+            await sessionKeyAPI.inActivateKey(req.user.authorization.split(' ')[1])
         } catch (e) {
             return res.status(400).json("failed");
         }
@@ -112,13 +95,14 @@ export function createOAuth2Router(logger: Logger, redirect_uri: string, provide
                 redirect_uri
             });
             const token = oauth2.accessToken.create(result);
-            const base64Token = btoa(JSON.stringify(token.token));
+            const userInfo = getUserInfoFromToken(token.token, provider)
+            const sessionKey = await sessionKeyAPI.createKey(userInfo, token)
             if (state.redirect_uri) {
                 const client_url = new url.URL(state.redirect_uri);
-                client_url.searchParams.append("token", base64Token);
+                client_url.searchParams.append("token", sessionKey.key);
                 return res.redirect(client_url.toString());
             } else {
-                return res.status(200).json({ token: base64Token });
+                return res.status(200).json({ token: sessionKey.key });
             }
         } catch (error) {
             logger.error('Access Token Error', error.message);

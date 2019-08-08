@@ -4,6 +4,7 @@ import { Status_DB_Mongo } from "./status_db_mongo";
 import { Provider_DB_Mongo } from "./provider_db_mongo";
 import { S2S_Key_DB_Mongo } from "./s2skey_db_mongo";
 import Logger from "../logger_interface";
+import { SessionKeyDbMongo } from "./session_key_db_mongo"
 
 export class MongoConnection {
     url: string;
@@ -14,6 +15,7 @@ export class MongoConnection {
     providerDb: Provider_DB_Mongo | undefined;
     statusDb: Status_DB_Mongo | undefined;
     s2skeyDb: S2S_Key_DB_Mongo | undefined;
+    sessionKeyDb: SessionKeyDbMongo | undefined
 
     constructor(url: string, dbName: string) {
         this.url = url;
@@ -77,5 +79,15 @@ export class MongoConnection {
         this.s2skeyDb = new S2S_Key_DB_Mongo(logger, this.db);
         await this.s2skeyDb.init();
         return this.s2skeyDb;
+    }
+
+    async get_session_key_db(logger: Logger): Promise<SessionKeyDbMongo> {
+        if (this.sessionKeyDb !== undefined)
+            return this.sessionKeyDb;
+        if (this.db === undefined)
+            throw new Error("Not connected");
+        this.sessionKeyDb = new SessionKeyDbMongo(logger, this.db);
+        await this.sessionKeyDb.init();
+        return this.sessionKeyDb;
     }
 }

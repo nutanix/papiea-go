@@ -99,6 +99,8 @@ describe("Entity API auth tests", () => {
                 expect(params.grant_type).toEqual('authorization_code');
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
+                const timestamp = new Date().getTime() / 1000
+                const expiration = new Date(timestamp + 1000000).getTime() / 1000
                 const access_token = base64UrlEncode({
                         "alg": "RS256"
                     },
@@ -109,8 +111,8 @@ describe("Entity API auth tests", () => {
                         "default_tenant": tenant_uuid,
                         "iss": "https:\/\/127.0.0.1:9002\/oauth2\/token",
                         "given_name": "Alice",
-                        "iat": 1555925532,
-                        "exp": 1555929132,
+                        "iat": timestamp,
+                        "exp": expiration,
                         "email": "alice@localhost",
                         "last_name": "Doe",
                         "aud": ["EEE"],
@@ -143,8 +145,8 @@ describe("Entity API auth tests", () => {
                                     "tenant-uuid": tenant_uuid
                                 }
                             }]),
-                            "auth_time": 1555926264,
-                            "exp": 1555940664,
+                            "auth_time": timestamp,
+                            "exp": expiration,
                             "email": "alice@localhost",
                             "aud": ["EEE"],
                             "last_name": "Doe",
@@ -154,7 +156,7 @@ describe("Entity API auth tests", () => {
                 idp_token = JSON.stringify({
                     scope: 'openid',
                     token_type: 'Bearer',
-                    expires_in: 3167,
+                    expires_in: expiration - timestamp,
                     refresh_token: uuid(),
                     id_token: id_token,
                     access_token: access_token,
@@ -205,7 +207,7 @@ describe("Entity API auth tests", () => {
         await entityApi.delete(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}`);
     });
 
-    test("Get user info", async () => {
+    test.only("Get user info", async () => {
         expect.hasAssertions();
         const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`);
         const { data } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
