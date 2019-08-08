@@ -1,6 +1,7 @@
 import * as express from "express";
 import { Provider_API, Provider_Power } from "./provider_api_interface";
 import { asyncHandler } from '../auth/authn';
+import { BadRequestError } from '../errors/bad_request_error';
 
 
 export default function createProviderAPIRouter(providerApi: Provider_API) {
@@ -53,12 +54,18 @@ export default function createProviderAPIRouter(providerApi: Provider_API) {
     }));
 
     providerApiRouter.get('/:prefix/:version/s2skey', asyncHandler(async (req, res) => {
-        const s2skeys = await providerApi.list_keys(req.user, {"deleted_at": req.query.deleted});
+        const s2skeys = await providerApi.list_keys(req.user, {
+            "provider_prefix": req.params.prefix,
+            "deleted_at": req.query.deleted
+        });
         res.json(s2skeys);
     }));
 
     providerApiRouter.post('/:prefix/:version/s2skey', asyncHandler(async (req, res) => {
-        const s2skey = await providerApi.create_key(req.user, req.body.name, req.body.owner, req.body.provider_prefix,
+        if (req.body.provider_prefix || (req.body.user_info && req.body.user_info.provider_prefix)) {
+            throw new BadRequestError('provider_prefix may not be specified in the request body');
+        }
+        const s2skey = await providerApi.create_key(req.user, req.body.name, req.body.owner, req.params.prefix,
             req.body.user_info, req.body.key);
         res.json(s2skey);
     }));

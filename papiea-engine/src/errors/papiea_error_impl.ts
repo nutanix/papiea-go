@@ -3,6 +3,8 @@ import { EntityNotFoundError } from "../databases/utils/errors";
 import { ValidationError } from "./validation_error";
 import { ProcedureInvocationError } from "./procedure_invocation_error";
 import { PermissionDeniedError, UnauthorizedError } from "./permission_error";
+import { BadRequestError } from "./bad_request_error";
+
 
 export class PapieaErrorImpl implements PapieaError {
     error: {
@@ -41,6 +43,9 @@ export class PapieaErrorImpl implements PapieaError {
     static create(err: Error) {
         let errorPayload: { message: string }[];
         switch (err.constructor) {
+            case BadRequestError:
+                return new PapieaErrorImpl(400, "Bad Request",
+                    [{ message: err.message }])
             case ValidationError:
                 errorPayload = (err as ValidationError).errors.map(description => {
                     return { message: description }

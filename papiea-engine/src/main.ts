@@ -5,14 +5,18 @@ import createProviderAPIRouter from "./provider/provider_routes";
 import { Provider_API_Impl } from "./provider/provider_api_impl";
 import { MongoConnection } from "./databases/mongo";
 import { createEntityAPIRouter } from "./entity/entity_routes";
-import { Entity_API_Impl} from "./entity/entity_api_impl";
+import { Entity_API_Impl } from "./entity/entity_api_impl";
+import {
+    createAuthnRouter, CompositeUserAuthInfoExtractor, AdminUserAuthInfoExtractor
+} from "./auth/authn";
+import { createOAuth2Router, IdpUserAuthInfoExtractor } from "./auth/oauth2";
+import { S2SKeyUserAuthInfoExtractor } from "./auth/s2s";
+import { Authorizer, AdminAuthorizer, PerProviderAuthorizer } from "./auth/authz";
 import { ValidatorImpl } from "./validator";
-import { createAuthnRouter } from "./auth/authn";
-import { createOAuth2Router } from "./auth/oauth2";
-import { Authorizer, AdminAuthorizer, PerProviderAuthorizer} from "./auth/authz";
 import { ProviderCasbinAuthorizerFactory } from "./auth/casbin";
 import { PapieaErrorImpl } from "./errors/papiea_error_impl";
 import { WinstonLogger, getLoggingMiddleware } from './logger';
+const cookieParser = require('cookie-parser');
 
 
 declare var process: {
@@ -24,8 +28,7 @@ declare var process: {
         PAPIEA_PUBLIC_ADDR: string,
         DEBUG_LEVEL: string,
         ADMIN_S2S_KEY: string,
-        DISALLOW_EXTRA_PROPERTIES: string,
-        LOGGING_LEVEL: string,
+        LOGGING_LEVEL: string
     },
     title: string;
 };
@@ -36,12 +39,12 @@ const oauth2RedirectUri: string = publicAddr + "/provider/auth/callback";
 const mongoHost = process.env.MONGO_HOST || 'mongo';
 const mongoPort = process.env.MONGO_PORT || '27017';
 const adminKey = process.env.ADMIN_S2S_KEY || '';
-const disallowExtraProps = process.env.DISALLOW_EXTRA_PROPERTIES !== "false";
 const loggingLevel = process.env.LOGGING_LEVEL || 'info';
 
 async function setUpApplication(): Promise<express.Express> {
     const logger = new WinstonLogger(loggingLevel);
     const app = express();
+    app.use(cookieParser());
     app.use(express.json());
     app.use(getLoggingMiddleware(logger));
     const mongoConnection: MongoConnection = new MongoConnection(`mongodb://${mongoHost}:${mongoPort}`, process.env.MONGO_DB || 'papiea');
@@ -52,7 +55,12 @@ async function setUpApplication(): Promise<express.Express> {
     const s2skeyDb = await mongoConnection.get_s2skey_db(logger);
     const validator = new ValidatorImpl()
     const providerApi = new Provider_API_Impl(logger, providerDb, statusDb, s2skeyDb, new AdminAuthorizer(), validator);
-    app.use(createAuthnRouter(logger, adminKey, s2skeyDb, providerDb));
+    const userAuthInfoExtractor = new CompositeUserAuthInfoExtractor([
+        new AdminUserAuthInfoExtractor(adminKey),
+        new S2SKeyUserAuthInfoExtractor(s2skeyDb),
+        new IdpUserAuthInfoExtractor(providerDb)
+    ]);
+    app.use(createAuthnRouter(logger, userAuthInfoExtractor));
     app.use(createOAuth2Router(logger, oauth2RedirectUri, providerDb));
     const entityApiAuthorizer: Authorizer = new PerProviderAuthorizer(logger, providerApi, new ProviderCasbinAuthorizerFactory(logger));
     app.use('/provider', createProviderAPIRouter(providerApi));

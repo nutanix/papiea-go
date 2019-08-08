@@ -2,7 +2,7 @@ import "jest";
 import axios from "axios";
 import { ProviderBuilder } from "../test_data_factory";
 import uuid = require("uuid");
-import { Metadata, Spec, Provider } from "papiea-core";
+import { Provider } from "papiea-core";
 
 
 declare var process: {
@@ -49,7 +49,6 @@ describe("Provider API auth tests", () => {
         const { data: s2skey } = await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
                 user_info: {
-                    provider_prefix: provider.prefix,
                     is_provider_admin: true
                 }
             }
@@ -69,7 +68,6 @@ describe("Provider API auth tests", () => {
             {
                 key: key,
                 user_info: {
-                    provider_prefix: provider.prefix,
                     is_provider_admin: true
                 }
             }
@@ -86,7 +84,6 @@ describe("Provider API auth tests", () => {
         const { data: s2skey } = await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
                 user_info: {
-                    provider_prefix: provider.prefix,
                     is_provider_admin: true
                 }
             }
@@ -115,7 +112,7 @@ describe("Provider API auth tests", () => {
             });
             throw new Error("Provider-admin should not register provider with another prefix");
         } catch (e) {
-            expect(e.response.status).toEqual(403);
+            expect(e.response.status).toEqual(400);
         }
     });
 
@@ -123,7 +120,6 @@ describe("Provider API auth tests", () => {
         const { data: s2skey } = await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
                 user_info: {
-                    provider_prefix: provider.prefix,
                     is_provider_admin: true
                 }
             }
@@ -168,7 +164,6 @@ describe("Provider API auth tests", () => {
                 {
                     name: "ProviderAdminStatus",
                     user_info: {
-                        provider_prefix: provider.prefix,
                         is_provider_admin: true
                     }
                 }
@@ -191,10 +186,9 @@ describe("Provider API auth tests", () => {
                     headers: { 'Authorization': `Bearer ${s2skey.key}` }
                 });
             const newStatus = Object.assign({}, spec, { y: 12 })
-            const { data } = await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/s2skey`,
+            const { data } = await providerApiAdmin.post(`/${uuid()}/${provider.version}/s2skey`,
                 {
                     user_info: {
-                        provider_prefix: uuid(),
                         is_provider_admin: true
                     }
                 }
@@ -222,7 +216,6 @@ describe("Provider API auth tests", () => {
                 {
                     user_info: {
                         owner: "admin@provider",
-                        provider_prefix: provider.prefix,
                         is_provider_admin: true
                     }
                 }
@@ -230,10 +223,8 @@ describe("Provider API auth tests", () => {
             await providerApi.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
                     owner: "admin@provider",
-                    provider_prefix: provider.prefix,
                     user_info: {
                         owner: "anotheradmin@provider",
-                        provider_prefix: provider.prefix,
                         is_admin: true
                     }
                 }, {
@@ -253,7 +244,6 @@ describe("Provider API auth tests", () => {
                 {
                     user_info: {
                         owner: "admin@provider",
-                        provider_prefix: provider.prefix,
                         is_provider_admin: true
                     }
                 }
@@ -261,7 +251,6 @@ describe("Provider API auth tests", () => {
             await providerApi.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
                     owner: "admin@provider",
-                    provider_prefix: provider.prefix,
                     user_info: {
                         owner: "admin@provider",
                         provider_prefix: provider.prefix + "1"
@@ -272,7 +261,7 @@ describe("Provider API auth tests", () => {
             );
             throw new Error("Provider-admin should not create s2s key for provider-admin");
         } catch (e) {
-            expect(e.response.status).toEqual(403);
+            expect(e.response.status).toEqual(400);
         }
     });
 
@@ -281,7 +270,6 @@ describe("Provider API auth tests", () => {
             {
                 user_info: {
                     owner: "admin@provider",
-                    provider_prefix: provider.prefix,
                     is_provider_admin: true
                 }
             }
@@ -289,10 +277,8 @@ describe("Provider API auth tests", () => {
         await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
                 owner: "admin@provider",
-                provider_prefix: provider.prefix,
                 user_info: {
                     owner: "anotheradmin@provider",
-                    provider_prefix: provider.prefix,
                     is_provider_admin: true
                 }
             }, {
@@ -306,7 +292,6 @@ describe("Provider API auth tests", () => {
             {
                 user_info: {
                     owner: "admin@provider",
-                    provider_prefix: provider.prefix,
                     is_provider_admin: true
                 }
             }
@@ -314,10 +299,8 @@ describe("Provider API auth tests", () => {
         await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
                 owner: "admin@provider",
-                provider_prefix: provider.prefix,
                 user_info: {
                     owner: "user@provider",
-                    provider_prefix: provider.prefix
                 }
             }, {
                 headers: { 'Authorization': `Bearer ${ s2skey.key }` }
@@ -332,7 +315,6 @@ describe("Provider API auth tests", () => {
                 {
                     user_info: {
                         owner: "admin@provider",
-                        provider_prefix: provider.prefix,
                         is_provider_admin: true
                     }
                 }
@@ -340,10 +322,8 @@ describe("Provider API auth tests", () => {
             await providerApi.post(`/${provider.prefix}/${provider.version}/s2skey`,
                 {
                     owner: "user@provider",
-                    provider_prefix: provider.prefix,
                     user_info: {
-                        owner: "user@provider",
-                        provider_prefix: provider.prefix
+                        owner: "user@provider"
                     }
                 }, {
                     headers: { 'Authorization': `Bearer ${s2skey.key}` }
@@ -360,20 +340,16 @@ describe("Provider API auth tests", () => {
         const { data: s2skey } = await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
                 owner: "user1@provider",
-                provider_prefix: provider.prefix,
                 user_info: {
-                    owner: "user1@provider",
-                    provider_prefix: provider.prefix
+                    owner: "user1@provider"
                 }
             }
         );
         await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
                 owner: "user2@provider",
-                provider_prefix: provider.prefix,
                 user_info: {
-                    owner: "user2@provider",
-                    provider_prefix: provider.prefix
+                    owner: "user2@provider"
                 }
             }
         );
@@ -391,10 +367,8 @@ describe("Provider API auth tests", () => {
         const { data: s2skey } = await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
                 owner: "admin123@provider",
-                provider_prefix: provider.prefix,
                 user_info: {
                     owner: "admin123@provider",
-                    provider_prefix: provider.prefix,
                     is_provider_admin: true
                 }
             }
@@ -402,10 +376,8 @@ describe("Provider API auth tests", () => {
         await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
             {
                 owner: "user2@provider",
-                provider_prefix: provider.prefix,
                 user_info: {
-                    owner: "user2@provider",
-                    provider_prefix: provider.prefix
+                    owner: "user2@provider"
                 }
             }
         );
