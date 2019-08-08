@@ -281,18 +281,6 @@ describe("Entity API auth tests", () => {
         expect(spec).toEqual(entity_spec);
     });
 
-    test("Get entity of another provider should raise unauthorized", async () => {
-        expect.assertions(1 + expectAssertionsFromOauth2Server);
-        try {
-            const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
-            await entityApi.get(`/${provider.prefix}1/${provider.version}/${kind_name}/${entity_metadata.uuid}`,
-                { headers: { 'Authorization': 'Bearer ' + token } }
-            );
-        } catch (e) {
-            expect(e.response.status).toEqual(401);
-        }
-    });
-
     test("Entity procedure should receive headers", async () => {
         let headers: any = {};
         const server = http.createServer((req, res) => {
