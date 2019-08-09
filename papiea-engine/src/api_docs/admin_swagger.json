@@ -26,11 +26,7 @@
                             "content": {
                                 "application/json": {
                                     "schema": {
-                                        "properties": {
-                                            "provider": {
-                                                "$ref": "#/components/schemas/Provider"
-                                            }
-                                        }
+                                        "$ref": "#/components/schemas/Provider"
                                     }
                                 }
                             }
@@ -108,12 +104,7 @@
                                 "content": {
                                     "application/json": {
                                         "schema": {
-                                            "type": "object",
-                                            "properties": {
-                                                "provider": {
-                                                    "$ref": "#/components/schemas/Provider"
-                                                }
-                                            }
+                                            "$ref": "#/components/schemas/Provider"
                                         }
                                     }
                                 }
@@ -158,9 +149,7 @@
                                                 "results": {
                                                     "type": "array",
                                                     "items": {
-                                                        "provider": {
-                                                            "$ref": "#/components/schemas/Provider"
-                                                        }
+                                                        "$ref": "#/components/schemas/Provider"
                                                     }
                                                 }
                                             }
@@ -203,6 +192,21 @@
                                     }
                                 }
                             }
+                        },
+                        "responses": {
+                            "200": {
+                                "description": "Status set"
+                            },
+                            "default": {
+                                "description": "Unexpected error",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
                         }
                     },
                     "patch": {
@@ -222,6 +226,21 @@
                                             "status": {
                                                 "type": "object"
                                             }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "responses": {
+                            "200": {
+                                "description": "Status updated"
+                            },
+                            "default": {
+                                "description": "Unexpected error",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "$ref": "#/components/schemas/Error"
                                         }
                                     }
                                 }
@@ -254,9 +273,30 @@
                                 }
                             }
                         ],
+                        "requestBody": {
+                            "description": "Auth parameters to update",
+                            "required": "true",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "properties": {
+                                            "authModel": {
+                                                "type": "string"
+                                            },
+                                            "policy": {
+                                                "type": "string"
+                                            },
+                                            "oauth2": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
                         "responses": {
-                            "204": {
-                                "description": "provider deleted"
+                            "200": {
+                                "description": "Updated auth"
                             },
                             "default": {
                                 "description": "Unexpected error",
@@ -302,10 +342,7 @@
                                 "content": {
                                     "application/json": {
                                         "schema": {
-                                            "type": "object",
-                                            "properties": {
-                                                "$ref": "#/components/schemas/S2SKey"
-                                            }
+                                            "$ref": "#/components/schemas/S2SKey"
                                         }
                                     }
                                 }
@@ -346,9 +383,27 @@
                                 }
                             }
                         ],
+                        "requestBody": {
+                            "description": "S2S key to save",
+                            "required": "true",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/S2SKey"
+                                    }
+                                }
+                            }
+                        },
                         "responses": {
-                            "204": {
-                                "description": "provider deleted"
+                            "200": {
+                                "description": "S2S key created",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "$ref": "#/components/schemas/S2SKey"
+                                        }
+                                    }
+                                }
                             },
                             "default": {
                                 "description": "Unexpected error",
@@ -386,9 +441,28 @@
                                 }
                             }
                         ],
+                        "requestBody": {
+                            "description": "S2S key UUID and \"active\" flag",
+                            "required": "true",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "properties": {
+                                            "uuid": {
+                                                "type": "string",
+                                                "format": "uuid"
+                                            },
+                                            "active": {
+                                                "type": "boolean"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
                         "responses": {
-                            "204": {
-                                "description": "provider deleted"
+                            "200": {
+                                "description": "S2S key inactivated"
                             },
                             "default": {
                                 "description": "Unexpected error",
@@ -459,9 +533,7 @@
                             "kinds": {
                                 "type": "array",
                                 "items": {
-                                    "type": {
-                                        "$ref": "#/components/schemas/kind"
-                                    }
+                                    "$ref": "#/components/schemas/Kind"
                                 }
                             },
                             "procedures": {
