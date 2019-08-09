@@ -41,8 +41,8 @@ class SecurityApiImpl implements SecurityApi {
             const {data: keys } = await this.provider.provider_api_axios.get(`${url}/s2skey`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return keys
         } catch (e) {
-            console.log("error getting s2skeys", e);
-            throw new Error("Cannot get s2skeys" + e.message)
+            console.log("Cannot list s2skeys: ", e);
+            throw new Error("Cannot list s2skeys: " + e.message)
         }
     }
 
@@ -52,8 +52,8 @@ class SecurityApiImpl implements SecurityApi {
             const {data: s2skey } = await this.provider.provider_api_axios.post(`${url}/s2skey`, new_key, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return s2skey
         } catch (e) {
-            console.log("error getting s2skeys", e);
-            throw new Error("Cannot get s2skeys" + e.message)
+            console.log("Cannot create new key: ", e);
+            throw new Error("Cannot create new key: " + e.message)
         }
     }
 
@@ -63,8 +63,8 @@ class SecurityApiImpl implements SecurityApi {
             const {data: r } = await this.provider.provider_api_axios.put(`${url}/s2skey`, {key: key_to_deactivate, active:false}, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return r
         } catch (e) {
-            console.log("error getting s2skeys", e);
-            throw new Error("Cannot get s2skeys" + e.message)
+            console.log("Cannot deactivate s2skey: ", e);
+            throw new Error("Cannot deactivate s2skey: " + e.message)
         }
     }
 }

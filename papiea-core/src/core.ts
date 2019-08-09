@@ -207,6 +207,14 @@ export interface S2S_Key {
     user_info: UserInfo
 }
 
+export interface SessionKey {
+    key: string
+    expireAt: Date
+
+    user_info: UserInfo
+    idpToken: any
+}
+
 
 // Modeled after https://developers.google.com/drive/api/v3/handle-errors
 export interface PapieaError {

@@ -9,13 +9,14 @@ import { Entity_API_Impl } from "./entity/entity_api_impl";
 import {
     createAuthnRouter, CompositeUserAuthInfoExtractor, AdminUserAuthInfoExtractor
 } from "./auth/authn";
-import { createOAuth2Router, IdpUserAuthInfoExtractor } from "./auth/oauth2";
+import { createOAuth2Router} from "./auth/oauth2";
 import { S2SKeyUserAuthInfoExtractor } from "./auth/s2s";
 import { Authorizer, AdminAuthorizer, PerProviderAuthorizer } from "./auth/authz";
 import { ValidatorImpl } from "./validator";
 import { ProviderCasbinAuthorizerFactory } from "./auth/casbin";
 import { PapieaErrorImpl } from "./errors/papiea_error_impl";
 import { WinstonLogger, getLoggingMiddleware } from './logger';
+import { SessionKeyAPI, SessionKeyUserAuthInfoExtractor } from "./auth/session_key"
 const cookieParser = require('cookie-parser');
 
 
@@ -55,13 +56,15 @@ async function setUpApplication(): Promise<express.Express> {
     const s2skeyDb = await mongoConnection.get_s2skey_db(logger);
     const validator = new ValidatorImpl()
     const providerApi = new Provider_API_Impl(logger, providerDb, statusDb, s2skeyDb, new AdminAuthorizer(), validator);
+    const sessionKeyDb = await mongoConnection.get_session_key_db(logger)
+    const sessionKeyApi = new SessionKeyAPI(sessionKeyDb)
     const userAuthInfoExtractor = new CompositeUserAuthInfoExtractor([
         new AdminUserAuthInfoExtractor(adminKey),
         new S2SKeyUserAuthInfoExtractor(s2skeyDb),
-        new IdpUserAuthInfoExtractor(providerDb)
+        new SessionKeyUserAuthInfoExtractor(sessionKeyApi)
     ]);
     app.use(createAuthnRouter(logger, userAuthInfoExtractor));
-    app.use(createOAuth2Router(logger, oauth2RedirectUri, providerDb));
+    app.use(createOAuth2Router(logger, oauth2RedirectUri, providerDb, sessionKeyApi));
     const entityApiAuthorizer: Authorizer = new PerProviderAuthorizer(logger, providerApi, new ProviderCasbinAuthorizerFactory(logger));
     app.use('/provider', createProviderAPIRouter(providerApi));
     app.use('/services', createEntityAPIRouter(new Entity_API_Impl(logger, statusDb, specDb, providerApi, entityApiAuthorizer, validator)));
