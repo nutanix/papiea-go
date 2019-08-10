@@ -60,7 +60,7 @@ export interface FilterResults {
 export async function filter_entity(provider: string, kind: string, version: string, filter: any, papiea_url: string, s2skey: string): Promise<FilterResults> {
     const res = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}/filter/`, filter, {headers:{"Authorization": `Bearer ${s2skey}`}});
     // This needs to return a list of entities to remain type-safe, unless we provide a new type for filter resu;ts 
-    return res.data["results"];
+    return res.data
 }
 
 export interface ProviderClient {
