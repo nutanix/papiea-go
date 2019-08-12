@@ -40,7 +40,7 @@ function convertToSimpleOauth2(description: any) {
     return simple_oauth_config;
 }
 
-function getOAuth2(provider: Provider) {
+export function getOAuth2(provider: Provider) {
     const converted_oauth = convertToSimpleOauth2(provider.oauth2);
     return simpleOauthModule.create(converted_oauth);
 }
@@ -70,7 +70,7 @@ export function createOAuth2Router(logger: Logger, redirect_uri: string, provide
         const provider: Provider = await providerDb.get_provider(req.params.prefix, req.params.version);
         const oauth2 = getOAuth2(provider);
         const token = req.user.authorization.split(' ')[1]
-        const sessionKey = await sessionKeyAPI.getKey(token)
+        const sessionKey = await sessionKeyAPI.getKey(token, oauth2)
         const idpToken = oauth2.accessToken.create({ "access_token": sessionKey.idpToken.access_token });
         try {
             await sessionKeyAPI.inActivateKey(sessionKey.key)
@@ -78,7 +78,7 @@ export function createOAuth2Router(logger: Logger, redirect_uri: string, provide
         } catch (e) {
             return res.status(400).json("failed");
         }
-        return res.status(200).json("OK");
+        return res.status(200).json({"logout_uri": `${provider.oauth2.auth_host}${provider.oauth2.logout_uri}`});
     }));
 
     router.use('/provider/auth/callback', asyncHandler(async (req, res, next) => {
@@ -95,7 +95,7 @@ export function createOAuth2Router(logger: Logger, redirect_uri: string, provide
             const key = uuid()
             const userInfo = getUserInfoFromToken(token.token, provider)
             userInfo.authorization = `Bearer ${key}`
-            const sessionKey = await sessionKeyAPI.createKey(userInfo, token, key)
+            const sessionKey = await sessionKeyAPI.createKey(userInfo, token, key, oauth2)
             if (state.redirect_uri) {
                 const client_url = new url.URL(state.redirect_uri);
                 client_url.searchParams.append("token", sessionKey.key);

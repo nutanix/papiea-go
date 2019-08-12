@@ -524,7 +524,7 @@ describe("SDK security tests", () => {
 
     beforeAll(async () => {
         await providerApiAdmin.post('/', provider);
-        oauth2Server.listen(oauth2ServerPort, oauth2ServerHost, () => {
+        oauth2Server.httpServer.listen(oauth2ServerPort, oauth2ServerHost, () => {
             providerSDKTestLogger.info(`Server running at http://${oauth2ServerHost}:${oauth2ServerPort}/`);
         });
         const { data: { metadata, spec } } = await entityApi.post(`/${ provider.prefix }/${ provider.version }/${ kind_name }`, {
@@ -546,7 +546,7 @@ describe("SDK security tests", () => {
     afterAll(async () => {
         await entityApi.delete(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}`);
         await providerApiAdmin.delete(`/${provider.prefix}/${provider.version}`);
-        oauth2Server.close();
+        oauth2Server.httpServer.close();
     });
 
 

@@ -61,7 +61,7 @@ async function setUpApplication(): Promise<express.Express> {
     const userAuthInfoExtractor = new CompositeUserAuthInfoExtractor([
         new AdminUserAuthInfoExtractor(adminKey),
         new S2SKeyUserAuthInfoExtractor(s2skeyDb),
-        new SessionKeyUserAuthInfoExtractor(sessionKeyApi)
+        new SessionKeyUserAuthInfoExtractor(sessionKeyApi, providerDb)
     ]);
     app.use(createAuthnRouter(logger, userAuthInfoExtractor));
     app.use(createOAuth2Router(logger, oauth2RedirectUri, providerDb, sessionKeyApi));
