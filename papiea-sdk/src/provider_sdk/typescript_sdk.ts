@@ -35,7 +35,7 @@ class SecurityApiImpl implements SecurityApi {
         }
     }
 
-    public async list_keys(): Promise<string[]>{
+    public async list_keys(): Promise<S2S_Key[]>{
         try {
             const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`;
             const {data: keys } = await this.provider.provider_api_axios.get(`${url}/s2skey`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
