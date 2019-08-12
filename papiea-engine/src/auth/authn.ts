@@ -1,8 +1,6 @@
 import { NextFunction, Request, Response, Router } from "express";
 import { UnauthorizedError } from "../errors/permission_error";
 import Logger from "../logger_interface";
-import { Provider_DB } from "../databases/provider_db_interface"
-
 
 export interface UserAuthInfoExtractor {
     getUserAuthInfo(token: string, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null>
@@ -74,7 +72,7 @@ function getToken(req: any): string | null {
     return null;
 }
 
-export function createAuthnRouter(logger: Logger, userAuthInfoExtractor: UserAuthInfoExtractor, providerDb: Provider_DB): Router {
+export function createAuthnRouter(logger: Logger, userAuthInfoExtractor: UserAuthInfoExtractor): Router {
 
     const router = Router();
 
@@ -89,13 +87,7 @@ export function createAuthnRouter(logger: Logger, userAuthInfoExtractor: UserAut
 
         const user_info = await userAuthInfoExtractor.getUserAuthInfo(token, provider_prefix, provider_version);
         if (user_info === null) {
-            if (provider_prefix && provider_version) {
-                const provider = await providerDb.get_provider(provider_prefix, provider_version)
-                res.redirect(`${provider.oauth2.oauth.auth_host}${provider.oauth2.oauth.authorize_uri}`)
-                return
-            } else {
-                throw new UnauthorizedError()
-            }
+            throw new UnauthorizedError()
         }
         if (urlParts.length > 1) {
             if (provider_prefix
