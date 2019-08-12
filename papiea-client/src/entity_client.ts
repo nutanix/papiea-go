@@ -53,9 +53,13 @@ export async function invoke_provider_procedure(provider: string, version: strin
     return res.data;
 }
 
-async function filter_entity(provider: string, kind: string, version: string, filter: any, papiea_url: string, s2skey: string): Promise<Entity[]> {
+export interface FilterResults {
+    entity_count : number
+    results: Entity[]
+}
+export async function filter_entity(provider: string, kind: string, version: string, filter: any, papiea_url: string, s2skey: string): Promise<FilterResults> {
     const res = await axios.post(`${papiea_url}/services/${provider}/${version}/${kind}/filter/`, filter, {headers:{"Authorization": `Bearer ${s2skey}`}});
-    return res.data;
+    return res.data
 }
 
 export interface ProviderClient {
@@ -78,7 +82,7 @@ export interface EntityCRUD {
     create_with_meta(metadata: Partial<Metadata>, spec: Spec): Promise<EntitySpec>
     update(metadata: Metadata, spec: Spec): Promise<EntitySpec>
     delete(entity_reference: Entity_Reference): Promise<void>
-    filter(filter:any): Promise<Entity[]>
+    filter(filter:any): Promise<FilterResults>
     invoke_procedure(procedure_name: string, entity_reference: Entity_Reference, input: any): Promise<any>
     invoke_kind_procedure(procedure_name: string, input: any): Promise<any>
 }
@@ -143,7 +147,7 @@ export function objectify(c: EntityCRUD): ImmutableEntityObjectBuilder {
     return {
         create: async (spec: Spec) => new ImmutableEntityObject(await c.create(spec), c).refresh(),
         create_with_meta: async (meta:Partial<Metadata>, spec:Spec) => new ImmutableEntityObject(await c.create_with_meta(meta, spec), c).refresh(),
-        filter: async (filter:any) => (await c.filter(filter)).map(e=>new ImmutableEntityObject(e, c)),
+        filter: async (filter:any) => (await c.filter(filter)).results.map(e=>new ImmutableEntityObject(e, c)),
         get: async (entity_reference: Entity_Reference) => new ImmutableEntityObject(await c.get(entity_reference), c)
     }
 }
