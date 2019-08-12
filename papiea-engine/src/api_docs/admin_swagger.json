@@ -478,6 +478,10 @@
                     }
                 }
             },
+            "externalDocs": {
+                "description": "Provider page",
+                "url": "http://localhost:3333/api-docs/test/0.1.0"
+            },
             "components": {
                 "schemas": {
                     "Error": {

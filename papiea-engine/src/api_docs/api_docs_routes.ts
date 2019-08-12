@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction, Router } from "express";
 import * as swaggerUi from "swagger-ui-express";
-import ApiDocsGenerator from "./api_docs_provider_generator";
+import ApiDocsGenerator from "./api_docs_generator";
 import { Provider_DB } from "../databases/provider_db_interface";
 import * as admin_swagger from './admin_swagger.json';
 import { Provider } from "papiea-core";

@@ -1,6 +1,6 @@
 import * as express from "express";
 import createAPIDocsRouter from "./api_docs/api_docs_routes";
-import ApiDocsGenerator from "./api_docs/api_docs_provider_generator";
+import ApiDocsGenerator from "./api_docs/api_docs_generator";
 import createProviderAPIRouter from "./provider/provider_routes";
 import { Provider_API_Impl } from "./provider/provider_api_impl";
 import { MongoConnection } from "./databases/mongo";
