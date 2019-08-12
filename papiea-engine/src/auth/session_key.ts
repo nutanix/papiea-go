@@ -1,9 +1,9 @@
 import { SessionKeyDb } from "../databases/session_key_db_interface"
 import { UserAuthInfo, UserAuthInfoExtractor } from "./authn"
 import { SessionKey } from "papiea-core"
-import { parseJwt } from "./user_data_evaluator"
 
 export class SessionKeyAPI {
+    private static EXPIRATION_WINDOW_IN_SECONDS = 300
     private readonly sessionKeyDb: SessionKeyDb
 
     constructor(sessionKeyDb: SessionKeyDb) {
@@ -11,36 +11,53 @@ export class SessionKeyAPI {
     }
 
     async createKey(userInfo: UserAuthInfo, token: any, key: string): Promise<SessionKey> {
-        const parsedToken = parseJwt(token.token.access_token)
-        const exp = parsedToken.content.exp
+        const exp = token.token.expires_at.getTime()
         const sessionKey: SessionKey = {
             key: key,
-            expireAt: new Date(exp * 1000),
+            expireAt: new Date(exp),
             user_info: userInfo,
             idpToken: token
         }
-        if (SessionKeyAPI.isExpired(sessionKey)) {
-            throw new Error("Access token expired")
-        }
         await this.sessionKeyDb.create_key(sessionKey)
+        if (SessionKeyAPI.isExpired(token)) {
+            return await this.refreshKey(sessionKey)
+        }
         return sessionKey
     }
 
     async getKey(key: string): Promise<SessionKey> {
         const sessionKey = await this.sessionKeyDb.get_key(key)
-        if (!SessionKeyAPI.isExpired(sessionKey)) {
-            return sessionKey
+        if (SessionKeyAPI.isExpired(sessionKey.idpToken)) {
+            return await this.refreshKey(sessionKey)
         } else {
-            throw new Error("Access token expired")
+            return sessionKey
         }
+    }
+
+    static isExpired(token: any): boolean {
+        const exp = token.token.expires_at.getTime()
+        const nowInSeconds = (new Date()).getTime() / 1000;
+        const expirationWindowStart = exp - SessionKeyAPI.EXPIRATION_WINDOW_IN_SECONDS;
+        return nowInSeconds >= expirationWindowStart;
     }
 
     async inActivateKey(key: string) {
         return this.sessionKeyDb.inactivate_key(key)
     }
 
-    static isExpired(sessionKey: SessionKey) {
-        return new Date() >= new Date(sessionKey.expireAt)
+    async refreshKey(sessionKey: SessionKey): Promise<SessionKey> {
+        try {
+            const token = await sessionKey.idpToken.refresh()
+            const exp = token.token.expires_at.getTime()
+            await this.sessionKeyDb.update_key(sessionKey.key, {
+                token: token,
+                expireAt: new Date(exp)
+            })
+            sessionKey.idpToken = token
+            return sessionKey
+        } catch (e) {
+            throw new Error(`Couldn't refresh the token: ${e.message}`)
+        }
     }
 }
 

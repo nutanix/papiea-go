@@ -1,10 +1,10 @@
 import { Router } from "express"
 import { asyncHandler, UserAuthInfo } from "./authn"
 import { Provider_DB } from "../databases/provider_db_interface"
-import { atob, extract_property } from "./user_data_evaluator"
+import { extract_property } from "./user_data_evaluator"
 import { Provider } from "papiea-core"
 import Logger from "../logger_interface"
-import { SessionKeyAPI, SessionKeyUserAuthInfoExtractor } from "./session_key"
+import { SessionKeyAPI } from "./session_key"
 import uuid = require("uuid")
 
 const simpleOauthModule = require("simple-oauth2"),

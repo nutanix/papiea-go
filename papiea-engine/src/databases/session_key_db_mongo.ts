@@ -54,4 +54,15 @@ export class SessionKeyDbMongo implements SessionKeyDb {
         }
         return;
     }
+
+    async update_key(key: string, query: any): Promise<void> {
+        const result = await this.collection.updateOne({
+            "key": key
+        }, {
+            $set: query
+        })
+        if (result.result.n !== 1) {
+            throw new Error(`Amount of updated entries doesn't equal to 1: ${result.result.n}`)
+        }
+    }
 }
