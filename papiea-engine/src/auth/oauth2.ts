@@ -73,12 +73,12 @@ export function createOAuth2Router(logger: Logger, redirect_uri: string, provide
         const sessionKey = await sessionKeyAPI.getKey(token, oauth2)
         const idpToken = oauth2.accessToken.create({ "access_token": sessionKey.idpToken.access_token });
         try {
-            await sessionKeyAPI.inActivateKey(sessionKey.key)
+            await sessionKeyAPI.inactivateKey(sessionKey.key)
             await idpToken.revoke('access_token');
         } catch (e) {
             return res.status(400).json("failed");
         }
-        return res.status(200).json({"logout_uri": `${provider.oauth2.auth_host}${provider.oauth2.logout_uri}`});
+        return res.status(200).json({"logout_uri": `${provider.oauth2.oauth.auth_host}${provider.oauth2.oauth.logout_uri}`});
     }));
 
     router.use('/provider/auth/callback', asyncHandler(async (req, res, next) => {

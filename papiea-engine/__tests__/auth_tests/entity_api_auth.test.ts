@@ -6,7 +6,6 @@ const queryString = require("query-string");
 import { OAuth2Server, ProviderBuilder } from "../test_data_factory"
 import uuid = require("uuid");
 import { Metadata, Spec, Provider } from "papiea-core";
-import btoa = require("btoa");
 import { WinstonLogger } from "../../src/logger";
 import Logger from "../../src/logger_interface";
 
@@ -75,6 +74,13 @@ describe("Entity API auth tests", () => {
     const oauth2Server = http.createServer((req, res) => {
         if (req.method == 'GET') {
             const params = queryString.parse(url.parse(req.url).query);
+            if (!params.redirect_uri) {
+                res.statusCode = 401
+                res.end(JSON.stringify({
+                    redirected: true
+                }))
+                return
+            }
             expect(params.client_id).toEqual('XXX');
             expect(params.scope).toEqual('openid');
             expect(params.response_type).toEqual('code');
@@ -163,7 +169,6 @@ describe("Entity API auth tests", () => {
                     refresh_token: uuid(),
                     id_token: id_token,
                     access_token: access_token,
-                    expires_at: "2019-07-24T19:50:43.823Z"
                 });
                 res.end(idp_token);
             });
@@ -711,7 +716,7 @@ describe("Entity API Logout tests", () => {
         const result = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/logout`,
             { headers: { 'Authorization': 'Bearer ' + token } }
         )
-        expect(result.data.logout_uri).toBe(`${provider.oauth2.auth_host}${provider.oauth2.logout_uri}`)
+        expect(result.data.logout_uri).toBe(`${provider.oauth2.oauth.auth_host}${provider.oauth2.oauth.logout_uri}`)
     })
 })
 
@@ -753,5 +758,48 @@ describe("Entity API Refresh token tests", () => {
             { headers: { 'Authorization': 'Bearer ' + token } }
         )
         expect(data).toBeDefined()
+    })
+})
+
+describe("Entity API Redirect tests", () => {
+    const oauth2ServerHost = '127.0.0.1';
+    const oauth2ServerPort = 9002;
+    const procedureCallbackHostname = "127.0.0.1";
+    const procedureCallbackPort = 9001;
+    const provider: Provider = new ProviderBuilder()
+        .withVersion("0.1.0")
+        .withKinds()
+        .withCallback(`http://${procedureCallbackHostname}:${procedureCallbackPort}`)
+        .withEntityProcedures()
+        .withKindProcedures()
+        .withProviderProcedures()
+        .withOAuth2Description()
+        .withAuthModel()
+        .build();
+    const oauth2Server = OAuth2Server.createServer();
+    const entityApiAuthTestLogger: Logger = new WinstonLogger("info", "entity_api_auth_redirect_test.log");
+
+    beforeAll(async () => {
+        await providerApiAdmin.post('/', provider);
+        oauth2Server.httpServer.listen(oauth2ServerPort, oauth2ServerHost, () => {
+            entityApiAuthTestLogger.info(`Server running at http://${oauth2ServerHost}:${oauth2ServerPort}/`);
+        });
+    });
+
+    afterAll(async () => {
+        await providerApiAdmin.delete(`/${provider.prefix}/${provider.version}`);
+        oauth2Server.httpServer.close();
+    });
+
+    test("Invalid token should redirect", async () => {
+        expect.hasAssertions()
+        const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`)
+        try {
+            const { data } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
+                { headers: { 'Authorization': 'Bearer ' + 'Not a valid token' } }
+            )
+        } catch (e) {
+            expect(e.response.data.redirected).toBeTruthy()
+        }
     })
 })

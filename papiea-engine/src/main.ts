@@ -63,7 +63,7 @@ async function setUpApplication(): Promise<express.Express> {
         new S2SKeyUserAuthInfoExtractor(s2skeyDb),
         new SessionKeyUserAuthInfoExtractor(sessionKeyApi, providerDb)
     ]);
-    app.use(createAuthnRouter(logger, userAuthInfoExtractor));
+    app.use(createAuthnRouter(logger, userAuthInfoExtractor, providerDb));
     app.use(createOAuth2Router(logger, oauth2RedirectUri, providerDb, sessionKeyApi));
     const entityApiAuthorizer: Authorizer = new PerProviderAuthorizer(logger, providerApi, new ProviderCasbinAuthorizerFactory(logger));
     app.use('/provider', createProviderAPIRouter(providerApi));

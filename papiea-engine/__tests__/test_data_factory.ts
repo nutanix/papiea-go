@@ -399,6 +399,13 @@ export class OAuth2Server {
         return {
             "/oauth2/authorize": (req: IncomingMessage, res: ServerResponse) => {
                 const params = queryString.parse(url.parse(req.url).query)
+                if (!params.redirect_uri) {
+                    res.statusCode = 401
+                    res.end(JSON.stringify({
+                        redirected: true
+                    }))
+                    return
+                }
                 const resp_query = queryString.stringify({
                     state: params.state,
                     code: 'ZZZ'
@@ -406,7 +413,12 @@ export class OAuth2Server {
                 res.statusCode = 302
                 res.setHeader('Location', params.redirect_uri + '?' + resp_query)
                 res.end()
-            }
+            },
+            "/oauth2/logout": (req: IncomingMessage, res: ServerResponse) => {
+                res.statusCode = 200
+                res.setHeader('Content-Type', 'application/json')
+                res.end()
+            },
         }
     }
 

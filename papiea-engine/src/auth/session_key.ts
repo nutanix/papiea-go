@@ -43,7 +43,7 @@ export class SessionKeyAPI {
         return nowInSeconds >= expirationWindowStart;
     }
 
-    async inActivateKey(key: string) {
+    async inactivateKey(key: string) {
         return this.sessionKeyDb.inactivate_key(key)
     }
 
