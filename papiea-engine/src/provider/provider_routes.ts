@@ -9,7 +9,7 @@ export type SortParams = { [key: string]: number };
 export default function createProviderAPIRouter(providerApi: Provider_API) {
     const providerApiRouter = express.Router();
 
-    const filterKeys = async function (user: UserAuthInfo, filter: any, skip: number, size: number, sortParams?: SortParams): Promise<any> {
+    const filterKeys = async function (user: UserAuthInfo, filter: any): Promise<any> {
         const result: any[] = await providerApi.filter_keys(user, filter);
 
         const uuidToEntity: { [key: string]: any } = {};
@@ -18,9 +18,8 @@ export default function createProviderAPIRouter(providerApi: Provider_API) {
 
         const entities = Object.values(uuidToEntity);
         const totalEntities: number = entities.length;
-        const pageEntities = entities.slice(skip, skip + size);
 
-        return {results: pageEntities, entity_count: totalEntities};
+        return {results: entities, entity_count: totalEntities};
     };
 
     providerApiRouter.post('/', asyncHandler(async (req, res) => {
@@ -95,15 +94,10 @@ export default function createProviderAPIRouter(providerApi: Provider_API) {
 
     providerApiRouter.post('/:prefix/:version/s2skey/filter', asyncHandler(async (req, res) => {
         const filter: any = {};
-        const offset: undefined | number = req.query.offset;
-        const limit: undefined | number = req.query.limit;
-        const rawSortQuery: undefined | string = req.query.sort;
-        const sortParams = processSortQuery(rawSortQuery);
-        const [skip, size] = processPaginationParams(offset, limit);
         for (let property of Object.keys(req.body)) {
             filter[property] = req.body[property];
         }
-        res.json(await filterKeys(req.user, filter, skip, size, sortParams));
+        res.json(await filterKeys(req.user, filter));
     }));
 
     return providerApiRouter;
