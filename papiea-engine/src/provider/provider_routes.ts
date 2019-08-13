@@ -1,11 +1,29 @@
 import * as express from "express";
 import { Provider_API, Provider_Power } from "./provider_api_interface";
-import { asyncHandler } from '../auth/authn';
+import { asyncHandler, UserAuthInfo } from '../auth/authn';
 import { BadRequestError } from '../errors/bad_request_error';
+import { processPaginationParams, processSortQuery } from "../utils/utils";
 
+export type SortParams = { [key: string]: number };
 
 export default function createProviderAPIRouter(providerApi: Provider_API) {
     const providerApiRouter = express.Router();
+
+    const filterKeys = async function (user: UserAuthInfo, filter: any, skip: number, size: number, sortParams?: SortParams): Promise<any> {
+        const result: any[] = await providerApi.filter_keys(user, filter);
+
+        const uuidToEntity: { [key: string]: any } = {};
+
+        result.forEach(x => {
+            uuidToEntity[x[0].uuid] = { metadata: x[0], spec: x[1] };
+        });
+
+        const entities = Object.values(uuidToEntity);
+        const totalEntities: number = entities.length;
+        const pageEntities = entities.slice(skip, skip + size);
+
+        return {results: pageEntities, entity_count: totalEntities};
+    };
 
     providerApiRouter.post('/', asyncHandler(async (req, res) => {
         const result = await providerApi.register_provider(req.user, req.body);
@@ -75,6 +93,19 @@ export default function createProviderAPIRouter(providerApi: Provider_API) {
             await providerApi.inactivate_key(req.user, req.body.uuid);
         }
         res.json("OK");
+    }));
+
+    providerApiRouter.post('/:prefix/:version/s2skey/filter', asyncHandler(async (req, res) => {
+        const filter: any = {};
+        const offset: undefined | number = req.query.offset;
+        const limit: undefined | number = req.query.limit;
+        const rawSortQuery: undefined | string = req.query.sort;
+        const sortParams = processSortQuery(rawSortQuery);
+        const [skip, size] = processPaginationParams(offset, limit);
+        for (let property of req.body) {
+            filter[property] = req.body[property];
+        }
+        res.json(await filterKeys(req.user, filter, skip, size, sortParams));
     }));
 
     return providerApiRouter;
