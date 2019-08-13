@@ -14,9 +14,7 @@ export default function createProviderAPIRouter(providerApi: Provider_API) {
 
         const uuidToEntity: { [key: string]: any } = {};
 
-        result.forEach(x => {
-            uuidToEntity[x[0].uuid] = { metadata: x[0], spec: x[1] };
-        });
+        result.forEach(x => {uuidToEntity[x.uuid] = x});
 
         const entities = Object.values(uuidToEntity);
         const totalEntities: number = entities.length;
