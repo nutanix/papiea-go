@@ -102,7 +102,7 @@ export default function createProviderAPIRouter(providerApi: Provider_API) {
         const rawSortQuery: undefined | string = req.query.sort;
         const sortParams = processSortQuery(rawSortQuery);
         const [skip, size] = processPaginationParams(offset, limit);
-        for (let property of req.body) {
+        for (let property of Object.keys(req.body)) {
             filter[property] = req.body[property];
         }
         res.json(await filterKeys(req.user, filter, skip, size, sortParams));
