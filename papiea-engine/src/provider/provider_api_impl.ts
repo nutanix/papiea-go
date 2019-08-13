@@ -166,7 +166,7 @@ export class Provider_API_Impl implements Provider_API {
 
     async filter_keys(user: UserAuthInfo, fields: any): Promise<S2S_Key[]> {
         const res = await this.s2skeyDb.list_keys(fields);
-        const filteredRes = await this.authorizer.filter(user, res, Action.ReadS2SKey, x => { return x });
+        const filteredRes = await this.authorizer.filter(user, res, Action.ReadS2SKey);
         return filteredRes;
     }
 }
