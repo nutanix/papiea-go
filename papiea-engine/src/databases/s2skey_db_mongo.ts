@@ -65,7 +65,6 @@ export class S2S_Key_DB_Mongo implements S2S_Key_DB {
     async list_keys(fields_map: any): Promise<S2S_Key[]> {
         const filter: any = Object.assign({}, fields_map);
         filter["deleted_at"] = datestringToFilter(fields_map.deleted_at);
-        this.logger.info("Filters are", filter);
         const result = await this.collection.find(filter).toArray();
         return result;
     }
