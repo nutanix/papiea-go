@@ -13,20 +13,20 @@ async function main() {
         const { metadata } = await location_client.create({ x: 10, y: 20 })
         console.log("\tCreated location metadata", metadata)
 
-        let entity = await location_client.get(metadata)
+        let entity = await location_client.get_by_ref(metadata)
         console.log("\tLocation created is:", entity)
 
         console.log("\nUpdate location to a new spec")
         await location_client.update(metadata, { x: 100, y: 200 })
 
-        entity = await location_client.get(metadata)
+        entity = await location_client.get_by_ref(metadata)
         console.log("\tLocation update to:", entity)
 
         console.log("\nInvoking moveX procedure...")
         const res = await location_client.invoke_procedure("moveX", metadata, { input: 100 })
         console.log("\tProcedure returned:", res);
 
-        entity = await location_client.get(metadata)
+        entity = await location_client.get(metadata.uuid)
         console.log("\tProcedure transformed to:", entity)
 
         console.log("\nDeleteing the entity...")
@@ -34,7 +34,7 @@ async function main() {
         await location_client.delete(metadata);
 
         try {
-            entity = await location_client.get(metadata)
+            entity = await location_client.get(metadata.uuid)
             console.log("\tShould not see this location!", entity)
         } catch (e) {
             console.log("\tLocation not found (good, it was deleted!)", e.message)

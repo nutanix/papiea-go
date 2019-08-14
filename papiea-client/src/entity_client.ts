@@ -121,7 +121,7 @@ export class ImmutableEntityObject implements EntityObjectCRUD {
     }
 
     async refresh(): Promise<ImmutableEntityObject> {
-        return new ImmutableEntityObject(await this.crud.get(this.entity.metadata), this.crud)
+        return new ImmutableEntityObject(await this.crud.get_by_ref(this.entity.metadata), this.crud)
     }
 
     async update(spec: any): Promise<ImmutableEntityObject> {
@@ -150,6 +150,6 @@ export function objectify(c: EntityCRUD): ImmutableEntityObjectBuilder {
         create: async (spec: Spec) => new ImmutableEntityObject(await c.create(spec), c).refresh(),
         create_with_meta: async (meta:Partial<Metadata>, spec:Spec) => new ImmutableEntityObject(await c.create_with_meta(meta, spec), c).refresh(),
         filter: async (filter:any) => (await c.filter(filter)).results.map(e=>new ImmutableEntityObject(e, c)),
-        get: async (entity_reference: Entity_Reference) => new ImmutableEntityObject(await c.get(entity_reference), c)
+        get: async (entity_reference: Entity_Reference) => new ImmutableEntityObject(await c.get_by_ref(entity_reference), c)
     }
 }
