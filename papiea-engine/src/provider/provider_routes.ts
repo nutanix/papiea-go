@@ -1,9 +1,7 @@
 import * as express from "express";
 import { Provider_API, Provider_Power } from "./provider_api_interface";
-import { asyncHandler, UserAuthInfo } from '../auth/authn';
+import { asyncHandler } from '../auth/authn';
 import { BadRequestError } from '../errors/bad_request_error';
-
-export type SortParams = { [key: string]: number };
 
 export default function createProviderAPIRouter(providerApi: Provider_API) {
     const providerApiRouter = express.Router();
