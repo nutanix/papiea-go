@@ -58,7 +58,6 @@ export class SessionKeyAPI {
             accessToken = await accessToken.refresh();
             const exp = accessToken.token.expires_at.getTime()
             await this.sessionKeyDb.update_key(sessionKey.key, {
-                token: accessToken,
                 idpToken: accessToken,
                 expireAt: new Date(exp)
             })
