@@ -10,15 +10,7 @@ export default function createProviderAPIRouter(providerApi: Provider_API) {
 
     const filterKeys = async function (user: UserAuthInfo, filter: any): Promise<any> {
         const result: any[] = await providerApi.filter_keys(user, filter);
-
-        const uuidToEntity: { [key: string]: any } = {};
-
-        result.forEach(x => {uuidToEntity[x.uuid] = x});
-
-        const entities = Object.values(uuidToEntity);
-        const totalEntities: number = entities.length;
-
-        return {results: entities, entity_count: totalEntities};
+        return {results: result, entity_count: result.length};
     };
 
     providerApiRouter.post('/', asyncHandler(async (req, res) => {
