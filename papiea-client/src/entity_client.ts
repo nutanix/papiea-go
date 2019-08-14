@@ -77,7 +77,8 @@ export function provider_client(papiea_url: string, provider: string, version: s
 
 // map based crud
 export interface EntityCRUD {
-    get(entity_reference: Entity_Reference): Promise<Entity>
+    get(entity_uuid: string): Promise<Entity>
+    get_by_ref(entity: Entity_Reference): Promise<Entity>
     create(spec: Spec): Promise<EntitySpec>
     create_with_meta(metadata: Partial<Metadata>, spec: Spec): Promise<EntitySpec>
     update(metadata: Metadata, spec: Spec): Promise<EntitySpec>
@@ -90,7 +91,8 @@ export interface EntityCRUD {
 export function kind_client(papiea_url: string, provider: string, kind: string, version: string, s2skey?: string, meta_extension?: (s2skey: string)=>any): EntityCRUD {
     const the_s2skey = s2skey || 'anonymous'
     const crudder: EntityCRUD = {
-        get: (entity_reference: Entity_Reference) => get_entity(provider, kind, version, entity_reference, papiea_url, the_s2skey),
+        get: (uuid: string) => get_entity(provider, kind, version, {uuid, kind}, papiea_url, the_s2skey),
+        get_by_ref: (entity: Entity_Reference) => get_entity(provider, kind, version, entity, papiea_url, the_s2skey),
         create: (spec: Spec) => create_entity(provider, kind, version, spec, papiea_url, meta_extension ? meta_extension(the_s2skey):undefined, the_s2skey),
         create_with_meta: (meta: Partial<Metadata>, spec: Spec) => create_entity_with_meta(provider,kind, version, meta, spec, papiea_url, the_s2skey),
         update: (metadata: Metadata, spec: Spec) => update_entity(provider, kind, version, spec, metadata, papiea_url, the_s2skey),
