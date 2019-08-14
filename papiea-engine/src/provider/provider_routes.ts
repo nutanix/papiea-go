@@ -2,7 +2,6 @@ import * as express from "express";
 import { Provider_API, Provider_Power } from "./provider_api_interface";
 import { asyncHandler, UserAuthInfo } from '../auth/authn';
 import { BadRequestError } from '../errors/bad_request_error';
-import { processPaginationParams, processSortQuery } from "../utils/utils";
 
 export type SortParams = { [key: string]: number };
 
