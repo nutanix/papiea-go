@@ -8,11 +8,6 @@ export type SortParams = { [key: string]: number };
 export default function createProviderAPIRouter(providerApi: Provider_API) {
     const providerApiRouter = express.Router();
 
-    const filterKeys = async function (user: UserAuthInfo, filter: any): Promise<any> {
-        const result: any[] = await providerApi.filter_keys(user, filter);
-        return {results: result, entity_count: result.length};
-    };
-
     providerApiRouter.post('/', asyncHandler(async (req, res) => {
         const result = await providerApi.register_provider(req.user, req.body);
         res.json(result);
@@ -87,8 +82,9 @@ export default function createProviderAPIRouter(providerApi: Provider_API) {
         const filter: any = {};
         for (let property of Object.keys(req.body)) {
             filter[property] = req.body[property];
-        }
-        res.json(await filterKeys(req.user, filter));
+        };
+        const result = await providerApi.filter_keys(req.user, filter);
+        res.json({ results: result, entity_count: result.length })
     }));
 
     return providerApiRouter;
