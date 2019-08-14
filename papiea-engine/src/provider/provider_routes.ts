@@ -3,7 +3,6 @@ import { Provider_API, Provider_Power } from "./provider_api_interface";
 import { asyncHandler } from '../auth/authn';
 import { BadRequestError } from '../errors/bad_request_error';
 
-
 export default function createProviderAPIRouter(providerApi: Provider_API) {
     const providerApiRouter = express.Router();
 
@@ -75,6 +74,15 @@ export default function createProviderAPIRouter(providerApi: Provider_API) {
             await providerApi.inactivate_key(req.user, req.body.uuid);
         }
         res.json("OK");
+    }));
+
+    providerApiRouter.post('/:prefix/:version/s2skey/filter', asyncHandler(async (req, res) => {
+        const filter: any = {};
+        for (let property of Object.keys(req.body)) {
+            filter[property] = req.body[property];
+        };
+        const result = await providerApi.filter_keys(req.user, filter);
+        res.json({ results: result, entity_count: result.length })
     }));
 
     return providerApiRouter;
