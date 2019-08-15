@@ -26,6 +26,7 @@ import { ProcedureInvocationError } from "../errors/procedure_invocation_error";
 import uuid = require("uuid");
 import { PermissionDeniedError } from "../errors/permission_error";
 import Logger from "../logger_interface";
+import { IntentfulContext } from "../intentful_core/intentful_context"
 
 export type SortParams = { [key: string]: number };
 
@@ -36,19 +37,16 @@ export class Entity_API_Impl implements Entity_API {
     private authorizer: Authorizer;
     private logger: Logger;
     private validator: Validator
+    private readonly intentfulCtx: IntentfulContext
 
-    constructor(logger: Logger, status_db: Status_DB, spec_db: Spec_DB, provider_api: Provider_API, authorizer: Authorizer, validator: Validator) {
+    constructor(logger: Logger, status_db: Status_DB, spec_db: Spec_DB, provider_api: Provider_API, authorizer: Authorizer, validator: Validator, intentfulCtx: IntentfulContext) {
         this.status_db = status_db;
         this.spec_db = spec_db;
         this.provider_api = provider_api;
         this.authorizer = authorizer;
         this.logger = logger;
         this.validator = validator;
-    }
-
-    private async get_kind(user: UserAuthInfo, prefix: string, kind_name: string, version: Version): Promise<Kind> {
-        const provider = await this.provider_api.get_provider(user, prefix, version);
-        return this.find_kind(provider, kind_name);
+        this.intentfulCtx = intentfulCtx
     }
 
     private async get_provider(user: UserAuthInfo, prefix: string, version: Version): Promise<Provider> {
@@ -79,9 +77,8 @@ export class Entity_API_Impl implements Entity_API {
         }
         request_metadata.kind = kind.name;
         await this.authorizer.checkPermission(user, { "metadata": request_metadata }, Action.Create);
-        const [metadata, spec] = await this.spec_db.update_spec(request_metadata, spec_description);
-        if (kind.kind_structure[kind.name]['x-papiea-entity'] === 'spec-only')
-            await this.status_db.replace_status(request_metadata, spec_description);
+        const strategy = this.intentfulCtx.getIntentfulStrategy(kind.intentful_behaviour)
+        const [metadata, spec] = await strategy.update(request_metadata, spec_description)
         return [metadata, spec];
     }
 
@@ -119,18 +116,19 @@ export class Entity_API_Impl implements Entity_API {
         this.validate_spec(spec_description, kind, provider.allowExtraProps);
         const metadata: Metadata = { uuid: uuid, kind: kind.name, spec_version: spec_version, extension: extension } as Metadata;
         await this.authorizer.checkPermission(user, { "metadata": metadata }, Action.Update);
-        const [_, spec] = await this.spec_db.update_spec(metadata, spec_description);
-        if (kind.kind_structure[kind.name]['x-papiea-entity'] === 'spec-only')
-            await this.status_db.replace_status(metadata, spec_description);
+        const strategy = this.intentfulCtx.getIntentfulStrategy(kind.intentful_behaviour)
+        const [_, spec] = await strategy.update(metadata, spec_description)
         return [metadata, spec];
     }
 
-    async delete_entity_spec(user: UserAuthInfo, kind_name: string, entity_uuid: uuid4): Promise<void> {
+    async delete_entity_spec(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, entity_uuid: uuid4): Promise<void> {
+        const provider = await this.get_provider(user, prefix, version);
+        const kind = this.find_kind(provider, kind_name);
         const entity_ref: Entity_Reference = { kind: kind_name, uuid: entity_uuid };
         const [metadata, _] = await this.spec_db.get_spec(entity_ref);
         await this.authorizer.checkPermission(user, { "metadata": metadata }, Action.Delete);
-        await this.spec_db.delete_spec(entity_ref);
-        await this.status_db.delete_status(entity_ref);
+        const strategy = this.intentfulCtx.getIntentfulStrategy(kind.intentful_behaviour)
+        await strategy.delete(metadata)
     }
 
     async call_procedure(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, entity_uuid: uuid4, procedure_name: string, input: any): Promise<any> {

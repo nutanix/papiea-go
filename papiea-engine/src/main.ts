@@ -17,6 +17,7 @@ import { ProviderCasbinAuthorizerFactory } from "./auth/casbin";
 import { PapieaErrorImpl } from "./errors/papiea_error_impl";
 import { WinstonLogger, getLoggingMiddleware } from './logger';
 import { SessionKeyAPI, SessionKeyUserAuthInfoExtractor } from "./auth/session_key"
+import { IntentfulContext } from "./intentful_core/intentful_context"
 const cookieParser = require('cookie-parser');
 
 
@@ -63,11 +64,12 @@ async function setUpApplication(): Promise<express.Express> {
         new S2SKeyUserAuthInfoExtractor(s2skeyDb),
         new SessionKeyUserAuthInfoExtractor(sessionKeyApi, providerDb)
     ]);
+    const intentfulContext = new IntentfulContext(specDb, statusDb)
     app.use(createAuthnRouter(logger, userAuthInfoExtractor));
     app.use(createOAuth2Router(logger, oauth2RedirectUri, providerDb, sessionKeyApi));
     const entityApiAuthorizer: Authorizer = new PerProviderAuthorizer(logger, providerApi, new ProviderCasbinAuthorizerFactory(logger));
     app.use('/provider', createProviderAPIRouter(providerApi));
-    app.use('/services', createEntityAPIRouter(new Entity_API_Impl(logger, statusDb, specDb, providerApi, entityApiAuthorizer, validator)));
+    app.use('/services', createEntityAPIRouter(new Entity_API_Impl(logger, statusDb, specDb, providerApi, entityApiAuthorizer, validator, intentfulContext)));
     app.use('/api-docs', createAPIDocsRouter('/api-docs', new ApiDocsGenerator(providerDb)));
     app.use(function (err: any, req: any, res: any, next: any) {
         if (res.headersSent) {

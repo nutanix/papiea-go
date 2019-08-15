@@ -1,11 +1,9 @@
-import { UserAuthInfo } from "../../src/auth/authn";
 import axios from "axios";
 import { ProviderSdk } from "papiea-sdk";
-import { Metadata, Spec, Action } from "papiea-core";
-import { getLocationDataDescription, getMetadataDescription } from "../test_data_factory";
+import { Metadata, Spec } from "papiea-core";
+import { getLocationDataDescription } from "../test_data_factory";
 import { stringify } from "querystring"
 import uuid = require("uuid");
-import { Authorizer } from "../../src/auth/authz";
 
 declare var process: {
     env: {
@@ -410,3 +408,80 @@ describe("Entity API tests", () => {
         }
     });
 });
+
+const providerApi = axios.create({
+    baseURL: `http://127.0.0.1:${serverPort}/provider/`,
+    timeout: 1000,
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminKey}`
+    }
+});
+
+describe('Status-only fields are not overridden by spec changes', function () {
+    const providerPrefix = "test_status_only";
+    const providerVersion = "0.1.0";
+    const locationDataDescription = getLocationDataDescription();
+    const kind_name = Object.keys(locationDataDescription)[0];
+
+    beforeAll(async () => {
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        sdk.new_kind(locationDataDescription);
+        sdk.version(providerVersion);
+        sdk.prefix(providerPrefix);
+        await sdk.register();
+    });
+
+    afterAll(async () => {
+        await axios.delete(`http://127.0.0.1:${serverPort}/provider/${providerPrefix}/${providerVersion}`);
+    });
+
+    test("Create entity, update status, update spec, status-only fields remain untouched, delete entity", async () => {
+        expect.assertions(4)
+        const { data: { metadata, spec } } = await entityApi.post(`/${ providerPrefix }/${ providerVersion }/${ kind_name }`, {
+            spec: {
+                x: 10,
+                y: 11
+            }
+        });
+
+        await providerApi.patch('/update_status', {
+            context: "some context",
+            entity_ref: {
+                uuid: metadata.uuid,
+                kind: kind_name
+            },
+            status: {
+                k: 200
+            }
+        });
+
+        let res = await entityApi.get(`/${ providerPrefix }/${ providerVersion }/${ kind_name }/${ metadata.uuid }`);
+        expect(res.data.status).toEqual({
+            x: 10,
+            y: 11,
+            k: 200
+        })
+        await entityApi.put(`/${ providerPrefix }/${ providerVersion }/${ kind_name }/${ metadata.uuid }`, {
+            spec: {
+                x: 20,
+                y: 21
+            },
+            metadata: {
+                spec_version: 1
+            }
+        });
+        res = await entityApi.get(`/${ providerPrefix }/${ providerVersion }/${ kind_name }/${ metadata.uuid }`);
+        expect(res.data.status).toEqual({
+            x: 20,
+            y: 21,
+            k: 200
+        })
+        expect(res.data.spec).toEqual({
+            x: 20,
+            y: 21
+        })
+        expect(res.data.spec.k).toBeUndefined()
+        await entityApi.delete(`/${ providerPrefix }/${ providerVersion }/${ kind_name }/${ metadata.uuid }`);
+    });
+})

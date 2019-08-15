@@ -14,6 +14,7 @@ import {
 import * as http from "http";
 import uuid = require("uuid");
 import { IncomingMessage, ServerResponse } from "http"
+import { IntentfulBehaviour } from "papiea-core"
 const url = require("url");
 const queryString = require("query-string");
 
@@ -55,6 +56,7 @@ export function getSpecOnlyEntityKind(): SpecOnlyEntityKind {
         kind_procedures: {},
         entity_procedures: {},
         differ: undefined,
+        intentful_behaviour: IntentfulBehaviour.Basic
     };
     return spec_only_kind;
 }

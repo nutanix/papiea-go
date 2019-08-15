@@ -13,7 +13,7 @@ import { Express, RequestHandler } from "express";
 import { Server } from "http";
 import { ProceduralCtx } from "./typescript_sdk_context_impl";
 
-import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, S2S_Key, UserInfo } from "papiea-core";
+import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, S2S_Key, UserInfo, IntentfulBehaviour } from "papiea-core";
 import { InvocationError } from "./typescript_sdk_exceptions";
 
 class SecurityApiImpl implements SecurityApi {
@@ -164,14 +164,27 @@ export class ProviderSdk implements ProviderImpl {
                     dependency_tree: new Map(),
                     kind_procedures: {},
                     entity_procedures: {},
+                    intentful_behaviour: IntentfulBehaviour.Basic,
                     differ: undefined,
                 };
                 const kind_builder = new Kind_Builder(spec_only_kind, this, this.allowExtraProps);
                 this._kind.push(spec_only_kind);
                 return kind_builder;
             } else {
-                //TODO: process non spec-only
-                throw new Error("Unimplemented")
+                const kind: Kind = {
+                    name,
+                    name_plural: plural(name),
+                    kind_structure: entity_description,
+                    intentful_signatures: new Map(),
+                    dependency_tree: new Map(),
+                    kind_procedures: {},
+                    entity_procedures: {},
+                    intentful_behaviour: IntentfulBehaviour.Basic,
+                    differ: undefined,
+                };
+                const kind_builder = new Kind_Builder(kind, this, this.allowExtraProps);
+                this._kind.push(kind);
+                return kind_builder;
             }
         } else {
             throw new Error(`Entity not a papiea entity. Please make sure you have 'x-papiea-entity' property for '${name}'`);

@@ -90,17 +90,6 @@ describe("Provider Sdk tests", () => {
         expect(location_manager.kind.name).toBe("Location");
         done();
     });
-    test("Provider with no x-papiea-entity should fail", (done) => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
-        const malformed_yaml = JSON.parse(JSON.stringify(location_yaml));
-        malformed_yaml.Location["x-papiea-entity"] = "fail";
-        try {
-            sdk.new_kind(malformed_yaml);
-        } catch (err) {
-            expect(err).not.toBeNull();
-            done();
-        }
-    });
     test("Provider without version should fail to register", async () => {
         expect.hasAssertions();
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
