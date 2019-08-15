@@ -5,7 +5,6 @@ import { plural } from "pluralize";
 import {
     Data_Description,
     Version,
-    SpecOnlyEntityKind,
     Kind,
     Procedural_Signature,
     Provider,
@@ -44,10 +43,10 @@ export function getMetadataDescription(): Data_Description {
     return MetadataDescription;
 }
 
-export function getSpecOnlyEntityKind(): SpecOnlyEntityKind {
+export function getLocationKind(): Kind {
     const locationDataDescription = getLocationDataDescription();
     const name = Object.keys(locationDataDescription)[0];
-    const spec_only_kind: SpecOnlyEntityKind = {
+    const locationKind: Kind = {
         name,
         name_plural: plural(name),
         kind_structure: locationDataDescription,
@@ -58,7 +57,7 @@ export function getSpecOnlyEntityKind(): SpecOnlyEntityKind {
         differ: undefined,
         intentful_behaviour: IntentfulBehaviour.Basic
     };
-    return spec_only_kind;
+    return locationKind;
 }
 
 function formatErrorMsg(current_field: string, missing_field: string) {
@@ -257,7 +256,7 @@ export class ProviderBuilder {
 
     public withKinds(value?: Kind[]) {
         if (value === undefined) {
-            this._kinds = [getSpecOnlyEntityKind()];
+            this._kinds = [getLocationKind()];
         } else {
             this._kinds = value;
         }
