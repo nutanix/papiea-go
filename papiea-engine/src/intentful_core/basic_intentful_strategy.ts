@@ -12,7 +12,7 @@ export class BasicIntentfulStrategy implements IntentfulStrategy {
         this.statusDb = statusDb
     }
 
-    // Update spec and status with delta received in spec
+    // Update spec and status with spec changes received
     async update(metadata: Metadata, spec: Spec): Promise<Spec> {
         const [updatedMetadata, updatedSpec] = await this.specDb.update_spec(metadata, spec);
         const [_, existingStatus] = await this.statusDb.get_status(metadata)
