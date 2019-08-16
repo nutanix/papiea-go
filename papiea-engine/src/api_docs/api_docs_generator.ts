@@ -185,7 +185,7 @@ export default class ApiDocsGenerator {
                 }
             ],
             "requestBody": {
-                "description": `${ kind.name } to add`,
+                "description": `${ kind.name } to retreive`,
                 "required": false,
                 "content": {
                     "application/json": {
@@ -209,7 +209,7 @@ export default class ApiDocsGenerator {
             "operationId": `add${ provider.prefix }${ kind.name }`,
             "tags": [`${ provider.prefix }/${ provider.version }/${ kind.name }`],
             "requestBody": {
-                "description": `${ kind.name } to add`,
+                "description": `${ kind.name } to create`,
                 "required": true,
                 "content": {
                     "application/json": {
