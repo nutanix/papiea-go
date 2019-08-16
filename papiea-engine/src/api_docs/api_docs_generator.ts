@@ -185,7 +185,7 @@ export default class ApiDocsGenerator {
                 }
             ],
             "requestBody": {
-                "description": `${ kind.name } to retreive`,
+                "description": `${ kind.name } to retrieve`,
                 "required": false,
                 "content": {
                     "application/json": {
