@@ -164,7 +164,7 @@ export class ProviderSdk implements ProviderImpl {
                     dependency_tree: new Map(),
                     kind_procedures: {},
                     entity_procedures: {},
-                    intentful_behaviour: IntentfulBehaviour.Basic,
+                    intentful_behaviour: IntentfulBehaviour.SpecOnly,
                     differ: undefined,
                 };
                 const kind_builder = new Kind_Builder(spec_only_kind, this, this.allowExtraProps);

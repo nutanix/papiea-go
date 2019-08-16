@@ -3,6 +3,7 @@ import { Status_DB } from "../databases/status_db_interface"
 import { IntentfulStrategy } from "./intentful_strategy_interface"
 import { BasicIntentfulStrategy } from "./basic_intentful_strategy"
 import { IntentfulBehaviour } from "papiea-core"
+import { SpecOnlyIntentfulStrategy } from "./spec_only_intentful_strategy"
 
 export type BehaviourStrategyMap = Map<IntentfulBehaviour, IntentfulStrategy>
 
@@ -16,6 +17,7 @@ export class IntentfulContext {
         this.statusDb = statusDb
         this.behaviourStrategy = new Map<IntentfulBehaviour, IntentfulStrategy>()
         this.behaviourStrategy.set(IntentfulBehaviour.Basic, new BasicIntentfulStrategy(specDb, statusDb))
+        this.behaviourStrategy.set(IntentfulBehaviour.SpecOnly, new SpecOnlyIntentfulStrategy(specDb, statusDb))
     }
 
     getIntentfulStrategy(behaviour: IntentfulBehaviour): IntentfulStrategy {

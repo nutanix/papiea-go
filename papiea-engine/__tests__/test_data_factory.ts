@@ -63,7 +63,7 @@ export function getSpecOnlyKind(): SpecOnlyEntityKind {
         kind_procedures: {},
         entity_procedures: {},
         differ: undefined,
-        intentful_behaviour: IntentfulBehaviour.Basic
+        intentful_behaviour: IntentfulBehaviour.SpecOnly
     };
     return locationKind;
 }

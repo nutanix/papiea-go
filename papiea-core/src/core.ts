@@ -84,7 +84,8 @@ export interface Kind_Compiler {
 }
 
 export enum IntentfulBehaviour {
-    Basic = "basic"
+    Basic = "basic",
+    SpecOnly = "spec_only"
 }
 
 // The differ is used to locate a diff in an entity between the
