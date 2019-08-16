@@ -27,7 +27,7 @@ declare var process: {
         MONGO_DB: string,
         MONGO_HOST: string,
         MONGO_PORT: string
-        PAPIEA_PUBLIC_ADDR: string,
+        PAPIEA_PUBLIC_URL: string,
         DEBUG_LEVEL: string,
         ADMIN_S2S_KEY: string,
         LOGGING_LEVEL: string
@@ -36,7 +36,7 @@ declare var process: {
 };
 process.title = "papiea";
 const serverPort = parseInt(process.env.SERVER_PORT || "3000");
-const publicAddr: string = process.env.PAPIEA_PUBLIC_ADDR || "http://localhost:3000";
+const publicAddr: string = process.env.PAPIEA_PUBLIC_URL || "http://localhost:3000";
 const oauth2RedirectUri: string = publicAddr + "/provider/auth/callback";
 const mongoHost = process.env.MONGO_HOST || 'mongo';
 const mongoPort = process.env.MONGO_PORT || '27017';

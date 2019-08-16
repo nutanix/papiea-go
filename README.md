@@ -38,7 +38,7 @@ See [Attaching to node js using Intellij](https://www.jetbrains.com/help/pycharm
 A set of these variables might be used to tweak the default papiea-engine configuration
 * `MONGO_HOST` - mongo host (default `mongo`)
 * `MONGO_PORT` - mongo port (default `27017`)
-* `PAPIEA_PUBLIC_ADDR` - external papiea address (default `"http://localhost:3000"`)
+* `PAPIEA_PUBLIC_URL` - external papiea address (default `"http://localhost:3000"`)
 * `HOT_RELOAD` - use nodemon to autoreload papiea on code changes (default `false`)
 * `DEBUG_LEVEL` - log level for [morgan](https://github.com/expressjs/morgan) logging (default `common`)
 * `PAPIEA_ADMIN_S2S_KEY` - papiea admin's s2s key
