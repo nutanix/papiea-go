@@ -1,6 +1,6 @@
 import "jest";
 import axios from "axios";
-import { ProviderBuilder } from "../test_data_factory";
+import { getClusterKind, ProviderBuilder } from "../test_data_factory"
 import uuid = require("uuid");
 import { Provider } from "papiea-core";
 
@@ -36,9 +36,10 @@ const entityApi = axios.create({
 });
 
 describe("Provider API auth tests", () => {
+    const clusterKinds = [getClusterKind()]
     const provider: Provider = new ProviderBuilder()
         .withVersion("0.1.0")
-        .withKinds()
+        .withKinds(clusterKinds)
         .build();
     const kind_name = provider.kinds[0].name;
     const tenant_uuid = uuid();
@@ -135,13 +136,13 @@ describe("Provider API auth tests", () => {
                 }
             },
             spec: {
-                x: 10,
-                y: 11
+                host: "small",
+                ip: "0.0.0.0"
             }
         }, {
             headers: { 'Authorization': `Bearer ${ s2skey.key }` }
         });
-        const newStatus = Object.assign({}, spec, { y: 12 })
+        const newStatus = Object.assign({}, spec, { ip: "1.1.1.1" })
         await providerApi.post('/update_status', {
             context: "some context",
             entity_ref: {
@@ -179,13 +180,13 @@ describe("Provider API auth tests", () => {
                     }
                 },
                 spec: {
-                    x: 10,
-                    y: 11
+                    host: "small",
+                    ip: "0.0.0.0"
                 }
             }, {
                     headers: { 'Authorization': `Bearer ${s2skey.key}` }
                 });
-            const newStatus = Object.assign({}, spec, { y: 12 })
+            const newStatus = Object.assign({}, spec, { ip: "1.1.1.1" })
             const { data } = await providerApiAdmin.post(`/${uuid()}/${provider.version}/s2skey`,
                 {
                     user_info: {

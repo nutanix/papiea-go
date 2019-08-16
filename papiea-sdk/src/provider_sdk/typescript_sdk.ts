@@ -155,21 +155,37 @@ export class ProviderSdk implements ProviderImpl {
         }
         const name = Object.keys(entity_description)[0];
         if (entity_description[name].hasOwnProperty("x-papiea-entity")) {
-            const kind: Kind = {
-                name,
-                name_plural: plural(name),
-                kind_structure: entity_description,
-                intentful_signatures: new Map(),
-                dependency_tree: new Map(),
-                kind_procedures: {},
-                entity_procedures: {},
-                intentful_behaviour: IntentfulBehaviour.Basic,
-                differ: undefined,
+            if (entity_description[name]["x-papiea-entity"] === "spec-only") {
+                const spec_only_kind: SpecOnlyEntityKind = {
+                    name,
+                    name_plural: plural(name),
+                    kind_structure: entity_description,
+                    intentful_signatures: new Map(),
+                    dependency_tree: new Map(),
+                    kind_procedures: {},
+                    entity_procedures: {},
+                    intentful_behaviour: IntentfulBehaviour.Basic,
+                    differ: undefined,
+                };
+                const kind_builder = new Kind_Builder(spec_only_kind, this, this.allowExtraProps);
+                this._kind.push(spec_only_kind);
+                return kind_builder;
+            } else {
+                const kind: Kind = {
+                    name,
+                    name_plural: plural(name),
+                    kind_structure: entity_description,
+                    intentful_signatures: new Map(),
+                    dependency_tree: new Map(),
+                    kind_procedures: {},
+                    entity_procedures: {},
+                    intentful_behaviour: IntentfulBehaviour.Basic,
+                    differ: undefined,
+                };
+                const kind_builder = new Kind_Builder(kind, this, this.allowExtraProps);
+                this._kind.push(kind);
+                return kind_builder;
             }
-            const kind_builder = new Kind_Builder(kind, this, this.allowExtraProps)
-            this._kind.push(kind)
-            return kind_builder
-
         } else {
             throw new Error(`Entity not a papiea entity. Please make sure you have 'x-papiea-entity' property for '${name}'`);
         }

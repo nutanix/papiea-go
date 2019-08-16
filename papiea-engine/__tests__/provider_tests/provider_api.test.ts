@@ -1,6 +1,6 @@
 import "jest"
 import axios from "axios"
-import { loadYaml, ProviderBuilder } from "../test_data_factory";
+import { getClusterKind, loadYaml, ProviderBuilder } from "../test_data_factory"
 import { Provider } from "papiea-core";
 
 declare var process: {
@@ -30,6 +30,7 @@ const entityApi = axios.create({
 describe("Provider API tests", () => {
     const providerPrefix = "test_provider";
     const providerVersion = "0.1.0";
+    const clusterKinds = [getClusterKind()]
 
     test("Non-existent route", done => {
         providerApi.delete(`/abc`).then(() => done.fail()).catch(() => done());
@@ -74,17 +75,17 @@ describe("Provider API tests", () => {
     });
 
     test("Update status", async () => {
-        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();
+        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds(clusterKinds).build();
         await providerApi.post('/', provider);
         const kind_name = provider.kinds[0].name;
         const { data: { metadata, spec } } = await entityApi.post(`/${ provider.prefix }/${provider.version}/${ kind_name }`, {
             spec: {
-                x: 10,
-                y: 11
+                host: "small",
+                ip: "0.0.0.0"
             }
         });
 
-        const newStatus = { x: 10, y: 20, z: 111 };
+        const newStatus = { host: "medium", ip: "127.0.0.1", name: "test_cluster" };
         await providerApi.post('/update_status', {
             context: "some context",
             entity_ref: {
@@ -100,13 +101,13 @@ describe("Provider API tests", () => {
 
     test("Update status with malformed status should fail validation", async () => {
         expect.hasAssertions();
-        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();
+        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds(clusterKinds).build();
         await providerApi.post('/', provider);
         const kind_name = provider.kinds[0].name;
         const { data: { metadata, spec } } = await entityApi.post(`/${ provider.prefix }/${provider.version}/${ kind_name }`, {
             spec: {
-                x: 10,
-                y: 11
+                host: "small",
+                ip: "0.0.0.0"
             }
         });
 
@@ -117,7 +118,7 @@ describe("Provider API tests", () => {
                     uuid: metadata.uuid,
                     kind: kind_name
                 },
-                status: { x: 11, y: "Totally not a number" }
+                status: { host: "small", ip: 100 }
             });
         } catch (err) {
             expect(err).toBeDefined();
@@ -139,17 +140,17 @@ describe("Provider API tests", () => {
 
     test("Update status with partial status definition", async () => {
         expect.hasAssertions();
-        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();
+        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds(clusterKinds).build();
         await providerApi.post('/', provider);
         const kind_name = provider.kinds[0].name;
         const { data: { metadata, spec } } = await entityApi.post(`/${ provider.prefix }/${ provider.version }/${ kind_name }`, {
             spec: {
-                x: 10,
-                y: 11
+                host: "small",
+                ip: "0.0.0.0"
             }
         });
 
-        const newStatus = { y: 20, z: 111 };
+        const newStatus = { host: "big", name: "test_cluster" };
         await providerApi.patch('/update_status', {
             context: "some context",
             entity_ref: {
@@ -160,9 +161,9 @@ describe("Provider API tests", () => {
         });
 
         const res = await entityApi.get(`/${ provider.prefix }/${ provider.version }/${ kind_name }/${ metadata.uuid }`);
-        expect(res.data.status.x).toEqual(10);
-        expect(res.data.status.y).toEqual(20);
-        expect(res.data.status.z).toEqual(111);
+        expect(res.data.status.host).toEqual("big");
+        expect(res.data.status.ip).toEqual("0.0.0.0");
+        expect(res.data.status.name).toEqual("test_cluster");
     });
 
     test("Register provider with extension structure", done => {
@@ -171,4 +172,89 @@ describe("Provider API tests", () => {
         providerApi.post('/', provider).then().catch(done.fail);
         providerApi.delete(`/${ providerPrefix }/${ providerVersion }`).then(() => done()).catch(done.fail);
     });
+
+    test("Update status of spec-only entity should fail", async () => {
+        expect.assertions(1)
+        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds().build();
+        await providerApi.post('/', provider);
+        const kind_name = provider.kinds[0].name;
+        const { data: { metadata, spec } } = await entityApi.post(`/${ provider.prefix }/${provider.version}/${ kind_name }`, {
+            spec: {
+                x: 10,
+                y: 20
+            }
+        });
+
+        const newStatus = { x: 15, y: 100 };
+        try {
+            await providerApi.post('/update_status', {
+                context: "some context",
+                entity_ref: {
+                    uuid: metadata.uuid,
+                    kind: kind_name
+                },
+                status: newStatus
+            });
+        } catch (e) {
+            expect(e).toBeDefined()
+        }
+    });
 });
+
+describe('Status-only fields are not overridden by spec changes', function () {
+    const clusterKinds = [getClusterKind()]
+
+    test("Create entity, update status, update spec, status-only fields remain untouched, delete entity", async () => {
+        expect.assertions(4)
+        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds(clusterKinds).build();
+        await providerApi.post('/', provider);
+        const kind_name = provider.kinds[0].name;
+        const providerPrefix = provider.prefix
+        const providerVersion = provider.version
+        const { data: { metadata, spec } } = await entityApi.post(`/${ providerPrefix }/${ providerVersion }/${ kind_name }`, {
+            spec: {
+                host: "medium",
+                ip: "0.0.0.0"
+            }
+        });
+
+        await providerApi.patch('/update_status', {
+            context: "some context",
+            entity_ref: {
+                uuid: metadata.uuid,
+                kind: kind_name
+            },
+            status: {
+                name: "test_cluster"
+            }
+        });
+
+        let res = await entityApi.get(`/${ providerPrefix }/${ providerVersion }/${ kind_name }/${ metadata.uuid }`);
+        expect(res.data.status).toEqual({
+            host: "medium",
+            ip: "0.0.0.0",
+            name: "test_cluster"
+        })
+        await entityApi.put(`/${ providerPrefix }/${ providerVersion }/${ kind_name }/${ metadata.uuid }`, {
+            spec: {
+                host: "large",
+                ip: "1.1.1.1"
+            },
+            metadata: {
+                spec_version: 1
+            }
+        });
+        res = await entityApi.get(`/${ providerPrefix }/${ providerVersion }/${ kind_name }/${ metadata.uuid }`);
+        expect(res.data.status).toEqual({
+            host: "large",
+            ip: "1.1.1.1",
+            name: "test_cluster"
+        })
+        expect(res.data.spec).toEqual({
+            host: "large",
+            ip: "1.1.1.1"
+        })
+        expect(res.data.spec.name).toBeUndefined()
+        await entityApi.delete(`/${ providerPrefix }/${ providerVersion }/${ kind_name }/${ metadata.uuid }`);
+    });
+})

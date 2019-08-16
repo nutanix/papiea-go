@@ -40,8 +40,24 @@ export class Provider_API_Impl implements Provider_API {
         return this.providerDb.delete_provider(provider_prefix, version);
     }
 
+    private findKind(provider: Provider, kindName: string): Kind {
+        const foundKind: Kind | undefined = provider.kinds.find(elem => elem.name === kindName);
+        if (foundKind === undefined) {
+            throw new Error(`Kind: ${kindName} not found`);
+        }
+        return foundKind
+    }
+
+    private isSpecOnly(kind: Kind) {
+        return kind.kind_structure[kind.name]['x-papiea-entity'] === 'spec-only'
+    }
+
     async replace_status(user: UserAuthInfo, context: any, entity_ref: Entity_Reference, status: Status): Promise<void> {
         const provider: Provider = await this.get_latest_provider_by_kind(user, entity_ref.kind);
+        const kind = this.findKind(provider, entity_ref.kind)
+        if (this.isSpecOnly(kind)) {
+            throw new Error("Cannot change status of a spec-only kind")
+        }
         await this.authorizer.checkPermission(user, provider, Action.UpdateStatus);
         await this.validate_status(provider, entity_ref, status);
         return this.statusDb.replace_status(entity_ref, status);
@@ -49,6 +65,10 @@ export class Provider_API_Impl implements Provider_API {
 
     async update_status(user: UserAuthInfo, context: any, entity_ref: Entity_Reference, status: Status): Promise<void> {
         const provider: Provider = await this.get_latest_provider_by_kind(user, entity_ref.kind);
+        const kind = this.findKind(provider, entity_ref.kind)
+        if (this.isSpecOnly(kind)) {
+            throw new Error("Cannot change status of a spec-only kind")
+        }
         await this.authorizer.checkPermission(user, provider, Action.UpdateStatus);
         return this.statusDb.update_status(entity_ref, status);
     }
