@@ -71,7 +71,7 @@ export function createOAuth2Router(logger: Logger, redirect_uri: string, provide
         const oauth2 = getOAuth2(provider);
         const token = req.user.authorization.split(' ')[1]
         const sessionKey = await sessionKeyAPI.getKey(token, oauth2)
-        const idpToken = oauth2.accessToken.create({ "access_token": sessionKey.idpToken.access_token });
+        const idpToken = oauth2.accessToken.create({ "access_token": sessionKey.idpToken.token.access_token });
         try {
             await sessionKeyAPI.inactivateKey(sessionKey.key)
             await idpToken.revoke('access_token');
