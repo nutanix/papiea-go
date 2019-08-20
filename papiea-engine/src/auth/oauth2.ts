@@ -79,7 +79,8 @@ export function createOAuth2Router(logger: Logger, redirect_uri: string, provide
             logger.error('Logout error: ', e.message);
             return res.status(400).json("Logout failed");
         }
-        return res.status(200).json({"logout_uri": `${provider.oauth2.oauth.auth_host}${provider.oauth2.oauth.logout_uri}`});
+        const logoutUrl = new url.URL(provider.oauth2.oauth.logout_uri, provider.oauth2.oauth.auth_host);
+        return res.status(200).json({"logout_uri": `${logoutUrl.href}`});
     }));
 
     router.use('/provider/auth/callback', asyncHandler(async (req, res, next) => {
