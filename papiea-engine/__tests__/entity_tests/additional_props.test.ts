@@ -4,7 +4,7 @@ import { ProviderSdk } from "papiea-sdk/build/provider_sdk/typescript_sdk";
 import { Metadata, Spec } from "papiea-core/build/core";
 
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
-const adminKey = process.env.ADMIN_S2S_KEY || '';
+const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
 const papieaUrl = `http://127.0.0.1:${serverPort}`;
 
 const server_config = {
