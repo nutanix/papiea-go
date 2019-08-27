@@ -12,8 +12,6 @@ export class PapieaErrorImpl implements PapieaError {
         code: number
         message: string
     }
-    
-    const logger = new WinstonLogger(loggingLevel);
 
     constructor(code: number, errorMsg: string, errors?: { [key: string]: any }[]) {
         if (errors) {
@@ -68,6 +66,7 @@ export class PapieaErrorImpl implements PapieaError {
             case ConflictingEntityError:
                 let conflictingError = err as ConflictingEntityError
                 let metadata = conflictingError.existing_metadata
+
                 return new PapieaErrorImpl(409, `Conflicting Entity: ${metadata.uuid} has version ${metadata.spec_version}`)
             default:
                 console.log(`Default handle got error: ${err}`)
