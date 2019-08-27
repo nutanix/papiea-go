@@ -370,6 +370,38 @@ describe("Entity API tests", () => {
         expect(res.data.metadata.uuid).toEqual(entity_uuid);
     });
 
+    test.only("Create entity with duplicate", async () => {
+        expect.assertions(4);
+        const entity_uuid = uuid();
+        const { data: { metadata, spec } } = await entityApi.post(`/${ providerPrefix }/${ providerVersion }/${ kind_name }`, {
+            spec: {
+                x: 10,
+                y: 11
+            },
+            metadata: {
+                uuid: entity_uuid
+            }
+        });
+        expect(metadata.uuid).toEqual(entity_uuid);
+        const res = await entityApi.get(`/${ providerPrefix }/${ providerVersion }/${ kind_name }/${ entity_uuid }`);
+        expect(res.data.metadata.uuid).toEqual(entity_uuid);
+        try {
+            await entityApi.post(`/${ providerPrefix }/${ providerVersion }/${ kind_name }`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                },
+                metadata: {
+                    uuid: entity_uuid
+                }
+            });
+        } catch (e) {
+            console.log(`Got error: ${JSON.stringify(e.response.data)}`)
+            expect(e.response.status).toEqual(409)
+            expect(e.response.data.error.message).toEqual(`Conflicting Entity: ${entity_uuid} has version ${1}`)
+        }
+    });
+
     test("Delete entity", async () => {
         expect.assertions(1);
         await entityApi.delete(`/${ providerPrefix }/${ providerVersion }/${ kind_name }/${ entity_metadata.uuid }`);
