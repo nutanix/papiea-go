@@ -370,7 +370,7 @@ describe("Entity API tests", () => {
         expect(res.data.metadata.uuid).toEqual(entity_uuid);
     });
 
-    test.only("Create entity with duplicate", async () => {
+    test("Create entity with duplicate", async () => {
         expect.assertions(4);
         const entity_uuid = uuid();
         const { data: { metadata, spec } } = await entityApi.post(`/${ providerPrefix }/${ providerVersion }/${ kind_name }`, {
