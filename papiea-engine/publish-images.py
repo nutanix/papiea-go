@@ -12,6 +12,9 @@ subprocess.check_call([
     '-u', os.environ['ARTIFACTORY_USER'],
     '-p', os.environ['ARTIFACTORY_PASSWORD']])
 
+with open(".dockerignore", "w") as f:
+    f.write("*/__tests__")
+
 subprocess.check_call([
     'docker', 'build',
     '-t', tag,
