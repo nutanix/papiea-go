@@ -5,14 +5,16 @@ import { plural } from "pluralize";
 import {
     Data_Description,
     Version,
-    SpecOnlyEntityKind,
     Kind,
     Procedural_Signature,
     Provider,
-    Procedural_Execution_Strategy
+    Procedural_Execution_Strategy,
+    SpecOnlyEntityKind
 } from "papiea-core";
 import * as http from "http";
 import uuid = require("uuid");
+import { IncomingMessage, ServerResponse } from "http"
+import { IntentfulBehaviour } from "papiea-core"
 const url = require("url");
 const queryString = require("query-string");
 
@@ -37,15 +39,22 @@ export function getLocationDataDescription(): Data_Description {
     return randomizedLocationDataDescription;
 }
 
+export function getClusterDataDescription(): Data_Description {
+    let locationDataDescription = loadYaml("./test_data/cluster_kind_test_data.yml");
+    let randomizedLocationDataDescription: any = {};
+    randomizedLocationDataDescription["Cluster" + randomString(5)] = locationDataDescription["Cluster"];
+    return randomizedLocationDataDescription;
+}
+
 export function getMetadataDescription(): Data_Description {
     let MetadataDescription = loadYaml("./test_data/metadata_extension.yml");
     return MetadataDescription;
 }
 
-export function getSpecOnlyEntityKind(): SpecOnlyEntityKind {
+export function getSpecOnlyKind(): SpecOnlyEntityKind {
     const locationDataDescription = getLocationDataDescription();
     const name = Object.keys(locationDataDescription)[0];
-    const spec_only_kind: SpecOnlyEntityKind = {
+    const locationKind: SpecOnlyEntityKind = {
         name,
         name_plural: plural(name),
         kind_structure: locationDataDescription,
@@ -54,8 +63,26 @@ export function getSpecOnlyEntityKind(): SpecOnlyEntityKind {
         kind_procedures: {},
         entity_procedures: {},
         differ: undefined,
+        intentful_behaviour: IntentfulBehaviour.SpecOnly
     };
-    return spec_only_kind;
+    return locationKind;
+}
+
+export function getClusterKind(): Kind {
+    const clusterDataDescription = getClusterDataDescription()
+    const name = Object.keys(clusterDataDescription)[0]
+    const kind = {
+        name,
+        name_plural: plural(name),
+        kind_structure: clusterDataDescription,
+        intentful_signatures: new Map(),
+        dependency_tree: new Map(),
+        kind_procedures: {},
+        entity_procedures: {},
+        differ: undefined,
+        intentful_behaviour: IntentfulBehaviour.Basic
+    }
+    return kind
 }
 
 function formatErrorMsg(current_field: string, missing_field: string) {
@@ -254,7 +281,7 @@ export class ProviderBuilder {
 
     public withKinds(value?: Kind[]) {
         if (value === undefined) {
-            this._kinds = [getSpecOnlyEntityKind()];
+            this._kinds = [getSpecOnlyKind()];
         } else {
             this._kinds = value;
         }
@@ -311,16 +338,13 @@ function base64UrlEncode(...parts: any[]): string {
     return parts.map(x => base64UrlEncodePart(x)).join('.');
 }
 
-const timestampDate = new Date().getTime()
-const timestamp = timestampDate / 1000
-const expirationDate = new Date(timestampDate)
-expirationDate.setHours(expirationDate.getHours() + 2)
-const expiration = expirationDate.getTime() / 1000
-
-export class OAuth2Server {
-    static tenant_uuid = uuid();
-
-    static access_token = base64UrlEncode({
+function createToken(expireIn: number) {
+    const timestampDate = new Date().getTime()
+    const timestamp = timestampDate / 1000
+    const expirationDate = new Date(timestampDate)
+    expirationDate.setSeconds(expirationDate.getSeconds() + expireIn)
+    const expiration = expirationDate.getTime() / 1000
+    const access = base64UrlEncode({
             "alg": "RS256"
         },
         {
@@ -340,7 +364,7 @@ export class OAuth2Server {
             "user_id": uuid()
         });
 
-    static id_token = base64UrlEncode(
+    const id = base64UrlEncode(
         {
             "alg": "RS256",
             "x5t": "AAA",
@@ -374,38 +398,101 @@ export class OAuth2Server {
             "federated_idp": "local"
         });
 
-    static idp_token = JSON.stringify({
+    const idpToken = JSON.stringify({
         scope: 'openid',
         token_type: 'Bearer',
         expires_in: expiration - timestamp,
         refresh_token: uuid(),
-        id_token: OAuth2Server.id_token,
-        access_token: OAuth2Server.access_token
+        id_token: id,
+        access_token: access
     });
+    return idpToken
+}
 
-    static createServer() {
-        return http.createServer((req, res) => {
-            if (req.method == 'GET') {
-                const params = queryString.parse(url.parse(req.url).query);
+export class OAuth2Server {
+    static tenant_uuid = uuid();
+    readonly idp_token: any
+    httpServer: http.Server
+
+    constructor(ttlSeconds: number) {
+        this.httpServer = http.createServer((req, res) => {
+            this.resolve(req, res)
+        });
+        this.idp_token = createToken(ttlSeconds)
+    }
+
+    get_actions(): { [key: string]: http.RequestListener } {
+        return {
+            "/oauth2/authorize": (req: IncomingMessage, res: ServerResponse) => {
+                const params = queryString.parse(url.parse(req.url).query)
+                if (!params.redirect_uri) {
+                    res.statusCode = 401
+                    res.end(JSON.stringify({
+                        redirected: true
+                    }))
+                    return
+                }
                 const resp_query = queryString.stringify({
                     state: params.state,
                     code: 'ZZZ'
-                });
-                res.statusCode = 302;
-                res.setHeader('Location', params.redirect_uri + '?' + resp_query);
-                res.end();
-            } else if (req.method == 'POST') {
-                let body = '';
+                })
+                res.statusCode = 302
+                res.setHeader('Location', params.redirect_uri + '?' + resp_query)
+                res.end()
+            },
+            "/oauth2/logout": (req: IncomingMessage, res: ServerResponse) => {
+                res.statusCode = 200
+                res.setHeader('Content-Type', 'application/json')
+                res.end()
+            },
+        }
+    }
+
+    post_actions(): { [key: string]: http.RequestListener } {
+        const idp = this.idp_token
+        return {
+            "/oauth2/token": (req: IncomingMessage, res: ServerResponse) => {
+                let body = ''
                 req.on('data', function (data) {
-                    body += data;
-                });
+                    body += data
+                })
                 req.on('end', function () {
-                    res.statusCode = 200;
-                    res.setHeader('Content-Type', 'application/json');
-                    res.end(OAuth2Server.idp_token);
-                });
+                    if (queryString.parse(body).grant_type === "refresh_token") {
+                        res.statusCode = 200
+                        res.setHeader('Content-Type', 'application/json')
+                        res.end(createToken(60 * 60 * 4))
+                    } else {
+                        res.statusCode = 200
+                        res.setHeader('Content-Type', 'application/json')
+                        res.end(idp)
+                    }
+                })
+            },
+            "/oauth2/revoke": (req: IncomingMessage, res: ServerResponse) => {
+                res.statusCode = 200
+                res.end()
             }
-        });
+        }
+    }
+
+    static createServer(tokenTTLSeconds?: number) {
+        if (tokenTTLSeconds) {
+            return new OAuth2Server(tokenTTLSeconds)
+        }
+        return new OAuth2Server(60 * 60 * 2)
+    }
+
+    private resolve(req: IncomingMessage, res: ServerResponse) {
+        const url: string | undefined = req.url
+        if (!url) {
+            throw new Error("No url was provided")
+        }
+        const baseUrl = url.split("?")[0]
+        if (req.method === "GET") {
+            this.get_actions()[baseUrl](req, res)
+        } else if (req.method === "POST") {
+            this.post_actions()[baseUrl](req, res)
+        }
     }
 
 }

@@ -13,7 +13,7 @@ import { Express, RequestHandler } from "express";
 import { Server } from "http";
 import { ProceduralCtx } from "./typescript_sdk_context_impl";
 
-import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, S2S_Key, UserInfo } from "papiea-core";
+import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, S2S_Key, UserInfo, IntentfulBehaviour } from "papiea-core";
 import { InvocationError } from "./typescript_sdk_exceptions";
 
 class SecurityApiImpl implements SecurityApi {
@@ -35,7 +35,7 @@ class SecurityApiImpl implements SecurityApi {
         }
     }
 
-    public async list_keys(): Promise<string[]>{
+    public async list_keys(): Promise<S2S_Key[]>{
         try {
             const url = `${this.provider.get_prefix()}/${this.provider.get_version()}`;
             const {data: keys } = await this.provider.provider_api_axios.get(`${url}/s2skey`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
@@ -155,24 +155,21 @@ export class ProviderSdk implements ProviderImpl {
         }
         const name = Object.keys(entity_description)[0];
         if (entity_description[name].hasOwnProperty("x-papiea-entity")) {
-            if (entity_description[name]["x-papiea-entity"] === "spec-only") {
-                const spec_only_kind: SpecOnlyEntityKind = {
-                    name,
-                    name_plural: plural(name),
-                    kind_structure: entity_description,
-                    intentful_signatures: new Map(),
-                    dependency_tree: new Map(),
-                    kind_procedures: {},
-                    entity_procedures: {},
-                    differ: undefined,
-                };
-                const kind_builder = new Kind_Builder(spec_only_kind, this, this.allowExtraProps);
-                this._kind.push(spec_only_kind);
-                return kind_builder;
-            } else {
-                //TODO: process non spec-only
-                throw new Error("Unimplemented")
-            }
+            const the_kind: SpecOnlyEntityKind = {
+                name,
+                name_plural: plural(name),
+                kind_structure: entity_description,
+                intentful_signatures: new Map(),
+                dependency_tree: new Map(),
+                kind_procedures: {},
+                entity_procedures: {},
+                intentful_behaviour: (entity_description[name]["x-papiea-entity"] === "spec-only") ? IntentfulBehaviour.SpecOnly : IntentfulBehaviour.Basic,
+                differ: undefined,
+            };
+
+            const kind_builder = new Kind_Builder(the_kind, this, this.allowExtraProps);
+            this._kind.push(the_kind);
+            return kind_builder;
         } else {
             throw new Error(`Entity not a papiea entity. Please make sure you have 'x-papiea-entity' property for '${name}'`);
         }
@@ -448,4 +445,4 @@ export class Kind_Builder {
         return this
     }
 }
-export {Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, ProceduralCtx_Interface, Provider_Power, IntentfulCtx_Interface, UserInfo, S2S_Key}
+export {Version, Kind, Procedural_Signature, Provider, Data_Description, Procedural_Execution_Strategy, Entity, ProceduralCtx_Interface, Provider_Power, IntentfulCtx_Interface, UserInfo, S2S_Key}

@@ -49,7 +49,7 @@ export interface Intentful_Handler {
 export interface SecurityApi {
  // Returns the user-info of user with s2skey or the current user 
  user_info(): Promise<UserInfo>
- list_keys(): Promise<string[]>
+ list_keys(): Promise<S2S_Key[]>
  create_key(new_key: Partial<S2S_Key>):Promise<S2S_Key>
  deactivate_key(key_to_deactivate:string):Promise<string>
 }

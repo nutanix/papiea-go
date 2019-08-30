@@ -83,6 +83,11 @@ export interface Kind_Compiler {
     compile_kind(kind: Kind): Differ;
 }
 
+export enum IntentfulBehaviour {
+    Basic = "basic",
+    SpecOnly = "spec_only"
+}
+
 // The differ is used to locate a diff in an entity between the
 // current status and the desired state. 
 export interface Differ {
@@ -105,6 +110,7 @@ export interface Kind {
     //// Entity structure
     kind_structure: Data_Description;
 
+    intentful_behaviour: IntentfulBehaviour;
     //// Intentful behavior
     intentful_signatures: Map<SFS, Intentful_Signature>;
 

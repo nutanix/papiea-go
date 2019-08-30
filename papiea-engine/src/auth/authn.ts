@@ -2,7 +2,6 @@ import { NextFunction, Request, Response, Router } from "express";
 import { UnauthorizedError } from "../errors/permission_error";
 import Logger from "../logger_interface";
 
-
 export interface UserAuthInfoExtractor {
     getUserAuthInfo(token: string, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null>
 }
@@ -88,7 +87,7 @@ export function createAuthnRouter(logger: Logger, userAuthInfoExtractor: UserAut
 
         const user_info = await userAuthInfoExtractor.getUserAuthInfo(token, provider_prefix, provider_version);
         if (user_info === null) {
-            throw new UnauthorizedError();
+            throw new UnauthorizedError()
         }
         if (urlParts.length > 1) {
             if (provider_prefix

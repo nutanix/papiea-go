@@ -3,21 +3,20 @@ import axios from "axios";
 import * as http from "http";
 const url = require("url");
 const queryString = require("query-string");
-import { ProviderBuilder } from "../test_data_factory";
+import { OAuth2Server, ProviderBuilder } from "../test_data_factory"
 import uuid = require("uuid");
 import { Metadata, Spec, Provider } from "papiea-core";
-import btoa = require("btoa");
 import { WinstonLogger } from "../../src/logger";
 import Logger from "../../src/logger_interface";
 
 declare var process: {
     env: {
         SERVER_PORT: string,
-        ADMIN_S2S_KEY: string
+        PAPIEA_ADMIN_S2S_KEY: string
     }
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
-const adminKey = process.env.ADMIN_S2S_KEY || '';
+const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
 
 const entityApi = axios.create({
     baseURL: `http://127.0.0.1:${serverPort}/services`,
@@ -75,6 +74,13 @@ describe("Entity API auth tests", () => {
     const oauth2Server = http.createServer((req, res) => {
         if (req.method == 'GET') {
             const params = queryString.parse(url.parse(req.url).query);
+            if (!params.redirect_uri) {
+                res.statusCode = 401
+                res.end(JSON.stringify({
+                    redirected: true
+                }))
+                return
+            }
             expect(params.client_id).toEqual('XXX');
             expect(params.scope).toEqual('openid');
             expect(params.response_type).toEqual('code');
@@ -163,7 +169,6 @@ describe("Entity API auth tests", () => {
                     refresh_token: uuid(),
                     id_token: id_token,
                     access_token: access_token,
-                    expires_at: "2019-07-24T19:50:43.823Z"
                 });
                 res.end(idp_token);
             });
@@ -670,3 +675,88 @@ describe("Entity API auth tests", () => {
         }
     });
 });
+
+
+describe("Entity API Logout tests", () => {
+    const oauth2ServerHost = '127.0.0.1';
+    const oauth2ServerPort = 9002;
+    const procedureCallbackHostname = "127.0.0.1";
+    const procedureCallbackPort = 9001;
+    const provider: Provider = new ProviderBuilder()
+        .withVersion("0.1.0")
+        .withKinds()
+        .withCallback(`http://${procedureCallbackHostname}:${procedureCallbackPort}`)
+        .withEntityProcedures()
+        .withKindProcedures()
+        .withProviderProcedures()
+        .withOAuth2Description()
+        .withAuthModel()
+        .build();
+    const oauth2Server = OAuth2Server.createServer();
+    const entityApiAuthTestLogger: Logger = new WinstonLogger("info", "entity_api_auth_login_test.log");
+
+    beforeAll(async () => {
+        await providerApiAdmin.post('/', provider);
+        oauth2Server.httpServer.listen(oauth2ServerPort, oauth2ServerHost, () => {
+            entityApiAuthTestLogger.info(`Server running at http://${oauth2ServerHost}:${oauth2ServerPort}/`);
+        });
+    });
+
+    afterAll(async () => {
+        await providerApiAdmin.delete(`/${provider.prefix}/${provider.version}`);
+        oauth2Server.httpServer.close();
+    });
+
+    test("User can logout", async () => {
+        expect.hasAssertions()
+        const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`)
+        const { data } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
+            { headers: { 'Authorization': 'Bearer ' + token } }
+        )
+        const result = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/logout`,
+            { headers: { 'Authorization': 'Bearer ' + token } }
+        )
+        expect(result.data.logout_uri).toBe(`${provider.oauth2.oauth.auth_host}${provider.oauth2.oauth.logout_uri}`)
+    })
+})
+
+
+describe("Entity API Refresh token tests", () => {
+    const oauth2ServerHost = '127.0.0.1';
+    const oauth2ServerPort = 9002;
+    const procedureCallbackHostname = "127.0.0.1";
+    const procedureCallbackPort = 9001;
+    const provider: Provider = new ProviderBuilder()
+        .withVersion("0.1.0")
+        .withKinds()
+        .withCallback(`http://${procedureCallbackHostname}:${procedureCallbackPort}`)
+        .withEntityProcedures()
+        .withKindProcedures()
+        .withProviderProcedures()
+        .withOAuth2Description()
+        .withAuthModel()
+        .build();
+    const oauth2Server = OAuth2Server.createServer(-5);
+    const entityApiAuthTestLogger: Logger = new WinstonLogger("info", "entity_api_auth_refresh_test.log");
+
+    beforeAll(async () => {
+        await providerApiAdmin.post('/', provider);
+        oauth2Server.httpServer.listen(oauth2ServerPort, oauth2ServerHost, () => {
+            entityApiAuthTestLogger.info(`Server running at http://${oauth2ServerHost}:${oauth2ServerPort}/`);
+        });
+    });
+
+    afterAll(async () => {
+        await providerApiAdmin.delete(`/${provider.prefix}/${provider.version}`);
+        oauth2Server.httpServer.close();
+    });
+
+    test("Silent token refresh", async () => {
+        expect.hasAssertions()
+        const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`)
+        const { data } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
+            { headers: { 'Authorization': 'Bearer ' + token } }
+        )
+        expect(data).toBeDefined()
+    })
+})

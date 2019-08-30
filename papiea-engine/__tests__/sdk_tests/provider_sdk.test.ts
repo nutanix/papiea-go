@@ -15,11 +15,11 @@ import Logger from "../../src/logger_interface";
 declare var process: {
     env: {
         SERVER_PORT: string,
-        ADMIN_S2S_KEY: string
+        PAPIEA_ADMIN_S2S_KEY: string
     }
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
-const adminKey = process.env.ADMIN_S2S_KEY || '';
+const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
 const papieaUrl = 'http://127.0.0.1:3000';
 
 const procedure_callback = "http://127.0.0.1:9000/moveX";
@@ -89,17 +89,6 @@ describe("Provider Sdk tests", () => {
         const location_manager = sdk.new_kind(location_yaml);
         expect(location_manager.kind.name).toBe("Location");
         done();
-    });
-    test("Provider with no x-papiea-entity should fail", (done) => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
-        const malformed_yaml = JSON.parse(JSON.stringify(location_yaml));
-        malformed_yaml.Location["x-papiea-entity"] = "fail";
-        try {
-            sdk.new_kind(malformed_yaml);
-        } catch (err) {
-            expect(err).not.toBeNull();
-            done();
-        }
     });
     test("Provider without version should fail to register", async () => {
         expect.hasAssertions();
@@ -524,7 +513,7 @@ describe("SDK security tests", () => {
 
     beforeAll(async () => {
         await providerApiAdmin.post('/', provider);
-        oauth2Server.listen(oauth2ServerPort, oauth2ServerHost, () => {
+        oauth2Server.httpServer.listen(oauth2ServerPort, oauth2ServerHost, () => {
             providerSDKTestLogger.info(`Server running at http://${oauth2ServerHost}:${oauth2ServerPort}/`);
         });
         const { data: { metadata, spec } } = await entityApi.post(`/${ provider.prefix }/${ provider.version }/${ kind_name }`, {
@@ -546,7 +535,7 @@ describe("SDK security tests", () => {
     afterAll(async () => {
         await entityApi.delete(`/${provider.prefix}/${provider.version}/${kind_name}/${entity_metadata.uuid}`);
         await providerApiAdmin.delete(`/${provider.prefix}/${provider.version}`);
-        oauth2Server.close();
+        oauth2Server.httpServer.close();
     });
 
 

@@ -36,10 +36,10 @@ export default class ApiDocsGenerator {
                                         "$ref": `#/components/schemas/Metadata`
                                     },
                                     "spec": {
-                                        "$ref": `#/components/schemas/${ kind.name }`
+                                        "$ref": `#/components/schemas/${ kind.name }-Spec`
                                     },
                                     "status": {
-                                        "type": "object"
+                                        "type": `#/components/schemas/${ kind.name }-Status`
                                     }
                                 }
                             }
@@ -69,10 +69,10 @@ export default class ApiDocsGenerator {
                                                 "$ref": `#/components/schemas/Metadata`
                                             },
                                             "spec": {
-                                                "$ref": `#/components/schemas/${ kind.name }`
+                                                "$ref": `#/components/schemas/${ kind.name }-Spec`
                                             },
                                             "status": {
-                                                "type": "object"
+                                                "$ref": `#/components/schemas/${ kind.name }-Status`
                                             }
                                         }
                                     }
@@ -103,10 +103,10 @@ export default class ApiDocsGenerator {
                                     "$ref": `#/components/schemas/Metadata`
                                 },
                                 "spec": {
-                                    "$ref": `#/components/schemas/${ kind.name }`
+                                    "$ref": `#/components/schemas/${ kind.name }-Spec`
                                 },
                                 "status": {
-                                    "type": "object"
+                                    "$ref": `#/components/schemas/${ kind.name }-Status`
                                 }
                             }
                         }
@@ -185,14 +185,14 @@ export default class ApiDocsGenerator {
                 }
             ],
             "requestBody": {
-                "description": `${ kind.name } to add`,
+                "description": `${ kind.name } to retrieve`,
                 "required": false,
                 "content": {
                     "application/json": {
                         "schema": {
                             "properties": {
                                 "spec": {
-                                    "$ref": `#/components/schemas/${ kind.name }`
+                                    "$ref": `#/components/schemas/${ kind.name }-Spec`
                                 }
                             }
                         }
@@ -209,14 +209,14 @@ export default class ApiDocsGenerator {
             "operationId": `add${ provider.prefix }${ kind.name }`,
             "tags": [`${ provider.prefix }/${ provider.version }/${ kind.name }`],
             "requestBody": {
-                "description": `${ kind.name } to add`,
+                "description": `${ kind.name } to create`,
                 "required": true,
                 "content": {
                     "application/json": {
                         "schema": {
                             "properties": {
                                 "spec": {
-                                    "$ref": `#/components/schemas/${ kind.name }`
+                                    "$ref": `#/components/schemas/${ kind.name }-Spec`
                                 },
                                 "metadata": {
                                     "$ref": `#/components/schemas/Metadata`
@@ -302,7 +302,7 @@ export default class ApiDocsGenerator {
                         "schema": {
                             "properties": {
                                 "spec": {
-                                    "$ref": `#/components/schemas/${ kind.name }`
+                                    "$ref": `#/components/schemas/${ kind.name }-Spec`
                                 },
                                 "metadata": {
                                     "properties": {
@@ -487,16 +487,6 @@ export default class ApiDocsGenerator {
         return this.processEmptyValidation(procedural_def, procedure)
     }
 
-    removeStatusFields(schema: any) {
-        for (let prop in schema) {
-            if (typeof schema[prop] === 'object' && "x-papiea" in schema[prop] && schema[prop]["x-papiea"] === "status-only") {
-                delete schema[prop];
-            }
-            else if (typeof schema[prop] === 'object')
-                this.removeStatusFields(schema[prop]);
-        }
-    }
-
     setSecurityScheme() {
         return {
             "securitySchemes": {
@@ -519,7 +509,32 @@ export default class ApiDocsGenerator {
         }
     }
 
-    async getApiDocs(provider: Provider): Promise<any> {
+    removeSchemaField(schema: any, fieldName: string) {
+        for (let prop in schema) {
+            if (typeof schema[prop] === 'object' && "x-papiea" in schema[prop] && schema[prop]["x-papiea"] === fieldName) {
+                delete schema[prop];
+            }
+            else if (typeof schema[prop] === 'object')
+                this.removeSchemaField(schema[prop], fieldName);
+        }
+    }
+
+    createSchema(schemas: any, kindStructure: any, type: string) {
+        const kindSchema: any = JSON.parse(JSON.stringify(kindStructure))
+        const schemaName = Object.keys(kindSchema)[0]
+        if (type === "spec") {
+            kindSchema[`${schemaName}-Spec`] = kindSchema[schemaName]
+            delete kindSchema[schemaName]
+            this.removeSchemaField(kindSchema, "status-only")
+        } else {
+            kindSchema[`${schemaName}-Status`] = kindSchema[schemaName]
+            delete kindSchema[schemaName]
+            this.removeSchemaField(kindSchema, "spec-only")
+        }
+        Object.assign(schemas, kindSchema)
+    }
+
+    async getApiDocs(): Promise<any> {
         const root: any = {
             "openapi": "3.0.0",
             "info": {
@@ -645,48 +660,51 @@ export default class ApiDocsGenerator {
 
         const paths = root.paths;
         const schemas = root.components.schemas;
-        provider.kinds.forEach(kind => {
-            paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }`] = {
-                "get": this.getKind(provider, kind),
-                "post": this.postKind(provider, kind)
-            };
-            paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/filter`] = {
-                "post": this.postKindFilter(provider, kind)
-            };
-            paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/{uuid}`] = {
-                "get": this.getKindEntity(provider, kind),
-                "delete": this.deleteKindEntity(provider, kind),
-                "put": this.putKindEntity(provider, kind)
-            };
-            if (kind.kind_procedures) {
-                Object.values(kind.kind_procedures).forEach(procedure => {
-                    paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/procedure/${ procedure.name }`] = {
-                        "post": this.callKindProcedure(provider, kind, procedure)
-                    };
-                    Object.assign(schemas, procedure.argument);
-                    Object.assign(schemas, procedure.result);
-                });
-            }
-            if (kind.entity_procedures) {
-                Object.values(kind.entity_procedures).forEach(procedure => {
-                    paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/{uuid}/procedure/${ procedure.name }`] = {
-                        "post": this.callEntityProcedure(provider, kind, procedure)
-                    };
-                    Object.assign(schemas, procedure.argument);
-                    Object.assign(schemas, procedure.result);
-                });
-            }
-            if (provider.procedures) {
-                Object.values(provider.procedures).forEach(procedure => {
-                    paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure.name }`] = {
-                        "post": this.callProviderProcedure(provider, procedure)
-                    };
-                    Object.assign(schemas, procedure.argument);
-                    Object.assign(schemas, procedure.result);
-                });
-            }
-            this.removeStatusFields(kind.kind_structure[Object.keys(kind.kind_structure)[0]]);
-            Object.assign(schemas, kind.kind_structure);
+        const providers = await this.providerDb.list_providers();
+        providers.forEach(provider => {
+            provider.kinds.forEach(kind => {
+                paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }`] = {
+                    "get": this.getKind(provider, kind),
+                    "post": this.postKind(provider, kind)
+                };
+                paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/filter`] = {
+                    "post": this.postKindFilter(provider, kind)
+                };
+                paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/{uuid}`] = {
+                    "get": this.getKindEntity(provider, kind),
+                    "delete": this.deleteKindEntity(provider, kind),
+                    "put": this.putKindEntity(provider, kind)
+                };
+                if (kind.kind_procedures) {
+                    Object.values(kind.kind_procedures).forEach(procedure => {
+                        paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/procedure/${ procedure.name }`] = {
+                            "post": this.callKindProcedure(provider, kind, procedure)
+                        };
+                        Object.assign(schemas, procedure.argument);
+                        Object.assign(schemas, procedure.result);
+                    });
+                }
+                if (kind.entity_procedures) {
+                    Object.values(kind.entity_procedures).forEach(procedure => {
+                        paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/{uuid}/procedure/${ procedure.name }`] = {
+                            "post": this.callEntityProcedure(provider, kind, procedure)
+                        };
+                        Object.assign(schemas, procedure.argument);
+                        Object.assign(schemas, procedure.result);
+                    });
+                }
+                if (provider.procedures) {
+                    Object.values(provider.procedures).forEach(procedure => {
+                        paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure.name }`] = {
+                            "post": this.callProviderProcedure(provider, procedure)
+                        };
+                        Object.assign(schemas, procedure.argument);
+                        Object.assign(schemas, procedure.result);
+                    });
+                }
+                this.createSchema(schemas, kind.kind_structure, "spec")
+                this.createSchema(schemas, kind.kind_structure, "status")
+            });
         });
 
         Object.assign(root.components, this.setSecurityScheme());

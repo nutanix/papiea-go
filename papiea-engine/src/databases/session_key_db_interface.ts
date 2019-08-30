@@ -8,4 +8,5 @@ export interface SessionKeyDb {
 
     inactivate_key(key: string): Promise<void>;
 
+    update_key(key: string, query: any): Promise<void>
 }

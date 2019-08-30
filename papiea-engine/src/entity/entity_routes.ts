@@ -109,7 +109,7 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
     }));
 
     router.delete("/:prefix/:version/:kind/:uuid", asyncHandler(async (req, res) => {
-        await entity_api.delete_entity_spec(req.user, req.params.kind, req.params.uuid);
+        await entity_api.delete_entity_spec(req.user, req.params.prefix, req.params.version, req.params.kind, req.params.uuid);
         res.json("OK")
     }));
 
