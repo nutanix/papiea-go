@@ -4,6 +4,8 @@ import ApiDocsGenerator from "./api_docs_generator";
 import { Provider_DB } from "../databases/provider_db_interface";
 import * as admin_swagger from './admin_swagger.json';
 import { Provider } from "papiea-core";
+import * as pug from "pug";
+import { resolve } from "path";
 
 async function swaggerSetupWrapper(req: Request, apiDocsGenerator: ApiDocsGenerator, providerDb: Provider_DB) {
     const provider: Provider = await providerDb.get_provider(req.params.provider, req.params.version);
@@ -20,22 +22,28 @@ export default function createAPIDocsRouter(urlPrefix: string, apiDocsGenerator:
         return swaggerSetup(req, res, next);
     });
 
+    apiDocsRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
+        const providers = await providerDb.list_providers();
+        res.send(pug.renderFile(resolve(__dirname, 'main_swagger.pug'), {providers: providers}));
+    });
+
+
     apiDocsRouter.get('/admin', swaggerUi.setup((<any>admin_swagger)));
 
     apiDocsRouter.get('*/swagger-ui-init.js', async (req: Request, res: Response, next: NextFunction) => {
-        await res.redirect(`${urlPrefix}/swagger-ui-init.js`);
+        res.redirect(`${urlPrefix}/swagger-ui-init.js`);
     });
     
     apiDocsRouter.get('*/swagger-ui-bundle.js', async (req: Request, res: Response, next: NextFunction) => {
-        await res.redirect(`${urlPrefix}/swagger-ui-bundle.js`);
+        res.redirect(`${urlPrefix}/swagger-ui-bundle.js`);
     });
     
     apiDocsRouter.get('*/swagger-ui-standalone-preset.js', async (req: Request, res: Response, next: NextFunction) => {
-        await res.redirect(`${urlPrefix}/swagger-ui-standalone-preset.js`);
+        res.redirect(`${urlPrefix}/swagger-ui-standalone-preset.js`);
     });
     
     apiDocsRouter.get('*/swagger-ui.css', async (req: Request, res: Response, next: NextFunction) => {
-        await res.redirect(`${urlPrefix}/swagger-ui.css`);
+        res.redirect(`${urlPrefix}/swagger-ui.css`);
     });
 
 

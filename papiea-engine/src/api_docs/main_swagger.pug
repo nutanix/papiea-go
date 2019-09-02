@@ -1,0 +1,12 @@
+doctype html
+html(lang="en")
+  head
+    title=MainSwaggerPage
+  body
+    h1 List of available swagger pages
+    #container.col
+      a(href="/api-docs/admin") Admin page
+      each provider in providers
+        p
+          a(href=`/api-docs/${provider.prefix}/${provider.version}/`)
+            =`${provider.prefix}/${provider.version}`
