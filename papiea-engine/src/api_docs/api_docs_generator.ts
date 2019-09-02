@@ -534,7 +534,7 @@ export default class ApiDocsGenerator {
         Object.assign(schemas, kindSchema)
     }
 
-    async getApiDocs(): Promise<any> {
+    async getApiDocs(provider: Provider): Promise<any> {
         const root: any = {
             "openapi": "3.0.0",
             "info": {
@@ -660,51 +660,48 @@ export default class ApiDocsGenerator {
 
         const paths = root.paths;
         const schemas = root.components.schemas;
-        const providers = await this.providerDb.list_providers();
-        providers.forEach(provider => {
-            provider.kinds.forEach(kind => {
-                paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }`] = {
-                    "get": this.getKind(provider, kind),
-                    "post": this.postKind(provider, kind)
-                };
-                paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/filter`] = {
-                    "post": this.postKindFilter(provider, kind)
-                };
-                paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/{uuid}`] = {
-                    "get": this.getKindEntity(provider, kind),
-                    "delete": this.deleteKindEntity(provider, kind),
-                    "put": this.putKindEntity(provider, kind)
-                };
-                if (kind.kind_procedures) {
-                    Object.values(kind.kind_procedures).forEach(procedure => {
-                        paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/procedure/${ procedure.name }`] = {
-                            "post": this.callKindProcedure(provider, kind, procedure)
-                        };
-                        Object.assign(schemas, procedure.argument);
-                        Object.assign(schemas, procedure.result);
-                    });
-                }
-                if (kind.entity_procedures) {
-                    Object.values(kind.entity_procedures).forEach(procedure => {
-                        paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/{uuid}/procedure/${ procedure.name }`] = {
-                            "post": this.callEntityProcedure(provider, kind, procedure)
-                        };
-                        Object.assign(schemas, procedure.argument);
-                        Object.assign(schemas, procedure.result);
-                    });
-                }
-                if (provider.procedures) {
-                    Object.values(provider.procedures).forEach(procedure => {
-                        paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure.name }`] = {
-                            "post": this.callProviderProcedure(provider, procedure)
-                        };
-                        Object.assign(schemas, procedure.argument);
-                        Object.assign(schemas, procedure.result);
-                    });
-                }
-                this.createSchema(schemas, kind.kind_structure, "spec")
-                this.createSchema(schemas, kind.kind_structure, "status")
-            });
+        provider.kinds.forEach(kind => {
+            paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }`] = {
+                "get": this.getKind(provider, kind),
+                "post": this.postKind(provider, kind)
+            };
+            paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/filter`] = {
+                "post": this.postKindFilter(provider, kind)
+            };
+            paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/{uuid}`] = {
+                "get": this.getKindEntity(provider, kind),
+                "delete": this.deleteKindEntity(provider, kind),
+                "put": this.putKindEntity(provider, kind)
+            };
+            if (kind.kind_procedures) {
+                Object.values(kind.kind_procedures).forEach(procedure => {
+                    paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/procedure/${ procedure.name }`] = {
+                        "post": this.callKindProcedure(provider, kind, procedure)
+                    };
+                    Object.assign(schemas, procedure.argument);
+                    Object.assign(schemas, procedure.result);
+                });
+            }
+            if (kind.entity_procedures) {
+                Object.values(kind.entity_procedures).forEach(procedure => {
+                    paths[`/services/${ provider.prefix }/${ provider.version }/${ kind.name }/{uuid}/procedure/${ procedure.name }`] = {
+                        "post": this.callEntityProcedure(provider, kind, procedure)
+                    };
+                    Object.assign(schemas, procedure.argument);
+                    Object.assign(schemas, procedure.result);
+                });
+            }
+            if (provider.procedures) {
+                Object.values(provider.procedures).forEach(procedure => {
+                    paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure.name }`] = {
+                        "post": this.callProviderProcedure(provider, procedure)
+                    };
+                    Object.assign(schemas, procedure.argument);
+                    Object.assign(schemas, procedure.result);
+                });
+            }
+            this.createSchema(schemas, kind.kind_structure, "spec")
+            this.createSchema(schemas, kind.kind_structure, "status")
         });
 
         Object.assign(root.components, this.setSecurityScheme());
