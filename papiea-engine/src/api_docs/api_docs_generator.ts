@@ -551,6 +551,10 @@ export default class ApiDocsGenerator {
                     "url": "/"
                 }
             ],
+            "externalDocs": {
+                "description": "Main page",
+                "url": "/api-docs"
+            },
             "paths": {},
             "components": {
                 "schemas": {
