@@ -17,18 +17,11 @@ export default function createAPIDocsRouter(urlPrefix: string, apiDocsGenerator:
     const apiDocsRouter = Router();
 
     apiDocsRouter.use('/', swaggerUi.serve);
-    apiDocsRouter.get('/:provider/:version', async (req: Request, res: Response, next: NextFunction) => {
-        const swaggerSetup = await swaggerSetupWrapper(req, apiDocsGenerator, providerDb);
-        return swaggerSetup(req, res, next);
-    });
 
     apiDocsRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
         const providers = await providerDb.list_providers();
         res.send(pug.renderFile(resolve(__dirname, 'main_swagger.pug'), {providers: providers}));
     });
-
-
-    apiDocsRouter.get('/admin', swaggerUi.setup((<any>admin_swagger)));
 
     apiDocsRouter.get('*/swagger-ui-init.js', async (req: Request, res: Response, next: NextFunction) => {
         res.redirect(`${urlPrefix}/swagger-ui-init.js`);
@@ -45,7 +38,18 @@ export default function createAPIDocsRouter(urlPrefix: string, apiDocsGenerator:
     apiDocsRouter.get('*/swagger-ui.css', async (req: Request, res: Response, next: NextFunction) => {
         res.redirect(`${urlPrefix}/swagger-ui.css`);
     });
+    apiDocsRouter.get('/:provider/:version', async (req: Request, res: Response, next: NextFunction) => {
+        const swaggerSetup = await swaggerSetupWrapper(req, apiDocsGenerator, providerDb);
+        return swaggerSetup(req, res, next);
+    });
 
+    apiDocsRouter.get('/admin', async (req: Request, res: Response, next: NextFunction) => {
+        res.send(swaggerUi.generateHTML(admin_swagger));
+    });
+
+    apiDocsRouter.get('/admin-api-docs.json', async (req: Request, res: Response, next: NextFunction) => {
+        res.send(admin_swagger);
+    });
 
     return apiDocsRouter;
 }
