@@ -65,7 +65,7 @@ describe("API Docs Tests", () => {
     test("Validate API Docs agains OpenAPI spec", async () => {
         expect.hasAssertions();
         try {
-            const apiDoc = await apiDocsGenerator.getApiDocs();
+            const apiDoc = await apiDocsGenerator.getApiDocs(providerDbMock.provider);
             const apiDocJson = JSON.stringify(apiDoc);
             writeFileSync("api-docs.json", apiDocJson);
             const api = await validate("api-docs.json");
@@ -79,7 +79,7 @@ describe("API Docs Tests", () => {
         const providerPrefix = providerDbMock.provider.prefix;
         const entityName = providerDbMock.provider.kinds[0].name;
         const providerVersion = providerDbMock.provider.version;
-        const apiDoc = await apiDocsGenerator.getApiDocs();
+        const apiDoc = await apiDocsGenerator.getApiDocs(providerDbMock.provider);
         expect(Object.keys(apiDoc.paths)).toContain(`/services/${ providerPrefix }/${ providerVersion }/${ entityName }`);
         const kindPath = apiDoc.paths[`/services/${ providerPrefix }/${ providerVersion }/${ entityName }`];
         expect(Object.keys(kindPath)).toContain("get");
@@ -92,7 +92,7 @@ describe("API Docs Tests", () => {
     });
     test("API Docs should contain Location scheme", async () => {
         expect.hasAssertions();
-        const apiDoc = await apiDocsGenerator.getApiDocs();
+        const apiDoc = await apiDocsGenerator.getApiDocs(providerDbMock.provider);
         const entityName = providerDbMock.provider.kinds[0].name;
         expect(Object.keys(apiDoc.components.schemas)).toContain(`${entityName}-Spec`);
         expect(Object.keys(apiDoc.components.schemas)).toContain(`${entityName}-Status`);
@@ -156,7 +156,7 @@ describe("API Docs Tests", () => {
         });
     });
     test("API Docs should be accessible by the url", done => {
-        api.get("/api-docs/api-docs.json").then(() => done()).catch(done.fail);
+        api.get("/api-docs").then(() => done()).catch(done.fail);
     });
 });
 
@@ -181,7 +181,7 @@ describe("API docs test entity", () => {
             .build();
         const providerDbMock = new Provider_DB_Mock(provider);
         const apiDocsGenerator = new ApiDocsGenerator(providerDbMock);
-        const apiDoc = await apiDocsGenerator.getApiDocs();
+        const apiDoc = await apiDocsGenerator.getApiDocs(providerDbMock.provider);
 
         expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
             .post
@@ -245,7 +245,7 @@ describe("API docs test entity", () => {
         // remove x-papiea prop so 'z' could be included in entity schema
         delete structure.properties.z["x-papiea"];
 
-        const apiDoc = await apiDocsGenerator.getApiDocs();
+        const apiDoc = await apiDocsGenerator.getApiDocs(providerDbMock.provider);
         const entityName = kind_name + "-Spec";
         expect(Object.keys(apiDoc.components.schemas)).toContain(entityName);
         const entitySchema = apiDoc.components.schemas[entityName];
@@ -300,7 +300,7 @@ describe("API docs test entity", () => {
             .build();
         const providerDbMock = new Provider_DB_Mock(provider);
         const apiDocsGenerator = new ApiDocsGenerator(providerDbMock);
-        const apiDoc = await apiDocsGenerator.getApiDocs();
+        const apiDoc = await apiDocsGenerator.getApiDocs(providerDbMock.provider);
 
         expect(apiDoc.paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure_id }`]
             .post
