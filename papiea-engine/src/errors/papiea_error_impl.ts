@@ -1,5 +1,5 @@
 import { PapieaError } from "papiea-core";
-import { EntityNotFoundError } from "../databases/utils/errors";
+import { EntityNotFoundError, ConflictingEntityError } from "../databases/utils/errors";
 import { ValidationError } from "./validation_error";
 import { ProcedureInvocationError } from "./procedure_invocation_error";
 import { PermissionDeniedError, UnauthorizedError } from "./permission_error";
@@ -63,7 +63,13 @@ export class PapieaErrorImpl implements PapieaError {
                 return new PapieaErrorImpl(401, "Unauthorized.")
             case PermissionDeniedError:
                 return new PapieaErrorImpl(403, "Permission denied.")
+            case ConflictingEntityError:
+                let conflictingError = err as ConflictingEntityError
+                let metadata = conflictingError.existing_metadata
+
+                return new PapieaErrorImpl(409, `Conflicting Entity: ${metadata.uuid} has version ${metadata.spec_version}`)
             default:
+                console.log(`Default handle got error: ${err}`)
                 return new PapieaErrorImpl(500, `${err}.`)
         }
     }

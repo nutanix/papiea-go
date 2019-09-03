@@ -12,7 +12,7 @@ services:
                         - "3333:3000"
                         - "9229:9229"
                 environment:
-                        - ADMIN_S2S_KEY=${PAPIEA_ADMIN_S2S_KEY}
+                        - PAPIEA_ADMIN_S2S_KEY=${PAPIEA_ADMIN_S2S_KEY}
                         - PAPIEA_PUBLIC_URL=${PAPIEA_PUBLIC_URL}
                         - HOT_RELOAD=true
                         - PAPIEA_DEBUG=true

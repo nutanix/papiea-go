@@ -29,10 +29,10 @@ declare var process: {
         MONGO_PORT: string
         PAPIEA_PUBLIC_URL: string,
         DEBUG_LEVEL: string,
-        ADMIN_S2S_KEY: string,
-        LOGGING_LEVEL: string,
         MONGO_USER: string,
         MONGO_PASSWORD: string
+        PAPIEA_ADMIN_S2S_KEY: string,
+        LOGGING_LEVEL: string
     },
     title: string;
 };
@@ -44,7 +44,7 @@ const mongoHost = process.env.MONGO_HOST || 'mongo';
 const mongoPort = process.env.MONGO_PORT || '27017';
 const mongoUser = process.env.MONGO_USER;
 const mongoPassword = process.env.MONGO_PASSWORD;
-const adminKey = process.env.ADMIN_S2S_KEY || '';
+const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
 const loggingLevel = process.env.LOGGING_LEVEL || 'info';
 
 async function setUpApplication(): Promise<express.Express> {

@@ -9,11 +9,11 @@ import Logger from "../../src/logger_interface";
 declare var process: {
     env: {
         SERVER_PORT: string,
-        ADMIN_S2S_KEY: string
+        PAPIEA_ADMIN_S2S_KEY: string
     }
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
-const adminKey = process.env.ADMIN_S2S_KEY || '';
+const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
 
 const entityApi = axios.create({
     baseURL: `http://127.0.0.1:${serverPort}/services`,
