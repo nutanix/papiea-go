@@ -42,8 +42,8 @@ const publicAddr: string = process.env.PAPIEA_PUBLIC_URL || "http://localhost:30
 const oauth2RedirectUri: string = publicAddr + "/provider/auth/callback";
 const mongoHost = process.env.MONGO_HOST || 'mongo';
 const mongoPort = process.env.MONGO_PORT || '27017';
-const mongoUser = process.env.MONGO_USER || '';
-const mongoPassword = process.env.MONGO_PASSWORD || '';
+const mongoUser = process.env.MONGO_USER;
+const mongoPassword = process.env.MONGO_PASSWORD;
 const adminKey = process.env.ADMIN_S2S_KEY || '';
 const loggingLevel = process.env.LOGGING_LEVEL || 'info';
 
@@ -54,7 +54,6 @@ async function setUpApplication(): Promise<express.Express> {
     app.use(express.json());
     app.use(getLoggingMiddleware(logger));
     const mongoAuth = (mongoPassword && mongoUser) ? `${mongoUser}:${mongoPassword}@` : '';
-    console.log(`mongodb://${mongoAuth}${mongoHost}:${mongoPort}`);
     const mongoConnection: MongoConnection = new MongoConnection(`mongodb://${mongoAuth}${mongoHost}:${mongoPort}`, process.env.MONGO_DB || 'papiea');
     await mongoConnection.connect();
     const providerDb = await mongoConnection.get_provider_db(logger);
