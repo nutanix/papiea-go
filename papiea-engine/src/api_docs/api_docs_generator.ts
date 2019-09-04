@@ -695,18 +695,18 @@ export default class ApiDocsGenerator {
                     Object.assign(schemas, procedure.result);
                 });
             }
-            if (provider.procedures) {
-                Object.values(provider.procedures).forEach(procedure => {
-                    paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure.name }`] = {
-                        "post": this.callProviderProcedure(provider, procedure)
-                    };
-                    Object.assign(schemas, procedure.argument);
-                    Object.assign(schemas, procedure.result);
-                });
-            }
             this.createSchema(schemas, kind.kind_structure, "spec")
             this.createSchema(schemas, kind.kind_structure, "status")
         });
+        if (provider.procedures) {
+            Object.values(provider.procedures).forEach(procedure => {
+                paths[`/services/${ provider.prefix }/${ provider.version }/procedure/${ procedure.name }`] = {
+                    "post": this.callProviderProcedure(provider, procedure)
+                };
+                Object.assign(schemas, procedure.argument);
+                Object.assign(schemas, procedure.result);
+            });
+        }
 
         Object.assign(root.components, this.setSecurityScheme());
         Object.assign(root, this.setSecurity());
