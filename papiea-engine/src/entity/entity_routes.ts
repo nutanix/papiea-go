@@ -3,6 +3,7 @@ import { Router } from "express";
 import { UserAuthInfo, asyncHandler } from '../auth/authn';
 import { processPaginationParams, processSortQuery } from "../utils/utils";
 import { SortParams } from "./entity_api_impl";
+import { BadRequestError } from "../errors/bad_request_error";
 
 export function createEntityAPIRouter(entity_api: Entity_API): Router {
     const router = Router();
@@ -27,7 +28,7 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
         const totalEntities: number = entities.length;
         const pageEntities = entities.slice(skip, skip + size);
 
-        return {results: pageEntities, entity_count: totalEntities};
+        return { results: pageEntities, entity_count: totalEntities };
     };
 
     router.post("/:prefix/:version/check_permission", asyncHandler(async (req, res) => {
@@ -41,6 +42,19 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
         const rawSortQuery: undefined | string = req.query.sort;
         const sortParams = processSortQuery(rawSortQuery);
         const [skip, size] = processPaginationParams(offset, limit);
+        const allowed_query_params = {
+            offset: true,
+            limit: true,
+            sort: true,
+            spec: true,
+            status: true,
+            metadata: true
+        };
+        for (var req_query_param in req.query) {
+            if (!(req_query_param in allowed_query_params)) {
+                throw new BadRequestError(`Allowed query params ${Object.keys(allowed_query_params)}`);
+            }
+        }
         if (req.query.spec) {
             filter.spec = JSON.parse(req.query.spec);
         } else {
@@ -72,6 +86,26 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
         const sortParams: undefined | SortParams = processSortQuery(rawSortQuery);
         const [skip, size] = processPaginationParams(offset, limit);
         const filter: any = {};
+        const allowed_query_params = {
+            offset: true,
+            limit: true,
+            sort: true
+        };
+        for (var req_query_param in req.query) {
+            if (!(req_query_param in allowed_query_params)) {
+                throw new BadRequestError(`Allowed query params ${Object.keys(allowed_query_params)}`);
+            }
+        }
+        const allowed_body_params = {
+            spec: true,
+            status: true,
+            metadata: true
+        };
+        for (var req_body_param in req.body) {
+            if (!(req_body_param in allowed_body_params)) {
+                throw new BadRequestError(`Allowed body params ${Object.keys(allowed_body_params)}`);
+            }
+        }
         if (req.body.spec) {
             filter.spec = req.body.spec;
         } else {
@@ -93,7 +127,7 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
 
     router.put("/:prefix/:version/:kind/:uuid", asyncHandler(async (req, res) => {
         const request_metadata = req.body.metadata;
-        const [metadata, spec] = await entity_api.update_entity_spec(req.user, req.params.uuid, req.params.prefix, request_metadata.spec_version, request_metadata.extension, req.params.kind, req.params.version, req.body.spec,);
+        const [metadata, spec] = await entity_api.update_entity_spec(req.user, req.params.uuid, req.params.prefix, request_metadata.spec_version, request_metadata.extension, req.params.kind, req.params.version, req.body.spec);
         res.json({ "metadata": metadata, "spec": spec });
     }));
 
