@@ -42,16 +42,15 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
         const rawSortQuery: undefined | string = req.query.sort;
         const sortParams = processSortQuery(rawSortQuery);
         const [skip, size] = processPaginationParams(offset, limit);
-        const allowed_query_params = {
-            offset: true,
-            limit: true,
-            sort: true,
-            spec: true,
-            status: true,
-            metadata: true
-        };
+        const allowed_query_params = new Set()
+            .add('offset')
+            .add('limit')
+            .add('sort')
+            .add('spec')
+            .add('status')
+            .add('metadata');
         for (var req_query_param in req.query) {
-            if (!(req_query_param in allowed_query_params)) {
+            if (!allowed_query_params.has(req_query_param)) {
                 throw new BadRequestError(`Allowed query params ${Object.keys(allowed_query_params)}`);
             }
         }
@@ -86,23 +85,21 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
         const sortParams: undefined | SortParams = processSortQuery(rawSortQuery);
         const [skip, size] = processPaginationParams(offset, limit);
         const filter: any = {};
-        const allowed_query_params = {
-            offset: true,
-            limit: true,
-            sort: true
-        };
+        const allowed_query_params = new Set()
+            .add('offset')
+            .add('limit')
+            .add('sort');
         for (var req_query_param in req.query) {
-            if (!(req_query_param in allowed_query_params)) {
+            if (!allowed_query_params.has(req_query_param)) {
                 throw new BadRequestError(`Allowed query params ${Object.keys(allowed_query_params)}`);
             }
         }
-        const allowed_body_params = {
-            spec: true,
-            status: true,
-            metadata: true
-        };
+        const allowed_body_params = new Set()
+            .add('spec')
+            .add('status')
+            .add('metadata');
         for (var req_body_param in req.body) {
-            if (!(req_body_param in allowed_body_params)) {
+            if (!allowed_body_params.has(req_body_param)) {
                 throw new BadRequestError(`Allowed body params ${Object.keys(allowed_body_params)}`);
             }
         }
