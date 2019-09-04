@@ -2,10 +2,13 @@ import { Request, Response, NextFunction, Router } from "express";
 import * as swaggerUi from "swagger-ui-express";
 import ApiDocsGenerator from "./api_docs_generator";
 import { Provider_DB } from "../databases/provider_db_interface";
-import * as admin_swagger from './admin_swagger.json';
 import { Provider } from "papiea-core";
+import { readFileSync } from "fs";
 import * as pug from "pug";
 import { resolve } from "path";
+
+const admin_swagger = readFileSync(resolve(__dirname, 'admin_swagger.json'), 'utf8');
+console.log(admin_swagger)
 
 async function swaggerSetupWrapper(req: Request, apiDocsGenerator: ApiDocsGenerator, providerDb: Provider_DB) {
     const provider: Provider = await providerDb.get_provider(req.params.provider, req.params.version);
@@ -44,11 +47,7 @@ export default function createAPIDocsRouter(urlPrefix: string, apiDocsGenerator:
     });
 
     apiDocsRouter.get('/admin', async (req: Request, res: Response, next: NextFunction) => {
-        res.send(swaggerUi.generateHTML(admin_swagger));
-    });
-
-    apiDocsRouter.get('/admin-api-docs.json', async (req: Request, res: Response, next: NextFunction) => {
-        res.send(admin_swagger);
+        res.send(swaggerUi.generateHTML(JSON.parse(admin_swagger)));
     });
 
     return apiDocsRouter;

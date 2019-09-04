@@ -12,8 +12,7 @@
       "*": [
         "src/@types/*"
       ]
-    },
-    "resolveJsonModule": true,
+    }
   },
   "exclude": ["node_modules", "**/__tests__/*", "build"]
 }
