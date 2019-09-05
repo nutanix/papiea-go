@@ -12,6 +12,8 @@ export interface Provider_API {
     // POST "/provider"
     register_provider(user: UserAuthInfo, provider: Provider): Promise<void>;
 
+    list_providers(user: UserAuthInfo): Promise<Provider[]>;
+
     // DELETE "/provider/{prefix}/{version}"
     unregister_provider(user: UserAuthInfo, provider_prefix: string, version: Version): Promise<void>;
 

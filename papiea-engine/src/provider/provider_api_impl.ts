@@ -35,6 +35,11 @@ export class Provider_API_Impl implements Provider_API {
         return this.providerDb.save_provider(provider);
     }
 
+    async list_providers(user: UserAuthInfo): Promise<Provider[]> {
+        const providers = await this.providerDb.list_providers();
+        return this.authorizer.filter(user, providers, Action.ReadProvider);
+    };
+
     async unregister_provider(user: UserAuthInfo, provider_prefix: string, version: Version): Promise<void> {
         await this.authorizer.checkPermission(user, { prefix: provider_prefix }, Action.UnregisterProvider);
         return this.providerDb.delete_provider(provider_prefix, version);
