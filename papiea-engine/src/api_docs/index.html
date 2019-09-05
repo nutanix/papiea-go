@@ -6,11 +6,18 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script>
-        axios.get("/provider").then(result => {
-            result.forEach(provider => {
+        axios.get("/provider", { withCredentials: true }).then(result => {
+            console.log(result);
+            result.data.forEach(provider => {
                 var container = document.getElementById("container");
+                var paragraph = document.createElement("p");
                 var provider_link = document.createElement("a");
-                provider_link.setAttribute("href", `/api-docs/${provider.prefix}/${provider.version}`)
+                var link_name = `${provider.prefix}/${provider.version}`;
+                provider_link.setAttribute("href", `/api-docs/${link_name}`);
+                var text = document.createTextNode(link_name);
+                provider_link.appendChild(text);
+                paragraph.appendChild(provider_link);
+                container.appendChild(paragraph);
             });
         }).catch(error => {
             console.error(error);
