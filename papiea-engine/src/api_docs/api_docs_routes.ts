@@ -1,14 +1,13 @@
 import { Request, Response, NextFunction, Router } from "express";
+import { static as staticFile} from "express"
 import { setup, serve, generateHTML } from "swagger-ui-express";
 import ApiDocsGenerator from "./api_docs_generator";
 import { Provider_DB } from "../databases/provider_db_interface";
 import { Provider } from "papiea-core";
 import { readFileSync } from "fs";
-import { renderFile } from "pug";
 import { resolve } from "path";
 
 const admin_swagger = readFileSync(resolve(__dirname, 'admin_swagger.json'), 'utf8');
-console.log(admin_swagger)
 
 async function swaggerSetupWrapper(req: Request, apiDocsGenerator: ApiDocsGenerator, providerDb: Provider_DB) {
     const provider: Provider = await providerDb.get_provider(req.params.provider, req.params.version);
@@ -21,10 +20,7 @@ export default function createAPIDocsRouter(urlPrefix: string, apiDocsGenerator:
 
     apiDocsRouter.use('/', serve);
 
-    apiDocsRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
-        const providers = await providerDb.list_providers();
-        res.send(renderFile(resolve(__dirname, 'main_swagger.pug'), {providers: providers}));
-    });
+    apiDocsRouter.use('/', staticFile(__dirname));
 
     apiDocsRouter.get('*/swagger-ui-init.js', async (req: Request, res: Response, next: NextFunction) => {
         res.redirect(`${urlPrefix}/swagger-ui-init.js`);

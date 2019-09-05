@@ -27,7 +27,6 @@
   "dependencies": {
     "@types/atob": "^2.1.2",
     "@types/btoa": "^1.2.3",
-    "@types/pug": "^2.0.4",
     "atob": "^2.1.2",
     "axios": "^0.18.1",
     "btoa": "^1.2.1",
@@ -43,7 +42,6 @@
     "morgan": "^1.9.1",
     "papiea-core": "file:../papiea-core",
     "pluralize": "^7.0.0",
-    "pug": "^2.0.4",
     "query-string": "^6.2.0",
     "simple-oauth2": "^2.2.1",
     "swagger-model-validator": "^3.0.6",
