@@ -280,6 +280,34 @@ describe("Entity API tests", () => {
         });
     });
 
+    test("Filter entity by wrong field should return bad request", async () => {
+        expect.assertions(3);
+        try {
+            await entityApi.post(`${ providerPrefix }/${ providerVersion }/${ kind_name }/filter`, {
+                'spec.x': 10
+            });
+            throw new Error("Filter entity by wrong field should return bad request");
+        } catch (e) {
+            expect(e.response.status).toEqual(400);
+        }
+        try {
+            await entityApi.post(`${ providerPrefix }/${ providerVersion }/${ kind_name }/filter?a=b`, {
+                spec: {
+                    x: 10
+                }
+            });
+            throw new Error("Filter entity by wrong field should return bad request");
+        } catch (e) {
+            expect(e.response.status).toEqual(400);
+        }
+        try {
+            await entityApi.get(`${ providerPrefix }/${ providerVersion }/${ kind_name }?a=b`);
+            throw new Error("Filter entity by wrong field should return bad request");
+        } catch (e) {
+            expect(e.response.status).toEqual(400);
+        }
+    });
+
     test("Filter entity with query params", async () => {
         expect.assertions(1);
         const spec = {
