@@ -2,19 +2,19 @@ export default interface Logger {
 
     setLoggingLevel(logLevel: string): void
 
-    emerg(...message: any): void
+    emerg(msg: any, ...messages: any[]): void
 
-    alert(...message: any): void
+    alert(msg: any, ...messages: any[]): void
 
-    crit(...message: any): void
+    crit(msg: any, ...messages: any[]): void
 
-    error(...message: any): void
+    error(msg: any, ...messages: any[]): void
 
-    warning(...message: any): void
+    warning(msg: any, ...messages: any[]): void
 
-    notice(...message: any): void
+    notice(msg: any, ...messages: any[]): void
 
-    info(...message: any): void
+    info(msg: any, ...messages: any[]): void
 
-    debug(...message: any): void
+    debug(msg: any, ...messages: any[]): void
 }

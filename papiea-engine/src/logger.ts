@@ -1,7 +1,8 @@
-import * as winston from 'winston';
-import { resolve } from "path";
-import { NextFunction, Request } from "express";
-import Logger from './logger_interface';
+import * as winston from 'winston'
+import { resolve } from "path"
+import { NextFunction, Request } from "express"
+import Logger from './logger_interface'
+import { safeJSONParse } from "./utils/utils"
 
 export function getLoggingMiddleware(logger: Logger) {
     return async (req: Request, res: any, next: NextFunction): Promise<void> => {
@@ -33,32 +34,32 @@ export function getLoggingMiddleware(logger: Logger) {
     }
 }
 
-function safeJSONParse(chunk: string) {
-    try {
-        return JSON.parse(chunk);
-    } catch (e) {
-        return undefined;
-    }
-}
-
 export class WinstonLogger implements Logger {
     private logger: winston.Logger;
     private readonly logLevels = ["emerg", "alert", "crit", "error", "warning", "notice", "info", "debug"];
 
     constructor(logLevel: string, logFile?: string) {
         if (!this.isValidLevel(logLevel)) {
-            throw new Error("Unsupported logging level");
+            this.error(`Unsupported logging level: ${logLevel}`)
+            // convert message to "warning", for lack of better knowledge
+            logLevel = "warning"
         }
+        let winstonFormat = winston.format.combine(winston.format.json(), winston.format.prettyPrint());
         this.logger = winston.createLogger({
             levels: winston.config.syslog.levels,
             level: logLevel,
             exitOnError: false,
-            format: winston.format.json(),
+            format: winstonFormat,
             transports: [
-                new winston.transports.File({ filename: logFile ?
-                    resolve(__dirname, `./logs/${logFile}`) :
-                    resolve(__dirname, `./logs/papiea_${logLevel}.log`) }),
-                new winston.transports.Console()
+                new winston.transports.File({
+                    filename: logFile ?
+                        resolve(__dirname, `./logs/${ logFile }`) :
+                        resolve(__dirname, `./logs/papiea_${ logLevel }.log`),
+                    format: winstonFormat
+                }),
+                new winston.transports.Console({
+                    format: winstonFormat
+                })
             ],
         });
     }
@@ -74,43 +75,43 @@ export class WinstonLogger implements Logger {
         this.logger.level = logLevel;
     }
 
-    public emerg(...message: any): void {
-        message["Time"] = new Date();
-        this.logger.emerg(message);
+    public emerg(msg: any, ...messages: any[]): void {
+        messages.push({ Time: new Date() })
+        this.logger.emerg(msg, messages);
     }
 
-    public alert(...message: any): void {
-        message["Time"] = new Date();
-        this.logger.alert(message);
+    public alert(msg: any, ...messages: any[]): void {
+        messages.push({ Time: new Date() })
+        this.logger.alert(msg, messages);
     }
 
-    public crit(...message: any): void {
-        message["Time"] = new Date();
-        this.logger.crit(message);
+    public crit(msg: any, ...messages: any[]): void {
+        messages.push({ Time: new Date() })
+        this.logger.crit(msg, messages);
     }
 
-    public error(...message: any): void {
-        message["Time"] = new Date();
-        this.logger.error(message);
+    public error(msg: any, ...messages: any[]): void {
+        messages.push({ Time: new Date() })
+        this.logger.error(msg, messages);
     }
 
-    public warning(...message: any): void {
-        message["Time"] = new Date();
-        this.logger.warning(message);
+    public warning(msg: any, ...messages: any[]): void {
+        messages.push({ Time: new Date() })
+        this.logger.warning(msg, messages);
     }
 
-    public notice(...message: any): void {
-        message["Time"] = new Date();
-        this.logger.notice(message);
+    public notice(msg: any, ...messages: any[]): void {
+        messages.push({ Time: new Date() })
+        this.logger.notice(msg, messages);
     }
 
-    public info(...message: any): void {
-        message["Time"] = new Date();
-        this.logger.info(message);
+    public info(msg: any, ...messages: any[]): void {
+        messages.push({ Time: new Date() })
+        this.logger.info(msg, messages);
     }
 
-    public debug(...message: any): void {
-        message["Time"] = new Date();
-        this.logger.debug(message);
+    public debug(msg: any, ...messages: any[]): void {
+        messages.push({ Time: new Date() })
+        this.logger.debug(msg, messages);
     }
 }

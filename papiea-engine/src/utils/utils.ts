@@ -1,5 +1,5 @@
-import { SortParams } from "../entity/entity_api_impl";
-import { ValidationError } from "../errors/validation_error";
+import { SortParams } from "../entity/entity_api_impl"
+import { ValidationError } from "../errors/validation_error"
 
 function validatePaginationParams(offset: number | undefined, limit: number | undefined) {
     if (offset) {
@@ -70,4 +70,13 @@ export function isEmpty(obj: any) {
             return false;
     }
     return true;
+}
+
+export function safeJSONParse(chunk: string): Object | null {
+    try {
+        return JSON.parse(chunk)
+    } catch (e) {
+        console.error(`Safe json parse failed: ${e}, Falling back to undefined`)
+        return null
+    }
 }
