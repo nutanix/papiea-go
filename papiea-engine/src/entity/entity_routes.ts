@@ -75,11 +75,11 @@ export function createEntityAPIRouter(entity_api: Entity_API): Router {
 
     router.post("/:prefix/:version/:kind/filter", check_request({
         allowed_query_params: ['offset', 'limit', 'sort'],
-        allowed_body_params: ['spec', 'status', 'metadata']
+        allowed_body_params: ['spec', 'status', 'metadata', 'offset', 'limit', 'sort']
     }), asyncHandler(async (req, res) => {
-        const offset: undefined | number = req.query.offset;
-        const limit: undefined | number = req.query.limit;
-        const rawSortQuery: undefined | string = req.query.sort;
+        const offset: undefined | number = req.query.offset || req.body.offset;
+        const limit: undefined | number = req.query.limit || req.body.limit;
+        const rawSortQuery: undefined | string = req.query.sort || req.body.sort;
         const sortParams: undefined | SortParams = processSortQuery(rawSortQuery);
         const [skip, size] = processPaginationParams(offset, limit);
         const filter: any = {};
