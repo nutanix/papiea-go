@@ -1,5 +1,5 @@
 import { ProceduralCtx_Interface, SecurityApi } from "./typescript_sdk_interface";
-import { Entity, Status, Entity_Reference, Action, Version } from "papiea-core";
+import { Entity, Status, Entity_Reference, Action, Version, Secret } from "papiea-core";
 import axios, { AxiosInstance } from "axios";
 import { ProviderSdk } from "./typescript_sdk";
 import { IncomingHttpHeaders } from "http";
@@ -62,7 +62,7 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
     get_provider_security_api(): SecurityApi {
         return this.provider.providerSecurityApi
     }
-    get_user_security_api(user_s2skey: string): SecurityApi {
+    get_user_security_api(user_s2skey: Secret): SecurityApi {
         return this.provider.new_security_api(user_s2skey)
     }
     get_headers(): IncomingHttpHeaders {

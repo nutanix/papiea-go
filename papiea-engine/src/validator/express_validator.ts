@@ -12,13 +12,13 @@ export function check_request(request_validator_options: RequestValidatorOptions
     return (req: Request, res: Response, next: NextFunction) => {
         for (var req_query_param in req.query) {
             if (!allowed_query_params_set.has(req_query_param)) {
-                throw new BadRequestError(`Allowed query params ${Object.keys(request_validator_options.allowed_query_params)}`);
+                throw new BadRequestError(`Allowed query params ${request_validator_options.allowed_query_params}`);
             }
         }
         if (request_validator_options.allowed_body_params && allowed_body_params_set) {
             for (var req_body_param in req.body) {
                 if (!allowed_body_params_set.has(req_body_param)) {
-                    throw new BadRequestError(`Allowed body params ${Object.keys(request_validator_options.allowed_body_params)}`);
+                    throw new BadRequestError(`Allowed body params ${request_validator_options.allowed_body_params}`);
                 }
             }
         }

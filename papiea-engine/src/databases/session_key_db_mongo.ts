@@ -1,7 +1,7 @@
 import { Collection, Db } from "mongodb";
 import Logger from "../logger_interface";
 import { SessionKeyDb } from "./session_key_db_interface"
-import { SessionKey } from "papiea-core"
+import { SessionKey, Secret } from "papiea-core"
 
 export class SessionKeyDbMongo implements SessionKeyDb {
     collection: Collection;
@@ -32,7 +32,7 @@ export class SessionKeyDbMongo implements SessionKeyDb {
         return;
     }
 
-    async get_key(key: string): Promise<SessionKey> {
+    async get_key(key: Secret): Promise<SessionKey> {
         const result: SessionKey | null = await this.collection.findOne({
             "key": key,
         });
@@ -42,7 +42,7 @@ export class SessionKeyDbMongo implements SessionKeyDb {
         return result;
     }
 
-    async inactivate_key(key: string): Promise<void> {
+    async inactivate_key(key: Secret): Promise<void> {
         const result = await this.collection.deleteOne({
             "key": key
         }, );
@@ -55,7 +55,7 @@ export class SessionKeyDbMongo implements SessionKeyDb {
         return;
     }
 
-    async update_key(key: string, query: any): Promise<void> {
+    async update_key(key: Secret, query: any): Promise<void> {
         const result = await this.collection.updateOne({
             "key": key
         }, {

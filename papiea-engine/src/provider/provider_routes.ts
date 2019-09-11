@@ -73,7 +73,7 @@ export default function createProviderAPIRouter(providerApi: Provider_API) {
     providerApiRouter.get('/:prefix/:version/s2skey', check_request({
         allowed_query_params: ['deleted']
     }), asyncHandler(async (req, res) => {
-        const s2skeys = await providerApi.list_keys(req.user, {
+        const s2skeys = await providerApi.filter_keys(req.user, {
             "provider_prefix": req.params.prefix,
             "deleted_at": req.query.deleted
         });
@@ -109,7 +109,7 @@ export default function createProviderAPIRouter(providerApi: Provider_API) {
         const filter: any = {};
         for (let property of Object.keys(req.body)) {
             filter[property] = req.body[property];
-        };
+        }
         const result = await providerApi.filter_keys(req.user, filter);
         res.json({ results: result, entity_count: result.length })
     }));

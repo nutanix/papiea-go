@@ -1,6 +1,6 @@
 // [[file:~/work/papiea-js/Papiea-design.org::*Typescript:%20/src/provider_sdk/typescript_sdk_interface][Typescript: /src/provider_sdk/typescript_sdk_interface:1]]
 import { Kind_Builder } from "./typescript_sdk";
-import { Data_Description, Version, Status, Entity, Entity_Reference, S2S_Key, UserInfo, Action } from "papiea-core";
+import { Data_Description, Version, Status, Entity, Entity_Reference, S2S_Key, UserInfo, Action, Secret } from "papiea-core";
 import { IncomingHttpHeaders } from "http";
 
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Providers-SDK-518][provider_sdk_ts_provider_interface]]
@@ -51,7 +51,7 @@ export interface SecurityApi {
  user_info(): Promise<UserInfo>
  list_keys(): Promise<S2S_Key[]>
  create_key(new_key: Partial<S2S_Key>):Promise<S2S_Key>
- deactivate_key(key_to_deactivate:string):Promise<string>
+ deactivate_key(key_to_deactivate:Secret):Promise<string>
 }
 
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Providers-SDK-518][provider_sdk_ts_intentful_ctx_interface]]
@@ -60,7 +60,7 @@ export interface IntentfulCtx_Interface {
     update_progress(message:string, done_percent:number):boolean
     url_for(entity: Entity): string
     get_provider_security_api(): SecurityApi
-    get_user_security_api(user_s2skey:string): SecurityApi
+    get_user_security_api(user_s2skey:Secret): SecurityApi
     get_headers(): IncomingHttpHeaders
     get_invoking_token(): string
     check_permission(entityAction: [Action, Entity_Reference][], provider_prefix: string, provider_version: Version): Promise<boolean>

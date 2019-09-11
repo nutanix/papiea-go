@@ -12,14 +12,13 @@ import * as asyncHandler from "express-async-handler";
 import { Express, RequestHandler } from "express";
 import { Server } from "http";
 import { ProceduralCtx } from "./typescript_sdk_context_impl";
-
-import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, S2S_Key, UserInfo, IntentfulBehaviour } from "papiea-core";
+import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, S2S_Key, UserInfo, IntentfulBehaviour, Secret } from "papiea-core";
 import { InvocationError } from "./typescript_sdk_exceptions";
 
 class SecurityApiImpl implements SecurityApi {
     readonly provider: ProviderSdk;
-    readonly s2s_key: string;
-    constructor (provider: ProviderSdk, s2s_key: string) {
+    readonly s2s_key: Secret;
+    constructor (provider: ProviderSdk, s2s_key: Secret) {
         this.provider = provider
         this.s2s_key = s2s_key
     }
@@ -78,14 +77,14 @@ export class ProviderSdk implements ProviderImpl {
     protected meta_ext: { [key: string]: string };
     protected _provider: Provider | null;
     protected readonly papiea_url: string;
-    protected readonly _s2skey: string;
+    protected readonly _s2skey: Secret;
     protected _policy: string | null = null;
     protected _oauth2: string | null = null;
     protected _authModel: any | null = null;
     protected readonly _securityApi : SecurityApi;
     protected allowExtraProps: boolean;
 
-    constructor(papiea_url: string, s2skey: string, server_manager?: Provider_Server_Manager, allowExtraProps?: boolean) {
+    constructor(papiea_url: string, s2skey: Secret, server_manager?: Provider_Server_Manager, allowExtraProps?: boolean) {
         this._version = null;
         this._prefix = null;
         this._kind = [];
@@ -277,7 +276,7 @@ export class ProviderSdk implements ProviderImpl {
         throw new Error(`Malformed provider description. Missing: ${ missing_field }`)
     }
 
-    static create_provider(papiea_url: string, s2skey: string, public_host?: string, public_port?: number, allowExtraProps: boolean = false): ProviderSdk {
+    static create_provider(papiea_url: string, s2skey: Secret, public_host?: string, public_port?: number, allowExtraProps: boolean = false): ProviderSdk {
         const server_manager = new Provider_Server_Manager(public_host, public_port);
         return new ProviderSdk(papiea_url, s2skey, server_manager, allowExtraProps)
     }
@@ -301,7 +300,7 @@ export class ProviderSdk implements ProviderImpl {
         return new SecurityApiImpl(this, s2s_key)
     }
 
-    public get s2s_key(): string {
+    public get s2s_key(): Secret {
         return this._s2skey
     }
 }

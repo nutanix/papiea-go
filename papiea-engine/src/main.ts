@@ -9,7 +9,7 @@ import { Entity_API_Impl } from "./entity/entity_api_impl";
 import {
     createAuthnRouter, CompositeUserAuthInfoExtractor, AdminUserAuthInfoExtractor
 } from "./auth/authn";
-import { createOAuth2Router} from "./auth/oauth2";
+import { createOAuth2Router } from "./auth/oauth2";
 import { S2SKeyUserAuthInfoExtractor } from "./auth/s2s";
 import { Authorizer, AdminAuthorizer, PerProviderAuthorizer } from "./auth/authz";
 import { ValidatorImpl } from "./validator";
@@ -25,12 +25,9 @@ declare var process: {
     env: {
         SERVER_PORT: string,
         MONGO_DB: string,
-        MONGO_HOST: string,
-        MONGO_PORT: string
+        MONGO_URL: string,
         PAPIEA_PUBLIC_URL: string,
         DEBUG_LEVEL: string,
-        MONGO_USER: string,
-        MONGO_PASSWORD: string,
         PAPIEA_ADMIN_S2S_KEY: string,
         LOGGING_LEVEL: string
     },
@@ -40,10 +37,8 @@ process.title = "papiea";
 const serverPort = parseInt(process.env.SERVER_PORT || "3000");
 const publicAddr: string = process.env.PAPIEA_PUBLIC_URL || "http://localhost:3000";
 const oauth2RedirectUri: string = publicAddr + "/provider/auth/callback";
-const mongoHost = process.env.MONGO_HOST || 'mongo';
-const mongoPort = process.env.MONGO_PORT || '27017';
-const mongoUser = process.env.MONGO_USER;
-const mongoPassword = process.env.MONGO_PASSWORD;
+const mongoUrl = process.env.MONGO_URL || 'mongodb://mongo:27017';
+const mongoDb = process.env.MONGO_DB || 'papiea';
 const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
 const loggingLevel = process.env.LOGGING_LEVEL || 'info';
 
@@ -53,8 +48,7 @@ async function setUpApplication(): Promise<express.Express> {
     app.use(cookieParser());
     app.use(express.json());
     app.use(getLoggingMiddleware(logger));
-    const mongoAuth = (mongoPassword && mongoUser) ? `${mongoUser}:${mongoPassword}@` : '';
-    const mongoConnection: MongoConnection = new MongoConnection(`mongodb://${mongoAuth}${mongoHost}:${mongoPort}`, process.env.MONGO_DB || 'papiea');
+    const mongoConnection: MongoConnection = new MongoConnection(mongoUrl, mongoDb);
     await mongoConnection.connect();
     const providerDb = await mongoConnection.get_provider_db(logger);
     const specDb = await mongoConnection.get_spec_db(logger);

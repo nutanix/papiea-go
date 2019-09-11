@@ -14,6 +14,8 @@ export type Data_Description = any;
 export type Version = string;
 // core-types ends here
 
+export type Secret = string
+
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Metadata-350][metadata-struct]]
 export interface Metadata extends Entity_Reference {
     // Identity fields
@@ -204,7 +206,7 @@ export interface S2S_Key {
     name?: string
     owner: string
     provider_prefix: string
-    key: string
+    key: Secret
     uuid: string;
 
     // Additional fields
@@ -214,7 +216,7 @@ export interface S2S_Key {
 }
 
 export interface SessionKey {
-    key: string
+    key: Secret
     expireAt: Date
 
     user_info: UserInfo

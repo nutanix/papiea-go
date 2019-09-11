@@ -1,9 +1,10 @@
 import { NextFunction, Request, Response, Router } from "express";
 import { UnauthorizedError } from "../errors/permission_error";
 import Logger from "../logger_interface";
+import { Secret } from "papiea-core"
 
 export interface UserAuthInfoExtractor {
-    getUserAuthInfo(token: string, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null>
+    getUserAuthInfo(token: Secret, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null>
 }
 
 export class CompositeUserAuthInfoExtractor implements UserAuthInfoExtractor {
@@ -13,7 +14,7 @@ export class CompositeUserAuthInfoExtractor implements UserAuthInfoExtractor {
         this.extractors = extractors;
     }
 
-    async getUserAuthInfo(token: string, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null> {
+    async getUserAuthInfo(token: Secret, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null> {
         let userAuthInfo: UserAuthInfo | null = null;
         let i = 0;
         while (userAuthInfo === null && i < this.extractors.length) {
@@ -26,13 +27,13 @@ export class CompositeUserAuthInfoExtractor implements UserAuthInfoExtractor {
 
 
 export class AdminUserAuthInfoExtractor implements UserAuthInfoExtractor {
-    private readonly adminKey: string;
+    private readonly adminKey: Secret;
 
-    constructor(adminKey: string) {
+    constructor(adminKey: Secret) {
         this.adminKey = adminKey;
     }
 
-    async getUserAuthInfo(token: string, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null> {
+    async getUserAuthInfo(token: Secret, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null> {
         if (token === this.adminKey) {
             return { is_admin: true }
         } else {

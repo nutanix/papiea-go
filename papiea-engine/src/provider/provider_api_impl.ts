@@ -7,7 +7,7 @@ import { Authorizer } from "../auth/authz";
 import { UserAuthInfo } from "../auth/authn";
 import { createHash } from "../auth/crypto";
 import { EventEmitter } from "events";
-import { Entity_Reference, Version, Status, Provider, Kind, S2S_Key, Action } from "papiea-core";
+import { Entity_Reference, Version, Status, Provider, Kind, S2S_Key, Action, Secret } from "papiea-core";
 import uuid = require("uuid");
 import Logger from "../logger_interface";
 
@@ -139,7 +139,7 @@ export class Provider_API_Impl implements Provider_API {
         this.eventEmitter.on('authChange', callbackfn);
     }
 
-    async create_key(user: UserAuthInfo, name: string, owner: string, provider_prefix: string, user_info?: any, key?: string): Promise<S2S_Key> {
+    async create_key(user: UserAuthInfo, name: string, owner: string, provider_prefix: string, user_info?: any, key?: Secret): Promise<S2S_Key> {
         // - name is not mandatory, displayed in UI
         // - owner is the owner of the key (usually email),
         // it is not unique, different providers may have same owner
@@ -171,16 +171,6 @@ export class Provider_API_Impl implements Provider_API {
         const s2skey = await this.s2skeyDb.get_key(uuid);
         await this.authorizer.checkPermission(user, s2skey, Action.ReadS2SKey);
         return s2skey;
-    }
-
-    async list_keys(user: UserAuthInfo, fields_map: any): Promise<S2S_Key[]> {
-        const res = await this.s2skeyDb.list_keys(fields_map);
-        let secret;
-        for (let s2s_key of res) {
-            secret = s2s_key.key;
-            s2s_key.key = secret.slice(0, 2) + "*****" + secret.slice(-2);
-        }
-        return this.authorizer.filter(user, res, Action.ReadS2SKey);
     }
 
     async inactivate_key(user: UserAuthInfo, uuid: string): Promise<void> {

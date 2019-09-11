@@ -1,6 +1,6 @@
 import { SessionKeyDb } from "../databases/session_key_db_interface"
 import { UserAuthInfo, UserAuthInfoExtractor } from "./authn"
-import { SessionKey } from "papiea-core"
+import { SessionKey, Secret } from "papiea-core"
 import { Provider_DB } from "../databases/provider_db_interface"
 import { getOAuth2 } from "./oauth2"
 
@@ -12,7 +12,7 @@ export class SessionKeyAPI {
         this.sessionKeyDb = sessionKeyDb
     }
 
-    async createKey(userInfo: UserAuthInfo, token: any, key: string, oauth2: any): Promise<SessionKey> {
+    async createKey(userInfo: UserAuthInfo, token: any, key: Secret, oauth2: any): Promise<SessionKey> {
         const exp = token.token.expires_at.getTime()
         const sessionKey: SessionKey = {
             key: key,
@@ -27,7 +27,7 @@ export class SessionKeyAPI {
         return sessionKey
     }
 
-    async getKey(key: string, oauth2: any): Promise<SessionKey> {
+    async getKey(key: Secret, oauth2: any): Promise<SessionKey> {
         const sessionKey = await this.sessionKeyDb.get_key(key)
         if (SessionKeyAPI.isExpired(sessionKey.idpToken)) {
             return await this.refreshKey(sessionKey, oauth2)
@@ -78,7 +78,7 @@ export class SessionKeyUserAuthInfoExtractor implements UserAuthInfoExtractor {
         this.providerDb = providerDb
     }
 
-    async getUserAuthInfo(token: string, provider_prefix: string, provider_version: string): Promise<UserAuthInfo | null> {
+    async getUserAuthInfo(token: Secret, provider_prefix: string, provider_version: string): Promise<UserAuthInfo | null> {
         try {
             const provider = await this.providerDb.get_provider(provider_prefix, provider_version)
             const oauth2 = getOAuth2(provider);
