@@ -42,6 +42,7 @@ export default function createAPIDocsRouter(urlPrefix: string, apiDocsGenerator:
     apiDocsRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
         const options: any = {
             explorer: true,
+            customCss: '.swagger-ui .url { display: none }',
             swaggerOptions: {
                 url: `admin`,
                 urls: [
