@@ -478,10 +478,6 @@
                     }
                 }
             },
-            "externalDocs": {
-                "description": "Main page",
-                "url": "/api-docs"
-            },
             "components": {
                 "schemas": {
                     "Error": {
@@ -655,6 +651,18 @@
                             }
                         }
                     }
+                },
+                "securitySchemes": {
+                    "bearerAuth": {
+                        "type": "http",
+                        "scheme": "bearer",
+                        "bearerFormat": "JWT"
+                    }
                 }
-            }
+            },
+            "security": [
+                {
+                    "bearerAuth": []
+                }
+            ]
         }
