@@ -49,8 +49,8 @@ export class Entity_API_Impl implements Entity_API {
         this.intentfulCtx = intentfulCtx
     }
 
-    private async get_provider(user: UserAuthInfo, prefix: string, version: Version): Promise<Provider> {
-        return this.provider_api.get_provider(user, prefix, version);
+    private async get_provider(prefix: string, version: Version): Promise<Provider> {
+        return this.provider_api.get_provider_unchecked(prefix, version);
     }
 
     private find_kind(provider: Provider, kind_name: string): Kind {
@@ -62,7 +62,7 @@ export class Entity_API_Impl implements Entity_API {
     }
 
     async save_entity(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, spec_description: Spec, request_metadata: Metadata = {} as Metadata): Promise<[Metadata, Spec]> {
-        const provider = await this.provider_api.get_provider(user, prefix, version);
+        const provider = await this.get_provider(prefix, version);
         const kind = this.find_kind(provider, kind_name);
         this.validate_metadata_extension(provider.extension_structure, request_metadata, provider.allowExtraProps);
         this.validate_spec(spec_description, kind, provider.allowExtraProps);
@@ -111,7 +111,7 @@ export class Entity_API_Impl implements Entity_API {
     }
 
     async update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, extension: {[key: string]: any}, kind_name: string, version: Version, spec_description: Spec): Promise<[Metadata, Spec]> {
-        const provider = await this.get_provider(user, prefix, version);
+        const provider = await this.get_provider(prefix, version);
         const kind = this.find_kind(provider, kind_name);
         this.validate_spec(spec_description, kind, provider.allowExtraProps);
         const metadata: Metadata = { uuid: uuid, kind: kind.name, spec_version: spec_version, extension: extension } as Metadata;
@@ -122,7 +122,7 @@ export class Entity_API_Impl implements Entity_API {
     }
 
     async delete_entity_spec(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, entity_uuid: uuid4): Promise<void> {
-        const provider = await this.get_provider(user, prefix, version);
+        const provider = await this.get_provider(prefix, version);
         const kind = this.find_kind(provider, kind_name);
         const entity_ref: Entity_Reference = { kind: kind_name, uuid: entity_uuid };
         const [metadata, _] = await this.spec_db.get_spec(entity_ref);
@@ -132,7 +132,7 @@ export class Entity_API_Impl implements Entity_API {
     }
 
     async call_procedure(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, entity_uuid: uuid4, procedure_name: string, input: any): Promise<any> {
-        const provider = await this.get_provider(user, prefix, version);
+        const provider = await this.get_provider(prefix, version);
         const kind = this.find_kind(provider, kind_name);
         const entity_spec: [Metadata, Spec] = await this.get_entity_spec(user, kind_name, entity_uuid);
         const entity_status: [Metadata, Status] = await this.get_entity_status(user, kind_name, entity_uuid);
@@ -170,7 +170,7 @@ export class Entity_API_Impl implements Entity_API {
     }
 
     async call_provider_procedure(user: UserAuthInfo, prefix: string, version: Version, procedure_name: string, input: any): Promise<any> {
-        const provider = await this.provider_api.get_provider(user, prefix, version);
+        const provider = await this.get_provider(prefix, version);
         if (provider.procedures === undefined) {
             throw new Error(`Procedure ${procedure_name} not found for provider ${prefix}`);
         }
@@ -203,7 +203,7 @@ export class Entity_API_Impl implements Entity_API {
     }
 
     async call_kind_procedure(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, procedure_name: string, input: any): Promise<any> {
-        const provider = await this.get_provider(user, prefix, version);
+        const provider = await this.get_provider(prefix, version);
         const kind = this.find_kind(provider, kind_name);
         const procedure: Procedural_Signature | undefined = kind.kind_procedures[procedure_name];
         if (procedure === undefined) {

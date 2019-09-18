@@ -88,6 +88,10 @@ export class Provider_API_Impl implements Provider_API {
         throw new Error("Not implemented");
     }
 
+    async get_provider_unchecked(provider_prefix: string, provider_version: Version): Promise<Provider> {
+        return this.providerDb.get_provider(provider_prefix, provider_version);
+    }
+
     async get_provider(user: UserAuthInfo, provider_prefix: string, provider_version: Version): Promise<Provider> {
         await this.authorizer.checkPermission(user, { prefix: provider_prefix }, Action.ReadProvider);
         return this.providerDb.get_provider(provider_prefix, provider_version);
@@ -99,13 +103,11 @@ export class Provider_API_Impl implements Provider_API {
     }
 
     async get_latest_provider(user: UserAuthInfo, provider_prefix: string): Promise<Provider> {
-        await this.authorizer.checkPermission(user, { prefix: provider_prefix }, Action.ReadProvider);
         return this.providerDb.get_latest_provider(provider_prefix);
     }
 
     async get_latest_provider_by_kind(user: UserAuthInfo, kind_name: string): Promise<Provider> {
         const res = await this.providerDb.get_latest_provider_by_kind(kind_name);
-        await this.authorizer.checkPermission(user, res, Action.ReadProvider);
         return res;
     }
 
@@ -120,7 +122,7 @@ export class Provider_API_Impl implements Provider_API {
     }
 
     async update_auth(user: UserAuthInfo, provider_prefix: string, provider_version: Version, auth: any): Promise<void> {
-        const provider: Provider = await this.get_provider(user, provider_prefix, provider_version);
+        const provider: Provider = await this.get_provider_unchecked(provider_prefix, provider_version);
         await this.authorizer.checkPermission(user, provider, Action.UpdateAuth);
         if (auth.authModel !== undefined) {
             provider.authModel = auth.authModel;
