@@ -1,9 +1,8 @@
 import "jest";
 import axios from "axios";
-import { getClusterKind, ProviderBuilder } from "../test_data_factory"
+import { getClusterKind, OAuth2Server, ProviderBuilder } from "../test_data_factory"
 import uuid = require("uuid");
-import { Provider } from "papiea-core";
-
+import { Provider, Version } from "papiea-core";
 
 declare var process: {
     env: {
@@ -392,3 +391,85 @@ describe("Provider API auth tests", () => {
     });
 
 });
+
+describe('Read provider security check', function () {
+    const clusterKinds = [getClusterKind()]
+    const oauth2Server = OAuth2Server.createServer();
+    const oauth2ServerHost = '127.0.0.1';
+    const oauth2ServerPort = 9002;
+
+    let providerPrefix: string;
+    let providerVersion: Version
+
+    beforeAll(async () => {
+        oauth2Server.httpServer.listen(oauth2ServerPort, oauth2ServerHost);
+    });
+
+    afterAll(async () => {
+        oauth2Server.httpServer.close();
+    });
+
+    afterEach(async () => {
+        await providerApiAdmin.delete(`${ providerPrefix }/${ providerVersion }`)
+    })
+
+    test("Read provider by unauthorized user should fail", async () => {
+        expect.assertions(1)
+        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds(clusterKinds).build();
+        await providerApiAdmin.post('/', provider);
+        providerPrefix = provider.prefix
+        providerVersion = provider.version
+        try {
+            await providerApi.get(`${ provider.prefix }/${ provider.version }`)
+        } catch (e) {
+            expect(e.response.status).toBe(401)
+        }
+    });
+
+    test("Read provider by admin should succeed", async () => {
+        expect.assertions(1)
+        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds(clusterKinds).build();
+        await providerApiAdmin.post('/', provider);
+        providerPrefix = provider.prefix
+        providerVersion = provider.version
+        const result = await providerApiAdmin.get(`${ provider.prefix }/${ provider.version }`)
+        expect(result.data).toBeDefined()
+    });
+
+    test("Read provider by provider-admin should succeed", async () => {
+        expect.assertions(1)
+        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds(clusterKinds).build();
+        await providerApiAdmin.post('/', provider);
+        providerPrefix = provider.prefix
+        providerVersion = provider.version
+        const { data: s2skey } = await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
+            {
+                user_info: {
+                    owner: "admin@provider",
+                    is_provider_admin: true
+                }
+            }
+        );
+        const result = await providerApi.get(`/${ provider.prefix }/${ provider.version }/s2skey`, {
+                headers: { 'Authorization': `Bearer ${ s2skey.key }` }
+            }
+        );
+        expect(result.data).toBeDefined()
+    });
+
+    test("Read provider by regular user should fail", async () => {
+        expect.assertions(1)
+        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds(clusterKinds).withOAuth2Description().build();
+        await providerApiAdmin.post('/', provider);
+        providerPrefix = provider.prefix
+        providerVersion = provider.version
+        const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`);
+        try {
+            await providerApi.get(`/${ provider.prefix }/${ provider.version }`,
+                { headers: { 'Authorization': 'Bearer ' + token } }
+            );
+        } catch (e) {
+            expect(e.response.status).toBe(403)
+        }
+    });
+})
