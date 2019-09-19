@@ -6,7 +6,6 @@ import { Validator } from "../validator";
 import * as uuid_validate from "uuid-validate";
 import { Authorizer } from "../auth/authz";
 import { UserAuthInfo } from "../auth/authn";
-import { Provider_API } from "../provider/provider_api_interface";
 import {
     Data_Description,
     Entity_Reference,
@@ -27,22 +26,23 @@ import uuid = require("uuid");
 import { PermissionDeniedError } from "../errors/permission_error";
 import Logger from "../logger_interface";
 import { IntentfulContext } from "../intentful_core/intentful_context"
+import { Provider_DB } from "../databases/provider_db_interface"
 
 export type SortParams = { [key: string]: number };
 
 export class Entity_API_Impl implements Entity_API {
     private status_db: Status_DB;
     private spec_db: Spec_DB;
-    private provider_api: Provider_API;
     private authorizer: Authorizer;
     private logger: Logger;
     private validator: Validator
     private readonly intentfulCtx: IntentfulContext
+    private providerDb: Provider_DB
 
-    constructor(logger: Logger, status_db: Status_DB, spec_db: Spec_DB, provider_api: Provider_API, authorizer: Authorizer, validator: Validator, intentfulCtx: IntentfulContext) {
+    constructor(logger: Logger, status_db: Status_DB, spec_db: Spec_DB, provider_db: Provider_DB, authorizer: Authorizer, validator: Validator, intentfulCtx: IntentfulContext) {
         this.status_db = status_db;
         this.spec_db = spec_db;
-        this.provider_api = provider_api;
+        this.providerDb = provider_db;
         this.authorizer = authorizer;
         this.logger = logger;
         this.validator = validator;
@@ -50,7 +50,7 @@ export class Entity_API_Impl implements Entity_API {
     }
 
     private async get_provider(prefix: string, version: Version): Promise<Provider> {
-        return this.provider_api.get_provider_unchecked(prefix, version);
+        return this.providerDb.get_provider(prefix, version);
     }
 
     private find_kind(provider: Provider, kind_name: string): Kind {

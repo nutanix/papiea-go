@@ -68,7 +68,7 @@ async function setUpApplication(): Promise<express.Express> {
     app.use(createOAuth2Router(logger, oauth2RedirectUri, providerDb, sessionKeyApi));
     const entityApiAuthorizer: Authorizer = new PerProviderAuthorizer(logger, providerApi, new ProviderCasbinAuthorizerFactory(logger));
     app.use('/provider', createProviderAPIRouter(providerApi));
-    app.use('/services', createEntityAPIRouter(new Entity_API_Impl(logger, statusDb, specDb, providerApi, entityApiAuthorizer, validator, intentfulContext)));
+    app.use('/services', createEntityAPIRouter(new Entity_API_Impl(logger, statusDb, specDb, providerDb, entityApiAuthorizer, validator, intentfulContext)));
     app.use('/api-docs', createAPIDocsRouter('/api-docs', new ApiDocsGenerator(providerDb), providerDb));
     app.use(function (err: any, req: any, res: any, next: any) {
         if (res.headersSent) {

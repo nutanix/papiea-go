@@ -88,7 +88,7 @@ export class Provider_API_Impl implements Provider_API {
         throw new Error("Not implemented");
     }
 
-    async get_provider_unchecked(provider_prefix: string, provider_version: Version): Promise<Provider> {
+    private async get_provider_unchecked(provider_prefix: string, provider_version: Version): Promise<Provider> {
         return this.providerDb.get_provider(provider_prefix, provider_version);
     }
 

@@ -31,8 +31,6 @@ export interface Provider_API {
 
     get_provider(user: UserAuthInfo, provider_prefix: string, provider_version: Version): Promise<Provider>;
 
-    get_provider_unchecked(provider_prefix: string, provider_version: Version): Promise<Provider>
-
     list_providers_by_prefix(user: UserAuthInfo, provider_prefix: string): Promise<Provider[]>;
 
     get_latest_provider(user: UserAuthInfo, provider_prefix: string): Promise<Provider>
