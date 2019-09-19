@@ -77,6 +77,8 @@ async function setUpApplication(): Promise<express.Express> {
         const papieaError = PapieaErrorImpl.create(err);
         res.status(papieaError.status)
         res.json(papieaError.toResponse())
+        logger.error(papieaError)
+        logger.error(err.stack)
     });
     return app;
 }
