@@ -587,6 +587,43 @@ describe("Entity API auth tests", () => {
         );
     });
 
+    test("Call kind procedure with s2s key should succeed", async () => {
+        const server = http.createServer((req, res) => {
+            if (req.method == 'POST') {
+                let body = '';
+                req.on('data', function (data) {
+                    body += data;
+                });
+                req.on('end', function () {
+                    const post = JSON.parse(body);
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'text/plain');
+                    res.end(JSON.stringify(post.spec));
+                    server.close();
+                });
+            }
+        });
+        server.listen(procedureCallbackPort, procedureCallbackHostname, () => {
+            entityApiAuthTestLogger.info(`Server running at http://${ procedureCallbackHostname }:${ procedureCallbackPort }/`);
+        });
+        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+        const { data: user_info } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/user_info`,
+            { headers: { 'Authorization': 'Bearer ' + token } }
+        );
+        await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
+            policy: `p, alice, owner, ${kind_name}, *, allow`
+        });
+        const { data: s2skey } = await providerApi.post(`/${ provider.prefix }/${ provider.version }/s2skey`,
+            {
+                owner: user_info.owner
+            },
+            { headers: { 'Authorization': 'Bearer ' + token } }
+        );
+        await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/computeGeolocation`, { input: "5" },
+            { headers: { 'Authorization': 'Bearer ' + s2skey.key } }
+        );
+    });
+
     test("Call kind procedure by provider-admin should succeed", async () => {
         const server = http.createServer((req, res) => {
             if (req.method == 'POST') {
