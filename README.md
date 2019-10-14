@@ -54,7 +54,7 @@ A set of these variables might be used to tweak the default papiea-engine config
 
 For now this clojurescript library is embedded, but it may end up in a different repository and will be exposed as a regular npm package which will be imported through npm. Until this happens, here are the instructions for developing this library:
 
-1. Make sure `leiningen` is installed (follow [leiningen installation]<https://github.com/technomancy/leiningen#installation)>
+1. Make sure `leiningen` is installed (follow [leiningen installation](https://github.com/technomancy/leiningen#installation))
 2. To use live repl with clojurescript do the following:
 
     ```bash
@@ -70,7 +70,7 @@ For now this clojurescript library is embedded, but it may end up in a different
     ```
 
     Then go to emacs with cider installed
-    ([Cider Installation]<https://github.com/clojure-emacs/cider#installation),> do `M+x cider-connect-cljs`,
+    ([Cider Installation](https://github.com/clojure-emacs/cider#installation)), do `M+x cider-connect-cljs`,
     select the host where the repl is running (usually localhost, but can be run anywhere.
     Use `.ssh/config` to name that host), then select `node` as the running environment and you should have a repl.
     Debugging is not yet working in cljs, but I simply use regular clojure if I need to live debug for now.
@@ -86,7 +86,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you
 may not use this file except in compliance with the License.  You may
 obtain a copy of the License at
 
-[Apache License]<http://www.apache.org/licenses/LICENSE-2.0>
+[Apache License](http://www.apache.org/licenses/LICENSE-2.0)
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
