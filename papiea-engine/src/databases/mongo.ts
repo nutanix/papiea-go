@@ -37,6 +37,9 @@ export class MongoConnection {
     }
 
     async download_rds_cert(): Promise<void> {
+        if (fs.existsSync('rds-combined-ca-bundle.pem')) {
+            return;
+        }
         const writer = fs.createWriteStream('rds-combined-ca-bundle.pem');
         const response = await axios({
             url: 'https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem',
