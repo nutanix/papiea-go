@@ -29,3 +29,6 @@ package.json.backup
 
 # logs
 logs/
+
+# DocDB certificate
+rds-combined-ca-bundle.pem
