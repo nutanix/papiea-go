@@ -85,7 +85,7 @@ export default function createProviderAPIRouter(providerApi: Provider_API) {
         allowed_body_params: ['user_info', 'name', 'owner', 'key']
     }), asyncHandler(async (req, res) => {
         if (req.body.user_info && req.body.user_info.provider_prefix) {
-            throw new BadRequestError('provider_prefix may not be specified in the request body');
+            throw new BadRequestError('provider_prefix should not be specified in the request body');
         }
         const s2skey = await providerApi.create_key(req.user, req.body.name, req.body.owner, req.params.prefix,
             req.body.user_info, req.body.key);

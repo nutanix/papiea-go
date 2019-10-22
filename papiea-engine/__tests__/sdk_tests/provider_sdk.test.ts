@@ -490,7 +490,7 @@ describe("Provider Sdk tests", () => {
     });
 });
 
-describe("SDK security tests", () => {
+describe("SDK + oauth provider tests", () => {
     const oauth2ServerHost = '127.0.0.1';
     const oauth2ServerPort = 9002;
     const pathToModel: string = resolve(__dirname, "../../src/auth/provider_model_example.txt");
@@ -845,6 +845,48 @@ describe("SDK security tests", () => {
             await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
                 policy: null
             });
+        }
+    });
+
+    test("Provider with provider level procedures throws error inside procedure", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        sdk.version(provider_version);
+        sdk.prefix("location_provider_throws_error_with_correct_description");
+        sdk.provider_procedure("computeWithErrorMessagePropagationCheck",
+            {},
+            Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./test_data/procedure_sum_input.yml"),
+            {},
+            async (ctx, input) => {
+                try {
+                    const token = ctx.get_invoking_token()
+                    const securityApi = ctx.get_user_security_api(token)
+                    let userInfo = await securityApi.user_info()
+                    const key = await ctx.get_provider_security_api().create_key({
+                        name: "test",
+                        owner: userInfo.owner,
+                        user_info: {
+                            provider_prefix: "test_provider"
+                        }
+                    })
+                    console.log(`Key ${key}`)
+                } catch (e) {
+                    throw new Error(`Couldn't invoke a function due to: ${ e.message }`)
+                }
+            }
+        );
+        sdk.secure_with(oauth, modelText, "xxx");
+        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+        try {
+            await sdk.register();
+            await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithErrorMessagePropagationCheck`, { input: { "a": 5, "b": 5 } },
+                { headers: { 'Authorization': `Bearer ${token}` }});
+        } catch (e) {
+            expect(e.response.data.error.errors[0].message).toEqual(`Couldn't invoke a function due to: Cannot create s2s key: Response status: 400, Errors: [{"message":"provider_prefix should not be specified in the request body"}]`)
+        } finally {
+            sdk.server.close()
         }
     });
 });
