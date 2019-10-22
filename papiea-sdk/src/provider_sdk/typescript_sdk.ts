@@ -30,7 +30,7 @@ class SecurityApiImpl implements SecurityApi {
             const {data: user_info } = await this.provider.provider_api_axios.get(`${url}/auth/user_info`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return user_info
         } catch (e) {
-            if (e.response) {
+            if (e.response.data.error) {
                 throw new Error(`Cannot get user info: Response status: ${e.response.data.error.code}, Errors: ${JSON.stringify(e.response.data.error.errors)}`)
             } else {
                 throw new Error(`Cannot get user info: ${e.message}`)
@@ -44,7 +44,7 @@ class SecurityApiImpl implements SecurityApi {
             const {data: keys } = await this.provider.provider_api_axios.get(`${url}/s2skey`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return keys
         } catch (e) {
-            if (e.response) {
+            if (e.response.data.error) {
                 throw new Error(`Cannot list s2s keys: Response status: ${e.response.data.error.code}, Errors: ${JSON.stringify(e.response.data.error.errors)}`)
             } else {
                 throw new Error(`Cannot list s2s keys: ${e.message}`)
@@ -58,7 +58,7 @@ class SecurityApiImpl implements SecurityApi {
             const {data: s2skey } = await this.provider.provider_api_axios.post(`${url}/s2skey`, new_key, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return s2skey
         } catch (e) {
-            if (e.response) {
+            if (e.response.data.error) {
                 throw new Error(`Cannot create s2s key: Response status: ${e.response.data.error.code}, Errors: ${JSON.stringify(e.response.data.error.errors)}`)
             } else {
                 throw new Error(`Cannot create s2s key: ${e.message}`)
@@ -72,7 +72,7 @@ class SecurityApiImpl implements SecurityApi {
             const {data: r } = await this.provider.provider_api_axios.put(`${url}/s2skey`, {key: key_to_deactivate, active:false}, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return r
         } catch (e) {
-            if (e.response) {
+            if (e.response.data.error) {
                 throw new Error(`Cannot deactivate s2s key: Response status: ${e.response.data.error.code}, Errors: ${JSON.stringify(e.response.data.error.errors)}`)
             } else {
                 throw new Error(`Cannot deactivate s2s key: ${e.message}`)
