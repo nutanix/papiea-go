@@ -157,15 +157,7 @@ export class Entity_API_Impl implements Entity_API {
             this.validator.validate(data, Object.values(procedure.result)[0], schemas, provider.allowExtraProps);
             return data;
         } catch (err) {
-            if (err instanceof ValidationError) {
-                throw new ProcedureInvocationError(err.errors.map(e => {
-                    return { message: e }
-                }), 400);
-            } else if (err.response) {
-                throw new ProcedureInvocationError(err.response.data, err.response.status)
-            } else {
-                throw err;
-            }
+            throw ProcedureInvocationError.fromError(err)
         }
     }
 
@@ -192,13 +184,7 @@ export class Entity_API_Impl implements Entity_API {
             this.validator.validate(data, Object.values(procedure.result)[0], schemas, provider.allowExtraProps);
             return data;
         } catch (err) {
-            if (err instanceof ValidationError) {
-                throw new ProcedureInvocationError(err.errors.map(e => {
-                    return { message: e }
-                }), 400);
-            } else {
-                throw new ProcedureInvocationError(err.response.data, err.response.status)
-            }
+            throw ProcedureInvocationError.fromError(err)
         }
     }
 
@@ -223,13 +209,7 @@ export class Entity_API_Impl implements Entity_API {
             this.validator.validate(data, Object.values(procedure.result)[0], schemas, provider.allowExtraProps);
             return data;
         } catch (err) {
-            if (err instanceof ValidationError) {
-                throw new ProcedureInvocationError(err.errors.map(e => {
-                    return { message: e }
-                }), 400);
-            } else {
-                throw new ProcedureInvocationError(err.response.data, err.response.status)
-            }
+            throw ProcedureInvocationError.fromError(err)
         }
     }
 

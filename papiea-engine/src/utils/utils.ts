@@ -1,5 +1,6 @@
 import { SortParams } from "../entity/entity_api_impl"
 import { ValidationError } from "../errors/validation_error"
+import { AxiosError } from "axios"
 
 function validatePaginationParams(offset: number | undefined, limit: number | undefined) {
     if (offset) {
@@ -79,4 +80,8 @@ export function safeJSONParse(chunk: string): Object | null {
         console.error(`Safe json parse failed: ${e}, Falling back to undefined`)
         return null
     }
+}
+
+export function isAxiosError(e: Error): e is AxiosError {
+    return e.hasOwnProperty("response");
 }

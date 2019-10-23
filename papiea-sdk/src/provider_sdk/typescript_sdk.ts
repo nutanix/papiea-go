@@ -13,7 +13,7 @@ import { Express, RequestHandler } from "express";
 import { Server } from "http";
 import { ProceduralCtx } from "./typescript_sdk_context_impl";
 import { Version, Kind, Procedural_Signature, Provider, Data_Description, SpecOnlyEntityKind, Procedural_Execution_Strategy, Entity, S2S_Key, UserInfo, IntentfulBehaviour, Secret } from "papiea-core";
-import { InvocationError } from "./typescript_sdk_exceptions";
+import { InvocationError, SecurityApiError } from "./typescript_sdk_exceptions"
 import { makeLoggerFactory } from "./typescript_sdk_logging"
 
 class SecurityApiImpl implements SecurityApi {
@@ -30,11 +30,7 @@ class SecurityApiImpl implements SecurityApi {
             const {data: user_info } = await this.provider.provider_api_axios.get(`${url}/auth/user_info`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return user_info
         } catch (e) {
-            if (e.response.data.error) {
-                throw new Error(`Cannot get user info: Response status: ${e.response.data.error.code}, Errors: ${JSON.stringify(e.response.data.error.errors)}`)
-            } else {
-                throw new Error(`Cannot get user info: ${e.message}`)
-            }
+            throw SecurityApiError.fromError(e, "Cannot get user info")
         }
     }
 
@@ -44,11 +40,7 @@ class SecurityApiImpl implements SecurityApi {
             const {data: keys } = await this.provider.provider_api_axios.get(`${url}/s2skey`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return keys
         } catch (e) {
-            if (e.response.data.error) {
-                throw new Error(`Cannot list s2s keys: Response status: ${e.response.data.error.code}, Errors: ${JSON.stringify(e.response.data.error.errors)}`)
-            } else {
-                throw new Error(`Cannot list s2s keys: ${e.message}`)
-            }
+            throw SecurityApiError.fromError(e, "Cannot list s2s keys")
         }
     }
 
@@ -58,11 +50,7 @@ class SecurityApiImpl implements SecurityApi {
             const {data: s2skey } = await this.provider.provider_api_axios.post(`${url}/s2skey`, new_key, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return s2skey
         } catch (e) {
-            if (e.response.data.error) {
-                throw new Error(`Cannot create s2s key: Response status: ${e.response.data.error.code}, Errors: ${JSON.stringify(e.response.data.error.errors)}`)
-            } else {
-                throw new Error(`Cannot create s2s key: ${e.message}`)
-            }
+            throw SecurityApiError.fromError(e, "Cannot create s2s key")
         }
     }
 
@@ -72,11 +60,7 @@ class SecurityApiImpl implements SecurityApi {
             const {data: r } = await this.provider.provider_api_axios.put(`${url}/s2skey`, {key: key_to_deactivate, active:false}, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return r
         } catch (e) {
-            if (e.response.data.error) {
-                throw new Error(`Cannot deactivate s2s key: Response status: ${e.response.data.error.code}, Errors: ${JSON.stringify(e.response.data.error.errors)}`)
-            } else {
-                throw new Error(`Cannot deactivate s2s key: ${e.message}`)
-            }
+            throw SecurityApiError.fromError(e, "Cannot deactivate s2s key")
         }
     }
 }
