@@ -14,7 +14,7 @@ export class WinstonLoggerFactory implements LoggerFactory {
     }
 
     createLogger(logLevel: string = "info", prettyPrint?: boolean): winston.Logger {
-        let formatArgs: Format[] = [winston.format.json()]
+        let formatArgs: Format[] = [winston.format.json(), winston.format.timestamp()]
         if (prettyPrint) {
             formatArgs.push(winston.format.prettyPrint())
         }
