@@ -17,12 +17,16 @@ export class InvocationError extends Error {
     }
 
     static fromError(status_code: number, e: SecurityApiError, custom_message?: string): InvocationError
+    static fromError(status_code: number, e: AxiosError, custom_message?: string): InvocationError
     static fromError(status_code: number, e: Error, custom_message?: string): InvocationError {
         if (custom_message !== undefined) {
             return new InvocationError(status_code, custom_message, [], e.stack)
         }
         if (e instanceof SecurityApiError) {
             return new InvocationError(e.status || 500, e.message, e.errors, e.stack)
+        }
+        if (isAxiosError(e)) {
+            return new InvocationError(e.response!.status, "Error while making request", e.response!.data.errors)
         }
         return new InvocationError(status_code, e.message, [], e.stack)
     }
