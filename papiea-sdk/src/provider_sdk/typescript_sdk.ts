@@ -231,7 +231,7 @@ export class ProviderSdk implements ProviderImpl {
                     return res.status(e.status_code).json(e.toResponse())
                 }
                 const error = InvocationError.fromError(500, e);
-                res.status(500).json(error.toResponse())
+                res.status(error.status_code).json(error.toResponse())
             }
         });
         return this
@@ -404,7 +404,7 @@ export class Kind_Builder {
                     return res.status(e.status_code).json(e.toResponse())
                 }
                 const error = InvocationError.fromError(500, e);
-                res.status(500).json(error.toResponse())
+                res.status(error.status_code).json(error.toResponse())
             }
         });
         return this
@@ -435,7 +435,7 @@ export class Kind_Builder {
                     return res.status(e.status_code).json(e.toResponse())
                 }
                 const error = InvocationError.fromError(500, e);
-                res.status(500).json(error.toResponse())
+                res.status(error.status_code).json(error.toResponse())
             }
         });
         return this
