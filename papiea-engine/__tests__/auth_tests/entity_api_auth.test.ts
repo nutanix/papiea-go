@@ -286,6 +286,89 @@ describe("Entity API auth tests", () => {
         expect(spec).toEqual(entity_spec);
     });
 
+    test("Update entity should raise permission denied", async () => {
+        expect.assertions(1 + expectAssertionsFromOauth2Server);
+        try {
+            const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+            await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
+                policy: `p, bill, owner, ${kind_name}, *, allow`
+            });
+            await entityApi.put(`/${ provider.prefix }/${ provider.version }/${ kind_name }/${ entity_metadata.uuid }`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                },
+                metadata: {
+                    spec_version: 1
+                }
+            }, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+        } catch (e) {
+            expect(e.response.status).toEqual(403);
+        }
+    });
+
+    test("Update entity should succeed after policy set", async () => {
+        const { data: { token } } = await providerApi.get(`/${ provider.prefix }/${ provider.version }/auth/login`);
+        await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+            policy: `p, alice, owner, ${ kind_name }, *, allow`
+        });
+        const { data: { metadata, spec } } = await entityApi.put(`/${ provider.prefix }/${ provider.version }/${ kind_name }/${ entity_metadata.uuid }`, {
+            spec: {
+                x: 101,
+                y: 11
+            },
+            metadata: {
+                spec_version: 1
+            }
+        }, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        entity_spec.x = 101;
+        entity_metadata.spec_version = 2;
+        expect(metadata).toEqual(entity_metadata);
+        expect(spec).toEqual(entity_spec);
+    });
+
+    test("Fake owner should raise permission denied", async () => {
+        const { data: { metadata, spec } } = await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}`, {
+            metadata: {
+                extension: {
+                    owner: "bill",
+                    tenant_uuid: tenant_uuid
+                }
+            },
+            spec: {
+                x: 10,
+                y: 11
+            }
+        });
+        expect.assertions(1 + expectAssertionsFromOauth2Server);
+        try {
+            const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+            await providerApiAdmin.post(`/${provider.prefix}/${provider.version}/auth`, {
+                policy: `p, bill, owner, ${kind_name}, *, allow`
+            });
+            await entityApi.put(`/${ provider.prefix }/${ provider.version }/${ kind_name }/${ metadata.uuid }`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                },
+                metadata: {
+                    spec_version: 1,
+                    extension: {
+                        owner: "alice"
+                    }
+                }
+            }, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+        } catch (e) {
+            expect(e.response.status).toEqual(403);
+        }
+    });
+
     test("Entity procedure should receive headers", async () => {
         let headers: any = {};
         const server = http.createServer((req, res) => {

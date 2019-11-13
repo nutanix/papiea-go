@@ -115,12 +115,13 @@ export class Entity_API_Impl implements Entity_API {
         const kind = this.find_kind(provider, kind_name);
         this.validate_spec(spec_description, kind, provider.allowExtraProps);
         const entity_ref: Entity_Reference = { kind: kind_name, uuid: uuid };
-        const [metadata, _] = await this.spec_db.get_spec(entity_ref);
+        const metadata: Metadata = (await this.spec_db.get_spec(entity_ref))[0];
         await this.authorizer.checkPermission(user, { "metadata": metadata }, Action.Update);
+        metadata.spec_version = spec_version;
         metadata.extension = extension;
         const strategy = this.intentfulCtx.getIntentfulStrategy(kind.intentful_behaviour)
-        const [_, spec] = await strategy.update(metadata, spec_description)
-        return [metadata, spec];
+        const [res_metadata, spec] = await strategy.update(metadata, spec_description)
+        return [res_metadata, spec];
     }
 
     async delete_entity_spec(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, entity_uuid: uuid4): Promise<void> {
