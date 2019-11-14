@@ -118,7 +118,6 @@ export class Entity_API_Impl implements Entity_API {
         const metadata: Metadata = (await this.spec_db.get_spec(entity_ref))[0];
         await this.authorizer.checkPermission(user, { "metadata": metadata }, Action.Update);
         metadata.spec_version = spec_version;
-        metadata.extension = extension;
         const strategy = this.intentfulCtx.getIntentfulStrategy(kind.intentful_behaviour)
         const [res_metadata, spec] = await strategy.update(metadata, spec_description)
         return [res_metadata, spec];
