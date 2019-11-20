@@ -5,6 +5,7 @@ import { Spec_DB_Mongo } from "./spec_db_mongo";
 import { Status_DB_Mongo } from "./status_db_mongo";
 import { Provider_DB_Mongo } from "./provider_db_mongo";
 import { S2S_Key_DB_Mongo } from "./s2skey_db_mongo";
+import { Policy_DB_Mongo } from "./policy_db_mongo";
 import { SessionKeyDbMongo } from "./session_key_db_mongo"
 import { Logger } from "../logger_interface"
 const fs = require('fs'),
@@ -22,6 +23,7 @@ export class MongoConnection {
     statusDb: Status_DB_Mongo | undefined;
     s2skeyDb: S2S_Key_DB_Mongo | undefined;
     sessionKeyDb: SessionKeyDbMongo | undefined
+    policyDb: Policy_DB_Mongo | undefined;
 
     constructor(url: string, dbName: string) {
         this.url = url;
@@ -37,6 +39,7 @@ export class MongoConnection {
         this.providerDb = undefined;
         this.statusDb = undefined;
         this.s2skeyDb = undefined;
+        this.policyDb = undefined;
     }
 
     async download_rds_cert(): Promise<void> {
@@ -109,6 +112,16 @@ export class MongoConnection {
         this.s2skeyDb = new S2S_Key_DB_Mongo(logger, this.db);
         await this.s2skeyDb.init();
         return this.s2skeyDb;
+    }
+
+    async get_policy_db(logger: Logger): Promise<Policy_DB_Mongo> {
+        if (this.policyDb !== undefined)
+            return this.policyDb;
+        if (this.db === undefined)
+            throw new Error("Not connected");
+        this.policyDb = new Policy_DB_Mongo(logger, this.db);
+        await this.policyDb.init();
+        return this.policyDb;
     }
 
     async get_session_key_db(logger: Logger): Promise<SessionKeyDbMongo> {

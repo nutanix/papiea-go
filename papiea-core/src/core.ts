@@ -247,3 +247,12 @@ export enum Action {
     InactivateS2SKey = "inactive_key",
     UpdateStatus = "update_status",
 }
+
+export interface Policy {
+    line: number,
+    rule_kind: string,
+    rule: string,
+    effect: string,
+    comment: string,
+    uuid: string
+}

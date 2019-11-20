@@ -1,13 +1,14 @@
 import { Provider_API, Provider_Power } from "./provider_api_interface";
 import { Provider_DB } from "../databases/provider_db_interface";
 import { Status_DB } from "../databases/status_db_interface";
+import { Policy_DB } from "../databases/policy_db_interface";
 import { S2S_Key_DB } from "../databases/s2skey_db_interface";
 import { Validator } from "../validator";
 import { Authorizer } from "../auth/authz";
 import { UserAuthInfo } from "../auth/authn";
 import { createHash } from "../auth/crypto";
 import { EventEmitter } from "events";
-import { Entity_Reference, Version, Status, Provider, Kind, S2S_Key, Action, Secret } from "papiea-core";
+import { Entity_Reference, Version, Status, Provider, Kind, S2S_Key, Action, Secret, Policy } from "papiea-core";
 import uuid = require("uuid");
 import { Logger } from "../logger_interface";
 
@@ -18,12 +19,14 @@ export class Provider_API_Impl implements Provider_API {
     private authorizer: Authorizer;
     private eventEmitter: EventEmitter;
     private logger: Logger;
-    private validator: Validator
+    private validator: Validator;
+    private policyDb: Policy_DB;
 
-    constructor(logger: Logger, providerDb: Provider_DB, statusDb: Status_DB, s2skeyDb: S2S_Key_DB, authorizer: Authorizer, validator: Validator) {
+    constructor(logger: Logger, providerDb: Provider_DB, statusDb: Status_DB, s2skeyDb: S2S_Key_DB, authorizer: Authorizer, validator: Validator, policyDb: Policy_DB) {
         this.providerDb = providerDb;
         this.statusDb = statusDb;
         this.s2skeyDb = s2skeyDb;
+        this.policyDb = policyDb;
         this.authorizer = authorizer;
         this.eventEmitter = new EventEmitter();
         this.logger = logger;
@@ -189,5 +192,21 @@ export class Provider_API_Impl implements Provider_API {
             s2s_key.key = secret.slice(0, 2) + "*****" + secret.slice(-2);
         }
         return this.authorizer.filter(user, res, Action.ReadS2SKey);
+    }
+
+    async get_policy(user: UserAuthInfo, uuid: string): Promise<Policy> {
+        return this.policyDb.get_policy(uuid);
+    }
+
+    async create_policy(user: UserAuthInfo, policy: Policy): Promise<void> {
+        return this.policyDb.create_policy(policy);
+    }
+
+    async list_policies(user: UserAuthInfo, fields: any): Promise<Policy[]> {
+        return this.policyDb.list_policies(fields);
+    }
+
+    async delete_policy(user: UserAuthInfo, uuid: string): Promise<void> {
+        return this.policyDb.delete_policy(uuid);
     }
 }
