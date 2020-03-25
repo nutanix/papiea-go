@@ -1,18 +1,10 @@
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from aiohttp import ClientSession
 from multidict import CIMultiDictProxy
 
-from core import (
-    Action,
-    DataDescription,
-    Entity,
-    EntityReference,
-    Kind,
-    Secret,
-    Status,
-    Version,
-)
+from core import Action, Entity, EntityReference, Secret, Status, Version
+from python_sdk_exceptions import InvocationError
 
 
 class ProceduralCtx(object):
@@ -37,9 +29,13 @@ class ProceduralCtx(object):
     async def check_permission(
         self,
         entity_action: List[Tuple[Action, EntityReference]],
-        provider_prefix: str = self.provider_prefix,
-        provider_version: Version = self.provider_version,
+        provider_prefix: Optional[str] = None,
+        provider_version: Optional[Version] = None,
     ) -> bool:
+        if provider_prefix is None:
+            provider_prefix = self.provider_prefix
+        if provider_version is None:
+            provider_version = self.provider_version
         return await self.try_check(provider_prefix, provider_version, entity_action)
 
     async def try_check(

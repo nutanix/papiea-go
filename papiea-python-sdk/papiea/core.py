@@ -10,10 +10,8 @@ Entity = dict
 EntityReference = dict
 Action = str
 Status = Any
-
-
-class Kind(object):
-    pass
+Provider = dict
+Kind = dict
 
 
 class IntentfulExecutionStrategy(object):

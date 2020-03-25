@@ -16,7 +16,7 @@ class InvocationError(Exception):
         self.stack = stack
 
     @staticmethod
-    def from_error(e: Exception) -> InvocationError:
+    def from_error(e: Exception):
         return InvocationError(500, str(e), [e])
 
     def to_response(self) -> dict:
@@ -29,5 +29,5 @@ class InvocationError(Exception):
 
 class SecurityApiError(InvocationError):
     @staticmethod
-    def from_error(e: Exception, message: str) -> SecurityApiError:
+    def from_error(e: Exception, message: str):
         return SecurityApiError(500, message, [e])

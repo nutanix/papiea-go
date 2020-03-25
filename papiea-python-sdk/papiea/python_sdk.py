@@ -1,5 +1,5 @@
 import json
-from typing import Any, Callable, NoReturn, Optional
+from typing import Any, Callable, List, NoReturn, Optional
 
 from aiohttp import ClientSession, web
 
@@ -9,6 +9,7 @@ from core import (
     IntentfulExecutionStrategy,
     Kind,
     ProceduralExecutionStrategy,
+    Provider,
     S2S_Key,
     Secret,
     UserInfo,
@@ -63,7 +64,7 @@ class ProviderServerManager(object):
 
 
 class SecurityApi(object):
-    def __init__(self, provider: ProviderSdk, s2s_key: Secret):
+    def __init__(self, provider, s2s_key: Secret):
         self.provider = provider
         self.s2s_key = s2s_key
 
@@ -223,7 +224,7 @@ class ProviderSdk(object):
     def server(self):
         return self._server_manager.server
 
-    def new_kind(self, entity_description: DataDescription) -> KindBuilder:
+    def new_kind(self, entity_description: DataDescription):
         if len(entity_description) == 0:
             raise Exception("Wrong kind description specified")
         for name in entity_description:
@@ -246,7 +247,7 @@ class ProviderSdk(object):
             self._kind.append(the_kind)
             return kind_builder
 
-    def add_kind(self, kind: Kind) -> KindBuilder:
+    def add_kind(self, kind: Kind):
         if kind not in self._kind.indexOf(kind):
             self._kind.append(kind)
             kind_builder = KindBuilder(kind, self, self.allow_extra_props)
@@ -261,15 +262,15 @@ class ProviderSdk(object):
         except ValueError:
             return False
 
-    def version(self, version: Version) -> ProviderSdk:
+    def version(self, version: Version):
         self._version = version
         return self
 
-    def prefix(self, prefix: string) -> ProviderSdk:
+    def prefix(self, prefix: str):
         self._prefix = prefix
         return self
 
-    def metadata_extension(self, ext: DataDescription) -> ProviderSdk:
+    def metadata_extension(self, ext: DataDescription):
         self.meta_ext = ext
         return self
 
@@ -281,7 +282,7 @@ class ProviderSdk(object):
         input_desc: Any,
         output_desc: Any,
         handler: Callable[[ProceduralCtx, Any], Any],
-    ) -> ProviderSdk:
+    ):
         procedure_callback_url = self._server_manager.procedure_callback_url(name)
         callback_url = self._server_manager.callback_url()
         procedural_signature = {
@@ -354,14 +355,14 @@ class ProviderSdk(object):
         s2skey: Secret,
         public_host: Optional[str],
         public_port: Optional[int],
-        allow_extra_props: bool = false,
-    ) -> ProviderSdk:
+        allow_extra_props: bool = False,
+    ):
         server_manager = ProviderServerManager(public_host, public_port)
         return ProviderSdk(papiea_url, s2skey, server_manager, allow_extra_props)
 
     def secure_with(
         self, oauth_config: Any, casbin_model: str, casbin_initial_policy: str
-    ) -> ProviderSdk:
+    ):
         self._oauth2 = oauth_config
         self._authModel = casbin_model
         self._policy = casbin_initial_policy
@@ -384,7 +385,7 @@ class ProviderSdk(object):
 
 
 class KindBuilder(object):
-    def __init__(self, kind: Kind, provider: ProviderSdk, allow_extra_props: boolean):
+    def __init__(self, kind: Kind, provider: ProviderSdk, allow_extra_props: bool):
         self.kind = kind
         self.provider = provider
         self.allow_extra_props = allow_extra_props
@@ -407,7 +408,7 @@ class KindBuilder(object):
         input_desc: Any,
         output_desc: Any,
         handler: Callable[[ProceduralCtx, Entity, Any], Any],
-    ) -> KindBuilder:
+    ):
         procedure_callback_url = self.server_manager.procedure_callback_url(
             name, self.kind.name
         )
@@ -456,7 +457,7 @@ class KindBuilder(object):
         input_desc: Any,
         output_desc: Any,
         handler: Callable[[ProceduralCtx, Any], Any],
-    ) -> KindBuilder:
+    ):
         procedure_callback_url = self.server_manager.procedure_callback_url(
             name, self.kind.name
         )
@@ -497,7 +498,7 @@ class KindBuilder(object):
         sfs_signature: str,
         rbac: Any,
         handler: Callable[[IntentfulCtx, Entity, Any], Any],
-    ) -> KindBuilder:
+    ):
         procedure_callback_url = self.server_manager.procedure_callback_url(
             sfs_signature, self.kind.name
         )
@@ -561,7 +562,7 @@ class KindBuilder(object):
         input_desc: Any,
         output_desc: Any,
         handler: Callable[[ProceduralCtx, Any], Any],
-    ) -> KindBuilder:
+    ):
         name = "__create"
         self.kind_procedure(name, rbac, strategy, input_desc, output_desc, handler)
         return self
@@ -573,7 +574,7 @@ class KindBuilder(object):
         input_desc: Any,
         output_desc: Any,
         handler: Callable[[ProceduralCtx, Any], Any],
-    ) -> KindBuilder:
+    ):
         name = "__delete"
         self.kind_procedure(name, rbac, strategy, input_desc, output_desc, handler)
         return self
