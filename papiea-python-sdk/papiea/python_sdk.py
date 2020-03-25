@@ -1,7 +1,7 @@
 import json
 from typing import Any, Callable, List, NoReturn, Optional
 
-from aiohttp import ClientSession, web
+from aiohttp import ClientSession, ClientTimeout, web
 
 from core import (
     DataDescription,
@@ -120,14 +120,14 @@ class ApiInstance(object):
         self.base_url = base_url
         self.timeout = timeout
         self.headers = headers
-        self.session = ClientSession(timeout=self.timeout)
+        self.session = ClientSession(timeout=ClientTimeout(total=self.timeout))
 
     async def post(self, prefix: str, data: dict, headers: dict = {}) -> Any:
         new_headers = {}
         new_headers.update(self.headers)
         new_headers.update(headers)
         data_binary = json.dumps(data).encode("utf-8")
-        async with session.post(
+        async with self.session.post(
             self.base_url + "/" + prefix, data=data_binary, headers=new_headers
         ) as resp:
             res = await resp.text()
@@ -188,6 +188,9 @@ class ProviderSdk(object):
                 "Authorization": f"Bearer {self._s2skey}",
             },
         )
+        self._oauth2 = None
+        self._authModel = None
+        self._policy = None
 
     @property
     def provider(self) -> Provider:

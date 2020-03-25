@@ -1,0 +1,23 @@
+Location:
+  type: object
+  title: X/Y Location
+  description: Stores an XY location of something
+  x-papiea-entity: spec-only
+  required:
+    - x
+    - y
+  properties:
+    x:
+      type: number
+    y:
+      type: number
+    z:
+      type: number
+      x-papiea: status-only
+    v:
+      type: object
+      properties:
+        e:
+          type: number
+        d:
+          type: number
