@@ -1,7 +1,14 @@
-from typing import Optional, Any, List
+from typing import Any, List, Optional
+
 
 class InvocationError(Exception):
-    def __init__(self, status_code: int, message: str, errors: List[Any], stack: Optional[str] = None):
+    def __init__(
+        self,
+        status_code: int,
+        message: str,
+        errors: List[Any],
+        stack: Optional[str] = None,
+    ):
         super().__init__(message)
         self.status_code = status_code
         self.message = message
@@ -16,11 +23,11 @@ class InvocationError(Exception):
         return {
             "errors": self.errors,
             "message": self.message,
-            "stacktrace": self.stack
+            "stacktrace": self.stack,
         }
 
-class SecurityApiError(InvocationError):
 
+class SecurityApiError(InvocationError):
     @staticmethod
     def from_error(e: Exception, message: str) -> SecurityApiError:
         return SecurityApiError(500, message, [e])

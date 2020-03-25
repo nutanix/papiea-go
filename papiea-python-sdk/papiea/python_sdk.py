@@ -1,18 +1,65 @@
 import json
-from typing import Optional, Any, NoReturn, Callable
+from typing import Any, Callable, NoReturn, Optional
 
-from aiohttp import web, ClientSession
+from aiohttp import ClientSession, web
 
-from core import Secret, Version, Kind, DataDescription, ProceduralExecutionStrategy, UserInfo, S2S_Key
-from python_sdk_context import ProceduralCtx
+from core import (
+    DataDescription,
+    Entity,
+    IntentfulExecutionStrategy,
+    Kind,
+    ProceduralExecutionStrategy,
+    S2S_Key,
+    Secret,
+    UserInfo,
+    Version,
+)
+from python_sdk_context import IntentfulCtx, ProceduralCtx
 from python_sdk_exceptions import InvocationError, SecurityApiError
 
 ProviderPower = str
 
-class ProviderServerManager(object):
-    pass
 
-    # TODO
+class ProviderServerManager(object):
+    def __init__(self, public_host: str = "127.0.0.1", public_port: int = 9000):
+        self.public_host = public_host
+        self.public_port = public_port
+        self.should_run = False
+        self.app = web.Application()
+
+    def register_handler(
+        self, route: str, handler: Callable[[web.Request], web.Response]
+    ) -> NoReturn:
+        if not self.should_run:
+            self.should_run = True
+        self.app.add_routes([web.post(route, handler)])
+
+    def register_healthcheck(self) -> NoReturn:
+        if not self.should_run:
+            self.should_run = True
+
+        async def healthcheck_callback_fn(req):
+            return web.json_response({"status": "Available"}, status=200)
+
+        self.app.add_routes([web.get("healthcheck", healthcheck_callback_fn)])
+
+    def start_server(self) -> NoReturn:
+        if self.should_run:
+            web.run_app(self.app)
+
+    def callback_url(self, kind: Optional[str]) -> str:
+        if kind is not None:
+            return f"http://{ self.public_host }:{ self.public_port }/{ kind }"
+        else:
+            return f"http://{ self.public_host }:{ self.public_port }/"
+
+    def procedure_callback_url(self, procedure_name: str, kind: Optional[str]) -> str:
+        if kind is not None:
+            return f"http://{ self.public_host }:{ self.public_port }/{ kind }/{ procedure_name }"
+        else:
+            return (
+                f"http://{ self.public_host }:{ self.public_port }/{ procedure_name }"
+            )
 
 
 class SecurityApi(object):
@@ -24,7 +71,10 @@ class SecurityApi(object):
         "Returns the user-info of user with s2skey or the current user"
         try:
             url = f"{self.provider.get_prefix()}/{self.provider.get_version()}"
-            res = await self.provider.provider_api.get(f"{url}/auth/user_info", headers={"Authorization": f"Bearer {self.s2s_key}"})
+            res = await self.provider.provider_api.get(
+                f"{url}/auth/user_info",
+                headers={"Authorization": f"Bearer {self.s2s_key}"},
+            )
             return res["data"]
         except Exception as e:
             raise SecurityApiError.from_error(e, "Cannot get user info")
@@ -32,16 +82,21 @@ class SecurityApi(object):
     async def list_keys(self) -> List[S2S_Key]:
         try:
             url = f"{self.provider.get_prefix()}/{self.provider.get_version()}"
-            res = await self.provider.provider_api.get(f"{url}/s2skey", headers={"Authorization": f"Bearer {self.s2s_key}"})
+            res = await self.provider.provider_api.get(
+                f"{url}/s2skey", headers={"Authorization": f"Bearer {self.s2s_key}"}
+            )
             return res["data"]
         except Exception as e:
             raise SecurityApiError.from_error(e, "Cannot list s2s keys")
 
-
     async def create_key(self, new_key: S2S_Key) -> S2S_Key:
         try:
             url = f"{self.provider.get_prefix()}/{self.provider.get_version()}"
-            res = await self.provider.provider_api.post(f"{url}/s2skey", data=new_key, headers={"Authorization": f"Bearer {self.s2s_key}"})
+            res = await self.provider.provider_api.post(
+                f"{url}/s2skey",
+                data=new_key,
+                headers={"Authorization": f"Bearer {self.s2s_key}"},
+            )
             return res["data"]
         except Exception as e:
             raise SecurityApiError.from_error(e, "Cannot create s2s key")
@@ -49,19 +104,14 @@ class SecurityApi(object):
     async def deactivate_key(self, key_to_deactivate: str) -> Any:
         try:
             url = f"{self.provider.get_prefix()}/{self.provider.get_version()}"
-            res = await self.provider.provider_api.post(f"{url}/s2skey", data={"key": key_to_deactivate, "active":False}, headers={"Authorization": f"Bearer {self.s2s_key}"})
+            res = await self.provider.provider_api.post(
+                f"{url}/s2skey",
+                data={"key": key_to_deactivate, "active": False},
+                headers={"Authorization": f"Bearer {self.s2s_key}"},
+            )
             return res["data"]
         except Exception as e:
             raise SecurityApiError.from_error(e, "Cannot deactivate s2s key")
-
-
-class KindBuilder(object):
-    def __init__(self, kind: Kind, provider: ProviderSdk, allow_extra_props: boolean):
-        self.kind = kind
-        self.provider = provider
-        self.allow_extra_props = allow_extra_props
-    
-    # TODO
 
 
 class ApiInstance(object):
@@ -71,32 +121,50 @@ class ApiInstance(object):
         self.headers = headers
         self.session = ClientSession(timeout=self.timeout)
 
-    async def post(self, prefix: str, data: dict, headers: dict = {}) -> str:
+    async def post(self, prefix: str, data: dict, headers: dict = {}) -> Any:
         new_headers = {}
         new_headers.update(self.headers)
         new_headers.update(headers)
         data_binary = json.dumps(data).encode("utf-8")
-        async with session.post(self.base_url + "/" + prefix,
-                                data=data_binary,
-                                headers=new_headers) as resp:
+        async with session.post(
+            self.base_url + "/" + prefix, data=data_binary, headers=new_headers
+        ) as resp:
             res = await resp.text()
-        return res
+        return json.loads(res)
 
-    async def get(self, prefix: str, headers: dict = {}) -> str:
+    async def patch(self, prefix: str, data: dict, headers: dict = {}) -> Any:
         new_headers = {}
         new_headers.update(self.headers)
         new_headers.update(headers)
-        async with session.get(self.base_url + "/" + prefix,
-                                headers=new_headers) as resp:
+        data_binary = json.dumps(data).encode("utf-8")
+        async with session.patch(
+            self.base_url + "/" + prefix, data=data_binary, headers=new_headers
+        ) as resp:
             res = await resp.text()
-        return res
+        return json.loads(res)
+
+    async def get(self, prefix: str, headers: dict = {}) -> Any:
+        new_headers = {}
+        new_headers.update(self.headers)
+        new_headers.update(headers)
+        async with session.get(
+            self.base_url + "/" + prefix, headers=new_headers
+        ) as resp:
+            res = await resp.text()
+        return json.loads(res)
 
     async def close(self):
         await self.session.close()
 
 
 class ProviderSdk(object):
-    def __init__(self, papiea_url: str, s2skey: Secret, server_manager: Optional[ProviderServerManager] = None, allow_extra_props: bool = False):
+    def __init__(
+        self,
+        papiea_url: str,
+        s2skey: Secret,
+        server_manager: Optional[ProviderServerManager] = None,
+        allow_extra_props: bool = False,
+    ):
         self._version = None
         self._prefix = None
         self._kind = []
@@ -111,10 +179,14 @@ class ProviderSdk(object):
         self.meta_ext = {}
         self.allow_extra_props = allow_extra_props
         self._security_api = SecurityApi(self, s2skey)
-        self._provider_api = ApiInstance(self.provider_url, 5000, {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self._s2skey}"
-        })
+        self._provider_api = ApiInstance(
+            self.provider_url,
+            5000,
+            {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self._s2skey}",
+            },
+        )
 
     @property
     def provider(self) -> Provider:
@@ -156,7 +228,9 @@ class ProviderSdk(object):
             raise Exception("Wrong kind description specified")
         for name in entity_description:
             if "x-papiea-entity" not in entity_description[name]:
-                raise Exception(f"Entity not a papiea entity. Please make sure you have 'x-papiea-entity' property for '{name}'")
+                raise Exception(
+                    f"Entity not a papiea entity. Please make sure you have 'x-papiea-entity' property for '{name}'"
+                )
             the_kind = {
                 "name": name,
                 "name_plural": name + "s",
@@ -166,12 +240,11 @@ class ProviderSdk(object):
                 "kind_procedures": {},
                 "entity_procedures": {},
                 "intentful_behaviour": entity_description[name]["x-papiea-entity"],
-                "differ": None
+                "differ": None,
             }
             kind_builder = KindBuilder(the_kind, self, self.allow_extra_props)
-            self._kind.push(the_kind)
+            self._kind.append(the_kind)
             return kind_builder
-
 
     def add_kind(self, kind: Kind) -> KindBuilder:
         if kind not in self._kind.indexOf(kind):
@@ -200,11 +273,15 @@ class ProviderSdk(object):
         self.meta_ext = ext
         return self
 
-    def provider_procedure(self, name: str, rbac: Any,
-                       strategy: ProceduralExecutionStrategy,
-                       input_desc: Any,
-                       output_desc: Any,
-                       handler: Callable[[ProceduralCtx, Any], Any]) -> ProviderSdk:
+    def provider_procedure(
+        self,
+        name: str,
+        rbac: Any,
+        strategy: ProceduralExecutionStrategy,
+        input_desc: Any,
+        output_desc: Any,
+        handler: Callable[[ProceduralCtx, Any], Any],
+    ) -> ProviderSdk:
         procedure_callback_url = self._server_manager.procedure_callback_url(name)
         callback_url = self._server_manager.callback_url()
         procedural_signature = {
@@ -213,7 +290,7 @@ class ProviderSdk(object):
             "result": output_desc,
             "execution_strategy": strategy,
             "procedure_callback": procedure_callback_url,
-            "base_callback": callback_url
+            "base_callback": callback_url,
         }
         self._procedures[name] = procedural_signature
         prefix = self.get_prefix()
@@ -222,7 +299,9 @@ class ProviderSdk(object):
         async def procedure_callback_fn(req):
             try:
                 body_json = await req.json()
-                result = await handler(ProceduralCtx(self, prefix, version, req.headers), body_json)
+                result = await handler(
+                    ProceduralCtx(self, prefix, version, req.headers), body_json
+                )
                 return web.json_response(result)
             except InvocationError as e:
                 return web.json_response(e.to_response(), status=e.status_code)
@@ -230,18 +309,22 @@ class ProviderSdk(object):
                 e = InvocationError.from_error(e)
                 return web.json_response(e.to_response(), status=e.status_code)
 
-        self._server_manager.register_handler("/" + name, procedure_callback_fn);
+        self._server_manager.register_handler("/" + name, procedure_callback_fn)
         return self
 
     async def register(self):
-        if self._prefix is not None and self._version is not None and len(self._kind) > 0:
+        if (
+            self._prefix is not None
+            and self._version is not None
+            and len(self._kind) > 0
+        ):
             self._provider = {
                 "kinds": self._kind,
                 "version": self._version,
                 "prefix": self._prefix,
                 "procedures": self._procedures,
                 "extension_structure": self.meta_ext,
-                "allowExtraProps": self.allow_extra_props
+                "allowExtraProps": self.allow_extra_props,
             }
             if self._policy is not None:
                 self._provider["policy"] = self._policy
@@ -266,11 +349,19 @@ class ProviderSdk(object):
         raise Exception(f"Malformed provider description. Missing: { missing_field }")
 
     @staticmethod
-    def create_provider(papiea_url: str, s2skey: Secret, public_host: Optional[str], public_port: Optional[int], allow_extra_props: bool = false) -> ProviderSdk:
+    def create_provider(
+        papiea_url: str,
+        s2skey: Secret,
+        public_host: Optional[str],
+        public_port: Optional[int],
+        allow_extra_props: bool = false,
+    ) -> ProviderSdk:
         server_manager = ProviderServerManager(public_host, public_port)
         return ProviderSdk(papiea_url, s2skey, server_manager, allow_extra_props)
 
-    def secure_with(self, oauth_config: Any, casbin_model: str, casbin_initial_policy: str) -> ProviderSdk:
+    def secure_with(
+        self, oauth_config: Any, casbin_model: str, casbin_initial_policy: str
+    ) -> ProviderSdk:
         self._oauth2 = oauth_config
         self._authModel = casbin_model
         self._policy = casbin_initial_policy
@@ -290,3 +381,199 @@ class ProviderSdk(object):
     @property
     def s2s_key(self) -> Secret:
         return self._s2skey
+
+
+class KindBuilder(object):
+    def __init__(self, kind: Kind, provider: ProviderSdk, allow_extra_props: boolean):
+        self.kind = kind
+        self.provider = provider
+        self.allow_extra_props = allow_extra_props
+
+        self.server_manager = provider.server_manager
+        self.entity_url = provider.entity_url
+        self.provider_url = provider.provider_url
+
+    def get_prefix(self) -> str:
+        return self.provider.get_prefix()
+
+    def get_version(self) -> str:
+        return self.provider.get_version()
+
+    def entity_procedure(
+        self,
+        name: str,
+        rbac: Any,
+        strategy: ProceduralExecutionStrategy,
+        input_desc: Any,
+        output_desc: Any,
+        handler: Callable[[ProceduralCtx, Entity, Any], Any],
+    ) -> KindBuilder:
+        procedure_callback_url = self.server_manager.procedure_callback_url(
+            name, self.kind.name
+        )
+        callback_url = self.server_manager.callback_url(self.kind.name)
+        procedural_signature = {
+            "name": name,
+            "argument": input_desc,
+            "result": output_desc,
+            "execution_strategy": strategy,
+            "procedure_callback": procedure_callback_url,
+            "base_callback": callback_url,
+        }
+        self.kind.entity_procedures[name] = procedural_signature
+        prefix = self.get_prefix()
+        version = self.get_version()
+
+        async def procedure_callback_fn(req):
+            try:
+                body_json = await req.json()
+                result = await handler(
+                    ProceduralCtx(self.provider, prefix, version, req.headers),
+                    {
+                        "metadata": body_json["metadata"],
+                        "spec": body_json["spec"],
+                        "status": body_json["status"],
+                    },
+                    body_json["input"],
+                )
+                return web.json_response(result)
+            except InvocationError as e:
+                return web.json_response(e.to_response(), status=e.status_code)
+            except Exception as e:
+                e = InvocationError.from_error(e)
+                return web.json_response(e.to_response(), status=e.status_code)
+
+        self.server_manager.register_handler(
+            f"/{self.kind.name}/{name}", procedure_callback_fn
+        )
+        return self
+
+    def kind_procedure(
+        self,
+        name: str,
+        rbac: Any,
+        strategy: ProceduralExecutionStrategy,
+        input_desc: Any,
+        output_desc: Any,
+        handler: Callable[[ProceduralCtx, Any], Any],
+    ) -> KindBuilder:
+        procedure_callback_url = self.server_manager.procedure_callback_url(
+            name, self.kind.name
+        )
+        callback_url = self.server_manager.callback_url(self.kind.name)
+        procedural_signature = {
+            "name": name,
+            "argument": input_desc,
+            "result": output_desc,
+            "execution_strategy": strategy,
+            "procedure_callback": procedure_callback_url,
+            "base_callback": callback_url,
+        }
+        self.kind.kind_procedures[name] = procedural_signature
+        prefix = self.get_prefix()
+        version = self.get_version()
+
+        async def procedure_callback_fn(req):
+            try:
+                body_json = await req.json()
+                result = await handler(
+                    ProceduralCtx(self.provider, prefix, version, req.headers),
+                    body_json["input"],
+                )
+                return web.json_response(result)
+            except InvocationError as e:
+                return web.json_response(e.to_response(), status=e.status_code)
+            except Exception as e:
+                e = InvocationError.from_error(e)
+                return web.json_response(e.to_response(), status=e.status_code)
+
+        self.server_manager.register_handler(
+            f"/{self.kind.name}/{name}", procedure_callback_fn
+        )
+        return self
+
+    def on(
+        self,
+        sfs_signature: str,
+        rbac: Any,
+        handler: Callable[[IntentfulCtx, Entity, Any], Any],
+    ) -> KindBuilder:
+        procedure_callback_url = self.server_manager.procedure_callback_url(
+            sfs_signature, self.kind.name
+        )
+        callback_url = self.server_manager.callback_url(self.kind.name)
+        self.kind.intentful_signatures.append(
+            {
+                "signature": sfs_signature,
+                "name": sfs_signature,
+                "argument": {
+                    "IntentfulInput": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "keys": {"type": "object"},
+                                "key": {"type": "string"},
+                                "spec-val": {"type": "array"},
+                                "status-val": {"type": "array"},
+                            },
+                        },
+                    }
+                },
+                "result": {},
+                "execution_strategy": IntentfulExecutionStrategy.Basic,
+                "procedure_callback": procedure_callback_url,
+                "base_callback": callback_url,
+            }
+        )
+        prefix = self.get_prefix()
+        version = self.get_version()
+
+        async def procedure_callback_fn(req):
+            try:
+                body_json = await req.json()
+                result = await handler(
+                    ProceduralCtx(self.provider, prefix, version, req.headers),
+                    {
+                        "metadata": body_json["metadata"],
+                        "spec": body_json["spec"],
+                        "status": body_json["status"],
+                    },
+                    body_json["input"],
+                )
+                return web.json_response(result)
+            except InvocationError as e:
+                return web.json_response(e.to_response(), status=e.status_code)
+            except Exception as e:
+                e = InvocationError.from_error(e)
+                return web.json_response(e.to_response(), status=e.status_code)
+
+        self.server_manager.register_handler(
+            f"/{self.kind.name}/{sfs_signature}", procedure_callback_fn
+        )
+        self.server_manager.register_healthcheck()
+        return self
+
+    def on_create(
+        self,
+        rbac: Any,
+        strategy: ProceduralExecutionStrategy,
+        input_desc: Any,
+        output_desc: Any,
+        handler: Callable[[ProceduralCtx, Any], Any],
+    ) -> KindBuilder:
+        name = "__create"
+        self.kind_procedure(name, rbac, strategy, input_desc, output_desc, handler)
+        return self
+
+    def on_delete(
+        self,
+        rbac: Any,
+        strategy: ProceduralExecutionStrategy,
+        input_desc: Any,
+        output_desc: Any,
+        handler: Callable[[ProceduralCtx, Any], Any],
+    ) -> KindBuilder:
+        name = "__delete"
+        self.kind_procedure(name, rbac, strategy, input_desc, output_desc, handler)
+        return self
