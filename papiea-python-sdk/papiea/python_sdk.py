@@ -1,5 +1,6 @@
 import json
-from typing import Any, Callable, List, NoReturn, Optional
+from types import TracebackType
+from typing import Any, Callable, List, NoReturn, Optional, Type
 
 from aiohttp import ClientSession, ClientTimeout, web
 
@@ -191,6 +192,17 @@ class ProviderSdk(object):
         self._oauth2 = None
         self._authModel = None
         self._policy = None
+
+    async def __aenter__(self) -> "ProviderSdk":
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
+        await self._provider_api.close()
 
     @property
     def provider(self) -> Provider:
