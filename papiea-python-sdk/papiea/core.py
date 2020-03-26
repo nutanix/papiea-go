@@ -1,20 +1,33 @@
 from typing import Any
 
+
+class AttributeDict(dict):
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+
+
 Version = str
 Secret = str
 DataDescription = Any
 ProceduralExecutionStrategy = str
-UserInfo = dict
-S2S_Key = dict
-Entity = dict
-EntityReference = dict
+UserInfo = AttributeDict
+S2S_Key = AttributeDict
+Entity = AttributeDict
+EntityReference = AttributeDict
 Action = str
 Status = Any
-Provider = dict
-Kind = dict
+Provider = AttributeDict
+Kind = AttributeDict
+IntentfulExecutionStrategy = str
+ProviderPower = str
+Key = str
 
 
-class IntentfulExecutionStrategy(object):
+class ProceduralExecutionStrategies(object):
+    HaltIntentful = "Halt_Intentful"
+
+
+class IntentfulExecutionStrategies(object):
     Basic = "basic"
     SpecOnly = "spec-only"
     Differ = "differ"

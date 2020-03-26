@@ -5,21 +5,21 @@ from typing import Any, Callable, List, NoReturn, Optional, Type
 from aiohttp import ClientSession, ClientTimeout, web
 
 from core import (
+    AttributeDict,
     DataDescription,
     Entity,
-    IntentfulExecutionStrategy,
+    IntentfulExecutionStrategies,
     Kind,
     ProceduralExecutionStrategy,
     Provider,
+    ProviderPower,
     S2S_Key,
     Secret,
     UserInfo,
-    Version,
+    Version
 )
 from python_sdk_context import IntentfulCtx, ProceduralCtx
 from python_sdk_exceptions import InvocationError, SecurityApiError
-
-ProviderPower = str
 
 
 class ProviderServerManager(object):
@@ -28,6 +28,7 @@ class ProviderServerManager(object):
         self.public_port = public_port
         self.should_run = False
         self.app = web.Application()
+        self._runner = None
 
     def register_handler(
         self, route: str, handler: Callable[[web.Request], web.Response]
@@ -45,9 +46,17 @@ class ProviderServerManager(object):
 
         self.app.add_routes([web.get("healthcheck", healthcheck_callback_fn)])
 
-    def start_server(self) -> NoReturn:
+    async def start_server(self) -> NoReturn:
         if self.should_run:
-            web.run_app(self.app)
+            runner = web.AppRunner(self.app)
+            await runner.setup()
+            self._runner = runner
+            site = web.TCPSite(runner, self.public_host, self.public_port)
+            await site.start()
+
+    async def close(self) -> NoReturn:
+        if self._runner is not None:
+            await self._runner.cleanup()
 
     def callback_url(self, kind: Optional[str]) -> str:
         if kind is not None:
@@ -77,7 +86,7 @@ class SecurityApi(object):
                 f"{url}/auth/user_info",
                 headers={"Authorization": f"Bearer {self.s2s_key}"},
             )
-            return res["data"]
+            return res
         except Exception as e:
             raise SecurityApiError.from_error(e, "Cannot get user info")
 
@@ -87,7 +96,7 @@ class SecurityApi(object):
             res = await self.provider.provider_api.get(
                 f"{url}/s2skey", headers={"Authorization": f"Bearer {self.s2s_key}"}
             )
-            return res["data"]
+            return res
         except Exception as e:
             raise SecurityApiError.from_error(e, "Cannot list s2s keys")
 
@@ -99,7 +108,7 @@ class SecurityApi(object):
                 data=new_key,
                 headers={"Authorization": f"Bearer {self.s2s_key}"},
             )
-            return res["data"]
+            return res
         except Exception as e:
             raise SecurityApiError.from_error(e, "Cannot create s2s key")
 
@@ -111,17 +120,25 @@ class SecurityApi(object):
                 data={"key": key_to_deactivate, "active": False},
                 headers={"Authorization": f"Bearer {self.s2s_key}"},
             )
-            return res["data"]
+            return res
         except Exception as e:
             raise SecurityApiError.from_error(e, "Cannot deactivate s2s key")
 
 
 class ApiInstance(object):
-    def __init__(self, base_url: str, timeout: int, headers: dict):
+    def __init__(
+        self, base_url: str, timeout: Optional[int] = None, headers: dict = {}
+    ):
         self.base_url = base_url
         self.timeout = timeout
         self.headers = headers
         self.session = ClientSession(timeout=ClientTimeout(total=self.timeout))
+
+    def json_loads_attrs(self, s: str) -> Any:
+        def object_hook(obj):
+            return AttributeDict(obj)
+
+        return json.loads(s, object_hook=object_hook)
 
     async def post(self, prefix: str, data: dict, headers: dict = {}) -> Any:
         new_headers = {}
@@ -132,28 +149,34 @@ class ApiInstance(object):
             self.base_url + "/" + prefix, data=data_binary, headers=new_headers
         ) as resp:
             res = await resp.text()
-        return json.loads(res)
+        if res == "":
+            return None
+        return self.json_loads_attrs(res)
 
     async def patch(self, prefix: str, data: dict, headers: dict = {}) -> Any:
         new_headers = {}
         new_headers.update(self.headers)
         new_headers.update(headers)
         data_binary = json.dumps(data).encode("utf-8")
-        async with session.patch(
+        async with self.session.patch(
             self.base_url + "/" + prefix, data=data_binary, headers=new_headers
         ) as resp:
             res = await resp.text()
-        return json.loads(res)
+        if res == "":
+            return None
+        return self.json_loads_attrs(res)
 
     async def get(self, prefix: str, headers: dict = {}) -> Any:
         new_headers = {}
         new_headers.update(self.headers)
         new_headers.update(headers)
-        async with session.get(
+        async with self.session.get(
             self.base_url + "/" + prefix, headers=new_headers
         ) as resp:
             res = await resp.text()
-        return json.loads(res)
+        if res == "":
+            return None
+        return self.json_loads_attrs(res)
 
     async def close(self):
         await self.session.close()
@@ -236,10 +259,10 @@ class ProviderSdk(object):
             raise Exception("Provider version is not set")
 
     @property
-    def server(self):
-        return self._server_manager.server
+    def server(self) -> ProviderServerManager:
+        return self._server_manager
 
-    def new_kind(self, entity_description: DataDescription):
+    def new_kind(self, entity_description: DataDescription) -> "KindBuilder":
         if len(entity_description) == 0:
             raise Exception("Wrong kind description specified")
         for name in entity_description:
@@ -247,17 +270,19 @@ class ProviderSdk(object):
                 raise Exception(
                     f"Entity not a papiea entity. Please make sure you have 'x-papiea-entity' property for '{name}'"
                 )
-            the_kind = {
-                "name": name,
-                "name_plural": name + "s",
-                "kind_structure": entity_description,
-                "intentful_signatures": [],
-                "dependency_tree": {},
-                "kind_procedures": {},
-                "entity_procedures": {},
-                "intentful_behaviour": entity_description[name]["x-papiea-entity"],
-                "differ": None,
-            }
+            the_kind = Kind(
+                {
+                    "name": name,
+                    "name_plural": name + "s",
+                    "kind_structure": entity_description,
+                    "intentful_signatures": [],
+                    "dependency_tree": {},
+                    "kind_procedures": {},
+                    "entity_procedures": {},
+                    "intentful_behaviour": entity_description[name]["x-papiea-entity"],
+                    "differ": None,
+                }
+            )
             kind_builder = KindBuilder(the_kind, self, self.allow_extra_props)
             self._kind.append(the_kind)
             return kind_builder
@@ -292,7 +317,6 @@ class ProviderSdk(object):
     def provider_procedure(
         self,
         name: str,
-        rbac: Any,
         strategy: ProceduralExecutionStrategy,
         input_desc: Any,
         output_desc: Any,
@@ -349,7 +373,7 @@ class ProviderSdk(object):
             if self._authModel is not None:
                 self._provider["authModel"] = self._authModel
             await self._provider_api.post("/", self._provider)
-            self._server_manager.start_server()
+            await self._server_manager.start_server()
         elif self._prefix is None:
             ProviderSdk._provider_description_error("prefix")
         elif self._version is None:
@@ -418,7 +442,6 @@ class KindBuilder(object):
     def entity_procedure(
         self,
         name: str,
-        rbac: Any,
         strategy: ProceduralExecutionStrategy,
         input_desc: Any,
         output_desc: Any,
@@ -467,7 +490,6 @@ class KindBuilder(object):
     def kind_procedure(
         self,
         name: str,
-        rbac: Any,
         strategy: ProceduralExecutionStrategy,
         input_desc: Any,
         output_desc: Any,
@@ -509,10 +531,7 @@ class KindBuilder(object):
         return self
 
     def on(
-        self,
-        sfs_signature: str,
-        rbac: Any,
-        handler: Callable[[IntentfulCtx, Entity, Any], Any],
+        self, sfs_signature: str, handler: Callable[[IntentfulCtx, Entity, Any], Any],
     ):
         procedure_callback_url = self.server_manager.procedure_callback_url(
             sfs_signature, self.kind.name
@@ -537,7 +556,7 @@ class KindBuilder(object):
                     }
                 },
                 "result": {},
-                "execution_strategy": IntentfulExecutionStrategy.Basic,
+                "execution_strategy": IntentfulExecutionStrategies.Basic,
                 "procedure_callback": procedure_callback_url,
                 "base_callback": callback_url,
             }
@@ -572,24 +591,22 @@ class KindBuilder(object):
 
     def on_create(
         self,
-        rbac: Any,
         strategy: ProceduralExecutionStrategy,
         input_desc: Any,
         output_desc: Any,
         handler: Callable[[ProceduralCtx, Any], Any],
     ):
         name = "__create"
-        self.kind_procedure(name, rbac, strategy, input_desc, output_desc, handler)
+        self.kind_procedure(name, strategy, input_desc, output_desc, handler)
         return self
 
     def on_delete(
         self,
-        rbac: Any,
         strategy: ProceduralExecutionStrategy,
         input_desc: Any,
         output_desc: Any,
         handler: Callable[[ProceduralCtx, Any], Any],
     ):
         name = "__delete"
-        self.kind_procedure(name, rbac, strategy, input_desc, output_desc, handler)
+        self.kind_procedure(name, strategy, input_desc, output_desc, handler)
         return self
