@@ -20,10 +20,30 @@ logging.basicConfig(
 
 PAPIEA_URL = os.getenv("PAPIEA_URL", "http://127.0.0.1:3333")
 PAPIEA_ADMIN_S2S_KEY = os.getenv("PAPIEA_ADMIN_S2S_KEY", "")
-PROVIDER_HOST = "127.0.0.1"
+PROVIDER_HOST = os.getenv("PROVIDER_HOST", "example-provider")
 PROVIDER_PORT = 9000
 PROVIDER_VERSION = "0.1.0"
 PROVIDER_ADMIN_S2S_KEY = "Sa8xaic9"
+
+
+def wait_port_is_open(url):
+    import socket
+    import time
+    from urllib.parse import urlparse
+
+    urlparts = urlparse(url).netloc.split(":")
+    host = urlparts[0]
+    port = int(urlparts[1])
+    while True:
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            result = sock.connect_ex((host, port))
+            sock.close()
+            if result == 0:
+                return
+        except socket.gaierror:
+            pass
+        time.sleep(1)
 
 
 def load_yaml_from_file(filename):
@@ -98,7 +118,7 @@ async def move_x(ctx, entity, input):
             },
         ) as resp:
             res = await resp.text()
-            return json.loads(res)["data"]["spec"]
+            return entity.spec
 
 
 async def main():
@@ -125,9 +145,6 @@ async def main():
         await sdk.register()
         user_s2s_key = await create_user_s2s_key(sdk)
         server = sdk.server
-
-    # while True:
-    #     await asyncio.sleep(300)
 
     async with ClientSession() as session:
         location_entity_base_url = (
@@ -170,8 +187,13 @@ async def main():
             res = await resp.text()
             logger.debug(f"Updated entity {res}")
 
+    while True:
+        # Serve provider procedures forever
+        await asyncio.sleep(300)
+
     await server.close()
 
 
 if __name__ == "__main__":
+    wait_port_is_open(PAPIEA_URL)
     asyncio.run(main())

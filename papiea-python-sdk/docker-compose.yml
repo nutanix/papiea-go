@@ -1,6 +1,14 @@
 version: '3.5'
 services:
-    
+
+  example-provider:
+    build: .
+    environment:
+      - PAPIEA_ADMIN_S2S_KEY=foshoh2A
+      - PAPIEA_URL=http://papiea:3000
+    depends_on: 
+      - papiea
+
   papiea:
     image: nutanix-docker.jfrog.io/papiea:904
     depends_on:
@@ -8,8 +16,6 @@ services:
     environment:
       - PAPIEA_ADMIN_S2S_KEY=foshoh2A
       - PAPIEA_PUBLIC_URL=http://127.0.0.1:3333
-    expose:
-      - "3000"
     ports:
       - "3333:3000"
 

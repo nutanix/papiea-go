@@ -16,7 +16,7 @@ from core import (
     S2S_Key,
     Secret,
     UserInfo,
-    Version
+    Version,
 )
 from python_sdk_context import IntentfulCtx, ProceduralCtx
 from python_sdk_exceptions import InvocationError, SecurityApiError
@@ -125,6 +125,13 @@ class SecurityApi(object):
             raise SecurityApiError.from_error(e, "Cannot deactivate s2s key")
 
 
+def json_loads_attrs(s: str) -> Any:
+    def object_hook(obj):
+        return AttributeDict(obj)
+
+    return json.loads(s, object_hook=object_hook)
+
+
 class ApiInstance(object):
     def __init__(
         self, base_url: str, timeout: Optional[int] = None, headers: dict = {}
@@ -133,12 +140,6 @@ class ApiInstance(object):
         self.timeout = timeout
         self.headers = headers
         self.session = ClientSession(timeout=ClientTimeout(total=self.timeout))
-
-    def json_loads_attrs(self, s: str) -> Any:
-        def object_hook(obj):
-            return AttributeDict(obj)
-
-        return json.loads(s, object_hook=object_hook)
 
     async def post(self, prefix: str, data: dict, headers: dict = {}) -> Any:
         new_headers = {}
@@ -151,7 +152,7 @@ class ApiInstance(object):
             res = await resp.text()
         if res == "":
             return None
-        return self.json_loads_attrs(res)
+        return json_loads_attrs(res)
 
     async def patch(self, prefix: str, data: dict, headers: dict = {}) -> Any:
         new_headers = {}
@@ -164,7 +165,7 @@ class ApiInstance(object):
             res = await resp.text()
         if res == "":
             return None
-        return self.json_loads_attrs(res)
+        return json_loads_attrs(res)
 
     async def get(self, prefix: str, headers: dict = {}) -> Any:
         new_headers = {}
@@ -176,7 +177,7 @@ class ApiInstance(object):
             res = await resp.text()
         if res == "":
             return None
-        return self.json_loads_attrs(res)
+        return json_loads_attrs(res)
 
     async def close(self):
         await self.session.close()
@@ -338,9 +339,9 @@ class ProviderSdk(object):
 
         async def procedure_callback_fn(req):
             try:
-                body_json = await req.json()
+                body_obj = json_loads_attrs(await req.text())
                 result = await handler(
-                    ProceduralCtx(self, prefix, version, req.headers), body_json
+                    ProceduralCtx(self, prefix, version, req.headers), body_obj
                 )
                 return web.json_response(result)
             except InvocationError as e:
@@ -465,15 +466,17 @@ class KindBuilder(object):
 
         async def procedure_callback_fn(req):
             try:
-                body_json = await req.json()
+                body_obj = json_loads_attrs(await req.text())
                 result = await handler(
                     ProceduralCtx(self.provider, prefix, version, req.headers),
-                    {
-                        "metadata": body_json["metadata"],
-                        "spec": body_json["spec"],
-                        "status": body_json["status"],
-                    },
-                    body_json["input"],
+                    Entity(
+                        {
+                            "metadata": body_obj.metadata,
+                            "spec": body_obj.spec,
+                            "status": body_obj.status,
+                        }
+                    ),
+                    body_obj.input,
                 )
                 return web.json_response(result)
             except InvocationError as e:
@@ -513,10 +516,10 @@ class KindBuilder(object):
 
         async def procedure_callback_fn(req):
             try:
-                body_json = await req.json()
+                body_obj = json_loads_attrs(await req.text())
                 result = await handler(
                     ProceduralCtx(self.provider, prefix, version, req.headers),
-                    body_json["input"],
+                    body_obj.input,
                 )
                 return web.json_response(result)
             except InvocationError as e:
@@ -566,15 +569,17 @@ class KindBuilder(object):
 
         async def procedure_callback_fn(req):
             try:
-                body_json = await req.json()
+                body_obj = json_loads_attrs(await req.text())
                 result = await handler(
                     ProceduralCtx(self.provider, prefix, version, req.headers),
-                    {
-                        "metadata": body_json["metadata"],
-                        "spec": body_json["spec"],
-                        "status": body_json["status"],
-                    },
-                    body_json["input"],
+                    Entity(
+                        {
+                            "metadata": body_obj.metadata,
+                            "spec": body_obj.spec,
+                            "status": body_obj.status,
+                        }
+                    ),
+                    body_obj.input,
                 )
                 return web.json_response(result)
             except InvocationError as e:
