@@ -9,8 +9,10 @@ from core import (
     DataDescription,
     Entity,
     IntentfulExecutionStrategies,
+    IntentfulSignature,
     Kind,
     ProceduralExecutionStrategy,
+    ProceduralSignature,
     Provider,
     ProviderPower,
     S2S_Key,
@@ -272,17 +274,15 @@ class ProviderSdk(object):
                     f"Entity not a papiea entity. Please make sure you have 'x-papiea-entity' property for '{name}'"
                 )
             the_kind = Kind(
-                {
-                    "name": name,
-                    "name_plural": name + "s",
-                    "kind_structure": entity_description,
-                    "intentful_signatures": [],
-                    "dependency_tree": {},
-                    "kind_procedures": {},
-                    "entity_procedures": {},
-                    "intentful_behaviour": entity_description[name]["x-papiea-entity"],
-                    "differ": None,
-                }
+                name=name,
+                name_plural=name + "s",
+                kind_structure=entity_description,
+                intentful_signatures=[],
+                dependency_tree={},
+                kind_procedures={},
+                entity_procedures={},
+                intentful_behaviour=entity_description[name]["x-papiea-entity"],
+                differ=None,
             )
             kind_builder = KindBuilder(the_kind, self, self.allow_extra_props)
             self._kind.append(the_kind)
@@ -325,14 +325,14 @@ class ProviderSdk(object):
     ):
         procedure_callback_url = self._server_manager.procedure_callback_url(name)
         callback_url = self._server_manager.callback_url()
-        procedural_signature = {
-            "name": name,
-            "argument": input_desc,
-            "result": output_desc,
-            "execution_strategy": strategy,
-            "procedure_callback": procedure_callback_url,
-            "base_callback": callback_url,
-        }
+        procedural_signature = ProceduralSignature(
+            name=name,
+            argument=input_desc,
+            result=output_desc,
+            execution_strategy=strategy,
+            procedure_callback=procedure_callback_url,
+            base_callback=callback_url,
+        )
         self._procedures[name] = procedural_signature
         prefix = self.get_prefix()
         version = self.get_version()
@@ -359,20 +359,20 @@ class ProviderSdk(object):
             and self._version is not None
             and len(self._kind) > 0
         ):
-            self._provider = {
-                "kinds": self._kind,
-                "version": self._version,
-                "prefix": self._prefix,
-                "procedures": self._procedures,
-                "extension_structure": self.meta_ext,
-                "allowExtraProps": self.allow_extra_props,
-            }
+            self._provider = Provider(
+                kinds=self._kind,
+                version=self._version,
+                prefix=self._prefix,
+                procedures=self._procedures,
+                extension_structure=self.meta_ext,
+                allowExtraProps=self.allow_extra_props,
+            )
             if self._policy is not None:
-                self._provider["policy"] = self._policy
+                self._provider.policy = self._policy
             if self._oauth2 is not None:
-                self._provider["oauth2"] = self._oauth2
+                self._provider.oauth2 = self._oauth2
             if self._authModel is not None:
-                self._provider["authModel"] = self._authModel
+                self._provider.authModel = self._authModel
             await self._provider_api.post("/", self._provider)
             await self._server_manager.start_server()
         elif self._prefix is None:
@@ -452,14 +452,14 @@ class KindBuilder(object):
             name, self.kind.name
         )
         callback_url = self.server_manager.callback_url(self.kind.name)
-        procedural_signature = {
-            "name": name,
-            "argument": input_desc,
-            "result": output_desc,
-            "execution_strategy": strategy,
-            "procedure_callback": procedure_callback_url,
-            "base_callback": callback_url,
-        }
+        procedural_signature = ProceduralSignature(
+            name=name,
+            argument=input_desc,
+            result=output_desc,
+            execution_strategy=strategy,
+            procedure_callback=procedure_callback_url,
+            base_callback=callback_url,
+        )
         self.kind.entity_procedures[name] = procedural_signature
         prefix = self.get_prefix()
         version = self.get_version()
@@ -470,11 +470,9 @@ class KindBuilder(object):
                 result = await handler(
                     ProceduralCtx(self.provider, prefix, version, req.headers),
                     Entity(
-                        {
-                            "metadata": body_obj.metadata,
-                            "spec": body_obj.spec,
-                            "status": body_obj.status,
-                        }
+                        metadata=body_obj.metadata,
+                        spec=body_obj.spec,
+                        status=body_obj.status,
                     ),
                     body_obj.input,
                 )
@@ -502,14 +500,14 @@ class KindBuilder(object):
             name, self.kind.name
         )
         callback_url = self.server_manager.callback_url(self.kind.name)
-        procedural_signature = {
-            "name": name,
-            "argument": input_desc,
-            "result": output_desc,
-            "execution_strategy": strategy,
-            "procedure_callback": procedure_callback_url,
-            "base_callback": callback_url,
-        }
+        procedural_signature = ProceduralSignature(
+            name=name,
+            argument=input_desc,
+            result=output_desc,
+            execution_strategy=strategy,
+            procedure_callback=procedure_callback_url,
+            base_callback=callback_url,
+        )
         self.kind.kind_procedures[name] = procedural_signature
         prefix = self.get_prefix()
         version = self.get_version()
@@ -541,10 +539,10 @@ class KindBuilder(object):
         )
         callback_url = self.server_manager.callback_url(self.kind.name)
         self.kind.intentful_signatures.append(
-            {
-                "signature": sfs_signature,
-                "name": sfs_signature,
-                "argument": {
+            IntentfulSignature(
+                signature=sfs_signature,
+                name=sfs_signature,
+                argument={
                     "IntentfulInput": {
                         "type": "array",
                         "items": {
@@ -558,11 +556,11 @@ class KindBuilder(object):
                         },
                     }
                 },
-                "result": {},
-                "execution_strategy": IntentfulExecutionStrategies.Basic,
-                "procedure_callback": procedure_callback_url,
-                "base_callback": callback_url,
-            }
+                result={},
+                execution_strategy=IntentfulExecutionStrategies.Basic,
+                procedure_callback=procedure_callback_url,
+                base_callback=callback_url,
+            )
         )
         prefix = self.get_prefix()
         version = self.get_version()
@@ -573,11 +571,9 @@ class KindBuilder(object):
                 result = await handler(
                     ProceduralCtx(self.provider, prefix, version, req.headers),
                     Entity(
-                        {
-                            "metadata": body_obj.metadata,
-                            "spec": body_obj.spec,
-                            "status": body_obj.status,
-                        }
+                        metadata=body_obj.metadata,
+                        spec=body_obj.spec,
+                        status=body_obj.status,
                     ),
                     body_obj.input,
                 )

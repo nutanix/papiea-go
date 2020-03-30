@@ -55,19 +55,17 @@ async def create_provider_admin_s2s_key(sdk: ProviderSdk, new_key: Key):
     admin_security_api = sdk.provider_security_api
 
     the_key = S2S_Key(
-        {
-            "name": "location provider admin s2s key",
-            "owner": "admin.xiclusters@nutanix.com",
-            "key": new_key,
-            "user_info": {
-                "tenant_uuid": "58af3c13-b5c0-4cdf-b803-613dcec2429f",
-                "tenant-email": "admin.location@nutanix.com",
-                "tenant-fname": "admin",
-                "tenant-lname": "location",
-                "tenant-role": "location-admin",
-                "is_provider_admin": True,
-            },
-        }
+        name="location provider admin s2s key",
+        owner="admin.xiclusters@nutanix.com",
+        key=new_key,
+        user_info={
+            "tenant_uuid": "58af3c13-b5c0-4cdf-b803-613dcec2429f",
+            "tenant-email": "admin.location@nutanix.com",
+            "tenant-fname": "admin",
+            "tenant-lname": "location",
+            "tenant-role": "location-admin",
+            "is_provider_admin": True,
+        },
     )
 
     keys = await admin_security_api.list_keys()
@@ -86,11 +84,9 @@ async def create_user_s2s_key(sdk: ProviderSdk):
     admin_security_api = sdk.provider_security_api
 
     the_key = S2S_Key(
-        {
-            "name": "location provider some.user s2s key",
-            "owner": "some.user@domain.com",
-            "user_info": {},
-        }
+        name="location provider some.user s2s key",
+        owner="some.user@domain.com",
+        user_info={},
     )
 
     new_s2s_key = await admin_security_api.create_key(the_key)

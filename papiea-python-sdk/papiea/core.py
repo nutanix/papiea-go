@@ -21,6 +21,8 @@ Kind = AttributeDict
 IntentfulExecutionStrategy = str
 ProviderPower = str
 Key = str
+ProceduralSignature = AttributeDict
+IntentfulSignature = AttributeDict
 
 
 class ProceduralExecutionStrategies(object):
