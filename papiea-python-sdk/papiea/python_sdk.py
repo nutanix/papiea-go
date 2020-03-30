@@ -2,8 +2,9 @@ import json
 from types import TracebackType
 from typing import Any, Callable, List, NoReturn, Optional, Type
 
-from aiohttp import ClientSession, ClientTimeout, web
+from aiohttp import web
 
+from api import ApiInstance, json_loads_attrs
 from core import (
     AttributeDict,
     DataDescription,
@@ -18,7 +19,7 @@ from core import (
     S2S_Key,
     Secret,
     UserInfo,
-    Version,
+    Version
 )
 from python_sdk_context import IntentfulCtx, ProceduralCtx
 from python_sdk_exceptions import InvocationError, SecurityApiError
@@ -127,64 +128,6 @@ class SecurityApi(object):
             raise SecurityApiError.from_error(e, "Cannot deactivate s2s key")
 
 
-def json_loads_attrs(s: str) -> Any:
-    def object_hook(obj):
-        return AttributeDict(obj)
-
-    return json.loads(s, object_hook=object_hook)
-
-
-class ApiInstance(object):
-    def __init__(
-        self, base_url: str, timeout: Optional[int] = None, headers: dict = {}
-    ):
-        self.base_url = base_url
-        self.timeout = timeout
-        self.headers = headers
-        self.session = ClientSession(timeout=ClientTimeout(total=self.timeout))
-
-    async def post(self, prefix: str, data: dict, headers: dict = {}) -> Any:
-        new_headers = {}
-        new_headers.update(self.headers)
-        new_headers.update(headers)
-        data_binary = json.dumps(data).encode("utf-8")
-        async with self.session.post(
-            self.base_url + "/" + prefix, data=data_binary, headers=new_headers
-        ) as resp:
-            res = await resp.text()
-        if res == "":
-            return None
-        return json_loads_attrs(res)
-
-    async def patch(self, prefix: str, data: dict, headers: dict = {}) -> Any:
-        new_headers = {}
-        new_headers.update(self.headers)
-        new_headers.update(headers)
-        data_binary = json.dumps(data).encode("utf-8")
-        async with self.session.patch(
-            self.base_url + "/" + prefix, data=data_binary, headers=new_headers
-        ) as resp:
-            res = await resp.text()
-        if res == "":
-            return None
-        return json_loads_attrs(res)
-
-    async def get(self, prefix: str, headers: dict = {}) -> Any:
-        new_headers = {}
-        new_headers.update(self.headers)
-        new_headers.update(headers)
-        async with self.session.get(
-            self.base_url + "/" + prefix, headers=new_headers
-        ) as resp:
-            res = await resp.text()
-        if res == "":
-            return None
-        return json_loads_attrs(res)
-
-    async def close(self):
-        await self.session.close()
-
-
 class ProviderSdk(object):
     def __init__(
         self,
@@ -209,8 +152,7 @@ class ProviderSdk(object):
         self._security_api = SecurityApi(self, s2skey)
         self._provider_api = ApiInstance(
             self.provider_url,
-            5000,
-            {
+            headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self._s2skey}",
             },

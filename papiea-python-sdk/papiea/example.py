@@ -7,7 +7,7 @@ from aiohttp import ClientSession
 from yaml import Loader as YamlLoader
 from yaml import load as load_yaml
 
-from core import Key, ProceduralExecutionStrategy, S2S_Key
+from core import Entity, Key, ProceduralExecutionStrategy, S2S_Key
 from python_sdk import ProviderSdk
 
 logger = logging.getLogger(__name__)
@@ -97,24 +97,10 @@ async def create_user_s2s_key(sdk: ProviderSdk):
 
 
 async def move_x(ctx, entity, input):
-    requesting_user_token = ctx.get_invoking_token()
-    if requesting_user_token is None:
-        raise Exception("Unauthorized")
-
     entity.spec.x += input
-    data = {"spec": entity.spec, "metadata": entity.metadata}
-    data_binary = json.dumps(data).encode("utf-8")
-    async with ClientSession() as session:
-        async with session.put(
-            ctx.url_for(entity),
-            data=data_binary,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {requesting_user_token}",
-            },
-        ) as resp:
-            res = await resp.text()
-            return entity.spec
+    async with ctx.user_api_for_entity(entity) as entity_api:
+        entity_api.put("/", entity)
+        return entity.spec
 
 
 async def main():

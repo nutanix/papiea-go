@@ -3,6 +3,7 @@ from typing import List, Optional, Tuple
 from aiohttp import ClientSession
 from multidict import CIMultiDictProxy
 
+from api import ApiInstance
 from core import Action, Entity, EntityReference, Secret, Status, Version
 from python_sdk_exceptions import InvocationError
 
@@ -19,12 +20,18 @@ class ProceduralCtx(object):
         self.base_url = provider.entity_url
         self.provider_prefix = provider_prefix
         self.provider_version = provider_version
-        self.providerApiAxios = provider.provider_api
+        self.provider_api = provider.provider_api
         self.provider = provider
         self.headers = headers
 
-    def url_for(self, entity: Entity) -> str:
-        return f"{self.base_url}/{self.provider_prefix}/{self.provider_version}/{entity.metadata.kind}/{entity.metadata.uuid}"
+    def user_api_for_entity(self, entity: Entity) -> ApiInstance:
+        return ApiInstance(
+            f"{self.base_url}/{self.provider_prefix}/{self.provider_version}/{entity.metadata.kind}/{entity.metadata.uuid}",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.get_invoking_token()}",
+            },
+        )
 
     async def check_permission(
         self,
