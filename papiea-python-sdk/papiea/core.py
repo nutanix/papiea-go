@@ -9,33 +9,19 @@ class AttributeDict(dict):
 Version = str
 Secret = str
 DataDescription = Any
-ProceduralExecutionStrategy = str
+
+
+class ProceduralExecutionStrategy(str):
+    HaltIntentful = "Halt_Intentful"
+
+
 UserInfo = AttributeDict
 S2S_Key = AttributeDict
 Entity = AttributeDict
 EntityReference = AttributeDict
-Action = str
-Status = Any
-Provider = AttributeDict
-Kind = AttributeDict
-IntentfulExecutionStrategy = str
-ProviderPower = str
-Key = str
-ProceduralSignature = AttributeDict
-IntentfulSignature = AttributeDict
 
 
-class ProceduralExecutionStrategies(object):
-    HaltIntentful = "Halt_Intentful"
-
-
-class IntentfulExecutionStrategies(object):
-    Basic = "basic"
-    SpecOnly = "spec-only"
-    Differ = "differ"
-
-
-class Actions(object):
+class Action(str):
     Read = "read"
     Update = "write"
     Create = "create"
@@ -48,3 +34,20 @@ class Actions(object):
     ReadS2SKey = "read_key"
     InactivateS2SKey = "inactive_key"
     UpdateStatus = "update_status"
+
+
+Status = Any
+Provider = AttributeDict
+Kind = AttributeDict
+
+
+class IntentfulExecutionStrategy(str):
+    Basic = "basic"
+    SpecOnly = "spec-only"
+    Differ = "differ"
+
+
+ProviderPower = str
+Key = str
+ProceduralSignature = AttributeDict
+IntentfulSignature = AttributeDict

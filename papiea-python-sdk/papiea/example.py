@@ -7,7 +7,7 @@ from aiohttp import ClientSession
 from yaml import Loader as YamlLoader
 from yaml import load as load_yaml
 
-from core import Key, ProceduralExecutionStrategies, S2S_Key
+from core import Key, ProceduralExecutionStrategy, S2S_Key
 from python_sdk import ProviderSdk
 
 logger = logging.getLogger(__name__)
@@ -133,7 +133,7 @@ async def main():
         location_kind = sdk.new_kind(location_kind_definition)
         location_kind.entity_procedure(
             "moveX",
-            ProceduralExecutionStrategies.HaltIntentful,
+            ProceduralExecutionStrategy.HaltIntentful,
             procedure_move_input_definition,
             location_kind_definition,
             move_x,

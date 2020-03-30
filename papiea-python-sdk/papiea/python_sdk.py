@@ -8,7 +8,7 @@ from core import (
     AttributeDict,
     DataDescription,
     Entity,
-    IntentfulExecutionStrategies,
+    IntentfulExecutionStrategy,
     IntentfulSignature,
     Kind,
     ProceduralExecutionStrategy,
@@ -18,7 +18,7 @@ from core import (
     S2S_Key,
     Secret,
     UserInfo,
-    Version,
+    Version
 )
 from python_sdk_context import IntentfulCtx, ProceduralCtx
 from python_sdk_exceptions import InvocationError, SecurityApiError
@@ -557,7 +557,7 @@ class KindBuilder(object):
                     }
                 },
                 result={},
-                execution_strategy=IntentfulExecutionStrategies.Basic,
+                execution_strategy=IntentfulExecutionStrategy.Basic,
                 procedure_callback=procedure_callback_url,
                 base_callback=callback_url,
             )
