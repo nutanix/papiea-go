@@ -18,7 +18,7 @@ from core import (
     S2S_Key,
     Secret,
     UserInfo,
-    Version
+    Version,
 )
 from python_sdk_context import IntentfulCtx, ProceduralCtx
 from python_sdk_exceptions import InvocationError, SecurityApiError
@@ -34,12 +34,12 @@ class ProviderServerManager(object):
 
     def register_handler(
         self, route: str, handler: Callable[[web.Request], web.Response]
-    ) -> NoReturn:
+    ) -> None:
         if not self.should_run:
             self.should_run = True
         self.app.add_routes([web.post(route, handler)])
 
-    def register_healthcheck(self) -> NoReturn:
+    def register_healthcheck(self) -> None:
         if not self.should_run:
             self.should_run = True
 
@@ -56,7 +56,7 @@ class ProviderServerManager(object):
             site = web.TCPSite(runner, self.public_host, self.public_port)
             await site.start()
 
-    async def close(self) -> NoReturn:
+    async def close(self) -> None:
         if self._runner is not None:
             await self._runner.cleanup()
 
@@ -242,7 +242,7 @@ class ProviderSdk(object):
         return f"{ self.papiea_url }/provider"
 
     @property
-    def provider_api(self):
+    def provider_api(self) -> ApiInstance:
         return self._provider_api
 
     @property
@@ -288,7 +288,7 @@ class ProviderSdk(object):
             self._kind.append(the_kind)
             return kind_builder
 
-    def add_kind(self, kind: Kind):
+    def add_kind(self, kind: Kind) -> Optional["KindBuilder"]:
         if kind not in self._kind.indexOf(kind):
             self._kind.append(kind)
             kind_builder = KindBuilder(kind, self, self.allow_extra_props)
@@ -303,15 +303,15 @@ class ProviderSdk(object):
         except ValueError:
             return False
 
-    def version(self, version: Version):
+    def version(self, version: Version) -> "ProviderSdk":
         self._version = version
         return self
 
-    def prefix(self, prefix: str):
+    def prefix(self, prefix: str) -> "ProviderSdk":
         self._prefix = prefix
         return self
 
-    def metadata_extension(self, ext: DataDescription):
+    def metadata_extension(self, ext: DataDescription) -> "ProviderSdk":
         self.meta_ext = ext
         return self
 
@@ -322,7 +322,7 @@ class ProviderSdk(object):
         input_desc: Any,
         output_desc: Any,
         handler: Callable[[ProceduralCtx, Any], Any],
-    ):
+    ) -> "ProviderSdk":
         procedure_callback_url = self._server_manager.procedure_callback_url(name)
         callback_url = self._server_manager.callback_url()
         procedural_signature = ProceduralSignature(
@@ -353,7 +353,7 @@ class ProviderSdk(object):
         self._server_manager.register_handler("/" + name, procedure_callback_fn)
         return self
 
-    async def register(self):
+    async def register(self) -> None:
         if (
             self._prefix is not None
             and self._version is not None
@@ -396,13 +396,13 @@ class ProviderSdk(object):
         public_host: Optional[str],
         public_port: Optional[int],
         allow_extra_props: bool = False,
-    ):
+    ) -> "ProviderSdk":
         server_manager = ProviderServerManager(public_host, public_port)
         return ProviderSdk(papiea_url, s2skey, server_manager, allow_extra_props)
 
     def secure_with(
         self, oauth_config: Any, casbin_model: str, casbin_initial_policy: str
-    ):
+    ) -> "ProviderSdk":
         self._oauth2 = oauth_config
         self._authModel = casbin_model
         self._policy = casbin_initial_policy
@@ -447,7 +447,7 @@ class KindBuilder(object):
         input_desc: Any,
         output_desc: Any,
         handler: Callable[[ProceduralCtx, Entity, Any], Any],
-    ):
+    ) -> "KindBuilder":
         procedure_callback_url = self.server_manager.procedure_callback_url(
             name, self.kind.name
         )
@@ -495,7 +495,7 @@ class KindBuilder(object):
         input_desc: Any,
         output_desc: Any,
         handler: Callable[[ProceduralCtx, Any], Any],
-    ):
+    ) -> "KindBuilder":
         procedure_callback_url = self.server_manager.procedure_callback_url(
             name, self.kind.name
         )
@@ -533,7 +533,7 @@ class KindBuilder(object):
 
     def on(
         self, sfs_signature: str, handler: Callable[[IntentfulCtx, Entity, Any], Any],
-    ):
+    ) -> "KindBuilder":
         procedure_callback_url = self.server_manager.procedure_callback_url(
             sfs_signature, self.kind.name
         )
@@ -596,7 +596,7 @@ class KindBuilder(object):
         input_desc: Any,
         output_desc: Any,
         handler: Callable[[ProceduralCtx, Any], Any],
-    ):
+    ) -> "KindBuilder":
         name = "__create"
         self.kind_procedure(name, strategy, input_desc, output_desc, handler)
         return self
@@ -607,7 +607,7 @@ class KindBuilder(object):
         input_desc: Any,
         output_desc: Any,
         handler: Callable[[ProceduralCtx, Any], Any],
-    ):
+    ) -> "KindBuilder":
         name = "__delete"
         self.kind_procedure(name, strategy, input_desc, output_desc, handler)
         return self
