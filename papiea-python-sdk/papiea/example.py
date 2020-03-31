@@ -28,7 +28,8 @@ logging.basicConfig(
 PAPIEA_URL = os.getenv("PAPIEA_URL", "http://127.0.0.1:3333")
 PAPIEA_ADMIN_S2S_KEY = os.getenv("PAPIEA_ADMIN_S2S_KEY", "")
 PROVIDER_HOST = os.getenv("PROVIDER_HOST", "example-provider")
-PROVIDER_PORT = 9000
+PROVIDER_PORT = int(os.getenv("PROVIDER_PORT", "9000"))
+PROVIDER_PREFIX = "location_provider"
 PROVIDER_VERSION = "0.1.0"
 PROVIDER_ADMIN_S2S_KEY = "Sa8xaic9"
 
@@ -124,7 +125,7 @@ async def main():
         PAPIEA_URL, PAPIEA_ADMIN_S2S_KEY, PROVIDER_HOST, PROVIDER_PORT
     ) as sdk:
         sdk.version(PROVIDER_VERSION)
-        sdk.prefix("location_provider")
+        sdk.prefix(PROVIDER_PREFIX)
         sdk.secure_with(
             oauth_config=oauth_config,
             casbin_model=casbin_model,
@@ -145,7 +146,7 @@ async def main():
 
         user_s2s_key = await create_user_s2s_key(sdk)
         async with EntityCRUD(
-            PAPIEA_URL, "location_provider", "0.1.0", "Location", user_s2s_key
+            PAPIEA_URL, PROVIDER_PREFIX, PROVIDER_VERSION, "Location", user_s2s_key
         ) as entity_client:
             entity = await entity_client.create(
                 Spec(x=10, y=11),
