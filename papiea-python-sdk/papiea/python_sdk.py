@@ -4,8 +4,8 @@ from typing import Any, Callable, List, NoReturn, Optional, Type
 
 from aiohttp import web
 
-from api import ApiInstance, json_loads_attrs
-from core import (
+from .api import ApiInstance, json_loads_attrs
+from .core import (
     AttributeDict,
     DataDescription,
     Entity,
@@ -19,10 +19,10 @@ from core import (
     S2S_Key,
     Secret,
     UserInfo,
-    Version
+    Version,
 )
-from python_sdk_context import IntentfulCtx, ProceduralCtx
-from python_sdk_exceptions import InvocationError, SecurityApiError
+from .python_sdk_context import IntentfulCtx, ProceduralCtx
+from .python_sdk_exceptions import InvocationError, SecurityApiError
 
 
 class ProviderServerManager(object):

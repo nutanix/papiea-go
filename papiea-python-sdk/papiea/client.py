@@ -1,8 +1,8 @@
 from types import TracebackType
 from typing import Any, Optional, Type
 
-from api import ApiInstance
-from core import AttributeDict, Entity, EntityReference, EntitySpec, Metadata, Spec
+from .api import ApiInstance
+from .core import AttributeDict, Entity, EntityReference, EntitySpec, Metadata, Spec
 
 FilterResults = AttributeDict
 

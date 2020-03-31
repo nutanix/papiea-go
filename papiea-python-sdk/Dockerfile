@@ -22,8 +22,8 @@ RUN chown $USER_ID:$GROUP_ID /home
 
 USER appuser
 
-ADD requirements.txt /home/
+ADD ./papiea/example/requirements.txt /home/
 RUN pip install -r requirements.txt
 
-ADD ./papiea/ /home/
+ADD ./papiea/example/ /home/
 CMD python example.py

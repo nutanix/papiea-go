@@ -1,0 +1,12 @@
+SumInput:
+  type: object
+  title: sums 2 numbers
+  description: sums 2 numbers
+  required:
+    - a
+    - b
+  properties:
+    a:
+      type: number
+    b:
+      type: number

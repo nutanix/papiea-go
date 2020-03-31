@@ -1,0 +1,4 @@
+RegionIdentifier:
+  type: string
+  title: Identifier of a region
+  description: Used to get a particular server region number

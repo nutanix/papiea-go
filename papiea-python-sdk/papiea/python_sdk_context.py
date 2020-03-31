@@ -3,9 +3,9 @@ from typing import List, Optional, Tuple
 from aiohttp import ClientSession
 from multidict import CIMultiDictProxy
 
-from client import EntityCRUD
-from core import Action, EntityReference, Secret, Status, Version
-from python_sdk_exceptions import InvocationError
+from .client import EntityCRUD
+from .core import Action, EntityReference, Secret, Status, Version
+from .python_sdk_exceptions import InvocationError
 
 
 class ProceduralCtx(object):

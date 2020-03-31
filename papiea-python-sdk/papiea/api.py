@@ -4,7 +4,7 @@ from typing import Any, Optional, Type
 
 from aiohttp import ClientSession, ClientTimeout, web
 
-from core import AttributeDict
+from .core import AttributeDict
 
 
 def json_loads_attrs(s: str) -> Any:

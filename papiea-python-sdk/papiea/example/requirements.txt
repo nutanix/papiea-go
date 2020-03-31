@@ -1,0 +1,2 @@
+PyYAML==5.3.1
+git+git@github.com:nutanix/papiea-js.git@baf4b01f2a0893b914632faab7b600bf832ce845#egg=papiea&subdirectory=papiea-python-sdk

@@ -6,16 +6,16 @@ import os
 from yaml import Loader as YamlLoader
 from yaml import load as load_yaml
 
-from client import EntityCRUD
-from core import (
+from papiea.client import EntityCRUD
+from papiea.core import (
     Entity,
     EntityReference,
     Key,
     ProceduralExecutionStrategy,
     S2S_Key,
-    Spec,
+    Spec
 )
-from python_sdk import ProviderSdk
+from papiea.python_sdk import ProviderSdk
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(

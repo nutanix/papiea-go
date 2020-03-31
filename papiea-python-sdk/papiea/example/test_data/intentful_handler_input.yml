@@ -1,0 +1,13 @@
+IntentfulInput:
+  type: array
+  items:
+    type: object
+    properties:
+      keys:
+        type: object
+      key:
+        type: string
+      spec-val:
+        type: array
+      status-val:
+        type: array
