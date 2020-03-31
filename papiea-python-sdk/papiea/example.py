@@ -97,10 +97,11 @@ async def create_user_s2s_key(sdk: ProviderSdk):
 
 async def move_x(ctx, entity, input):
     entity.spec.x += input
-    entity_update = Entity(metadata=entity.metadata, spec=entity.spec)
-    async with ctx.user_api_for_entity(entity) as entity_api:
-        await entity_api.put("", entity_update)
-    return entity_update.spec.x
+    async with ctx.entity_client_for_user(
+        EntityReference(kind=entity.metadata.kind, uuid=entity.metadata.uuid)
+    ) as entity_client:
+        await entity_client.update(entity.metadata, entity.spec)
+    return entity.spec.x
 
 
 async def main():

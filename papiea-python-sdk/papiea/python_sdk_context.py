@@ -3,8 +3,8 @@ from typing import List, Optional, Tuple
 from aiohttp import ClientSession
 from multidict import CIMultiDictProxy
 
-from api import ApiInstance
-from core import Action, Entity, EntityReference, Secret, Status, Version
+from client import EntityCRUD
+from core import Action, EntityReference, Secret, Status, Version
 from python_sdk_exceptions import InvocationError
 
 
@@ -24,13 +24,13 @@ class ProceduralCtx(object):
         self.provider = provider
         self.headers = headers
 
-    def user_api_for_entity(self, entity: Entity) -> ApiInstance:
-        return ApiInstance(
-            f"{self.base_url}/{self.provider_prefix}/{self.provider_version}/{entity.metadata.kind}/{entity.metadata.uuid}",
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.get_invoking_token()}",
-            },
+    def entity_client_for_user(self, entity_reference: EntityReference) -> EntityCRUD:
+        return EntityCRUD(
+            self.provider.papiea_url,
+            self.provider_prefix,
+            self.provider_version,
+            entity_reference.kind,
+            self.get_invoking_token(),
         )
 
     async def check_permission(
