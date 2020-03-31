@@ -1,0 +1,46 @@
+oauth:
+  client_id: XXX
+  client_secret: YYY
+  auth_host: http://127.0.0.1:9002
+  authorize_uri: /oauth2/authorize    # relative to auth_host
+  revoke_uri: /oauth2/revoke          # relative to auth_host
+  token_uri: /oauth2/token            # relative to auth_host
+  logout_uri: /oauth2/logout
+  user_info:
+    access_token: ^token.access_token.$JWT.content  # how to get the access_token from the token
+    id_token: ^token.id_token.$JWT.content # how to get the access_token from the token
+    
+    # `role` will be set to the first item in the list that is not undefined, so they must be
+    # ordered properly.
+
+    # `JWT` is a special instruction to decode the token. It returns a map with `content`
+    # and `header` to read the part we need.
+
+    # If the returned value is a list, `.0.` is simply an index into this list
+
+    # `contains` is another special instruction which finds the given value in the list.
+
+    # In our case, the value returned is an object that has `name` property so we can choose to
+    # return it.
+
+    extracted_roles: ^id_token.xi_role.$JWT.header.0.roles
+
+    role: # Find the role of the user
+        first_match: # This directive checks each line from top to bottom and returns the first
+                     # one that matches. Items must be ordered according in descending order
+          - ^extracted_roles.$find(name:papiea-admin).name
+          - ^extracted_roles.$find(name:account-admin).name
+          - anonymous # If none of the above matched, simply put a constant "anonymous" role
+          
+    # headers is the only entry that is mandatory in this section
+    # All lines listed will be added to the request's header. 
+    headers:
+      # These will use the same syntax as role above
+      tenant:    ^id_token.default_tenant
+      tenant-email: ^id_token.email
+      tenant-fname: ^id_token.given_name
+      tenant-lname: ^id_token.last_name
+
+      # role will be populated by what `role` got resolved into in its section above
+      tenant-role: ^role
+      owner: ^id_token.sub

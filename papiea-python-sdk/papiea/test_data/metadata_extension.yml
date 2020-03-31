@@ -1,0 +1,12 @@
+OwnerTenant:
+  type: object
+  title: specifies tenant & owner
+  description: specifies tenant & owner
+  required:
+    - owner
+    - tenant_uuid
+  properties:
+    owner:
+      type: string
+    tenant_uuid:
+      type: string

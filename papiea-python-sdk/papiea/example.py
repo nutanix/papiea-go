@@ -58,14 +58,7 @@ async def create_provider_admin_s2s_key(sdk: ProviderSdk, new_key: Key):
         name="location provider admin s2s key",
         owner="admin.xiclusters@nutanix.com",
         key=new_key,
-        user_info={
-            "tenant_uuid": "58af3c13-b5c0-4cdf-b803-613dcec2429f",
-            "tenant-email": "admin.location@nutanix.com",
-            "tenant-fname": "admin",
-            "tenant-lname": "location",
-            "tenant-role": "location-admin",
-            "is_provider_admin": True,
-        },
+        user_info={"is_provider_admin": True},
     )
 
     keys = await admin_security_api.list_keys()
@@ -85,8 +78,7 @@ async def create_user_s2s_key(sdk: ProviderSdk):
 
     the_key = S2S_Key(
         name="location provider some.user s2s key",
-        owner="some.user@domain.com",
-        user_info={},
+        user_info={"owner": "alice", "tenant": "ada14b27-c147-4aca-9b9f-7762f1f48426"},
     )
 
     new_s2s_key = await admin_security_api.create_key(the_key)
@@ -98,30 +90,46 @@ async def create_user_s2s_key(sdk: ProviderSdk):
 
 async def move_x(ctx, entity, input):
     entity.spec.x += input
+    entity_update = Entity(metadata=entity.metadata, spec=entity.spec)
     async with ctx.user_api_for_entity(entity) as entity_api:
-        entity_api.put("/", entity)
-        return entity.spec
+        await entity_api.put("", entity_update)
+    return entity_update.spec.x
 
 
 async def main():
     location_kind_definition = load_yaml_from_file(
         "./test_data/location_kind_test_data.yml"
     )
+    metadata_extension = load_yaml_from_file("./test_data/metadata_extension.yml")
     procedure_move_input_definition = load_yaml_from_file(
         "./test_data/procedure_move_input.yml"
     )
+    procedure_move_output_definition = load_yaml_from_file(
+        "./test_data/procedure_move_output.yml"
+    )
+    oauth_config = load_yaml_from_file("./test_data/auth.yaml")
+    with open("./test_data/provider_model_example.txt") as f:
+        casbin_model = f.read()
+    with open("./test_data/provider_policy_example.txt") as f:
+        casbin_initial_policy = f.read()
     async with ProviderSdk.create_provider(
         PAPIEA_URL, PAPIEA_ADMIN_S2S_KEY, PROVIDER_HOST, PROVIDER_PORT
     ) as sdk:
         sdk.version(PROVIDER_VERSION)
         sdk.prefix("location_provider")
+        sdk.secure_with(
+            oauth_config=oauth_config,
+            casbin_model=casbin_model,
+            casbin_initial_policy=casbin_initial_policy,
+        )
+        sdk.metadata_extension(metadata_extension)
         await create_provider_admin_s2s_key(sdk, PROVIDER_ADMIN_S2S_KEY)
         location_kind = sdk.new_kind(location_kind_definition)
         location_kind.entity_procedure(
             "moveX",
             ProceduralExecutionStrategy.HaltIntentful,
             procedure_move_input_definition,
-            location_kind_definition,
+            procedure_move_output_definition,
             move_x,
         )
         await sdk.register()
@@ -132,7 +140,15 @@ async def main():
         location_entity_base_url = (
             f"{PAPIEA_URL}/services/location_provider/0.1.0/Location"
         )
-        data = {"spec": {"x": 10, "y": 11}}
+        data = {
+            "metadata": {
+                "extension": {
+                    "owner": "alice",
+                    "tenant_uuid": "ada14b27-c147-4aca-9b9f-7762f1f48426",
+                }
+            },
+            "spec": {"x": 10, "y": 11},
+        }
         data_binary = json.dumps(data).encode("utf-8")
         async with session.post(
             f"{location_entity_base_url}",

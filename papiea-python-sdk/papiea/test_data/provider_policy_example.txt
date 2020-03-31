@@ -1,0 +1,36 @@
+// p has the following structure:
+// p, {the user or group name}, {the entity's owner: "owner", "anyone" or "tenant"}, {entity type or *}, {operation name or *}, {allow or deny} 
+
+// define reader group:
+p, reader_group, anyone, kind_1, read, allow
+p, reader_group, anyone, kind_2, read, allow
+
+// make reader group default on all users
+g2, reader_group, default
+
+// deny anonymous user from all operations
+p, anonymous, anyone, *, *, deny
+
+// define admin group
+p, admin_group, anyone, *, *, allow
+
+// assign user admin to admin group
+g, admin, admin_group
+
+// tenant group
+p, tenant_group, tenant, kind_3, *, allow
+p, tenant_group, tenant, kind_4, *, deny
+
+g, rick, tenant_group
+
+// standard user
+p, standard_group, owner, kind_3, *, allow
+p, standard_group, owner, kind_4, *, allow
+
+// define bill as a standard_group user
+g, bill, standard_group
+
+// define alice's rights
+p, alice, owner, Location, *, allow
+p, alice, owner, kind_4, delete, deny
+

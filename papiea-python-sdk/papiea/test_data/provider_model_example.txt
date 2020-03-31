@@ -1,0 +1,16 @@
+[request_definition]
+r = sub, obj, act
+
+[policy_definition]
+p = sub, owner, obj, act, eft
+
+[role_definition]
+g = _, _
+g2 = _, _
+
+[policy_effect]
+e = some(where (p.eft == allow)) && !some(where (p.eft == deny))
+
+[matchers]
+m = (r.sub.owner == p.sub || g(r.sub.owner, p.sub) || g2(p.sub, "default")) && ((p.owner == "owner" && r.sub.owner == r.obj.metadata.extension.owner) || (p.owner == "tenant" && r.sub.tenant == r.obj.metadata.extension.tenant_uuid) || p.owner == "anyone" ) && (p.obj == r.obj.metadata.kind || p.obj == "*") && (r.act == p.act || p.act == "*")
+
