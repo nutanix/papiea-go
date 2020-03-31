@@ -19,6 +19,9 @@ UserInfo = AttributeDict
 S2S_Key = AttributeDict
 Entity = AttributeDict
 EntityReference = AttributeDict
+Spec = AttributeDict
+EntitySpec = AttributeDict
+Metadata = AttributeDict
 
 
 class Action(str):

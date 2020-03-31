@@ -104,5 +104,18 @@ class ApiInstance(object):
             return None
         return json_loads_attrs(res)
 
+    async def delete(self, prefix: str, headers: dict = {}) -> Any:
+        new_headers = {}
+        new_headers.update(self.headers)
+        new_headers.update(headers)
+        async with self.session.delete(
+            self.base_url + "/" + prefix, headers=new_headers
+        ) as resp:
+            await ApiException.check_response(resp)
+            res = await resp.text()
+        if res == "":
+            return None
+        return json_loads_attrs(res)
+
     async def close(self):
         await self.session.close()

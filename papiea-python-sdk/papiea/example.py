@@ -3,11 +3,18 @@ import json
 import logging
 import os
 
-from aiohttp import ClientSession
 from yaml import Loader as YamlLoader
 from yaml import load as load_yaml
 
-from core import Entity, Key, ProceduralExecutionStrategy, S2S_Key
+from client import EntityCRUD
+from core import (
+    Entity,
+    EntityReference,
+    Key,
+    ProceduralExecutionStrategy,
+    S2S_Key,
+    Spec,
+)
 from python_sdk import ProviderSdk
 
 logger = logging.getLogger(__name__)
@@ -133,63 +140,33 @@ async def main():
             move_x,
         )
         await sdk.register()
-        user_s2s_key = await create_user_s2s_key(sdk)
         server = sdk.server
 
-    async with ClientSession() as session:
-        location_entity_base_url = (
-            f"{PAPIEA_URL}/services/location_provider/0.1.0/Location"
-        )
-        data = {
-            "metadata": {
-                "extension": {
+        user_s2s_key = await create_user_s2s_key(sdk)
+        async with EntityCRUD(
+            PAPIEA_URL, "location_provider", "0.1.0", "Location", user_s2s_key
+        ) as entity_client:
+            entity = await entity_client.create(
+                Spec(x=10, y=11),
+                metadata_extension={
                     "owner": "alice",
                     "tenant_uuid": "ada14b27-c147-4aca-9b9f-7762f1f48426",
-                }
-            },
-            "spec": {"x": 10, "y": 11},
-        }
-        data_binary = json.dumps(data).encode("utf-8")
-        async with session.post(
-            f"{location_entity_base_url}",
-            data=data_binary,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {user_s2s_key}",
-            },
-        ) as resp:
-            res = await resp.text()
-            logger.debug(f"Created entity {res}")
-            entity_uuid = json.loads(res)["metadata"]["uuid"]
-
-        data = {"input": 5}
-        data_binary = json.dumps(data).encode("utf-8")
-        async with session.post(
-            f"{location_entity_base_url}/{entity_uuid}/procedure/moveX",
-            data=data_binary,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {user_s2s_key}",
-            },
-        ) as resp:
-            res = await resp.text()
+                },
+            )
+            logger.debug(f"Created entity {entity}")
+            entity_uuid = entity.metadata.uuid
+            res = await entity_client.invoke_procedure(
+                "moveX", EntityReference(uuid=entity_uuid), 5
+            )
             logger.debug(f"Procedure returns {res}")
-
-        async with session.get(
-            f"{location_entity_base_url}/{entity_uuid}",
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {user_s2s_key}",
-            },
-        ) as resp:
-            res = await resp.text()
+            entity = await entity_client.get(EntityReference(uuid=entity_uuid))
             logger.debug(f"Updated entity {res}")
 
-    while True:
-        # Serve provider procedures forever
-        await asyncio.sleep(300)
+        while True:
+            # Serve provider procedures forever
+            await asyncio.sleep(300)
 
-    await server.close()
+        await server.close()
 
 
 if __name__ == "__main__":
