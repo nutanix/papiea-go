@@ -7,14 +7,7 @@ from yaml import Loader as YamlLoader
 from yaml import load as load_yaml
 
 from papiea.client import EntityCRUD
-from papiea.core import (
-    Entity,
-    EntityReference,
-    Key,
-    ProceduralExecutionStrategy,
-    S2S_Key,
-    Spec
-)
+from papiea.core import Entity, Key, ProceduralExecutionStrategy, S2S_Key, Spec
 from papiea.python_sdk import ProviderSdk
 
 logger = logging.getLogger(__name__)
@@ -98,9 +91,7 @@ async def create_user_s2s_key(sdk: ProviderSdk):
 
 async def move_x(ctx, entity, input):
     entity.spec.x += input
-    async with ctx.entity_client_for_user(
-        EntityReference(kind=entity.metadata.kind, uuid=entity.metadata.uuid)
-    ) as entity_client:
+    async with ctx.entity_client_for_user(entity.metadata) as entity_client:
         await entity_client.update(entity.metadata, entity.spec)
     return entity.spec.x
 
@@ -156,12 +147,9 @@ async def main():
                 },
             )
             logger.debug(f"Created entity {entity}")
-            entity_uuid = entity.metadata.uuid
-            res = await entity_client.invoke_procedure(
-                "moveX", EntityReference(uuid=entity_uuid), 5
-            )
+            res = await entity_client.invoke_procedure("moveX", entity.metadata, 5)
             logger.debug(f"Procedure returns {res}")
-            entity = await entity_client.get(EntityReference(uuid=entity_uuid))
+            entity = await entity_client.get(entity.metadata)
             logger.debug(f"Updated entity {res}")
 
         while True:
