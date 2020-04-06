@@ -21,7 +21,7 @@ export class IntentfulTask_DB_Mongo implements IntentfulTask_DB {
         this.logger = logger;
     }
 
-        async init(): Promise<void> {
+    async init(): Promise<void> {
         try {
             await this.collection.createIndex(
                 { "uuid": 1 },
@@ -40,7 +40,6 @@ export class IntentfulTask_DB_Mongo implements IntentfulTask_DB {
     async get_task(uuid: string): Promise<IntentfulTask> {
         const result: IntentfulTask | null = await this.collection.findOne({
             "uuid": uuid,
-            "deleted_at": null
         });
         if (result === null) {
             throw new Error("key not found");
@@ -72,10 +71,10 @@ export class IntentfulTask_DB_Mongo implements IntentfulTask_DB {
             $set: delta
         })
         if (result.result.n === undefined || result.result.ok !== 1) {
-            throw new Error("Failed to inactivate key");
+            throw new Error("Failed update task");
         }
         if (result.result.n !== 1 && result.result.n !== 0) {
-            throw new Error(`Amount of key inactivated must be 0 or 1, found: ${result.result.n}`);
+            throw new Error(`Amount of task updated must be 0 or 1, found: ${result.result.n}`);
         }
     }
 

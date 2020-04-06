@@ -4,6 +4,7 @@ import { Status_DB } from "../databases/status_db_interface"
 import { UserAuthInfo } from "../auth/authn"
 import axios from "axios"
 import { IntentfulTask } from "../tasks/task_interface"
+import { OnActionError } from "../errors/on_action_error";
 
 export abstract class IntentfulStrategy {
     protected readonly specDb: Spec_DB
@@ -47,7 +48,7 @@ export abstract class IntentfulStrategy {
         if (this.kind) {
             if (this.kind.kind_procedures[procedure_name]) {
                 if (this.user === undefined) {
-                    throw new Error("Dispatch couldn't be called, user not specified")
+                    throw new OnActionError("User not specified", procedure_name)
                 }
                 try {
                     const { data } =  await axios.post(this.kind.kind_procedures[procedure_name].procedure_callback, {
@@ -55,11 +56,11 @@ export abstract class IntentfulStrategy {
                     }, { headers: this.user })
                     return data
                 } catch (e) {
-                    throw new Error(`Dispatch couldn't be called, Error occurred`)
+                    throw new OnActionError(e.response.data.message, procedure_name)
                 }
             }
         } else {
-            throw new Error("Dispatch couldn't be called, insufficient params specified")
+            throw new OnActionError("Insufficient params specified", procedure_name)
         }
     }
 

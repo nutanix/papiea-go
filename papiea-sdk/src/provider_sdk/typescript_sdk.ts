@@ -533,23 +533,15 @@ export class Kind_Builder {
         return this
     }
 
-    on_create(rbac: any,
-              strategy: Procedural_Execution_Strategy,
-              input_desc: any,
-              output_desc: any,
-              handler: (ctx: ProceduralCtx_Interface, input: any) => Promise<any>): Kind_Builder {
+    on_create(handler: (ctx: ProceduralCtx_Interface, input: any) => Promise<any>): Kind_Builder {
         const name = "__create"
-        this.kind_procedure(name, rbac, strategy, input_desc, output_desc, handler)
+        this.kind_procedure(name, {}, 0, {}, {}, handler)
         return this
     }
 
-    on_delete(rbac: any,
-              strategy: Procedural_Execution_Strategy,
-              input_desc: any,
-              output_desc: any,
-              handler: (ctx: ProceduralCtx_Interface, input: any) => Promise<any>): Kind_Builder {
+    on_delete(handler: (ctx: ProceduralCtx_Interface, input: any) => Promise<any>): Kind_Builder {
         const name = "__delete"
-        this.kind_procedure(name, rbac, strategy, input_desc, output_desc, handler)
+        this.kind_procedure(name, {}, 0, {}, {}, handler)
         return this
     }
 }

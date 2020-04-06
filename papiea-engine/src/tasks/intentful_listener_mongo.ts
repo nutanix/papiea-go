@@ -1,13 +1,14 @@
-import { Entity_Reference, Status, Metadata } from "papiea-core"
-import { IntentfulTask } from "./task_interface"
-import { Handler, IntentfulListener } from "./intentful_listener_interface"
-import { IntentfulTask_DB } from "../databases/intentful_task_db_interface"
-import { Watchlist } from "./watchlist"
-import { Status_DB } from "../databases/status_db_interface"
+import {Entity_Reference, Status, Metadata} from "papiea-core"
+import {IntentfulTask} from "./task_interface"
+import {Handler, IntentfulListener} from "./intentful_listener_interface"
+import {IntentfulTask_DB} from "../databases/intentful_task_db_interface"
+import {Watchlist} from "./watchlist"
+import {Status_DB} from "../databases/status_db_interface"
 // @ts-ignore
 import MultiMap from "mnemonist/multi-map"
+
 var MultiMap = require('mnemonist/multi-map');
-import { timeout } from "../utils/utils"
+import {timeout} from "../utils/utils"
 
 export class IntentfulListenerMongo implements IntentfulListener {
     private readonly intentfulTaskDb: IntentfulTask_DB
@@ -51,7 +52,7 @@ export class IntentfulListenerMongo implements IntentfulListener {
         let watchlistTasks: Set<IntentfulTask>
         let currStatuses: [Metadata, Status][]
         while (true) {
-            currTasks = await this.intentfulTaskDb.list_tasks({})
+            currTasks = await this.intentfulTaskDb.list_tasks({ marked_for_deletion: null })
             watchlistTasks = this.get_watchlist_tasks()
             this.checkTasks(currTasks, watchlistTasks)
 

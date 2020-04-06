@@ -33,6 +33,7 @@ declare var process: {
         PAPIEA_ADMIN_S2S_KEY: string,
         LOGGING_LEVEL: string
         PAPIEA_DEBUG: string,
+        DELETED_TASK_PERSIST_SECONDS: string
     },
     title: string;
 };

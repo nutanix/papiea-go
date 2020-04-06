@@ -63,7 +63,7 @@ export interface IntentfulCtx_Interface {
     get_user_security_api(user_s2skey:Secret): SecurityApi
     get_headers(): IncomingHttpHeaders
     get_invoking_token(): string
-    check_permission(entityAction: [Action, Entity_Reference][], provider_prefix: string, provider_version: Version): Promise<boolean>
+    check_permission(entityAction: [Action, Entity_Reference][], user_token?: string, provider_prefix?: string, provider_version?: Version): Promise<boolean>
     get_logger(log_level?: string, pretty_print?: boolean): Logger
 }
 

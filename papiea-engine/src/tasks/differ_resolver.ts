@@ -1,13 +1,13 @@
 // [[file:~/work/papiea-js/Papiea-design.org::*/src/tasks/task_manager_interface.ts][/src/tasks/task_manager_interface.ts:1]]
-import { Entity_Reference, Status, IntentfulStatus } from "papiea-core";
-import { IntentfulTask } from "./task_interface"
-import { timeout } from "../utils/utils"
-import { IntentfulTask_DB_Mongo } from "../databases/intentful_task_db_mongo"
-import { Spec_DB } from "../databases/spec_db_interface"
-import { Status_DB } from "../databases/status_db_interface"
-import { Watchlist, EntityTasks } from "./watchlist"
-import { Handler, IntentfulListener } from "./intentful_listener_interface"
-import { SFSCompiler } from "../intentful_core/sfs_compiler"
+import {Entity_Reference, Status, IntentfulStatus} from "papiea-core";
+import {IntentfulTask} from "./task_interface"
+import {timeout} from "../utils/utils"
+import {IntentfulTask_DB_Mongo} from "../databases/intentful_task_db_mongo"
+import {Spec_DB} from "../databases/spec_db_interface"
+import {Status_DB} from "../databases/status_db_interface"
+import {Watchlist, EntityTasks} from "./watchlist"
+import {Handler, IntentfulListener} from "./intentful_listener_interface"
+import {SFSCompiler} from "../intentful_core/sfs_compiler"
 import axios from "axios"
 
 // This should be run in a different process
@@ -31,21 +31,21 @@ export class DifferResolver {
         this.intentfulListener.onStatus = new Handler(this.onStatus)
     }
 
-    public async run(delay: number) {
+    public async run(delay: number, taskExpirySeconds: number = 120) {
         try {
-            await this._run(delay)
+            await this._run(delay, taskExpirySeconds)
         } catch (e) {
             console.error(e)
             throw e
         }
     }
 
-    private async _run(delay: number) {
+    private async _run(delay: number, taskExpirySeconds: number) {
         while (true) {
             await timeout(delay)
             await this.checkActiveTasksHealth()
             await this.retryTasks()
-            await this.clearFinishedTasks()
+            await this.clearFinishedTasks(taskExpirySeconds)
         }
     }
 
@@ -100,9 +100,9 @@ export class DifferResolver {
         }
     }
 
-    public async clearFinishedTasks(): Promise<void> {
-        // Remove all watchs on entities which have no more diffs to look
-        this.watchlist = this.watchlist.filter((entity_task:EntityTasks)=>entity_task.tasks.length>0)
+    public async clearFinishedTasks(taskExpirySeconds: number): Promise<void> {
+        // Remove all watches on entities which have no more diffs to look
+        this.watchlist = this.watchlist.filter((entity_task: EntityTasks) => entity_task.tasks.length > 0)
 
         const tasks = this.watchlist.reduce((acc: IntentfulTask[], entityTask) => {
             entityTask.tasks.forEach(task => {
@@ -112,17 +112,19 @@ export class DifferResolver {
         }, [])
         for (let task of tasks) {
             if (task.status !== IntentfulStatus.Active && task.status !== IntentfulStatus.Pending && task.status !== IntentfulStatus.Failed) {
-                await this.removeTask(task)
+                if (task.last_status_changed && (new Date().getTime() - task.last_status_changed.getTime()) / 1000 > taskExpirySeconds) {
+                    await this.removeTask(task)
+                }
             }
         }
     }
 
     private async removeTask(task: IntentfulTask): Promise<void> {
-        for (let entityTasks of this.watchlist) {
-            for (let i in entityTasks.tasks) {
-                if (entityTasks.tasks[i] === task) {
-                    await this.intentfulTaskDb.delete_task(entityTasks.tasks[i].uuid)
-                    entityTasks.tasks.splice(Number(i), 1)
+        for (let i in this.watchlist) {
+            for (let j in this.watchlist[i].tasks) {
+                if (this.watchlist[i].tasks[j] === task) {
+                    await this.intentfulTaskDb.delete_task(this.watchlist[i].tasks[j].uuid)
+                    this.watchlist[i].tasks.splice(Number(j), 1)
                 }
             }
         }
@@ -178,27 +180,14 @@ export class DifferResolver {
             let activeTasks = entityTask.tasks.filter(task => task.status === IntentfulStatus.Active)
             if (activeTasks.length === 1) {
                 let activeTask = activeTasks[0]
-                let doneDiff = 0
                 try {
                     for (let diff of activeTask.diffs) {
                         const compiledSignature = SFSCompiler.compile_sfs(diff.intentful_signature.signature)
-                        const [,spec] = await this.specDb.get_spec(activeTask.entity_ref)
-                        const [,status] = await this.statusDb.get_status(activeTask.entity_ref)
+                        const [, spec] = await this.specDb.get_spec(activeTask.entity_ref)
+                        const [, status] = await this.statusDb.get_status(activeTask.entity_ref)
                         if (SFSCompiler.run_sfs(compiledSignature, spec, status) !== null) {
-                            // Shlomi.v
-                            // No need to healthcheck a diff which may already be resolved,
-                            // the handler may have already terminated
-                        await axios.get(`${ diff.intentful_signature.base_callback }/healthcheck`)
-                        } else {
-                            doneDiff = doneDiff+1
+                            await axios.get(`${diff.intentful_signature.base_callback}/healthcheck`)
                         }
-                    }
-                    if (doneDiff == activeTask.diffs.length) {
-                        // Shlomi.v
-                        // if all diffs were resolved - this task must be completed. 
-                        // TODO: What about Completed_Partially? Make sure we are not missing anything
-                        activeTask.status = IntentfulStatus.Completed_Successfully
-                        await this.intentfulTaskDb.update_task(activeTask.uuid, activeTask)    
                     }
                 } catch (e) {
                     activeTask.status = IntentfulStatus.Failed

@@ -165,7 +165,11 @@ export class Entity_API_Impl implements Entity_API {
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
         try {
-            this.validator.validate(input, Object.values(procedure.argument)[0], schemas, provider.allowExtraProps);
+            this.validator.validate(input, Object.values(procedure.argument)[ 0 ], schemas, provider.allowExtraProps);
+        } catch (err) {
+            throw ProcedureInvocationError.fromError(err, 400)
+        }
+        try {
             const { data } = await axios.post(procedure.procedure_callback,
                 {
                     metadata: entity_spec[0],
@@ -195,7 +199,11 @@ export class Entity_API_Impl implements Entity_API {
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
         try {
-            this.validator.validate(input, Object.values(procedure.argument)[0], schemas, provider.allowExtraProps);
+            this.validator.validate(input, Object.values(procedure.argument)[ 0 ], schemas, provider.allowExtraProps);
+        } catch (err) {
+            throw ProcedureInvocationError.fromError(err, 400)
+        }
+        try {
             const { data } = await axios.post(procedure.procedure_callback,
                 {
                     input: input
@@ -220,7 +228,11 @@ export class Entity_API_Impl implements Entity_API {
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
         try {
-            this.validator.validate(input, Object.values(procedure.argument)[0], schemas, provider.allowExtraProps);
+            this.validator.validate(input, Object.values(procedure.argument)[ 0 ], schemas, provider.allowExtraProps);
+        } catch (err) {
+            throw ProcedureInvocationError.fromError(err, 400)
+        }
+        try {
             const { data } = await axios.post(procedure.procedure_callback,
                 {
                     input: input

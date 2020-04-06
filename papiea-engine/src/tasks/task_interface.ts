@@ -22,6 +22,8 @@ export interface IntentfulTask {
     // Current status of the entity
     status: IntentfulStatus
 
+    last_status_changed?: Date
+
     // Date of creation
     created_at?: Date
 }

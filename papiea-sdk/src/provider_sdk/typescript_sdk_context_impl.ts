@@ -14,7 +14,7 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
     headers: IncomingHttpHeaders;
     loggerFactory: LoggerFactory
 
-    constructor(provider:ProviderSdk, provider_prefix: string, provider_version: string, headers: IncomingHttpHeaders, loggerFactory: LoggerFactory) {
+    constructor(provider: ProviderSdk, provider_prefix: string, provider_version: string, headers: IncomingHttpHeaders, loggerFactory: LoggerFactory) {
         this.provider_url = provider.provider_url;
         this.base_url = provider.entity_url;
         this.provider_prefix = provider_prefix;
@@ -29,14 +29,19 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
         return `${this.base_url}/${this.provider_prefix}/${this.provider_version}/${entity.metadata.kind}/${entity.metadata.uuid}`
     }
 
-    async check_permission(entityAction: [Action, Entity_Reference][], provider_prefix: string = this.provider_prefix, provider_version: Version = this.provider_version): Promise<boolean> {
-        return this.try_check(provider_prefix, provider_version, entityAction)
+    async check_permission(entityAction: [Action, Entity_Reference][], user_token?: string, provider_prefix: string = this.provider_prefix, provider_version: Version = this.provider_version): Promise<boolean> {
+        if (user_token) {
+            const auth_header = `Bearer ${user_token}`
+            return this.try_check(provider_prefix, provider_version, entityAction, {...this.headers, authorization: auth_header})
+        } else {
+            return this.try_check(provider_prefix, provider_version, entityAction, this.headers)
+        }
     }
 
-    async try_check(provider_prefix: string, provider_version: Version, entityAction: [Action, Entity_Reference][]) {
+    async try_check(provider_prefix: string, provider_version: Version, entityAction: [Action, Entity_Reference][], headers: any) {
         try {
             const { data: { success } } = await axios.post(`${ this.base_url }/${ provider_prefix }/${ provider_version }/check_permission`,
-                entityAction, { headers: this.headers });
+                entityAction, { headers: headers });
             return success === "Ok";
         } catch (e) {
             return false;

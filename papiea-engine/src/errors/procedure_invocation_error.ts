@@ -13,9 +13,9 @@ export class ProcedureInvocationError extends Error {
         this.status = status;
     }
 
-    static fromError(err: AxiosError): ProcedureInvocationError
-    static fromError(err: ValidationError): ProcedureInvocationError
-    static fromError(err: Error): ProcedureInvocationError {
+    static fromError(err: AxiosError, status?: number): ProcedureInvocationError
+    static fromError(err: ValidationError, status?: number): ProcedureInvocationError
+    static fromError(err: Error, status?: number): ProcedureInvocationError {
         if (isAxiosError(err)) {
             return new ProcedureInvocationError([{
                 message: err.response!.data.message,
@@ -25,13 +25,13 @@ export class ProcedureInvocationError extends Error {
         } else if (err instanceof ValidationError) {
             return new ProcedureInvocationError(err.errors.map(e => {
                 return { message: e }
-            }), 400)
+            }), status || 500)
         } else {
             return new ProcedureInvocationError([{
                 message: "Unknown error during procedure invocation",
                 errors: {},
                 stacktrace: err.stack
-            }], 500)
+            }], status || 500)
         }
     }
 }

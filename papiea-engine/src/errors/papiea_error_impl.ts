@@ -69,8 +69,8 @@ export class PapieaErrorImpl implements PapieaError {
 
                 return new PapieaErrorImpl(409, `Conflicting Entity: ${metadata.uuid} has version ${metadata.spec_version}`)
             default:
-                console.log(`Default handle got error: ${err}`)
-                return new PapieaErrorImpl(500, `${err}.`)
+                console.log(`Default handle got error: ${err.message}`)
+                return new PapieaErrorImpl(500, err.message)
         }
     }
 }

@@ -412,6 +412,7 @@ describe("Provider Sdk tests", () => {
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { input: { "a": 5, "b": 5 } });
         } catch (e) {
             expect(e.response.data.error.errors[0].message).toBe("Unable to validate a model with a type: string, expected: number");
+            expect(e.response.data.error.code).toBe(500);
         } finally {
             sdk.server.close();
         }
@@ -551,7 +552,7 @@ describe("SDK + oauth provider tests", () => {
             loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
-                const allowed = await ctx.check_permission([[Action.Read, { uuid: entity_metadata.uuid, kind: kind_name }]], provider.prefix, provider.version);
+                const allowed = await ctx.check_permission([[Action.Read, { uuid: entity_metadata.uuid, kind: kind_name }]], undefined,  provider.prefix, provider.version);
                 expect(allowed).toBeFalsy();
             }
         );
@@ -584,8 +585,74 @@ describe("SDK + oauth provider tests", () => {
             loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
-                const allowed = await ctx.check_permission([[Action.Read, { uuid: entity_metadata.uuid, kind: kind_name }]], provider.prefix, provider.version);
+                const allowed = await ctx.check_permission([[Action.Read, { uuid: entity_metadata.uuid, kind: kind_name }]], undefined, provider.prefix, provider.version);
                 expect(allowed).toBeTruthy();
+            }
+        );
+        sdk.secure_with(oauth, modelText, "xxx");
+        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+        await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+            policy: `p, alice, owner, ${ kind_name }, *, allow`
+        });
+        try {
+            await sdk.register();
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { input: { "a": 5, "b": 5 } },
+                { headers: { 'Authorization': `Bearer ${token}` }});
+        } finally {
+            sdk.server.close();
+            await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+                policy: null
+            });
+        }
+    });
+
+    test("Procedure check permission read should succeed with specified user token", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        sdk.version(provider_version);
+        sdk.prefix("permissioned_provider_read_success_user_token");
+        sdk.provider_procedure("computeWithPermissionCheck",
+            {},
+            Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./test_data/procedure_sum_input.yml"),
+            {},
+            async (ctx, input) => {
+                const allowed = await ctx.check_permission([[Action.Read, { uuid: entity_metadata.uuid, kind: kind_name }]], adminKey, provider.prefix, provider.version);
+                expect(allowed).toBeTruthy();
+            }
+        );
+        sdk.secure_with(oauth, modelText, "xxx");
+        const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+        await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+            policy: `p, alice, owner, ${ kind_name }, *, allow`
+        });
+        try {
+            await sdk.register();
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { input: { "a": 5, "b": 5 } },
+                { headers: { 'Authorization': `Bearer ${token}` }});
+        } finally {
+            sdk.server.close();
+            await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
+                policy: null
+            });
+        }
+    });
+
+    test("Procedure check permission read should fail with specified invalid user token", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        sdk.version(provider_version);
+        sdk.prefix("permissioned_provider_read_fail_user_token");
+        sdk.provider_procedure("computeWithPermissionCheck",
+            {},
+            Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./test_data/procedure_sum_input.yml"),
+            {},
+            async (ctx, input) => {
+                const allowed = await ctx.check_permission([[Action.Read, { uuid: entity_metadata.uuid, kind: kind_name }]], "Totally invalid key", provider.prefix, provider.version);
+                expect(allowed).toBeFalsy();
             }
         );
         sdk.secure_with(oauth, modelText, "xxx");
@@ -617,7 +684,7 @@ describe("SDK + oauth provider tests", () => {
             loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
-                const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]], provider.prefix, provider.version);
+                const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]], undefined, provider.prefix, provider.version);
                 expect(allowed).toBeTruthy();
             }
         );
@@ -650,7 +717,7 @@ describe("SDK + oauth provider tests", () => {
             loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
-                const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]], provider.prefix, provider.version);
+                const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]], undefined, provider.prefix, provider.version);
                 expect(allowed).toBeFalsy();
             }
         );
@@ -683,7 +750,7 @@ describe("SDK + oauth provider tests", () => {
             loadYaml("./test_data/procedure_sum_input.yml"),
             {},
             async (ctx, input) => {
-                const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]], provider.prefix, provider.version);
+                const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]], undefined, provider.prefix, provider.version);
                 expect(allowed).toBeFalsy();
             }
         );
@@ -719,7 +786,7 @@ describe("SDK + oauth provider tests", () => {
                 const allowed = await ctx.check_permission([
                     [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata],
                     [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "jane" }, created_at: {} as Date } as Metadata]
-                ], provider.prefix, provider.version);
+                ], undefined, provider.prefix, provider.version);
                 expect(allowed).toBeFalsy();
             }
         );
@@ -755,7 +822,7 @@ describe("SDK + oauth provider tests", () => {
                 const allowed = await ctx.check_permission([
                     [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata],
                     [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]
-                ], provider.prefix, provider.version);
+                ], undefined, provider.prefix, provider.version);
                 expect(allowed).toBeTruthy();
             }
         );
@@ -791,7 +858,7 @@ describe("SDK + oauth provider tests", () => {
                 const allowed = await ctx.check_permission([
                     [Action.Read, { uuid: entity_metadata.uuid, kind: kind_name }],
                     [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]
-                ], provider.prefix, provider.version);
+                ], undefined, provider.prefix, provider.version);
                 expect(allowed).toBeTruthy();
             }
         );
@@ -827,7 +894,7 @@ describe("SDK + oauth provider tests", () => {
                 const allowed = await ctx.check_permission([
                     [Action.Read, { uuid: entity_metadata.uuid, kind: kind_name }],
                     [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date } as Metadata]
-                ], provider.prefix, provider.version);
+                ], undefined, provider.prefix, provider.version);
                 expect(allowed).toBeFalsy();
             }
         );
@@ -911,7 +978,7 @@ describe("SDK callback tests", () => {
             async (ctx, input) => {
             }
         );
-        location.on_delete({}, Procedural_Execution_Strategy.Halt_Intentful, {}, {}, async (ctx, input) => {
+        location.on_delete(async (ctx, input) => {
             expect(input).toBeDefined()
         })
         try {
@@ -952,7 +1019,7 @@ describe("SDK callback tests", () => {
             async (ctx, input) => {
             }
         );
-        location.on_create({}, Procedural_Execution_Strategy.Halt_Intentful, {}, {}, async (ctx, input) => {
+        location.on_create(async (ctx, input) => {
             expect(input).toBeDefined()
         })
         try {
@@ -993,11 +1060,11 @@ describe("SDK callback tests", () => {
             async (ctx, input) => {
             }
         );
-        location.on_delete({}, Procedural_Execution_Strategy.Halt_Intentful, {}, {}, async (ctx, input) => {
+        location.on_delete(async (ctx, input) => {
             expect(input).toBeDefined()
         })
 
-        location.on_create({}, Procedural_Execution_Strategy.Halt_Intentful, {}, {}, async (ctx, input) => {
+        location.on_create(async (ctx, input) => {
             expect(input).toBeDefined()
         })
         try {
@@ -1018,6 +1085,84 @@ describe("SDK callback tests", () => {
                     'Authorization': `Bearer ${ adminKey }`
                 }
             })
+        } finally {
+            sdk.server.close();
+        }
+    });
+    test("On delete callback with error should interrupt execution", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        const prefix = "provider_on_delete_callback"
+        sdk.version(provider_version);
+        sdk.prefix(prefix);
+        location.on_delete(async (ctx, input) => {
+            throw new Error("Cannot invoke on delete")
+        })
+        try {
+            await sdk.register()
+            kind_name = sdk.provider.kinds[0].name
+            const { data: { metadata } } = await entityApi.post(`/${ prefix }/${ provider_version }/${ kind_name }`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${ adminKey }`
+                }
+            })
+            try {
+                await entityApi.delete(`/${prefix}/${provider_version}/${kind_name}/${metadata.uuid}`, {
+                    headers: {
+                        'Authorization': `Bearer ${adminKey}`
+                    }
+                })
+            } catch (e) {
+                expect(e.response.data).toBeDefined()
+                expect(e.response.data.error.message).toBe("On Delete couldn't be called; Cannot invoke on delete")
+            }
+        } finally {
+            sdk.server.close();
+        }
+    });
+
+    test("On create callback with error should interrupt execution", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        const prefix = "provider_on_create_callback"
+        sdk.version(provider_version);
+        sdk.prefix(prefix);
+        sdk.provider_procedure("computeWithCreateCallback",
+            {},
+            Procedural_Execution_Strategy.Halt_Intentful,
+            loadYaml("./test_data/procedure_sum_input.yml"),
+            {},
+            async (ctx, input) => {
+            }
+        );
+        location.on_create(async (ctx, input) => {
+            throw new Error("Cannot invoke on create")
+        })
+        try {
+            await sdk.register()
+            kind_name = sdk.provider.kinds[0].name
+            try {
+                const { data: { metadata } } = await entityApi.post(`/${ prefix }/${ provider_version }/${ kind_name }`, {
+                    spec: {
+                        x: 10,
+                        y: 11
+                    }
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${adminKey}`
+                    }
+                })
+            } catch (e) {
+                expect(e.response.data).toBeDefined()
+                expect(e.response.data.error.message).toBe("On Create couldn't be called; Cannot invoke on create")
+            }
         } finally {
             sdk.server.close();
         }

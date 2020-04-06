@@ -40,7 +40,7 @@ describe("Intentful Workflow tests", () => {
     const provider_version = "0.1.0";
 
     test("Change single field intentful workflow should pass", async () => {
-        expect.hasAssertions();
+        expect.assertions(2);
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
             const location = sdk.new_kind(locationDataDescription);
@@ -73,28 +73,21 @@ describe("Intentful Workflow tests", () => {
                     spec_version: 1
                 }
             })
-            let retries = 4
+            let retries = 5
             try {
-            for (let i = 1; i <= retries; i++) {
-                    const result = await entityApi.get(`/intentful_task/${task.uuid}`)
-
-                    // SHLOMI: I think that the task is getting removed too quickly once it is completed
-                    // task is returning 
-                    // console.debug("WHAT IS GOING ON??!", result.data, i)
-                if (result.data.status === IntentfulStatus.Completed_Successfully) {
-                    expect(result.data.status).toEqual(IntentfulStatus.Completed_Successfully)
-                    return
+                for (let i = 1; i <= retries; i++) {
+                    const result = await entityApi.get(`/intentful_task/${ task.uuid }`)
+                    if (result.data.status === IntentfulStatus.Completed_Successfully) {
+                        expect(result.data.status).toEqual(IntentfulStatus.Completed_Successfully)
+                        break
+                    }
+                    await timeout(7000)
                 }
-                await timeout(7000)
-            }
+                const res = await entityApi.get(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
+                expect(res.data.status.x).toEqual(20)
             } catch (e) {
-                console.debug("Got some error:", e.response.status)
+                console.log(`Couldn't get intentful task: ${e.response}`)
             }
-
-            // Shlomi: In any case, this should succeed if the diff got resolved
-            const { data: entity } = await entityApi.get(`/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`)
-            expect(entity.spec).toEqual(entity.status)
-
         } finally {
             sdk.server.close();
         }
