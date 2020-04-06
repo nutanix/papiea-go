@@ -3,6 +3,7 @@ from types import TracebackType
 from typing import Any, Optional, Type
 
 from aiohttp import ClientSession, ClientTimeout, web
+from multidict import CIMultiDict
 
 from .core import AttributeDict
 
@@ -50,7 +51,7 @@ class ApiInstance(object):
         await self.close()
 
     async def post(self, prefix: str, data: dict, headers: dict = {}) -> Any:
-        new_headers = {}
+        new_headers = CIMultiDict()
         new_headers.update(self.headers)
         new_headers.update(headers)
         data_binary = json.dumps(data).encode("utf-8")
@@ -64,7 +65,7 @@ class ApiInstance(object):
         return json_loads_attrs(res)
 
     async def put(self, prefix: str, data: dict, headers: dict = {}) -> Any:
-        new_headers = {}
+        new_headers = CIMultiDict()
         new_headers.update(self.headers)
         new_headers.update(headers)
         data_binary = json.dumps(data).encode("utf-8")
@@ -78,7 +79,7 @@ class ApiInstance(object):
         return json_loads_attrs(res)
 
     async def patch(self, prefix: str, data: dict, headers: dict = {}) -> Any:
-        new_headers = {}
+        new_headers = CIMultiDict()
         new_headers.update(self.headers)
         new_headers.update(headers)
         data_binary = json.dumps(data).encode("utf-8")
@@ -92,7 +93,7 @@ class ApiInstance(object):
         return json_loads_attrs(res)
 
     async def get(self, prefix: str, headers: dict = {}) -> Any:
-        new_headers = {}
+        new_headers = CIMultiDict()
         new_headers.update(self.headers)
         new_headers.update(headers)
         async with self.session.get(
@@ -105,7 +106,7 @@ class ApiInstance(object):
         return json_loads_attrs(res)
 
     async def delete(self, prefix: str, headers: dict = {}) -> Any:
-        new_headers = {}
+        new_headers = CIMultiDict()
         new_headers.update(self.headers)
         new_headers.update(headers)
         async with self.session.delete(

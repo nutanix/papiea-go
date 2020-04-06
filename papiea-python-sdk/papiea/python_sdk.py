@@ -532,24 +532,20 @@ class KindBuilder(object):
         self.server_manager.register_healthcheck()
         return self
 
-    def on_create(
-        self,
-        strategy: ProceduralExecutionStrategy,
-        input_desc: Any,
-        output_desc: Any,
-        handler: Callable[[ProceduralCtx, Any], Any],
-    ) -> "KindBuilder":
+    def on_create(self, handler: Callable[[ProceduralCtx, Any], Any],) -> "KindBuilder":
         name = "__create"
-        self.kind_procedure(name, strategy, input_desc, output_desc, handler)
+        self.kind_procedure(
+            name, ProceduralExecutionStrategy.HaltIntentful, {}, {}, handler
+        )
         return self
 
     def on_delete(
         self,
         strategy: ProceduralExecutionStrategy,
-        input_desc: Any,
-        output_desc: Any,
         handler: Callable[[ProceduralCtx, Any], Any],
     ) -> "KindBuilder":
         name = "__delete"
-        self.kind_procedure(name, strategy, input_desc, output_desc, handler)
+        self.kind_procedure(
+            name, ProceduralExecutionStrategy.HaltIntentful, {}, {}, handler
+        )
         return self

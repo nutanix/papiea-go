@@ -10,7 +10,7 @@ services:
       - papiea
 
   papiea:
-    image: nutanix-docker.jfrog.io/papiea:904
+    image: nutanix-docker.jfrog.io/papiea:941
     depends_on:
       - mongo
     environment:

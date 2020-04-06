@@ -7,7 +7,7 @@ from yaml import Loader as YamlLoader
 from yaml import load as load_yaml
 
 from papiea.client import EntityCRUD
-from papiea.core import Entity, Key, ProceduralExecutionStrategy, S2S_Key, Spec
+from papiea.core import Action, Entity, Key, ProceduralExecutionStrategy, S2S_Key, Spec
 from papiea.python_sdk import ProviderSdk
 
 logger = logging.getLogger(__name__)
@@ -91,6 +91,10 @@ async def create_user_s2s_key(sdk: ProviderSdk):
 
 async def move_x(ctx, entity, input):
     entity.spec.x += input
+    allowed = await ctx.check_permission([(Action.Update, entity.metadata)])
+    logger.debug(f"Allowed {allowed}")
+    if not allowed:
+        raise Exception("Permission denied")
     async with ctx.entity_client_for_user(entity.metadata) as entity_client:
         await entity_client.update(entity.metadata, entity.spec)
     return entity.spec.x

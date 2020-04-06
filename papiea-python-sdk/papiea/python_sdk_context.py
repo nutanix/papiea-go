@@ -1,7 +1,8 @@
+import json
 from typing import List, Optional, Tuple
 
 from aiohttp import ClientSession
-from multidict import CIMultiDictProxy
+from multidict import CIMultiDict
 
 from .client import EntityCRUD
 from .core import Action, EntityReference, Secret, Status, Version
@@ -14,7 +15,7 @@ class ProceduralCtx(object):
         provider,
         provider_prefix: str,
         provider_version: str,
-        headers: CIMultiDictProxy,
+        headers: CIMultiDict,
     ):
         self.provider_url = provider.provider_url
         self.base_url = provider.entity_url
@@ -36,6 +37,7 @@ class ProceduralCtx(object):
     async def check_permission(
         self,
         entity_action: List[Tuple[Action, EntityReference]],
+        user_token: Optional[str] = None,
         provider_prefix: Optional[str] = None,
         provider_version: Optional[Version] = None,
     ) -> bool:
@@ -43,13 +45,23 @@ class ProceduralCtx(object):
             provider_prefix = self.provider_prefix
         if provider_version is None:
             provider_version = self.provider_version
-        return await self.try_check(provider_prefix, provider_version, entity_action)
+        headers = {
+            "Content-Type": "application/json",
+        }
+        if user_token is not None:
+            headers["Authorization"] = f"Bearer {user_token}"
+        else:
+            headers["Authorization"] = self.headers["Authorization"]
+        return await self.try_check(
+            provider_prefix, provider_version, entity_action, headers
+        )
 
     async def try_check(
         self,
         provider_prefix: str,
         provider_version: Version,
         entity_action: List[Tuple[Action, EntityReference]],
+        headers: dict = {},
     ) -> bool:
         try:
             data_binary = json.dumps(entity_action).encode("utf-8")
@@ -57,11 +69,11 @@ class ProceduralCtx(object):
                 async with session.post(
                     f"{ self.base_url }/{ provider_prefix }/{ provider_version }/check_permission",
                     data=data_binary,
-                    headers=self.headers,
+                    headers=headers,
                 ) as resp:
                     res = await resp.text()
             res = json.loads(res)
-            return res["data"]["success"] == "Ok"
+            return res["success"] == "Ok"
         except Exception as e:
             return False
 
@@ -86,7 +98,7 @@ class ProceduralCtx(object):
     def get_user_security_api(self, user_s2skey: Secret):
         return self.provider.new_security_api(user_s2skey)
 
-    def get_headers(self) -> CIMultiDictProxy:
+    def get_headers(self) -> CIMultiDict:
         return self.headers
 
     def get_invoking_token(self) -> str:
