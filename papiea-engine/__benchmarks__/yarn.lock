@@ -568,9 +568,9 @@ lodash.isequal@^4.5.0:
   integrity sha1-QVxEePK8wwEgwizhDtMib30+GOA=
 
 lodash@^4.17.14:
-  version "4.17.15"
-  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.15.tgz#b447f6670a0455bbfeedd11392eff330ea097548"
-  integrity sha512-8xOcRHvCjnocdS5cpwXQXVzmmh5e5+saE2QGoeQmbKmRS6J3VQppPOIt0MnmE+4xlZoumy0GPG0D0MVIQbNA1A==
+  version "4.17.19"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.19.tgz#e48ddedbe30b3321783c5b4301fbd353bc1e4a4b"
+  integrity sha512-JNvd8XER9GQX0v2qJgsaN/mzFCNA5BRe/j8JN9d+tWyGLSodKQHKFicdwNYzWwI3wjRnaKPsGj1XkBjx/F96DQ==
 
 logform@^2.1.1, logform@^2.1.2:
   version "2.1.2"
@@ -688,14 +688,14 @@ pako@^1.0.3:
   version "1.0.89"
   dependencies:
     logform "^2.1.2"
-    papiea-core "file:../../../../Library/Caches/Yarn/v6/npm-papiea-backend-utils-1.0.89-6c919170-597b-465a-a5a9-0ef91faea3b1-1593514835837/node_modules/papiea-core"
+    papiea-core "file:../../papiea-core"
     winston "^3.2.1"
 
 "papiea-client@file:../../papiea-client":
   version "1.0.89"
   dependencies:
     axios "^0.18.1"
-    papiea-core "file:../../../../Library/Caches/Yarn/v6/npm-papiea-client-1.0.89-42c0c60c-2276-4af2-8def-42e2756b213c-1593514835790/node_modules/papiea-core"
+    papiea-core "file:../../papiea-core"
 
 "papiea-core@file:../../papiea-core":
   version "1.0.89"
@@ -707,9 +707,9 @@ pako@^1.0.3:
     express "^4.17.0"
     express-async-handler "^1.1.4"
     js-yaml "^3.12.0"
-    papiea-backend-utils "file:../../../../Library/Caches/Yarn/v6/npm-papiea-sdk-1.0.89-e8ca5f57-ec2a-43bb-8937-aecf5913d2cd-1593514835800/papiea-backend-utils"
-    papiea-client "file:../../../../Library/Caches/Yarn/v6/npm-papiea-sdk-1.0.89-e8ca5f57-ec2a-43bb-8937-aecf5913d2cd-1593514835800/papiea-client"
-    papiea-core "file:../../../../Library/Caches/Yarn/v6/npm-papiea-sdk-1.0.89-e8ca5f57-ec2a-43bb-8937-aecf5913d2cd-1593514835800/papiea-core"
+    papiea-backend-utils "file:../../papiea-backend-utils"
+    papiea-client "file:../../papiea-client"
+    papiea-core "file:../../papiea-core"
     pluralize "^7.0.0"
     swagger-model-validator "^3.0.6"
     uuid "^3.3.2"
