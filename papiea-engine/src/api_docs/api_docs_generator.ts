@@ -608,7 +608,6 @@ export default class ApiDocsGenerator {
      * @param schema - schema to remove the required from.
      * @param fieldName - type of x-papiea value spec-only|status-only.
      */
-
     removeRequiredField(schema: any, fieldName: string) {
         for (let prop in schema) {
             // check that it's a object holding properties
