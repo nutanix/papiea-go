@@ -1,10 +1,10 @@
 import axios from "axios";
 import { ProviderSdk } from "papiea-sdk";
 import {
-    getDifferLocationDataDescription,
-    getLocationDataDescription,
+    DescriptionBuilder,
     loadYamlFromTestFactoryDir
 } from "../../__tests__/test_data_factory";
+import { IntentfulBehaviour } from "papiea-core";
 
 const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
 const args = process.argv
@@ -22,8 +22,8 @@ const providerApiAdmin = axios.create({
 const provider_version = "0.1.0"
 const provider_prefix = "benchmark_provider"
 const intentful_provider_prefix = "benchmark_intentful_provider"
-const location_desc = getLocationDataDescription()
-const location_differ_desc = getDifferLocationDataDescription()
+const location_desc = new DescriptionBuilder().withIntentfulBehaviour(IntentfulBehaviour.Basic).build()
+const location_differ_desc = new DescriptionBuilder().withIntentfulBehaviour(IntentfulBehaviour.Differ).build()
 
 function tryParsePort(portStr: string): number {
     let port: number
