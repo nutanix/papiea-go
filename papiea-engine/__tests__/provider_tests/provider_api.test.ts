@@ -76,7 +76,7 @@ describe("Provider API tests", () => {
 
     test("Register provider with spec only kind structure with spec only fields", async () => {
         expect.assertions(1)
-                const desc = new DescriptionBuilder(DescriptionType.Location).withIntentfulBehaviour(IntentfulBehaviour.SpecOnly).withSpecOnlyField().build()
+        const desc = new DescriptionBuilder(DescriptionType.Location).withIntentfulBehaviour(IntentfulBehaviour.SpecOnly).withSpecOnlyField().build()
         const kind = getKind(IntentfulBehaviour.SpecOnly, desc)
         const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds([kind]).build();
         try {
