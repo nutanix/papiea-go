@@ -1,10 +1,23 @@
 import "jest"
-import { writeFileSync, unlinkSync } from "fs";
+import { unlinkSync, writeFileSync } from "fs";
 import { validate } from "swagger-parser";
 import axios from "axios"
-import { getBasicKind, loadYamlFromTestFactoryDir, ProviderBuilder } from "../test_data_factory"
+import {
+    DescriptionBuilder,
+    DescriptionType,
+    getKind,
+    loadYamlFromTestFactoryDir,
+    ProviderBuilder
+} from "../test_data_factory"
 import { Provider_DB } from "../../src/databases/provider_db_interface";
-import { Provider, Version, Procedural_Signature, Procedural_Execution_Strategy, Kind } from "papiea-core";
+import {
+    IntentfulBehaviour,
+    Kind,
+    Procedural_Execution_Strategy,
+    Procedural_Signature,
+    Provider,
+    Version
+} from "papiea-core";
 import ApiDocsGenerator from "../../src/api_docs/api_docs_generator";
 import { IntentfulKindReference } from "../../src/databases/provider_db_mongo";
 
@@ -245,7 +258,8 @@ describe("API docs test entity", () => {
 
     test("Provider with procedures generates correct openAPI emitting all variables without 'x-papiea' - 'status_only' property", async () => {
         expect.hasAssertions();
-        const provider = new ProviderBuilder("provider_include_all_props").withVersion("0.1.0").withKinds([getBasicKind()]).build();
+        const kind = getKind(IntentfulBehaviour.Basic)
+        const provider = new ProviderBuilder("provider_include_all_props").withVersion("0.1.0").withKinds([kind]).build();
         const providerDbMock = new Provider_DB_Mock(provider);
         const apiDocsGenerator = new ApiDocsGenerator(providerDbMock);
         const kind_name = provider.kinds[0].name;
@@ -284,18 +298,17 @@ describe("API docs test entity", () => {
 
     test("Provider with procedures generates correct openAPI removing all variables with 'x-papiea' - 'status_only' from properties and required of a spec", async () => {
         expect.hasAssertions()
-        const provider = new ProviderBuilder("provider_include_all_props").withVersion("0.1.0").withKinds([getBasicKind()]).build()
+        let desc = new DescriptionBuilder(DescriptionType.Location)
+        // add 'z' to required field, so that we check it gets removed from required and fields
+        desc = desc.withRequiredField("z")
+        // add required fields to v that are marked as status-only so that we check recursive deletion works
+        desc = desc.withStatusOnlyField("h", "number").withRequiredField("h")
+        desc = desc.build()
+        const kind = getKind(IntentfulBehaviour.Basic, desc)
+        const provider = new ProviderBuilder("provider_include_all_props").withVersion("0.1.0").withKinds([kind]).build()
         const providerDbMock = new Provider_DB_Mock(provider)
         const apiDocsGenerator = new ApiDocsGenerator(providerDbMock)
         const kind_name = provider.kinds[0].name
-        const structure = provider.kinds[0].kind_structure[kind_name]
-
-        // add 'z' to required field, so that we check it gets removed from required and fields
-        structure.required.push("z")
-
-        // add required fields to v that are marked as status-only so that we check recursive deletion works
-        structure.properties.v.required = ["h"]
-        structure.properties.v.properties["h"] = {"type": "number", "x-papiea": "status-only"}
 
         const apiDoc = await apiDocsGenerator.getApiDocs(providerDbMock.provider)
         const entityName = kind_name + "-Spec"

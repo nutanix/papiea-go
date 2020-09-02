@@ -4069,11 +4069,11 @@ package-json@^4.0.0:
   version "1.0.90"
   dependencies:
     logform "^2.1.2"
-    papiea-core "file:../../../Library/Caches/Yarn/v6/npm-papiea-backend-utils-1.0.90-8ba30171-8490-4ee2-a4c8-e0cb55b38350-1596800056147/node_modules/papiea-core"
+    papiea-core "file:../../../../.cache/yarn/v6/npm-papiea-backend-utils-1.0.90-3f162b68-8aef-44e5-9746-d346411c4629-1599036326335/node_modules/papiea-core"
     winston "^3.2.1"
 
 "papiea-core@file:../papiea-core":
-  version "1.0.90"
+  version "1.0.91"
 
 parse-glob@^3.0.4:
   version "3.0.4"

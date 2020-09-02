@@ -1,17 +1,8 @@
 import "jest"
 import axios from "axios"
-import {
-    getBasicKind,
-    getClusterKind,
-    getClusterKindWithNullableFields,
-    getSpecOnlyArrayKind,
-    getSpecOnlyKindByDescription,
-    getSpecOnlyKindDescriptionWithSpecOnlyFields,
-    getSpecOnlyKindDescriptionWithStatusOnlyFields,
-    loadYamlFromTestFactoryDir,
-    ProviderBuilder
-} from "../test_data_factory"
-import { Provider } from "papiea-core";
+import { DescriptionBuilder, DescriptionType, getKind, ProviderBuilder } from "../test_data_factory"
+import { IntentfulBehaviour, Provider } from "papiea-core";
+import get = Reflect.get;
 
 declare var process: {
     env: {
@@ -40,9 +31,12 @@ const entityApi = axios.create({
 describe("Provider API tests", () => {
     const providerPrefix = "test_provider";
     const providerVersion = "0.1.0";
-    const clusterKinds = [getClusterKind()]
-    const nullableClusterKinds = [getClusterKindWithNullableFields()]
-    const locationArrayKinds = [getSpecOnlyArrayKind()]
+    const clusterDescription = new DescriptionBuilder(DescriptionType.Cluster).build()
+    const clusterKinds = [getKind(IntentfulBehaviour.Basic, clusterDescription)]
+    const nullableClusterDescription = new DescriptionBuilder(DescriptionType.Cluster).withNullableFields().build()
+    const nullableClusterKinds = [getKind(IntentfulBehaviour.Basic, nullableClusterDescription)]
+    const arrayDescription = new DescriptionBuilder(DescriptionType.Array).build()
+    const locationArrayKinds = [getKind(IntentfulBehaviour.Basic, arrayDescription)]
 
     test("Non-existent route", done => {
         providerApi.delete(`/abc`).then(() => done.fail()).catch(() => done());
@@ -70,9 +64,9 @@ describe("Provider API tests", () => {
 
     test("Register provider with spec only kind structure with status only fields", async () => {
         expect.assertions(1)
-        const desc = getSpecOnlyKindDescriptionWithStatusOnlyFields()
-        const kind = getSpecOnlyKindByDescription(desc)
-                const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds([kind]).build();
+        const desc = new DescriptionBuilder(DescriptionType.Location).withIntentfulBehaviour(IntentfulBehaviour.SpecOnly).withStatusOnlyField().build()
+        const kind = getKind(IntentfulBehaviour.SpecOnly, desc)
+        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds([kind]).build();
         try {
             await providerApi.post('/', provider);
         } catch (e) {
@@ -82,8 +76,8 @@ describe("Provider API tests", () => {
 
     test("Register provider with spec only kind structure with spec only fields", async () => {
         expect.assertions(1)
-        const desc = getSpecOnlyKindDescriptionWithSpecOnlyFields()
-        const kind = getSpecOnlyKindByDescription(desc)
+                const desc = new DescriptionBuilder(DescriptionType.Location).withIntentfulBehaviour(IntentfulBehaviour.SpecOnly).withSpecOnlyField().build()
+        const kind = getKind(IntentfulBehaviour.SpecOnly, desc)
         const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds([kind]).build();
         try {
             await providerApi.post('/', provider);
@@ -94,7 +88,8 @@ describe("Provider API tests", () => {
 
     test("Register provider with spec only kind structure", async () => {
         expect.assertions(1)
-        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds([getBasicKind()]).build();
+        const kind = getKind(IntentfulBehaviour.Basic)
+        const provider: Provider = new ProviderBuilder().withVersion("0.1.0").withKinds([kind]).build();
         const result = await providerApi.post('/', provider);
         expect(result.status).toEqual(200)
     });
@@ -382,7 +377,7 @@ describe("Provider API tests", () => {
     });
 
     test("Register provider with extension structure", async () => {
-        const extension_desc = loadYamlFromTestFactoryDir("./test_data/metadata_extension.yml");
+        const extension_desc = new DescriptionBuilder(DescriptionType.Metadata).build();
         const provider: Provider = { prefix: providerPrefix, version: providerVersion, kinds: [], procedures: {}, extension_structure: extension_desc, allowExtraProps: false };
         await providerApi.post('/', provider);
         await providerApi.delete(`/${ providerPrefix }/${ providerVersion }`);
@@ -417,7 +412,8 @@ describe("Provider API tests", () => {
 });
 
 describe('Status-only fields are not overridden by spec changes', function () {
-    const clusterKinds = [getClusterKind()]
+    const clusterDescription = new DescriptionBuilder(DescriptionType.Cluster).build()
+    const clusterKinds = [getKind(IntentfulBehaviour.Basic, clusterDescription)]
 
     test("Create entity, update status, update spec, status-only fields remain untouched, delete entity", async () => {
         expect.assertions(4)

@@ -3,6 +3,7 @@ import { isEmpty } from "../utils/utils"
 import {
     Data_Description,
     Entity_Reference,
+    FieldBehavior,
     IntentfulBehaviour,
     Kind,
     Metadata,
@@ -151,7 +152,7 @@ export class ValidatorImpl {
 
     validate_kind_structure(schema: Data_Description) {
         const x_papiea_field = "x-papiea"
-        const status_only_value = "status-only"
+        const status_only_value = FieldBehavior.StatusOnly
         // x_papiea_field property have only status_only_value value
         this.validate_field_value(schema, x_papiea_field, [status_only_value])
         this.validate_spec_only_structure(schema)

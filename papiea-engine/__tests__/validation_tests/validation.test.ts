@@ -1,20 +1,16 @@
 import "jest"
 import { ValidatorImpl } from "../../src/validator";
 import {
-    getBasicEntityLocationDataDescription,
-    getLocationDataDescription,
-    getSpecOnlyKind,
-    getSpecOnlyKindDescription,
-    getSpecOnlyKindDescriptionWithSpecOnlyFields,
-    getSpecOnlyKindDescriptionWithStatusOnlyFields,
+    DescriptionBuilder,
+    DescriptionType, getKind,
     ValidationBuilder
 } from "../test_data_factory"
-import uuid = require("uuid")
-import { SpecOnlyEntityKind } from "papiea-core"
+import { SpecOnlyEntityKind, IntentfulBehaviour } from "papiea-core"
+import uuid = require("uuid");
 
 describe("Validation tests", () => {
 
-    const locationDataDescription = getBasicEntityLocationDataDescription();
+    const locationDataDescription = new DescriptionBuilder(DescriptionType.Location).build();
     const trimmedLocationDataDescription = Object.assign({}, locationDataDescription);
     const maybeLocation = Object.values(locationDataDescription)[0];
     const validator = ValidatorImpl.create()
@@ -133,17 +129,16 @@ describe("Validation tests", () => {
         }, true)
     });
 
-    let locationDataDescriptionStringParam = getLocationDataDescription();
-    const edited_kind_name = Object.keys(locationDataDescriptionStringParam)[0];
-    locationDataDescriptionStringParam[edited_kind_name].properties.x.type = "string";
+    let locationDataDescriptionStringParam = new DescriptionBuilder(DescriptionType.Location).withField("h", "string").build();
     const trimmedLocationDataDescriptionStringParam = Object.assign({}, locationDataDescription);
     const maybeLocationStringParam = Object.values(locationDataDescriptionStringParam)[0];
 
     test("Basic validation with string param should succeed", (done) => {
         const entity = {
             spec: {
-                x: "String",
-                y: 11
+                x: 10,
+                y: 11,
+                h: "String"
             }
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
@@ -156,7 +151,8 @@ describe("Validation tests", () => {
         const entity = {
             spec: {
                 x: 10,
-                y: 11
+                y: 11,
+                h: 12
             }
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
@@ -168,8 +164,9 @@ describe("Validation tests", () => {
     test("Required parameter x with empty string", (done) => {
         const entity = {
             spec: {
-                x: "",
-                y: 11
+                x: 10,
+                y: 11,
+                h: ""
             }
         };
         const try_validate = ValidationBuilder.createSimpleValidationFunc(done);
@@ -178,7 +175,7 @@ describe("Validation tests", () => {
         })
     });
 
-    const kind = getSpecOnlyKind()
+    const kind = getKind(IntentfulBehaviour.SpecOnly)
     const kind_with_pattern: SpecOnlyEntityKind = JSON.parse(JSON.stringify(kind))
     kind_with_pattern.uuid_validation_pattern = "^a$"
 
@@ -215,19 +212,19 @@ describe("Validation tests", () => {
     });
 
     test("Validator validate incorrect spec only kind structure with x-papiea=spec-only", () => {
-        const desc = getSpecOnlyKindDescriptionWithSpecOnlyFields()
+        const desc = new DescriptionBuilder(DescriptionType.Location).withIntentfulBehaviour(IntentfulBehaviour.SpecOnly).withSpecOnlyField().build()
         const kindStructure = desc[Object.keys(desc)[0]]
         expect(() => validator.validate_kind_structure(kindStructure)).toThrow()
     })
 
     test("Validator validate incorrect spec only kind structure with x-papiea=status-only", () => {
-        const desc = getSpecOnlyKindDescriptionWithStatusOnlyFields()
+        const desc = new DescriptionBuilder(DescriptionType.Location).withIntentfulBehaviour(IntentfulBehaviour.SpecOnly).withStatusOnlyField().build()
         const kindStructure = desc[Object.keys(desc)[0]]
         expect(()=>validator.validate_kind_structure(kindStructure)).toThrow()
     })
 
     test("Validator validate correct spec only kind structure", () => {
-        const desc = getSpecOnlyKindDescription()
+        const desc = new DescriptionBuilder(DescriptionType.Location).withIntentfulBehaviour(IntentfulBehaviour.SpecOnly).build()
         const kindStructure = desc[Object.keys(desc)[0]]
         validator.validate_kind_structure(kindStructure)
     })

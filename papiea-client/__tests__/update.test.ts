@@ -1,10 +1,7 @@
 import { kind_client } from "../src/entity_client"
-import {
-    getDifferKind,
-    ProviderBuilder
-} from "../../papiea-engine/__tests__/test_data_factory"
+import { getKind, ProviderBuilder } from "../../papiea-engine/__tests__/test_data_factory"
 import axios from "axios"
-import { IntentfulStatus } from "papiea-core"
+import { IntentfulBehaviour, IntentfulStatus } from "papiea-core"
 
 declare var process: {
     env: {
@@ -30,7 +27,7 @@ describe("Entity API tests", () => {
     const providerPrefix = "location_provider_iter_test";
     const providerVersion = "0.0.3";
     let kind_name: string
-    const kind = getDifferKind()
+    const kind = getKind(IntentfulBehaviour.Differ)
 
     beforeAll(async () => {
         const provider = new ProviderBuilder(providerPrefix).withVersion(providerVersion).withOAuth2Description().withKinds([kind]).build();

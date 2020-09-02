@@ -11,9 +11,6 @@ Location:
       type: number
     y:
       type: number
-    z:
-      type: number
-      x-papiea: status-only
     v:
       type: object
       properties:

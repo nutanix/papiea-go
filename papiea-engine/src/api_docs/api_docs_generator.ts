@@ -1,5 +1,6 @@
 import { Provider_DB } from "../databases/provider_db_interface"
 import { Kind, Procedural_Signature, Provider } from "papiea-core"
+import { IntentfulBehaviour, FieldBehavior } from "papiea-core";
 
 export default class ApiDocsGenerator {
     providerDb: Provider_DB;
@@ -607,6 +608,7 @@ export default class ApiDocsGenerator {
      * @param schema - schema to remove the required from.
      * @param fieldName - type of x-papiea value spec-only|status-only.
      */
+
     removeRequiredField(schema: any, fieldName: string) {
         for (let prop in schema) {
             // check that it's a object holding properties
@@ -654,14 +656,14 @@ export default class ApiDocsGenerator {
         if (type === "spec") {
             kindSchema[ `${ schemaName }-Spec` ] = kindSchema[ schemaName ]
             delete kindSchema[ schemaName ]
-            this.removeRequiredField(kindSchema, "status-only")
-            this.removeSchemaField(kindSchema, "status-only")
+            this.removeRequiredField(kindSchema, FieldBehavior.StatusOnly)
+            this.removeSchemaField(kindSchema, FieldBehavior.StatusOnly)
         } else if (type === "metadata") {
             kindSchema[ `${ schemaName }-Metadata` ] = this.getMetadata(kind.uuid_validation_pattern)["Metadata"]
         } else {
             kindSchema[`${schemaName}-Status`] = kindSchema[schemaName]
             delete kindSchema[schemaName]
-            this.removeSchemaField(kindSchema, "spec-only")
+            this.removeSchemaField(kindSchema, IntentfulBehaviour.SpecOnly)
         }
         Object.assign(schemas, kindSchema)
     }

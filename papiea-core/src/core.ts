@@ -144,6 +144,10 @@ export enum IntentfulBehaviour {
     Differ = "differ"
 }
 
+export enum FieldBehavior {
+    StatusOnly = "status-only"
+}
+
 // The differ is used to locate a diff in an entity between the
 // current status and the desired state. 
 export interface Differ {

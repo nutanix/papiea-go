@@ -1,11 +1,17 @@
-import { getDifferLocationDataDescription, ProviderBuilder } from "../test_data_factory"
-import { IntentfulBehaviour, IntentfulStatus, IntentWatcher } from "papiea-core"
+import { DescriptionBuilder, DescriptionType, getKind, ProviderBuilder } from "../test_data_factory"
+import {
+    Intentful_Execution_Strategy,
+    IntentfulBehaviour,
+    IntentfulStatus,
+    IntentWatcher,
+    Metadata,
+    Provider
+} from "papiea-core"
 import { LoggerFactory } from 'papiea-backend-utils';
 import { plural } from "pluralize"
 import axios from "axios"
 import { MongoConnection } from "../../src/databases/mongo"
 import { IntentWatcher_DB } from "../../src/databases/intent_watcher_db_interface"
-import { Intentful_Execution_Strategy, Metadata, Provider } from "papiea-core"
 
 declare var process: {
     env: {
@@ -38,55 +44,26 @@ const providerApiAdmin = axios.create({
 
 describe("Intent Watcher tests", () => {
 
-    const locationDataDescription = getDifferLocationDataDescription()
-    const name = Object.keys(locationDataDescription)[0]
-    const locationDifferKind = {
-        name,
-        name_plural: plural(name),
-        kind_structure: locationDataDescription,
-        intentful_signatures: [{
-            signature: "x",
-            name: "test",
-            argument: {},
-            result: {},
-            execution_strategy: Intentful_Execution_Strategy.Basic,
-            procedure_callback: "",
-            base_callback: ""
-        }],
-        dependency_tree: new Map(),
-        kind_procedures: {},
-        entity_procedures: {},
-        differ: undefined,
-        intentful_behaviour: IntentfulBehaviour.Differ
-    }
-
-    const locationDifferKindWithMultipleSignatures = {
-        name,
-        name_plural: plural(name),
-        kind_structure: locationDataDescription,
-        intentful_signatures: [{
-            signature: "x",
-            name: "test",
-            argument: {},
-            result: {},
-            execution_strategy: Intentful_Execution_Strategy.Basic,
-            procedure_callback: "",
-            base_callback: ""
-        }, {
-            signature: "y",
-            name: "test",
-            argument: {},
-            result: {},
-            execution_strategy: Intentful_Execution_Strategy.Basic,
-            procedure_callback: "",
-            base_callback: ""
-        }],
-        dependency_tree: new Map(),
-        kind_procedures: {},
-        entity_procedures: {},
-        differ: undefined,
-        intentful_behaviour: IntentfulBehaviour.Differ
-    }
+    const locationDataDescription = new DescriptionBuilder(DescriptionType.Location).build()
+    const signatures = [{
+        signature: "x",
+        name: "test",
+        argument: {},
+        result: {},
+        execution_strategy: Intentful_Execution_Strategy.Basic,
+        procedure_callback: "",
+        base_callback: ""
+    }, {
+        signature: "y",
+        name: "test",
+        argument: {},
+        result: {},
+        execution_strategy: Intentful_Execution_Strategy.Basic,
+        procedure_callback: "",
+        base_callback: ""
+    }]
+    const locationDifferKind = getKind(IntentfulBehaviour.Differ, locationDataDescription, signatures.slice(0, 1))
+    const locationDifferKindWithMultipleSignatures = getKind(IntentfulBehaviour.Differ, locationDataDescription, signatures)
     const mongoUrl = process.env.MONGO_URL || 'mongodb://mongo:27017';
     const mongoDb = process.env.MONGO_DB || 'papiea';
     const mongoConnection: MongoConnection = new MongoConnection(mongoUrl, mongoDb);

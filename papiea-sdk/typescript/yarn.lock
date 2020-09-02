@@ -2934,20 +2934,20 @@ p-try@^1.0.0:
   integrity sha1-y8ec26+P1CKOE/Yh8rGiN8GyB7M=
 
 "papiea-backend-utils@file:../../papiea-backend-utils":
-  version "1.0.89"
+  version "1.0.90"
   dependencies:
     logform "^2.1.2"
     papiea-core "file:../../papiea-core"
     winston "^3.2.1"
 
 "papiea-client@file:../../papiea-client":
-  version "1.0.89"
+  version "1.0.90"
   dependencies:
     axios "^0.18.1"
     papiea-core "file:../../papiea-core"
 
 "papiea-core@file:../../papiea-core":
-  version "1.0.89"
+  version "1.0.91"
 
 parse-glob@^3.0.4:
   version "3.0.4"

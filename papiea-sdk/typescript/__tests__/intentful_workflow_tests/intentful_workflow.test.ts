@@ -1,12 +1,9 @@
-import { getDifferLocationDataDescription } from "../../../../papiea-engine/__tests__/test_data_factory"
+import { DescriptionBuilder, DescriptionType, } from "../../../../papiea-engine/__tests__/test_data_factory"
 import axios from "axios"
 import { timeout } from "../../../../papiea-engine/src/utils/utils"
-import { IntentfulStatus, Version, Metadata } from "papiea-core"
+import { IntentfulBehaviour, IntentfulStatus, Metadata, Version } from "papiea-core"
 import { ProviderSdk } from "../../src/provider_sdk/typescript_sdk";
-import { load } from "js-yaml"
-import { readFileSync } from "fs"
-import { resolve } from "path"
-import uuid = require("uuid")
+import uuid = require("uuid");
 
 declare var process: {
     env: {
@@ -48,16 +45,15 @@ const providerApiAdmin = axios.create({
 
 describe("Intentful Workflow tests", () => {
 
-    const locationDataDescription = getDifferLocationDataDescription()
-    const locationDataDescriptionDuplicate = getDifferLocationDataDescription()
-    const locationDataDescriptionArraySfs = load(readFileSync(resolve(__dirname, "../test_data/location_kind_test_data_array_sfs.yml"), "utf-8"));
+    const locationDataDescription = new DescriptionBuilder(DescriptionType.Location).build()
+    const locationDataDescriptionDuplicate = new DescriptionBuilder(DescriptionType.Location).build()
+    const locationDataDescriptionArraySfs = new DescriptionBuilder(DescriptionType.Location).withStatusOnlyField().build()
     let first_provider_prefix: string
     let second_provider_prefix: string
     let provider_version: Version = "0.1.0"
     let first_provider_to_delete_entites: Metadata[] = []
     let second_provider_to_delete_entites: Metadata[] = []
-    const location_yaml = load(readFileSync(resolve(__dirname, "../test_data/location_kind_test_data.yml"), "utf-8"))
-    location_yaml["Location"]["x-papiea-entity"] = "differ"
+
 
     afterEach(async () => {
         for (let metadata of first_provider_to_delete_entites) {
@@ -896,7 +892,7 @@ describe("Intentful Workflow tests", () => {
 
 describe("Intentful Workflow test sfs validation", () => {
 
-    const locationDataDescription = getDifferLocationDataDescription()
+    const locationDataDescription = new DescriptionBuilder(DescriptionType.Location).withIntentfulBehaviour(IntentfulBehaviour.Differ).build()
     let provider_prefix: string
     let provider_version: Version = "0.1.0"
 

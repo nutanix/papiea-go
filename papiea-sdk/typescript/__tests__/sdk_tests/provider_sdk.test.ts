@@ -5,7 +5,7 @@ import { plural } from "pluralize"
 import { loadYamlFromTestFactoryDir, OAuth2Server, ProviderBuilder } from "../../../../papiea-engine/__tests__/test_data_factory";
 import axios from "axios"
 import { readFileSync } from "fs";
-import { Metadata, Procedural_Execution_Strategy, Provider, Spec, Action, Entity_Reference, Entity } from "papiea-core";
+import { Metadata, IntentfulBehaviour, Provider, Spec, Action, Entity_Reference, Entity } from "papiea-core";
 import uuid = require("uuid");
 import { Logger, LoggerFactory } from "papiea-backend-utils";
 import { ProviderClient } from "papiea-client";
@@ -65,7 +65,7 @@ describe("Provider Sdk tests", () => {
     });
     test("Yaml openapi spec-only model example contains valid structure", (done) => {
         expect(location_yaml.Location["x-papiea-entity"]).not.toBeUndefined();
-        expect(location_yaml.Location["x-papiea-entity"]).toBe("spec-only");
+        expect(location_yaml.Location["x-papiea-entity"]).toBe(IntentfulBehaviour.SpecOnly);
         expect(location_yaml.Location["properties"]).not.toBeUndefined();
         const props = location_yaml.Location["properties"];
         for (let prop in props) {

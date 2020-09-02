@@ -1,8 +1,8 @@
 import { SFSCompiler } from "../../src/intentful_core/sfs_compiler"
-import { getLocationDataDescription } from "../test_data_factory"
+import { DescriptionBuilder, DescriptionType } from "../test_data_factory"
 
 describe("SFS Compiler Tests", () => {
-    const locationDataDescription = getLocationDataDescription()
+    const locationDataDescription = new DescriptionBuilder(DescriptionType.Location).build()
     const name = Object.keys(locationDataDescription)[0]
 
     test("SFS Compiler compile single signature", () => {
