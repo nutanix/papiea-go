@@ -3,8 +3,7 @@ import { unlinkSync, writeFileSync } from "fs";
 import { validate } from "swagger-parser";
 import axios from "axios"
 import {
-    DescriptionBuilder,
-    getKind,
+    DescriptionBuilder, KindBuilder,
     loadYamlFromTestFactoryDir,
     ProviderBuilder
 } from "../test_data_factory"
@@ -258,7 +257,7 @@ describe("API docs test entity", () => {
 
     test("Provider with procedures generates correct openAPI emitting all variables without 'x-papiea' - 'status_only' property", async () => {
         expect.hasAssertions();
-        const kind = getKind(IntentfulBehaviour.Basic)
+        const kind = new KindBuilder(IntentfulBehaviour.Basic).build()
         const provider = new ProviderBuilder("provider_include_all_props").withVersion("0.1.0").withKinds([kind]).build();
         const providerDbMock = new Provider_DB_Mock(provider);
         const apiDocsGenerator = new ApiDocsGenerator(providerDbMock);
@@ -302,7 +301,7 @@ describe("API docs test entity", () => {
         // add 'z' to required field, so that we check it gets removed from required and fields
         desc = desc.withStatusOnlyField("z", "number").withRequiredField("z")
         desc = desc.build()
-        const kind = getKind(IntentfulBehaviour.Basic, desc)
+        const kind = new KindBuilder(IntentfulBehaviour.Basic).withDescription(desc).build()
         const provider = new ProviderBuilder("provider_include_all_props").withVersion("0.1.0").withKinds([kind]).build()
         const providerDbMock = new Provider_DB_Mock(provider)
         const apiDocsGenerator = new ApiDocsGenerator(providerDbMock)

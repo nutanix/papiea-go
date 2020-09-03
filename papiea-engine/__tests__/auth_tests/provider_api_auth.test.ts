@@ -2,8 +2,7 @@ import "jest";
 import axios from "axios";
 import {
     DescriptionBuilder,
-    DescriptionType,
-    getKind,
+    DescriptionType, KindBuilder,
     OAuth2Server,
     ProviderBuilder
 } from "../test_data_factory"
@@ -42,7 +41,7 @@ const entityApi = axios.create({
 
 describe("Provider API auth tests", () => {
     const clusterDescription = new DescriptionBuilder(DescriptionType.Cluster).build()
-    const clusterKinds = [getKind(IntentfulBehaviour.Basic, clusterDescription)]
+    const clusterKinds = [new KindBuilder(IntentfulBehaviour.Basic).withDescription(clusterDescription).build()]
     const provider: Provider = new ProviderBuilder()
         .withVersion("0.1.0")
         .withKinds(clusterKinds)
@@ -401,7 +400,7 @@ describe("Provider API auth tests", () => {
 
 describe('Read provider security check', function () {
     const clusterDescription = new DescriptionBuilder(DescriptionType.Cluster).build()
-    const clusterKinds = [getKind(IntentfulBehaviour.Basic, clusterDescription)]
+    const clusterKinds = [new KindBuilder(IntentfulBehaviour.Basic).withDescription(clusterDescription).build()]
     const oauth2Server = OAuth2Server.createServer();
     const oauth2ServerHost = '127.0.0.1';
     const oauth2ServerPort = 9002;

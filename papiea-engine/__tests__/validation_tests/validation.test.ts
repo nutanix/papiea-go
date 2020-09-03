@@ -1,6 +1,6 @@
 import "jest"
 import { ValidatorImpl } from "../../src/validator";
-import { DescriptionBuilder, getKind, ValidationBuilder } from "../test_data_factory"
+import { DescriptionBuilder, KindBuilder, ValidationBuilder } from "../test_data_factory"
 import { IntentfulBehaviour, SpecOnlyEntityKind } from "papiea-core"
 import uuid = require("uuid");
 
@@ -171,7 +171,7 @@ describe("Validation tests", () => {
         })
     });
 
-    const kind = getKind(IntentfulBehaviour.SpecOnly)
+    const kind = new KindBuilder(IntentfulBehaviour.SpecOnly).build()
     const kind_with_pattern: SpecOnlyEntityKind = JSON.parse(JSON.stringify(kind))
     kind_with_pattern.uuid_validation_pattern = "^a$"
 

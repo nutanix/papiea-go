@@ -34,26 +34,6 @@ export function loadYamlFromTestFactoryDir(relativePath: string): any {
     return load(readFileSync(resolve(__dirname, relativePath), "utf-8"));
 }
 
-
-export function getKind(type: IntentfulBehaviour, desc?: Data_Description, signatures?: Intentful_Signature[]): Kind {
-    const descWithType = desc !== undefined ? {...desc} : new DescriptionBuilder().build()
-
-    const name = Object.keys(descWithType)[0];
-    descWithType[name]["x-papiea-entity"] = type.toString()
-    return {
-        name,
-        name_plural: plural(name),
-        kind_structure: descWithType,
-        intentful_signatures: signatures ?? [],
-        dependency_tree: new Map(),
-        kind_procedures: {},
-        entity_procedures: {},
-        differ: undefined,
-        intentful_behaviour: type
-    };
-}
-
-
 function formatErrorMsg(current_field: string, missing_field: string) {
     return `Please specify ${ missing_field } before ${ current_field }`
 }
@@ -254,7 +234,7 @@ export class ProviderBuilder {
 
     public withKinds(value?: Kind[]) {
         if (value === undefined) {
-            this._kinds = [getKind(IntentfulBehaviour.SpecOnly)];
+            this._kinds = [new KindBuilder(IntentfulBehaviour.SpecOnly).build()];
         } else {
             this._kinds = value;
         }
@@ -568,6 +548,45 @@ export class DescriptionBuilder {
         this.withIntentfulBehaviour(undefined)
         return this
     }
+}
 
 
+export class KindBuilder {
+    private readonly type: IntentfulBehaviour
+    private description: Data_Description = new DescriptionBuilder().build()
+    private signatures: Intentful_Signature[] = []
+
+    constructor(type: IntentfulBehaviour) {
+        this.type = type
+        return this
+    }
+
+    public withDescription(desc: Data_Description) {
+        this.description = desc
+        return this
+    }
+
+    public withSignatures(signatures: Intentful_Signature[]) {
+        this.signatures = signatures
+        return this
+    }
+
+    public build(): Kind {
+        // explicitly set the type of the kind to the description
+        const descWithType = this.description
+        const name = Object.keys(this.description)[0]
+
+        descWithType[name]["x-papiea-entity"] = this.type.toString()
+        return {
+            name,
+            name_plural: plural(name),
+            kind_structure: descWithType,
+            intentful_signatures: this.signatures,
+            dependency_tree: new Map(),
+            kind_procedures: {},
+            entity_procedures: {},
+            differ: undefined,
+            intentful_behaviour: this.type
+        };
+    }
 }

@@ -1,5 +1,5 @@
 import { SFSCompiler } from "../../src/intentful_core/sfs_compiler"
-import { DescriptionBuilder, getKind } from "../test_data_factory"
+import { DescriptionBuilder, KindBuilder } from "../test_data_factory"
 import { IntentfulBehaviour } from "papiea-core"
 import { BasicDiffer } from "../../src/intentful_core/differ_impl"
 import {
@@ -34,7 +34,7 @@ describe("Differ tests", () => {
             procedure_callback: "",
             base_callback: ""
         }]
-    const locationDifferKind = getKind(IntentfulBehaviour.Differ, locationDataDescription, intentfulSignature)
+    const locationDifferKind = new KindBuilder(IntentfulBehaviour.Differ).withDescription(locationDataDescription).withSignatures(intentfulSignature).build()
 
     test("Differ find single diff", () => {
         expect.assertions(1)

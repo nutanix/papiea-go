@@ -1,4 +1,4 @@
-import { DescriptionBuilder, getKind, ProviderBuilder } from "../test_data_factory"
+import { DescriptionBuilder, KindBuilder, ProviderBuilder } from "../test_data_factory"
 import {
     Intentful_Execution_Strategy,
     IntentfulBehaviour,
@@ -61,8 +61,8 @@ describe("Intent Watcher tests", () => {
         procedure_callback: "",
         base_callback: ""
     }]
-    const locationDifferKind = getKind(IntentfulBehaviour.Differ, locationDataDescription, signatures.slice(0, 1))
-    const locationDifferKindWithMultipleSignatures = getKind(IntentfulBehaviour.Differ, locationDataDescription, signatures)
+    const locationDifferKind = new KindBuilder(IntentfulBehaviour.Differ).withDescription(locationDataDescription).withSignatures(signatures.slice(0, 1)).build()
+    const locationDifferKindWithMultipleSignatures = new KindBuilder(IntentfulBehaviour.Differ).withDescription(locationDataDescription).withSignatures(signatures).build()
     const mongoUrl = process.env.MONGO_URL || 'mongodb://mongo:27017';
     const mongoDb = process.env.MONGO_DB || 'papiea';
     const mongoConnection: MongoConnection = new MongoConnection(mongoUrl, mongoDb);

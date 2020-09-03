@@ -1,4 +1,4 @@
-import { DescriptionBuilder, DescriptionType, getKind, ProviderBuilder } from "../test_data_factory"
+import { KindBuilder, ProviderBuilder } from "../test_data_factory"
 import axios from "axios"
 import uuid = require("uuid");
 import { IntentfulBehaviour } from "papiea-core";
@@ -31,7 +31,7 @@ describe("Uuid validation tests", () => {
     const providerPrefix = uuid();
     const providerVersion = "0.1.0";
     let kind_name: string
-    const specOnlyEntityKind = getKind(IntentfulBehaviour.SpecOnly)
+    const specOnlyEntityKind = new KindBuilder(IntentfulBehaviour.SpecOnly).build()
     specOnlyEntityKind.uuid_validation_pattern = "^a*$"
 
     beforeAll(async () => {
