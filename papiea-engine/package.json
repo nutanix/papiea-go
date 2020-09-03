@@ -1,6 +1,6 @@
 {
   "name": "papiea-engine",
-  "version": "1.0.90",
+  "version": "1.0.107",
   "description": "",
   "main": "build/main.js",
   "files": [
@@ -69,14 +69,14 @@
     "@types/swagger-ui-express": "^3.0.1",
     "@types/uuid": "^3.4.4",
     "@types/uuid-validate": "0.0.0",
+    "cpy": "^8.1.0",
+    "cpy-cli": "^2.0.0",
     "fast-check": "^1.16.0",
     "jest": "^23.6.0",
     "jest-junit": "^5.2.0",
     "nodemon": "^1.18.8",
     "swagger-parser": "^6.0.2",
     "ts-jest": "^23.10.5",
-    "cpy": "^8.1.0",
-    "cpy-cli": "^2.0.0",
     "typescript": "^3.8.3"
   },
   "jest": {
