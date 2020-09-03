@@ -44,7 +44,7 @@ export function getKind(type: IntentfulBehaviour, desc?: Data_Description, signa
         name,
         name_plural: plural(name),
         kind_structure: descWithType,
-        intentful_signatures: signatures || [],
+        intentful_signatures: signatures ?? [],
         dependency_tree: new Map(),
         kind_procedures: {},
         entity_procedures: {},
@@ -495,12 +495,12 @@ export class DescriptionBuilder {
 
 
     constructor(type?: DescriptionType, name?: string) {
-        this.type = type || DescriptionType.Location
+        this.type = type ?? DescriptionType.Location
         // metadata is a description without intentful behavior
         if (this.type == DescriptionType.Metadata){
             this.withoutIntentfulBehaviour()
         }
-        this.name = name || "object_" + randomString(5)
+        this.name = name ?? ("object_" + randomString(5))
         return this;
     }
 
@@ -539,18 +539,18 @@ export class DescriptionBuilder {
 
 
     public withField(name?: string, structure?: any) {
-        let key = name || "field_" + randomString(5)
+        let key = name ?? ("field_" + randomString(5))
         this.additionalFields[key] = structure !== undefined ? structure : {"type": "number"}
         return this
     }
 
     public withStatusOnlyField(name?: string, type?: string) {
-        this.withField(name, {"type": type || "number", "x-papiea": FieldBehavior.StatusOnly})
+        this.withField(name, {"type": type ?? "number", "x-papiea": FieldBehavior.StatusOnly})
         return this
     }
 
     public withSpecOnlyField(name?: string, type?: string) {
-        this.withField(name, {"type": type || "number", "x-papiea": IntentfulBehaviour.SpecOnly})
+        this.withField(name, {"type": type ?? "number", "x-papiea": IntentfulBehaviour.SpecOnly})
         return this
     }
 
