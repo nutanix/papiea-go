@@ -505,7 +505,8 @@ export class DescriptionBuilder {
     public build(): Data_Description {
         const filePath = this.typeToFile[this.type]
         let loadedDescription = loadYamlFromTestFactoryDir(filePath)
-        const description = loadedDescription[Object.keys(loadedDescription)[0]]
+        const name = Object.keys(loadedDescription)[0]
+        const description = loadedDescription[name]
 
         let fields = this.type === DescriptionType.Array ? description.items.properties : description.properties
         Object.assign(fields, this.additionalFields)
@@ -523,7 +524,9 @@ export class DescriptionBuilder {
             description["x-papiea-entity"] = this.intentfulBehaviour.toString()
         }
 
-        return loadedDescription
+        let randomizedDataDescription: any = {};
+        randomizedDataDescription[name + randomString(5)] = description;
+        return randomizedDataDescription;
 
     }
 
