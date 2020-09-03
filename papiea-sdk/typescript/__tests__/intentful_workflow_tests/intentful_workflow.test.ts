@@ -45,10 +45,10 @@ const providerApiAdmin = axios.create({
 
 describe("Intentful Workflow tests", () => {
 
-    const locationDataDescription = new DescriptionBuilder().withIntentfulBehaviour(IntentfulBehaviour.Differ).build()
-    const locationDataDescriptionDuplicate = new DescriptionBuilder().withIntentfulBehaviour(IntentfulBehaviour.Differ).build()
+    const locationDataDescription = new DescriptionBuilder().withBehaviour(IntentfulBehaviour.Differ).build()
+    const locationDataDescriptionDuplicate = new DescriptionBuilder().withBehaviour(IntentfulBehaviour.Differ).build()
     const xFieldStructure = {"type": "array", "items": {"type": "object", "properties": {"ip": {"type": "string"}}}}
-    const locationDataDescriptionArraySfs = new DescriptionBuilder(DescriptionType.Location, "Location").withIntentfulBehaviour(IntentfulBehaviour.Differ).withStatusOnlyField("z").withField("x", xFieldStructure).build()
+    const locationDataDescriptionArraySfs = new DescriptionBuilder(DescriptionType.Location, "Location").withBehaviour(IntentfulBehaviour.Differ).withStatusOnlyField("z").withField("x", xFieldStructure).build()
     let first_provider_prefix: string
     let second_provider_prefix: string
     let provider_version: Version = "0.1.0"
@@ -893,7 +893,7 @@ describe("Intentful Workflow tests", () => {
 
 describe("Intentful Workflow test sfs validation", () => {
 
-    const locationDataDescription = new DescriptionBuilder().withIntentfulBehaviour(IntentfulBehaviour.Differ).build()
+    const locationDataDescription = new DescriptionBuilder().withBehaviour(IntentfulBehaviour.Differ).build()
     let provider_prefix: string
     let provider_version: Version = "0.1.0"
 

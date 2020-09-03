@@ -23,7 +23,7 @@ const provider_version = "0.1.0"
 const provider_prefix = "benchmark_provider"
 const intentful_provider_prefix = "benchmark_intentful_provider"
 const location_desc = new DescriptionBuilder().build()
-const location_differ_desc = new DescriptionBuilder().withIntentfulBehaviour(IntentfulBehaviour.Differ).build()
+const location_differ_desc = new DescriptionBuilder().withBehaviour(IntentfulBehaviour.Differ).build()
 
 function tryParsePort(portStr: string): number {
     let port: number
