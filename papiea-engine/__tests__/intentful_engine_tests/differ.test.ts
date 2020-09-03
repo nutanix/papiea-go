@@ -1,7 +1,6 @@
 import { SFSCompiler } from "../../src/intentful_core/sfs_compiler"
-import { DescriptionBuilder, DescriptionType, getKind } from "../test_data_factory"
+import { DescriptionBuilder, getKind } from "../test_data_factory"
 import { IntentfulBehaviour } from "papiea-core"
-import { plural } from "pluralize"
 import { BasicDiffer } from "../../src/intentful_core/differ_impl"
 import {
     Intentful_Execution_Strategy,
@@ -9,7 +8,7 @@ import {
 
 describe("Differ tests", () => {
 
-    const locationDataDescription = new DescriptionBuilder(DescriptionType.Location).build()
+    const locationDataDescription = new DescriptionBuilder().build()
     const intentfulSignature = [{
             signature: "a.{id}.[a,d]",
             name: "test",

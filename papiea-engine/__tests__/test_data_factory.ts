@@ -36,7 +36,7 @@ export function loadYamlFromTestFactoryDir(relativePath: string): any {
 
 
 export function getKind(type: IntentfulBehaviour, desc?: Data_Description, signatures?: Intentful_Signature[]): Kind {
-    const descWithType = desc !== undefined ? {...desc} : new DescriptionBuilder(DescriptionType.Location).build()
+    const descWithType = desc !== undefined ? {...desc} : new DescriptionBuilder().build()
 
     const name = Object.keys(descWithType)[0];
     descWithType[name]["x-papiea-entity"] = type.toString()
@@ -481,6 +481,7 @@ export enum DescriptionType {
 
 export class DescriptionBuilder {
     private readonly type: DescriptionType
+    private readonly name: string
     private readonly typeToFile: any = {
         [DescriptionType.Array]: "./test_data/location_kind_test_data_array.yml",
         [DescriptionType.Location]: "./test_data/location_kind_test_data_basic.yml",
@@ -493,12 +494,13 @@ export class DescriptionBuilder {
     private intentfulBehaviour?: IntentfulBehaviour = IntentfulBehaviour.Basic;
 
 
-    constructor(type?: DescriptionType) {
+    constructor(type?: DescriptionType, name?: string) {
         this.type = type || DescriptionType.Location
         // metadata is a description without intentful behavior
         if (this.type == DescriptionType.Metadata){
             this.withoutIntentfulBehaviour()
         }
+        this.name = name || "object_" + randomString(5)
         return this;
     }
 
@@ -524,9 +526,9 @@ export class DescriptionBuilder {
             description["x-papiea-entity"] = this.intentfulBehaviour.toString()
         }
 
-        let randomizedDataDescription: any = {};
-        randomizedDataDescription[name + randomString(5)] = description;
-        return randomizedDataDescription;
+        let correctlyNamedDescription: any = {};
+        correctlyNamedDescription[this.name] = description;
+        return correctlyNamedDescription;
 
     }
 
@@ -536,24 +538,19 @@ export class DescriptionBuilder {
     }
 
 
-    public withField(name?: string, type?: string, fieldBehavior?: string) {
-        const newField: any = {}
+    public withField(name?: string, structure?: any) {
         let key = name || "field_" + randomString(5)
-        newField["type"] = type || "number"
-        if (fieldBehavior !== undefined) {
-            newField["x-papiea"] = fieldBehavior
-        }
-        this.additionalFields[key] = newField
+        this.additionalFields[key] = structure !== undefined ? structure : {"type": "number"}
         return this
     }
 
     public withStatusOnlyField(name?: string, type?: string) {
-        this.withField(name, type, FieldBehavior.StatusOnly)
+        this.withField(name, {"type": type || "number", "x-papiea": FieldBehavior.StatusOnly})
         return this
     }
 
     public withSpecOnlyField(name?: string, type?: string) {
-        this.withField(name, type, IntentfulBehaviour.SpecOnly)
+        this.withField(name, {"type": type || "number", "x-papiea": IntentfulBehaviour.SpecOnly})
         return this
     }
 

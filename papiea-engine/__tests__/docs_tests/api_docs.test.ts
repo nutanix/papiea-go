@@ -4,7 +4,6 @@ import { validate } from "swagger-parser";
 import axios from "axios"
 import {
     DescriptionBuilder,
-    DescriptionType,
     getKind,
     loadYamlFromTestFactoryDir,
     ProviderBuilder
@@ -299,7 +298,7 @@ describe("API docs test entity", () => {
 
     test("Provider with procedures generates correct openAPI removing all variables with 'x-papiea' - 'status_only' from properties and required of a spec", async () => {
         expect.hasAssertions()
-        let desc = new DescriptionBuilder(DescriptionType.Location)
+        let desc = new DescriptionBuilder()
         // add 'z' to required field, so that we check it gets removed from required and fields
         desc = desc.withStatusOnlyField("z", "number").withRequiredField("z")
         desc = desc.build()

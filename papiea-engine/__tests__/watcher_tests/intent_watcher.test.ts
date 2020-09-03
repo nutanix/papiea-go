@@ -1,4 +1,4 @@
-import { DescriptionBuilder, DescriptionType, getKind, ProviderBuilder } from "../test_data_factory"
+import { DescriptionBuilder, getKind, ProviderBuilder } from "../test_data_factory"
 import {
     Intentful_Execution_Strategy,
     IntentfulBehaviour,
@@ -8,7 +8,6 @@ import {
     Provider
 } from "papiea-core"
 import { LoggerFactory } from 'papiea-backend-utils';
-import { plural } from "pluralize"
 import axios from "axios"
 import { MongoConnection } from "../../src/databases/mongo"
 import { IntentWatcher_DB } from "../../src/databases/intent_watcher_db_interface"
@@ -44,7 +43,7 @@ const providerApiAdmin = axios.create({
 
 describe("Intent Watcher tests", () => {
 
-    const locationDataDescription = new DescriptionBuilder(DescriptionType.Location).build()
+    const locationDataDescription = new DescriptionBuilder().build()
     const signatures = [{
         signature: "x",
         name: "test",

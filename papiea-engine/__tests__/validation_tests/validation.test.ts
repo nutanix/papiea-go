@@ -1,16 +1,12 @@
 import "jest"
 import { ValidatorImpl } from "../../src/validator";
-import {
-    DescriptionBuilder,
-    DescriptionType, getKind,
-    ValidationBuilder
-} from "../test_data_factory"
-import { SpecOnlyEntityKind, IntentfulBehaviour } from "papiea-core"
+import { DescriptionBuilder, getKind, ValidationBuilder } from "../test_data_factory"
+import { IntentfulBehaviour, SpecOnlyEntityKind } from "papiea-core"
 import uuid = require("uuid");
 
 describe("Validation tests", () => {
 
-    const locationDataDescription = new DescriptionBuilder(DescriptionType.Location).withField("z").build();
+    const locationDataDescription = new DescriptionBuilder().withField("z").build();
     const trimmedLocationDataDescription = Object.assign({}, locationDataDescription);
     const maybeLocation = Object.values(locationDataDescription)[0];
     const validator = ValidatorImpl.create()
@@ -129,7 +125,7 @@ describe("Validation tests", () => {
         }, true)
     });
 
-    let locationDataDescriptionStringParam = new DescriptionBuilder(DescriptionType.Location).withField("h", "string").build();
+    let locationDataDescriptionStringParam = new DescriptionBuilder().withField("h", {"type": "string"}).build();
     const trimmedLocationDataDescriptionStringParam = Object.assign({}, locationDataDescription);
     const maybeLocationStringParam = Object.values(locationDataDescriptionStringParam)[0];
 
@@ -212,19 +208,19 @@ describe("Validation tests", () => {
     });
 
     test("Validator validate incorrect spec only kind structure with x-papiea=spec-only", () => {
-        const desc = new DescriptionBuilder(DescriptionType.Location).withIntentfulBehaviour(IntentfulBehaviour.SpecOnly).withSpecOnlyField().build()
+        const desc = new DescriptionBuilder().withIntentfulBehaviour(IntentfulBehaviour.SpecOnly).withSpecOnlyField().build()
         const kindStructure = desc[Object.keys(desc)[0]]
         expect(() => validator.validate_kind_structure(kindStructure)).toThrow()
     })
 
     test("Validator validate incorrect spec only kind structure with x-papiea=status-only", () => {
-        const desc = new DescriptionBuilder(DescriptionType.Location).withIntentfulBehaviour(IntentfulBehaviour.SpecOnly).withStatusOnlyField().build()
+        const desc = new DescriptionBuilder().withIntentfulBehaviour(IntentfulBehaviour.SpecOnly).withStatusOnlyField().build()
         const kindStructure = desc[Object.keys(desc)[0]]
         expect(()=>validator.validate_kind_structure(kindStructure)).toThrow()
     })
 
     test("Validator validate correct spec only kind structure", () => {
-        const desc = new DescriptionBuilder(DescriptionType.Location).withIntentfulBehaviour(IntentfulBehaviour.SpecOnly).build()
+        const desc = new DescriptionBuilder().withIntentfulBehaviour(IntentfulBehaviour.SpecOnly).build()
         const kindStructure = desc[Object.keys(desc)[0]]
         validator.validate_kind_structure(kindStructure)
     })
