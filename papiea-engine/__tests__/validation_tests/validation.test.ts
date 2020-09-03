@@ -10,7 +10,7 @@ import uuid = require("uuid");
 
 describe("Validation tests", () => {
 
-    const locationDataDescription = new DescriptionBuilder(DescriptionType.Location).build();
+    const locationDataDescription = new DescriptionBuilder(DescriptionType.Location).withField("z").build();
     const trimmedLocationDataDescription = Object.assign({}, locationDataDescription);
     const maybeLocation = Object.values(locationDataDescription)[0];
     const validator = ValidatorImpl.create()

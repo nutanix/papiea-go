@@ -45,15 +45,14 @@ const providerApiAdmin = axios.create({
 
 describe("Intentful Workflow tests", () => {
 
-    const locationDataDescription = new DescriptionBuilder(DescriptionType.Location).build()
-    const locationDataDescriptionDuplicate = new DescriptionBuilder(DescriptionType.Location).build()
-    const locationDataDescriptionArraySfs = new DescriptionBuilder(DescriptionType.Location).withStatusOnlyField().build()
+    const locationDataDescription = new DescriptionBuilder(DescriptionType.Location).withIntentfulBehaviour(IntentfulBehaviour.Differ).build()
+    const locationDataDescriptionDuplicate = new DescriptionBuilder(DescriptionType.Location).withIntentfulBehaviour(IntentfulBehaviour.Differ).build()
+    const locationDataDescriptionArraySfs = new DescriptionBuilder(DescriptionType.Location).withIntentfulBehaviour(IntentfulBehaviour.Differ).withStatusOnlyField().build()
     let first_provider_prefix: string
     let second_provider_prefix: string
     let provider_version: Version = "0.1.0"
     let first_provider_to_delete_entites: Metadata[] = []
     let second_provider_to_delete_entites: Metadata[] = []
-
 
     afterEach(async () => {
         for (let metadata of first_provider_to_delete_entites) {
@@ -113,6 +112,7 @@ describe("Intentful Workflow tests", () => {
                 },
                 metadata: {
                     spec_version: 1
+
                 }
             })
             let retries = 10

@@ -490,11 +490,15 @@ export class DescriptionBuilder {
     private makeFeldsNullable = false
     private additionalFields: any = {}
     private additionalRequiredFields: string[] = []
-    private intentfulBehavior?: IntentfulBehaviour;
+    private intentfulBehaviour?: IntentfulBehaviour = IntentfulBehaviour.Basic;
 
 
     constructor(type?: DescriptionType) {
         this.type = type || DescriptionType.Location
+        // metadata is a description without intentful behavior
+        if (this.type == DescriptionType.Metadata){
+            this.withoutIntentfulBehaviour()
+        }
         return this;
     }
 
@@ -515,8 +519,8 @@ export class DescriptionBuilder {
         let requiredFields = this.type === DescriptionType.Array ? description.items.required : description.required
         requiredFields.push(...this.additionalRequiredFields)
 
-        if (this.intentfulBehavior) {
-            description["x-papiea-entity"] = this.intentfulBehavior.toString()
+        if (this.intentfulBehaviour) {
+            description["x-papiea-entity"] = this.intentfulBehaviour.toString()
         }
 
         return loadedDescription
@@ -555,8 +559,13 @@ export class DescriptionBuilder {
         return this
     }
 
-    withIntentfulBehaviour(behavior: IntentfulBehaviour) {
-        this.intentfulBehavior = behavior
+    public withIntentfulBehaviour(behavior?: IntentfulBehaviour) {
+        this.intentfulBehaviour = behavior
+        return this
+    }
+
+    public withoutIntentfulBehaviour(){
+        this.withIntentfulBehaviour(undefined)
         return this
     }
 

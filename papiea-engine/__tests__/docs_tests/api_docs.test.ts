@@ -11,6 +11,7 @@ import {
 } from "../test_data_factory"
 import { Provider_DB } from "../../src/databases/provider_db_interface";
 import {
+    FieldBehavior,
     IntentfulBehaviour,
     Kind,
     Procedural_Execution_Strategy,
@@ -300,15 +301,19 @@ describe("API docs test entity", () => {
         expect.hasAssertions()
         let desc = new DescriptionBuilder(DescriptionType.Location)
         // add 'z' to required field, so that we check it gets removed from required and fields
-        desc = desc.withRequiredField("z")
-        // add required fields to v that are marked as status-only so that we check recursive deletion works
-        desc = desc.withStatusOnlyField("h", "number").withRequiredField("h")
+        desc = desc.withStatusOnlyField("z", "number").withRequiredField("z")
         desc = desc.build()
         const kind = getKind(IntentfulBehaviour.Basic, desc)
         const provider = new ProviderBuilder("provider_include_all_props").withVersion("0.1.0").withKinds([kind]).build()
         const providerDbMock = new Provider_DB_Mock(provider)
         const apiDocsGenerator = new ApiDocsGenerator(providerDbMock)
         const kind_name = provider.kinds[0].name
+        const structure = provider.kinds[0].kind_structure[kind_name]
+
+        // add required fields to v that are marked as status-only so that we check recursive deletion works
+        structure.properties.v.required = ["h"]
+        structure.properties.v.properties["h"] = {"type": "number", "x-papiea": FieldBehavior.StatusOnly}
+
 
         const apiDoc = await apiDocsGenerator.getApiDocs(providerDbMock.provider)
         const entityName = kind_name + "-Spec"
