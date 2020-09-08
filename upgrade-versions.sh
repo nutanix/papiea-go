@@ -95,6 +95,18 @@ else
   " README.md
 fi
 
+# append version with PR link to the CHANGELOG.md
+commit_message=$(git log -n 1 --format=%s)
+# match (#$number) in the commit message
+pr_number=$(echo $commit_message | grep -oP "\(\#\K\d+")
+
+changelog_message="- Version $typescript_version: $commit_message"
+# if there is a PR number in the commit
+if [[ "$pr_number" -ne "" ]]; then
+  changelog_message+=" PR url: $CIRCLE_REPOSITORY_URL/pull/$pr_number"
+fi
+echo $changelog_message >> CHANGELOG.md
+
 echo "Python commit hash: $python_version ; Typescript version: $typescipt_version; Circle build number: $circle_num."
 
 if [[ "$accept" != true ]]; then
