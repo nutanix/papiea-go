@@ -105,7 +105,7 @@ changelog_message="- Version $typescript_version: $commit_message"
 if [[ "$pr_number" -ne "" ]]; then
   changelog_message+=" PR url: $CIRCLE_REPOSITORY_URL/pull/$pr_number"
 fi
-echo $changelog_message >> CHANGELOG.md
+sed -i "1i $changelog_message" CHANGELOG.md
 
 echo "Python commit hash: $python_version ; Typescript version: $typescipt_version; Circle build number: $circle_num."
 
