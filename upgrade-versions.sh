@@ -101,7 +101,7 @@ commit_message=$(git log -n 1 --format=%s)
 pr_number=$(echo $commit_message | grep -oE "#[1-9]+\b" | tail -1 | cut -c2-)
 changelog_message="- Version $typescript_version: $commit_message"
 # if there is a PR number in the commit
-if [[ -z "$pr_number" ]]; then
+if [[ "$pr_number" -ne "" ]]; then
   changelog_message+=" PR url: $CIRCLE_REPOSITORY_URL/pull/$pr_number"
 fi
 sed -i "1i $changelog_message" CHANGELOG.md
