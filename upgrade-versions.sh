@@ -63,7 +63,7 @@ fi
 yarn run patch-all > temp_version.txt
 node publish-papiea.js
 
-typescipt_version=$(grep -m 1 'New version' temp_version.txt | sed 's/[a-zA-Z :]*//')
+typescript_version=$(grep -m 1 'New version' temp_version.txt | sed 's/[a-zA-Z :]*//')
 python_version=$(git rev-parse HEAD)
 
 # sed command is different in BSD (Mac OS) and Linux
@@ -71,7 +71,7 @@ python_version=$(git rev-parse HEAD)
 # Thus checking the OS type
 if [[ "$OSTYPE" == "darwin"* ]]; then
   sed -i '' "/Client\/SDK (typescript)/c\\
-  | Client/SDK (typescript)  | $typescipt_version |
+  | Client/SDK (typescript)  | $typescript_version |
   " README.md
 
   sed -i '' "/Client\/SDK (python)/c\\
@@ -83,7 +83,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   " README.md
 else
   sed -i "/Client\/SDK (typescript)/c\\
-  | Client/SDK (typescript)  | $typescipt_version |
+  | Client/SDK (typescript)  | $typescript_version |
   " README.md
 
   sed -i "/Client\/SDK (python)/c\\
@@ -98,16 +98,15 @@ fi
 # append version with PR link to the CHANGELOG.md
 commit_message=$(git log -n 1 --format=%s)
 # match #$number in the commit message
-pr_number=$(echo $commit_message | grep -E "#[1-9]+\b")
-
+pr_number=$(echo $commit_message | grep -oE "#[1-9]+\b" | tail -1 | cut -c2-)
 changelog_message="- Version $typescript_version: $commit_message"
 # if there is a PR number in the commit
-if [[ "$pr_number" -ne "" ]]; then
+if [[ -z "$pr_number" ]]; then
   changelog_message+=" PR url: $CIRCLE_REPOSITORY_URL/pull/$pr_number"
 fi
 sed -i "1i $changelog_message" CHANGELOG.md
 
-echo "Python commit hash: $python_version ; Typescript version: $typescipt_version; Circle build number: $circle_num."
+echo "Python commit hash: $python_version ; Typescript version: $typescript_version; Circle build number: $circle_num."
 
 if [[ "$accept" != true ]]; then
   while true; do
@@ -126,7 +125,7 @@ git add README.md
 
 git add CHANGELOG.md
 
-git commit -m "[skip ci] Upgrade versions. Engine: $circle_num. Typescript: $typescipt_version. Python: $python_version."
+git commit -m "[skip ci] Upgrade versions. Engine: $circle_num. Typescript: $typescript_version. Python: $python_version."
 
 git push -u origin HEAD
 
