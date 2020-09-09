@@ -97,8 +97,8 @@ fi
 
 # append version with PR link to the CHANGELOG.md
 commit_message=$(git log -n 1 --format=%s)
-# match (#$number) in the commit message
-pr_number=$(echo $commit_message | grep -oP "\(\#\K\d+")
+# match #$number in the commit message
+pr_number=$(echo $commit_message | grep -E "#[1-9]+\b")
 
 changelog_message="- Version $typescript_version: $commit_message"
 # if there is a PR number in the commit
@@ -123,6 +123,8 @@ fi
 git ls-files . | grep 'package\.json' | xargs git add
 
 git add README.md
+
+git add CHANGELOG.md
 
 git commit -m "[skip ci] Upgrade versions. Engine: $circle_num. Typescript: $typescipt_version. Python: $python_version."
 
