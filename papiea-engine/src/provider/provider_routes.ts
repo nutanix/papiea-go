@@ -80,6 +80,11 @@ export default function createProviderAPIRouter(providerApi: Provider_API) {
         res.json(s2skeys);
     }));
 
+    providerApiRouter.get("/:prefix/:version/s2skey/:uuid", CheckNoQueryParams, asyncHandler(async (req, res) => {
+        const key = await providerApi.get_key(req.user, req.params.uuid);
+        res.json(key);
+    }));
+
     providerApiRouter.post('/:prefix/:version/s2skey', check_request({
         allowed_query_params: [],
         allowed_body_params: ['user_info', 'name', 'owner', 'key']
@@ -92,13 +97,8 @@ export default function createProviderAPIRouter(providerApi: Provider_API) {
         res.json(s2skey);
     }));
 
-    providerApiRouter.put('/:prefix/:version/s2skey', check_request({
-        allowed_query_params: [],
-        allowed_body_params: ['active', 'uuid']
-    }), asyncHandler(async (req, res) => {
-        if (!req.body.active) {
-            await providerApi.inactivate_key(req.user, req.body.uuid);
-        }
+    providerApiRouter.delete('/:prefix/:version/s2skey/:uuid', CheckNoQueryParams, asyncHandler(async (req, res) => {
+        await providerApi.inactivate_key(req.user, req.params.uuid);
         res.json("OK");
     }));
 

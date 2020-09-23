@@ -431,11 +431,7 @@ describe("Entity API auth tests", () => {
         expect(data.owner).toEqual("alice");
         expect(data.tenant).toEqual(tenant_uuid);
         expect(data.provider_prefix).toEqual(provider.prefix);
-        await providerApi.put(`/${ provider.prefix }/${ provider.version }/s2skey`,
-            {
-                uuid: s2skey.uuid,
-                active: false
-            },
+        await providerApi.delete(`/${ provider.prefix }/${ provider.version }/s2skey/${s2skey.uuid}`,
             { headers: { 'Authorization': 'Bearer ' + token } }
         );
         try {
