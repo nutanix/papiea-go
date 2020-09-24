@@ -1,9 +1,5 @@
 import { PapieaResponse } from "papiea-core";
-import {
-    EntityNotFoundError,
-    ConflictingEntityError,
-    GraveyardConflictingEntityError
-} from "../databases/utils/errors"
+import { EntityNotFoundError, ConflictingEntityError } from "../databases/utils/errors";
 import { ValidationError } from "./validation_error";
 import { ProcedureInvocationError } from "./procedure_invocation_error";
 import { PermissionDeniedError, UnauthorizedError } from "./permission_error";
@@ -73,6 +69,14 @@ export class PapieaErrorResponseImpl implements PapieaResponse {
             case ProcedureInvocationError:
                 return new PapieaErrorResponseImpl((err as ProcedureInvocationError).status, "Procedure invocation failed.", PapieaError.ProcedureInvocation, (err as ProcedureInvocationError).errors)
             case EntityNotFoundError:
+                if ((err as EntityNotFoundError).uuid === '') {
+                    return new PapieaErrorResponseImpl(
+                        404,
+                        "Entity not found.",
+                        PapieaError.EntityNotFound,
+                        [{ message: `Entity with kind: ${(err as EntityNotFoundError).kind} not found` }],
+                    )
+                }
                 return new PapieaErrorResponseImpl(
                     404,
                     "Entity not found.",
@@ -83,11 +87,6 @@ export class PapieaErrorResponseImpl implements PapieaResponse {
                 return new PapieaErrorResponseImpl(401, "Unauthorized.", PapieaError.Unauthorized)
             case PermissionDeniedError:
                 return new PapieaErrorResponseImpl(403, "Permission denied.", PapieaError.PermissionDenied)
-            case GraveyardConflictingEntityError:
-                let graveyardErr = err as GraveyardConflictingEntityError
-                let meta = graveyardErr.existing_metadata
-
-                return new PapieaErrorResponseImpl(409, `${graveyardErr.message}: uuid - ${meta.uuid}, maximum current spec version - ${graveyardErr.highest_spec_version}`, PapieaError.ConflictingEntity)
             case ConflictingEntityError:
                 let conflictingError = err as ConflictingEntityError
                 let metadata = conflictingError.existing_metadata
