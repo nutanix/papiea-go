@@ -2,6 +2,7 @@ import { Provider_DB } from "./provider_db_interface";
 import { Collection, Db } from "mongodb"
 import { IntentfulBehaviour, Kind, Provider, Version } from "papiea-core";
 import { Logger } from "papiea-backend-utils"
+import { EntityNotFoundError } from "./utils/errors";
 
 export interface IntentfulKindReference {
     provider_prefix: string,
@@ -83,7 +84,7 @@ export class Provider_DB_Mongo implements Provider_DB {
         const filter: any = { prefix: provider_prefix, version };
         const provider: Provider | null = await this.collection.findOne(filter);
         if (provider === null) {
-            throw new Error(`Provider with prefix ${ provider_prefix } and version ${ version } not found`);
+            throw new EntityNotFoundError('Provider', '')
         } else {
             return provider;
         }

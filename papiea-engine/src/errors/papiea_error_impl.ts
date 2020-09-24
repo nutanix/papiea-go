@@ -73,6 +73,14 @@ export class PapieaErrorResponseImpl implements PapieaResponse {
             case ProcedureInvocationError:
                 return new PapieaErrorResponseImpl((err as ProcedureInvocationError).status, "Procedure invocation failed.", PapieaError.ProcedureInvocation, (err as ProcedureInvocationError).errors)
             case EntityNotFoundError:
+                if ((err as EntityNotFoundError).uuid === '') {
+                    return new PapieaErrorResponseImpl(
+                        404,
+                        "Entity not found.",
+                        PapieaError.EntityNotFound,
+                        [{ message: `Entity with kind: ${(err as EntityNotFoundError).kind} not found` }],
+                    )
+                }
                 return new PapieaErrorResponseImpl(
                     404,
                     "Entity not found.",
