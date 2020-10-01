@@ -1,10 +1,9 @@
 import logging
 from types import TracebackType
-from typing import Any, Optional, Type, Callable, AsyncGenerator
+from typing import Any, Optional, List, Type, Callable, AsyncGenerator
 
 from .api import ApiInstance
 from .core import AttributeDict, Entity, EntityReference, EntitySpec, Metadata, Spec
-
 FilterResults = AttributeDict
 
 BATCH_SIZE = 20
@@ -13,7 +12,7 @@ class EntityCRUD(object):
     def __init__(
         self,
         papiea_url: str,
-        provider: str,
+        prefix: str,
         version: str,
         kind: str,
         s2skey: Optional[str] = None,
@@ -25,7 +24,7 @@ class EntityCRUD(object):
         if s2skey is not None:
             headers["Authorization"] = f"Bearer {s2skey}"
         self.api_instance = ApiInstance(
-            f"{papiea_url}/services/{provider}/{version}/{kind}", headers=headers, logger=logger
+            f"{papiea_url}/services/{prefix}/{version}/{kind}", headers=headers, logger=logger
         )
 
     async def __aenter__(self) -> "EntityCRUD":
@@ -40,30 +39,55 @@ class EntityCRUD(object):
         await self.api_instance.close()
 
     async def get(self, entity_reference: EntityReference) -> Entity:
-        return await self.api_instance.get(entity_reference.uuid)
+        try:
+            return await self.api_instance.get(entity_reference.uuid)
+        except:
+            raise
+
+    async def get_all(self) -> List[Entity]:
+        try:
+            res = await self.api_instance.get("")
+            return res.results
+        except:
+            raise
 
     async def create(
         self, spec: Spec, metadata_extension: Optional[Any] = None
     ) -> EntitySpec:
-        payload = {"spec": spec}
-        if metadata_extension is not None:
-            payload["metadata"] = {"extension": metadata_extension}
-        return await self.api_instance.post("", payload)
+        try:
+            payload = {"spec": spec}
+            if metadata_extension is not None:
+                payload["metadata"] = {"extension": metadata_extension}
+            return await self.api_instance.post("", payload)
+        except:
+            raise
 
     async def create_with_meta(self, metadata: Metadata, spec: Spec) -> EntitySpec:
-        payload = {"metadata": metadata, "spec": spec}
-        return await self.api_instance.post("", payload)
+        try:
+            payload = {"metadata": metadata, "spec": spec}
+            return await self.api_instance.post("", payload)
+        except:
+            raise
 
     async def update(self, metadata: Metadata, spec: Spec) -> EntitySpec:
-        payload = {"metadata": {"spec_version": metadata.spec_version}, "spec": spec}
-        return await self.api_instance.put(metadata.uuid, payload)
+        try:
+            payload = {"metadata": {"spec_version": metadata.spec_version}, "spec": spec}
+            return await self.api_instance.put(metadata.uuid, payload)
+        except:
+            raise
 
     async def delete(self, entity_reference: EntityReference) -> None:
-        return await self.api_instance.delete(entity_reference.uuid)
+        try:
+            return await self.api_instance.delete(entity_reference.uuid)
+        except:
+            raise
 
     async def filter(self, filter_obj: Any) -> FilterResults:
-        res = await self.api_instance.post("filter", filter_obj)
-        return res
+        try:
+            res = await self.api_instance.post("filter", filter_obj)
+            return res
+        except:
+            raise
 
     async def filter_iter(self, filter_obj: Any) -> Callable[[Optional[int], Optional[int]], AsyncGenerator[Any, None]]:
         async def iter_func(batch_size: Optional[int] = None, offset: Optional[int] = None):
@@ -87,15 +111,20 @@ class EntityCRUD(object):
     async def invoke_procedure(
         self, procedure_name: str, entity_reference: EntityReference, input_: Any
     ) -> Any:
-        payload = {"input": input_}
-        return await self.api_instance.post(
-            f"{entity_reference.uuid}/procedure/{procedure_name}", payload
-        )
+        try:
+            payload = {"input": input_}
+            return await self.api_instance.post(
+                f"{entity_reference.uuid}/procedure/{procedure_name}", payload
+            )
+        except:
+            raise
 
     async def invoke_kind_procedure(self, procedure_name: str, input_: Any) -> Any:
-        payload = {"input": input_}
-        return await self.api_instance.post(f"procedure/{procedure_name}", payload)
-
+        try:
+            payload = {"input": input_}
+            return await self.api_instance.post(f"procedure/{procedure_name}", payload)
+        except:
+            raise
 
 class ProviderClient(object):
     def __init__(
@@ -137,5 +166,8 @@ class ProviderClient(object):
         )
 
     async def invoke_procedure(self, procedure_name: str, input: Any) -> Any:
-        payload = {"input": input}
-        return await self.api_instance.post(f"procedure/{procedure_name}", payload)
+        try:
+            payload = {"input": input}
+            return await self.api_instance.post(f"procedure/{procedure_name}", payload)
+        except:
+            raise

@@ -10,6 +10,7 @@ from .core import (
     Entity,
     IntentfulExecutionStrategy,
     IntentfulSignature,
+    IntentWatcher,
     Kind,
     ProceduralExecutionStrategy,
     ProceduralSignature,
@@ -21,7 +22,7 @@ from .core import (
     Version, ProcedureDescription,
 )
 from .python_sdk_context import IntentfulCtx, ProceduralCtx
-from .python_sdk_exceptions import InvocationError, SecurityApiError
+from .python_sdk_exceptions import ApiException, InvocationError, PapieaBaseException, SecurityApiError
 from .utils import json_loads_attrs, validate_error_codes
 
 
@@ -127,6 +128,68 @@ class SecurityApi(object):
         except Exception as e:
             raise SecurityApiError.from_error(e, "Cannot deactivate s2s key")
 
+class IntentWatcherApi(object):
+    def __init__(
+        self,
+        papiea_url: str,
+        s2skey: Secret = None,
+        logger: logging.Logger = logging.getLogger(__name__)
+    ):
+        headers = {
+            "Content-Type": "application/json",
+        }
+
+        if s2skey is not None:
+            headers["Authorization"] = f"Bearer {s2skey}"
+        self.api_instance = ApiInstance(
+            f"{papiea_url}/services/intent_watcher", headers=headers, logger=logger
+        )
+
+        self.logger = logger
+
+    async def __aenter__(self) -> "IntentWatcherApi":
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType]
+    ) -> None:
+        await self.api_instance.close()
+
+    async def get_intent_watcher(self, id: str) -> IntentWatcher:
+        try:
+            return await self.api_instance.get(id)
+        except PapieaBaseException as papiea_exception:
+            raise Exception('Papiea exception: ' + str(papiea_exception))
+        except ApiException as api_exception:
+            raise Exception('Api exception: ' + api_exception.reason)
+        except Exception as ex:
+            raise ex
+
+    async def list_intent_watcher(self) -> List[IntentWatcher]:
+        try:
+            res = await self.api_instance.get("")
+            return res.results
+        except PapieaBaseException as papiea_exception:
+            raise Exception('Papiea exception: ' + str(papiea_exception))
+        except ApiException as api_exception:
+            raise Exception('Api exception: ' + api_exception.reason)
+        except Exception as ex:
+            raise ex
+
+    # filter_intent_watcher(AttributeDict(status='Pending'))
+    async def filter_intent_watcher(self, filter_obj: Any) -> List[IntentWatcher]:
+        try:
+            res = await self.api_instance.post("filter", filter_obj)
+            return res.results
+        except PapieaBaseException as papiea_exception:
+            raise Exception('Papiea exception: ' + str(papiea_exception))
+        except ApiException as api_exception:
+            raise Exception('Api exception: ' + api_exception.reason)
+        except Exception as ex:
+            raise ex
 
 class ProviderSdk(object):
     def __init__(
@@ -234,7 +297,7 @@ class ProviderSdk(object):
             return kind_builder
 
     def add_kind(self, kind: Kind) -> Optional["KindBuilder"]:
-        if kind not in self._kind.indexOf(kind):
+        if kind not in self._kind:
             self._kind.append(kind)
             kind_builder = KindBuilder(kind, self, self.allow_extra_props)
             return kind_builder
@@ -505,7 +568,16 @@ class KindBuilder(object):
                         },
                     }
                 },
-                result={},
+                result={
+                    "IntentfulOutput": {
+                        "type": "object",
+                        "nullable": "true",
+                        "properties": {
+                            "delay_secs": {"type": "integer"}
+                        },
+                        "description": "Amount of seconds to wait before this entity will be checked again by the intent engine"
+                    }
+                },
                 execution_strategy=IntentfulExecutionStrategy.Basic,
                 procedure_callback=procedure_callback_url,
                 base_callback=callback_url,
@@ -532,7 +604,6 @@ class KindBuilder(object):
             except Exception as e:
                 e = InvocationError.from_error(e)
                 return web.json_response(e.to_response(), status=e.status_code)
-
         self.server_manager.register_handler(
             f"/{self.kind.name}/{sfs_signature}", procedure_callback_fn
         )

@@ -1,5 +1,6 @@
 import {
     IntentfulCtx_Interface,
+    IntentWatcherImpl,
     ProceduralCtx_Interface, ProcedureDescription,
     Provider as ProviderImpl,
     Provider_Power,
@@ -25,6 +26,7 @@ import {
     SpecOnlyEntityKind,
     UserInfo,
     Version,
+    IntentWatcher,
 } from "papiea-core"
 import { LoggerFactory } from 'papiea-backend-utils'
 import { InvocationError, SecurityApiError } from "./typescript_sdk_exceptions"
@@ -78,6 +80,54 @@ class SecurityApiImpl implements SecurityApi {
         }
     }
 }
+
+export class IntentWatcherApi implements IntentWatcherImpl {
+    protected readonly apiAxios: AxiosInstance;
+
+    constructor(papiea_url: string, s2skey: Secret) {
+        this.apiAxios = axios.create({
+            baseURL: `${papiea_url}/services/intent_watcher`,
+            timeout: 10000,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${s2skey}`
+            }
+        });
+    }
+
+    get api_axios() {
+        return this.apiAxios
+    }
+
+    public async get_intent_watcher(id: string): Promise<IntentWatcher> {
+        try {
+            const res = await this.api_axios.get(`${id}`);
+            return res.data;
+        } catch (e) {
+            throw new Error("Failed to get intent watcher");
+        }
+    }
+
+    public async list_intent_watcher(): Promise<IntentWatcher[]> {
+        try {
+            const res = await this.api_axios.get("");
+            return res.data.results;
+        } catch (e) {
+            throw new Error("Failed to list intent watchers");
+        }
+    }
+
+    // filter_intent_watcher({'status':'Pending'})
+    public async filter_intent_watcher(filter: any): Promise<IntentWatcher[]> {
+        try {
+            const res = await this.api_axios.post("filter", filter);
+            return res.data.results;
+        } catch (e) {
+            throw new Error("Failed to filter intent watchers")
+        }
+    }
+}
+
 export class ProviderSdk implements ProviderImpl {
     protected readonly _kind: Kind[];
     protected readonly _procedures: { [key: string]: Procedural_Signature };

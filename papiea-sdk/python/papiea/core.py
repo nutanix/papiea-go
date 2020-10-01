@@ -24,7 +24,7 @@ EntityReference = AttributeDict
 Spec = AttributeDict
 EntitySpec = AttributeDict
 Metadata = AttributeDict
-
+IntentWatcher = AttributeDict
 
 class Action(str):
     Read = "read"
@@ -92,3 +92,11 @@ ProviderPower = str
 Key = str
 ProceduralSignature = AttributeDict
 IntentfulSignature = AttributeDict
+
+class IntentfulStatus(str):
+    Pending = "Pending"
+    Active = "Active"
+    Completed_Successfully = "Completed Successfully"
+    Completed_Partially = "Completed Partially"
+    Failed = "Failed"
+    Outdated = "Outdated"

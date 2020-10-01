@@ -1,0 +1,21 @@
+bucket:
+    type: object
+    title: Bucket
+    description: Bucket structure (similar to S3)
+    x-papiea-entity: differ
+    required:
+        - name
+    properties:
+        name:
+            type: string
+            description: Name of the bucket
+        objects:
+            type: array
+            description: Information for the objects within the bucket
+            items:
+                type: object
+                properties:
+                    name:
+                        type: string
+                        description: Name of the object within the bucket
+                    # object reference added in python code

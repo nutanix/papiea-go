@@ -2,7 +2,7 @@ import { DescriptionBuilder, DescriptionType, } from "../../../../papiea-engine/
 import axios from "axios"
 import { timeout } from "../../../../papiea-engine/src/utils/utils"
 import { IntentfulBehaviour, IntentfulStatus, Metadata, Version } from "papiea-core"
-import { ProviderSdk } from "../../src/provider_sdk/typescript_sdk";
+import { ProviderSdk, IntentWatcherApi } from "../../src/provider_sdk/typescript_sdk";
 import uuid = require("uuid");
 
 declare var process: {
@@ -118,10 +118,11 @@ describe("Intentful Workflow tests", () => {
             })
             let retries = 10
             try {
+                let watcherApi = new IntentWatcherApi(papieaUrl, adminKey)
                 for (let i = 1; i <= retries; i++) {
-                    const res = await entityApi.get(`/intent_watcher/${ watcher.uuid }`)
-                    if (res.data.status === IntentfulStatus.Completed_Successfully) {
-                        expect(res.data.status).toBe(IntentfulStatus.Completed_Successfully)
+                    const intent_watcher = await watcherApi.get_intent_watcher(watcher.uuid)
+                    if (intent_watcher.status === IntentfulStatus.Completed_Successfully) {
+                        expect(intent_watcher.status).toBe(IntentfulStatus.Completed_Successfully)
                         const result = await entityApi.get(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
                         expect(result.data.status.x).toEqual(20)
                         return
@@ -187,14 +188,16 @@ describe("Intentful Workflow tests", () => {
             })
             try {
                 await timeout(5000)
-                let res = await entityApi.get(`/intent_watcher/${ watcher.uuid }`)
-                expect(res.data.status).toBe(IntentfulStatus.Active)
+                let watcherApi = new IntentWatcherApi(papieaUrl, adminKey)
+
+                let intent_watcher = await watcherApi.get_intent_watcher(watcher.uuid)
+                expect(intent_watcher.status).toBe(IntentfulStatus.Active)
                 await timeout(3000)
-                res = await entityApi.get(`/intent_watcher/${ watcher.uuid }`)
-                expect(res.data.status).toBe(IntentfulStatus.Active)
+                intent_watcher = await watcherApi.get_intent_watcher(watcher.uuid)
+                expect(intent_watcher.status).toBe(IntentfulStatus.Active)
                 await timeout(15000)
-                res = await entityApi.get(`/intent_watcher/${ watcher.uuid }`)
-                expect(res.data.status).toBe(IntentfulStatus.Completed_Successfully)
+                intent_watcher = await watcherApi.get_intent_watcher(watcher.uuid)
+                expect(intent_watcher.status).toBe(IntentfulStatus.Completed_Successfully)
             } catch (e) {
                 console.log(`Couldn't get entity: ${e}`)
                 expect(e).toBeUndefined()
@@ -289,10 +292,11 @@ describe("Intentful Workflow tests", () => {
             })
             let retries = 10
             try {
+                let watcherApi = new IntentWatcherApi(papieaUrl, adminKey)
                 for (let i = 1; i <= retries; i++) {
-                    const res = await entityApi.get(`/intent_watcher/${ watcher.uuid }`)
-                    if (res.data.status === IntentfulStatus.Completed_Successfully) {
-                        expect(res.data.status).toBe(IntentfulStatus.Completed_Successfully)
+                    const intent_watcher = await watcherApi.get_intent_watcher(watcher.uuid)
+                    if (intent_watcher.status === IntentfulStatus.Completed_Successfully) {
+                        expect(intent_watcher.status).toBe(IntentfulStatus.Completed_Successfully)
                         const result = await entityApi.get(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
                         expect(result.data.status.x).toEqual(30)
                         return
@@ -390,10 +394,11 @@ describe("Intentful Workflow tests", () => {
             const watchers = [first_watcher, second_watcher]
             let retries = 10
             try {
+                let watcherApi = new IntentWatcherApi(papieaUrl, adminKey)
                 for (let i = 1; i <= retries; i++) {
-                    const promises = watchers.map(watcher => entityApi.get(`/intent_watcher/${ watcher.uuid }`))
+                    const promises = watchers.map(watcher => watcherApi.get_intent_watcher(watcher.uuid))
                     const results = await Promise.all(promises)
-                    if (results.every(res => res.data.status === IntentfulStatus.Completed_Successfully)) {
+                    if (results.every(intent_watcher => intent_watcher.status === IntentfulStatus.Completed_Successfully)) {
                         const first_res = await entityApi.get(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ first_kind_name }/${ first_result.data.metadata.uuid }`)
                         expect(first_res.data.status.x).toEqual(20)
                         const second_res = await entityApi.get(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ second_kind_name }/${ second_result.data.metadata.uuid }`)
@@ -504,11 +509,13 @@ describe("Intentful Workflow tests", () => {
             const second_watcher = second_watcher_result.data.watcher
             const watchers = [first_watcher, second_watcher]
             let retries = 10
+
             try {
+                let watcherApi = new IntentWatcherApi(papieaUrl, adminKey)
                 for (let i = 1; i <= retries; i++) {
-                    const promises = watchers.map(watcher => entityApi.get(`/intent_watcher/${ watcher.uuid }`))
+                    const promises = watchers.map(watcher => watcherApi.get_intent_watcher(watcher.uuid))
                     const results = await Promise.all(promises)
-                    if (results.every(res => res.data.status === IntentfulStatus.Completed_Successfully)) {
+                    if (results.every(intent_watcher => intent_watcher.status === IntentfulStatus.Completed_Successfully)) {
                         const first_res = await entityApi.get(`/${ sdk1.provider.prefix }/${ sdk1.provider.version }/${ first_kind_name }/${ first_result.data.metadata.uuid }`)
                         expect(first_res.data.status.x).toEqual(20)
                         const second_res = await entityApi.get(`/${ sdk2.provider.prefix }/${ sdk2.provider.version }/${ second_kind_name }/${ second_result.data.metadata.uuid }`)
@@ -623,10 +630,11 @@ describe("Intentful Workflow tests", () => {
             const watchers = [first_watcher, second_watcher]
             let retries = 10
             try {
+                let watcherApi = new IntentWatcherApi(papieaUrl, adminKey)
                 for (let i = 1; i <= retries; i++) {
-                    const promises = watchers.map(watcher => entityApi.get(`/intent_watcher/${ watcher.uuid }`))
+                    const promises = watchers.map(watcher => watcherApi.get_intent_watcher(watcher.uuid))
                     const results = await Promise.all(promises)
-                    if (results.every(res => res.data.status === IntentfulStatus.Completed_Successfully)) {
+                    if (results.every(intent_watcher => intent_watcher.status === IntentfulStatus.Completed_Successfully)) {
                         const first_res = await entityApi.get(`/${ sdk1.provider.prefix }/${ sdk1.provider.version }/${ first_kind_name }/${ first_result.data.metadata.uuid }`)
                         expect(first_res.data.status.x).toEqual(20)
                         const second_res = await entityApi.get(`/${ sdk2.provider.prefix }/${ sdk2.provider.version }/${ second_kind_name }/${ second_result.data.metadata.uuid }`)
@@ -684,11 +692,12 @@ describe("Intentful Workflow tests", () => {
             })
             let retries = 10
             try {
+                let watcherApi = new IntentWatcherApi(papieaUrl, adminKey)
                 for (let i = 1; i <= retries; i++) {
-                    const res = await entityApi.get(`/intent_watcher/${ watcher.uuid }`)
-                    if (res.data.status === IntentfulStatus.Active && res.data.times_failed > 1) {
-                        expect(res.data.times_failed).toBeGreaterThan(1)
-                        expect(res.data.last_handler_error).toEqual("Error in handler")
+                    const intent_watcher = await watcherApi.get_intent_watcher(watcher.uuid)
+                    if (intent_watcher.status === IntentfulStatus.Active && intent_watcher.times_failed > 1) {
+                        expect(intent_watcher.times_failed).toBeGreaterThan(1)
+                        expect(intent_watcher.last_handler_error).toEqual("Error in handler")
                         return
                     }
                     await timeout(5000)
@@ -913,10 +922,11 @@ describe("Intentful Workflow tests", () => {
             })
             let retries = 10
             try {
+                let watcherApi = new IntentWatcherApi(papieaUrl, adminKey)
                 for (let i = 1; i <= retries; i++) {
-                    const res = await entityApi.get(`/intent_watcher/${ watcher.uuid }`)
-                    if (res.data.status === IntentfulStatus.Completed_Successfully) {
-                        expect(res.data.status).toBe(IntentfulStatus.Completed_Successfully)
+                    const intent_watcher = await watcherApi.get_intent_watcher(watcher.uuid)
+                    if (intent_watcher.status === IntentfulStatus.Completed_Successfully) {
+                        expect(intent_watcher.status).toBe(IntentfulStatus.Completed_Successfully)
                         const result = await entityApi.get(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
                         expect(result.data.status.x.length).toEqual(2)
                         return

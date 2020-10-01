@@ -1,6 +1,6 @@
 // [[file:~/work/papiea-js/Papiea-design.org::*Typescript:%20/src/provider_sdk/typescript_sdk_interface][Typescript: /src/provider_sdk/typescript_sdk_interface:1]]
 import { Kind_Builder } from "./typescript_sdk";
-import { Data_Description, Version, Status, Entity, Entity_Reference, S2S_Key, UserInfo, Action, Secret, ErrorSchemas } from "papiea-core";
+import { Data_Description, Version, Status, Entity, Entity_Reference, S2S_Key, UserInfo, Action, Secret, ErrorSchemas, IntentWatcher } from "papiea-core";
 import {
     LOG_LEVELS, LogLevel, LoggerOptions, Logger, LoggerFactory
 } from 'papiea-backend-utils';
@@ -59,6 +59,12 @@ export interface SecurityApi {
  list_keys(): Promise<S2S_Key[]>
  create_key(new_key: Partial<S2S_Key>):Promise<S2S_Key>
  deactivate_key(key_to_deactivate:Secret):Promise<string>
+}
+
+export interface IntentWatcherImpl {
+  get_intent_watcher(id: string): Promise<IntentWatcher>
+  list_intent_watcher(): Promise<IntentWatcher[]>
+  filter_intent_watcher(filter: any): Promise<IntentWatcher[]>
 }
 
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Providers-SDK-518][provider_sdk_ts_intentful_ctx_interface]]
