@@ -5,7 +5,7 @@ import {
     LOG_LEVELS, LogLevel, LoggerOptions, Logger, LoggerFactory
 } from 'papiea-backend-utils';
 import { IncomingHttpHeaders } from "http";
-import { provider_client, ProviderClient } from "papiea-client";
+import { ProviderClient } from "papiea-client";
 
 // Re-exports from papiea-backend.
 export {LOG_LEVELS, LogLevel, LoggerOptions, Logger, LoggerFactory}
@@ -59,12 +59,6 @@ export interface SecurityApi {
  list_keys(): Promise<S2S_Key[]>
  create_key(new_key: Partial<S2S_Key>):Promise<S2S_Key>
  deactivate_key(key_to_deactivate:Secret):Promise<string>
-}
-
-export interface IntentWatcherImpl {
-  get_intent_watcher(id: string): Promise<IntentWatcher>
-  list_intent_watcher(): Promise<IntentWatcher[]>
-  filter_intent_watcher(filter: any): Promise<IntentWatcher[]>
 }
 
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Providers-SDK-518][provider_sdk_ts_intentful_ctx_interface]]

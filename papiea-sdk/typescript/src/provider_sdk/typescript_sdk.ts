@@ -1,6 +1,5 @@
 import {
     IntentfulCtx_Interface,
-    IntentWatcherImpl,
     ProceduralCtx_Interface, ProcedureDescription,
     Provider as ProviderImpl,
     Provider_Power,
@@ -13,6 +12,7 @@ import { Express, RequestHandler } from "express"
 import * as asyncHandler from "express-async-handler"
 import { Server } from "http"
 import { ProceduralCtx } from "./typescript_sdk_context_impl"
+import {intent_watcher_client, IntentWatcherClient } from "papiea-client"
 import {
     Data_Description,
     Entity,
@@ -81,53 +81,6 @@ class SecurityApiImpl implements SecurityApi {
     }
 }
 
-export class IntentWatcherApi implements IntentWatcherImpl {
-    protected readonly apiAxios: AxiosInstance;
-
-    constructor(papiea_url: string, s2skey: Secret) {
-        this.apiAxios = axios.create({
-            baseURL: `${papiea_url}/services/intent_watcher`,
-            timeout: 10000,
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${s2skey}`
-            }
-        });
-    }
-
-    get api_axios() {
-        return this.apiAxios
-    }
-
-    public async get_intent_watcher(id: string): Promise<IntentWatcher> {
-        try {
-            const res = await this.api_axios.get(`${id}`);
-            return res.data;
-        } catch (e) {
-            throw new Error("Failed to get intent watcher");
-        }
-    }
-
-    public async list_intent_watcher(): Promise<IntentWatcher[]> {
-        try {
-            const res = await this.api_axios.get("");
-            return res.data.results;
-        } catch (e) {
-            throw new Error("Failed to list intent watchers");
-        }
-    }
-
-    // filter_intent_watcher({'status':'Pending'})
-    public async filter_intent_watcher(filter: any): Promise<IntentWatcher[]> {
-        try {
-            const res = await this.api_axios.post("filter", filter);
-            return res.data.results;
-        } catch (e) {
-            throw new Error("Failed to filter intent watchers")
-        }
-    }
-}
-
 export class ProviderSdk implements ProviderImpl {
     protected readonly _kind: Kind[];
     protected readonly _procedures: { [key: string]: Procedural_Signature };
@@ -143,6 +96,7 @@ export class ProviderSdk implements ProviderImpl {
     protected _oauth2: string | null = null;
     protected _authModel: any | null = null;
     protected readonly _securityApi : SecurityApi;
+    protected readonly _intentWatcherClient : IntentWatcherClient
     protected allowExtraProps: boolean;
 
     constructor(papiea_url: string, s2skey: Secret, server_manager?: Provider_Server_Manager, allowExtraProps?: boolean) {
@@ -159,6 +113,7 @@ export class ProviderSdk implements ProviderImpl {
         this.get_prefix = this.get_prefix.bind(this);
         this.get_version = this.get_version.bind(this);
         this._securityApi = new SecurityApiImpl(this, s2skey);
+        this._intentWatcherClient = intent_watcher_client(papiea_url, s2skey)
         this.providerApiAxios = axios.create({
             baseURL: this.provider_url,
             timeout: 10000,
@@ -371,6 +326,10 @@ export class ProviderSdk implements ProviderImpl {
 
     public get s2s_key(): Secret {
         return this._s2skey
+    }
+
+    public get_intent_watcher_client(): IntentWatcherClient {
+        return this._intentWatcherClient
     }
 }
 

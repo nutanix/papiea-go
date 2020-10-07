@@ -123,6 +123,25 @@ export async function iter_filter(url: string, data: any, config?: AxiosRequestC
     })
 }
 
+async function get_intent_watcher(papiea_url: string, id: string, s2skey: string): Promise<IntentWatcher> {
+    const res = await make_request(axios.get, `${ papiea_url }/services/intent_watcher/${ id }`,
+        { headers: { "Authorization": `Bearer ${ s2skey }` } });
+    return res.data
+}
+
+async function filter_intent_watcher(papiea_url: string, filter: any, s2skey: string): Promise<FilterResults> {
+    const res = await make_request(axios.post, `${ papiea_url }/services/intent_watcher/filter`, filter, { headers: { "Authorization": `Bearer ${ s2skey }` } });
+    return res.data
+}
+// {'objects': {'length': '2'}, 'bucket_name': {'value': 'new_name'}}
+async function wait_for_entity_status_sync(status: any): Promise<boolean> {
+    return true
+}
+
+async function wait_for_entity_status_async(status: any, callback: any): Promise<void> {
+    return
+}
+
 export interface ProviderClient {
     get_kind(kind: string): EntityCRUD
 
@@ -177,6 +196,29 @@ export function kind_client(papiea_url: string, provider: string, kind: string, 
     return crudder
 }
 
+export interface IntentWatcherClient {
+    get(id: string): Promise<IntentWatcher>
+
+    list_iter(): Promise<FilterResults>
+
+    filter_iter(filter: any): Promise<FilterResults>
+
+    wait_for_status_change_sync(status: any): Promise<boolean>
+
+    wait_for_status_change_async(status: any, callback: any): Promise<void>
+}
+
+export function intent_watcher_client(papiea_url: string, s2skey?: string): IntentWatcherClient {
+    const the_s2skey = s2skey ?? 'anonymous'
+    const intent_watcher: IntentWatcherClient = {
+        get: (id: string) => get_intent_watcher(papiea_url, id, the_s2skey),
+        list_iter: () => filter_intent_watcher(papiea_url, "", the_s2skey),
+        filter_iter: (filter: any) => filter_intent_watcher(papiea_url, filter, the_s2skey),
+        wait_for_status_change_sync: (status: any) => wait_for_entity_status_sync(status),
+        wait_for_status_change_async: (status: any, callback: any) => wait_for_entity_status_async(status, callback)
+    }
+    return intent_watcher
+}
 // class based crud
 interface EntityObjectCRUD {
     update(spec: Spec): Promise<EntityObjectCRUD>
