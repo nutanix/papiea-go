@@ -5,7 +5,7 @@ import e2e_tests as papiea_test
 import e2e_tests.provider_setup as provider
 import e2e_tests.utils as test_utils
 
-from papiea.core import Spec
+from papiea.core import AttributeDict, Spec
 
 # Includes all the entity ops related tests
 class TestEntityOperations:
@@ -50,18 +50,28 @@ class TestEntityOperations:
                     spec = Spec(
                         content=obj_content
                     )
-                    watcher_ref = await object_entity_client.update(b1_object1_entity.metadata, spec)
-                    op_status = await test_utils.wait_for_diff_resolver(watcher_ref.watcher)
+                    await object_entity_client.update(b1_object1_entity.metadata, spec)
+
+                    async def cb_function(entity_ref):
+                        async with papiea_test.get_client(papiea_test.OBJECT_KIND) as object_entity_client:
+                            b1_object1_entity = await object_entity_client.get(object_ref)
+
+                            assert b1_object1_entity.status.content == obj_content
+                            assert b1_object1_entity.status.size == len(obj_content)
+                            assert len(b1_object1_entity.status.references) == 1
+                            assert b1_object1_entity.status.references[0].bucket_name == bucket1_name
+                            assert b1_object1_entity.status.references[0].object_name == object1_name
+                            assert b1_object1_entity.status.references[0].bucket_reference.uuid == bucket1_entity.metadata.uuid
+
+                    status = [
+                        AttributeDict(content=AttributeDict(value=obj_content)),
+                        AttributeDict(size=AttributeDict(value=len(obj_content))),
+                        AttributeDict(references=AttributeDict(length=1))]
+                    op_status = await test_utils.wait_for_status_change(papiea_test.OBJECT_KIND, object_ref, status, False, cb_function)
                     if op_status == True:
                         b1_object1_entity = await object_entity_client.get(object_ref)
 
-                        assert b1_object1_entity.spec.content == obj_content
-                        assert b1_object1_entity.status.content == obj_content
-                        assert b1_object1_entity.status.size == len(obj_content)
-                        assert len(b1_object1_entity.status.references) == 1
-                        assert b1_object1_entity.status.references[0].bucket_name == bucket1_name
-                        assert b1_object1_entity.status.references[0].object_name == object1_name
-                        assert b1_object1_entity.status.references[0].bucket_reference.uuid == bucket1_entity.metadata.uuid
+                        assert b1_object1_entity.spec.content == obj_content        
                     else:
                         papiea_test.logger.debug("Intent resolver operation failed")
                         assert False

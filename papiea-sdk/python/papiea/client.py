@@ -3,7 +3,7 @@ from types import TracebackType
 from typing import Any, Optional, List, Type, Callable, AsyncGenerator
 
 from .api import ApiInstance
-from .core import AttributeDict, Entity, EntityReference, EntitySpec, Metadata, Spec
+from .core import AttributeDict, Entity, EntityReference, EntitySpec, IntentWatcher, Metadata, Secret, Spec
 FilterResults = AttributeDict
 
 BATCH_SIZE = 20
@@ -123,6 +123,57 @@ class EntityCRUD(object):
         try:
             payload = {"input": input_}
             return await self.api_instance.post(f"procedure/{procedure_name}", payload)
+        except:
+            raise
+
+class IntentWatcherClient(object):
+    def __init__(
+        self,
+        papiea_url: str,
+        s2skey: Secret = None,
+        logger: logging.Logger = logging.getLogger(__name__)
+    ):
+        headers = {
+            "Content-Type": "application/json",
+        }
+
+        if s2skey is not None:
+            headers["Authorization"] = f"Bearer {s2skey}"
+        self.api_instance = ApiInstance(
+            f"{papiea_url}/services/intent_watcher", headers=headers, logger=logger
+        )
+
+        self.logger = logger
+
+    async def __aenter__(self) -> "IntentWatcherApi":
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType]
+    ) -> None:
+        await self.api_instance.close()
+
+    async def get_intent_watcher(self, id: str) -> IntentWatcher:
+        try:
+            return await self.api_instance.get(id)
+        except:
+            raise
+
+    async def list_intent_watcher(self) -> List[IntentWatcher]:
+        try:
+            res = await self.api_instance.get("")
+            return res.results
+        except:
+            raise
+
+    # filter_intent_watcher(AttributeDict(status='Pending'))
+    async def filter_intent_watcher(self, filter_obj: Any) -> List[IntentWatcher]:
+        try:
+            res = await self.api_instance.post("filter", filter_obj)
+            return res.results
         except:
             raise
 
