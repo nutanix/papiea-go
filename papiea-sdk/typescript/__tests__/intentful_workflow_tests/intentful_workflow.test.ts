@@ -117,8 +117,10 @@ describe("Intentful Workflow tests", () => {
                 }
             })
             let retries = 10
+            let watcher_status = {'status': IntentfulStatus.Completed_Successfully}
             try {
                 let watcherApi = sdk.get_intent_watcher_client()
+                await watcherApi.wait_for_status_change(watcher, watcher_status, 50)
                 for (let i = 1; i <= retries; i++) {
                     const intent_watcher = await watcherApi.get(watcher.uuid)
                     if (intent_watcher.status === IntentfulStatus.Completed_Successfully) {

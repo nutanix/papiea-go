@@ -1,3 +1,5 @@
+import asyncio
+import functools
 import pytest
 import time
 
@@ -5,17 +7,22 @@ import e2e_tests as papiea_test
 import e2e_tests.provider_setup as provider
 import e2e_tests.utils as test_utils
 
-from papiea.core import AttributeDict, Spec
+from papiea.core import AttributeDict, IntentfulStatus, Spec
 
 # Includes all the entity ops related tests
 class TestEntityOperations:
+
+    async def add_done_callback(self, task, callback, entity_ref):
+        result = await task
+        await callback(entity_ref=entity_ref)
+        return result
 
     @pytest.mark.asyncio
     async def test_object_content_change_intent(self):
         papiea_test.logger.debug("Running test to change object content and validate intent resolver")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -50,7 +57,7 @@ class TestEntityOperations:
                     spec = Spec(
                         content=obj_content
                     )
-                    await object_entity_client.update(b1_object1_entity.metadata, spec)
+                    watcher_ref = await object_entity_client.update(b1_object1_entity.metadata, spec)
 
                     async def cb_function(entity_ref):
                         async with papiea_test.get_client(papiea_test.OBJECT_KIND) as object_entity_client:
@@ -63,17 +70,12 @@ class TestEntityOperations:
                             assert b1_object1_entity.status.references[0].object_name == object1_name
                             assert b1_object1_entity.status.references[0].bucket_reference.uuid == bucket1_entity.metadata.uuid
 
-                    status = [
-                        AttributeDict(content=AttributeDict(value=obj_content)),
-                        AttributeDict(size=AttributeDict(value=len(obj_content))),
-                        AttributeDict(references=AttributeDict(length=1))]
-                    op_status = await test_utils.wait_for_status_change(papiea_test.OBJECT_KIND, object_ref, status, False, cb_function)
-                    if op_status == True:
-                        b1_object1_entity = await object_entity_client.get(object_ref)
+                    watcher_status = AttributeDict(status=IntentfulStatus.Completed_Successfully)
 
-                        assert b1_object1_entity.spec.content == obj_content        
-                    else:
-                        papiea_test.logger.debug("Intent resolver operation failed")
-                        assert False
+                    task = asyncio.create_task(sdk.intent_watcher.wait_for_watcher_status(watcher_ref.watcher, watcher_status, 50))
+                    await self.add_done_callback(task, cb_function, b1_object1_entity)
+
+                    b1_object1_entity = await object_entity_client.get(object_ref)
+                    assert b1_object1_entity.spec.content == obj_content
         finally:
-            await server.close()
+            await sdk.server.close()

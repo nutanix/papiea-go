@@ -1,3 +1,4 @@
+import time
 import logging
 from types import TracebackType
 from typing import Any, Optional, List, Type, Callable, AsyncGenerator
@@ -169,11 +170,26 @@ class IntentWatcherClient(object):
         except:
             raise
 
-    # filter_intent_watcher(AttributeDict(status='Pending'))
+    # filter_intent_watcher(AttributeDict(status=IntentfulStatus.Pending))
     async def filter_intent_watcher(self, filter_obj: Any) -> List[IntentWatcher]:
         try:
             res = await self.api_instance.post("filter", filter_obj)
             return res.results
+        except:
+            raise
+
+    async def wait_for_watcher_status(self, watcher_ref: AttributeDict, watcher_status: AttributeDict, limit: int = 50) -> bool:
+        try:
+            start_time = time.time()
+            while True:
+                watcher = await self.get_intent_watcher(watcher_ref.uuid)
+                if watcher.status == watcher_status.status:
+                    return True
+                end_time = time.time()
+                time_elapsed = end_time - start_time
+                if time_elapsed > limit:
+                    raise Exception("Timeout waiting for intent watcher status")
+                time.sleep(5)
         except:
             raise
 

@@ -13,6 +13,10 @@ import {
 
 const BATCH_SIZE = 20
 
+function delay(ms: number) {
+    return new Promise( resolve => setTimeout(resolve, ms) );
+}
+
 function make_request<T = any, Y = AxiosPromise<T>>(f: (url: string, data?: any, config?: AxiosRequestConfig) => Y, url: string, data?: any, config?: AxiosRequestConfig): Y {
     try {
         return f(url, data, config)
@@ -129,17 +133,26 @@ async function get_intent_watcher(papiea_url: string, id: string, s2skey: string
     return res.data
 }
 
+// filter_intent_watcher({'status':'Pending'})
 async function filter_intent_watcher(papiea_url: string, filter: any, s2skey: string): Promise<FilterResults> {
     const res = await make_request(axios.post, `${ papiea_url }/services/intent_watcher/filter`, filter, { headers: { "Authorization": `Bearer ${ s2skey }` } });
     return res.data
 }
-// {'objects': {'length': '2'}, 'bucket_name': {'value': 'new_name'}}
-async function wait_for_entity_status_sync(status: any): Promise<boolean> {
-    return true
-}
 
-async function wait_for_entity_status_async(status: any, callback: any): Promise<void> {
-    return
+async function wait_for_watcher_status(papiea_url: string, s2skey: string, watcher_ref: IntentWatcher, watcher_status: any, limit: number = 50): Promise<boolean> {
+    const start_time: number = new Date().getTime()
+    while (true) {
+        const watcher = await get_intent_watcher(papiea_url, watcher_ref.uuid, s2skey)
+        if (watcher.status == watcher_status.status) {
+            return true;
+        }
+        const end_time: number = new Date().getTime()
+        const time_elapsed = (end_time - start_time)/1000
+        if (time_elapsed > limit) {
+            throw new Error("Timeout waiting for intent watcher status")
+        }
+        await delay(5000)
+    }
 }
 
 export interface ProviderClient {
@@ -203,9 +216,7 @@ export interface IntentWatcherClient {
 
     filter_iter(filter: any): Promise<FilterResults>
 
-    wait_for_status_change_sync(status: any): Promise<boolean>
-
-    wait_for_status_change_async(status: any, callback: any): Promise<void>
+    wait_for_status_change(watcher_ref: any, watcher_status: any, timeout: number): Promise<boolean>
 }
 
 export function intent_watcher_client(papiea_url: string, s2skey?: string): IntentWatcherClient {
@@ -214,11 +225,11 @@ export function intent_watcher_client(papiea_url: string, s2skey?: string): Inte
         get: (id: string) => get_intent_watcher(papiea_url, id, the_s2skey),
         list_iter: () => filter_intent_watcher(papiea_url, "", the_s2skey),
         filter_iter: (filter: any) => filter_intent_watcher(papiea_url, filter, the_s2skey),
-        wait_for_status_change_sync: (status: any) => wait_for_entity_status_sync(status),
-        wait_for_status_change_async: (status: any, callback: any) => wait_for_entity_status_async(status, callback)
+        wait_for_status_change: (watcher_ref: any, watcher_status: any, timeout: number) => wait_for_watcher_status(papiea_url, the_s2skey, watcher_ref, watcher_status)
     }
     return intent_watcher
 }
+
 // class based crud
 interface EntityObjectCRUD {
     update(spec: Spec): Promise<EntityObjectCRUD>
