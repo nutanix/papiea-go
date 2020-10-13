@@ -4,7 +4,7 @@ from types import TracebackType
 from typing import Any, Optional, List, Type, Callable, AsyncGenerator
 
 from .api import ApiInstance
-from .core import AttributeDict, Entity, EntityReference, EntitySpec, IntentWatcher, Metadata, Secret, Spec
+from .core import AttributeDict, Entity, EntityReference, EntitySpec, IntentfulStatus, IntentWatcher, Metadata, Secret, Spec
 FilterResults = AttributeDict
 
 BATCH_SIZE = 20
@@ -178,18 +178,19 @@ class IntentWatcherClient(object):
         except:
             raise
 
-    async def wait_for_watcher_status(self, watcher_ref: AttributeDict, watcher_status: AttributeDict, limit: int = 50) -> bool:
+    async def wait_for_watcher_status(self, watcher_ref: AttributeDict, watcher_status: IntentfulStatus, timeout_secs: float = 50, delay_millis: float = 500) -> bool:
         try:
             start_time = time.time()
+            delay_secs = delay_millis/1000
             while True:
                 watcher = await self.get_intent_watcher(watcher_ref.uuid)
-                if watcher.status == watcher_status.status:
+                if watcher.status == watcher_status:
                     return True
                 end_time = time.time()
                 time_elapsed = end_time - start_time
-                if time_elapsed > limit:
+                if time_elapsed > timeout_secs:
                     raise Exception("Timeout waiting for intent watcher status")
-                time.sleep(5)
+                time.sleep(delay_secs)
         except:
             raise
 

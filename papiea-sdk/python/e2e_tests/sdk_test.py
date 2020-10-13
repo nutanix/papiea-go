@@ -11,12 +11,6 @@ from papiea.core import AttributeDict, IntentfulStatus, Spec
 
 # Includes all the entity ops related tests
 class TestEntityOperations:
-
-    async def add_done_callback(self, task, callback, entity_ref):
-        result = await task
-        await callback(entity_ref=entity_ref)
-        return result
-
     @pytest.mark.asyncio
     async def test_object_content_change_intent(self):
         papiea_test.logger.debug("Running test to change object content and validate intent resolver")
@@ -57,25 +51,23 @@ class TestEntityOperations:
                     spec = Spec(
                         content=obj_content
                     )
+
+                    callback_invoked = False
+                    def cb_function(fut: asyncio.Future):
+                        nonlocal callback_invoked
+                        callback_invoked = True
+
                     watcher_ref = await object_entity_client.update(b1_object1_entity.metadata, spec)
 
-                    async def cb_function(entity_ref):
-                        async with papiea_test.get_client(papiea_test.OBJECT_KIND) as object_entity_client:
-                            b1_object1_entity = await object_entity_client.get(object_ref)
-
-                            assert b1_object1_entity.status.content == obj_content
-                            assert b1_object1_entity.status.size == len(obj_content)
-                            assert len(b1_object1_entity.status.references) == 1
-                            assert b1_object1_entity.status.references[0].bucket_name == bucket1_name
-                            assert b1_object1_entity.status.references[0].object_name == object1_name
-                            assert b1_object1_entity.status.references[0].bucket_reference.uuid == bucket1_entity.metadata.uuid
-
-                    watcher_status = AttributeDict(status=IntentfulStatus.Completed_Successfully)
-
+                    watcher_status = IntentfulStatus.Completed_Successfully
                     task = asyncio.create_task(sdk.intent_watcher.wait_for_watcher_status(watcher_ref.watcher, watcher_status, 50))
-                    await self.add_done_callback(task, cb_function, b1_object1_entity)
+                    task.add_done_callback(cb_function)
+
+                    await asyncio.sleep(10)
 
                     b1_object1_entity = await object_entity_client.get(object_ref)
+
                     assert b1_object1_entity.spec.content == obj_content
+                    assert callback_invoked == True
         finally:
             await sdk.server.close()

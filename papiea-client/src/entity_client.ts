@@ -1,5 +1,5 @@
 import axios, { AxiosPromise, AxiosRequestConfig } from "axios";
-import { Metadata, Spec, Entity_Reference, Entity, EntitySpec, PapieaError, IntentWatcher } from "papiea-core";
+import { Metadata, Spec, Entity_Reference, Entity, EntitySpec, PapieaError, IntentWatcher, IntentfulStatus } from "papiea-core";
 import {
     BadRequestError,
     ConflictingEntityError,
@@ -139,19 +139,19 @@ async function filter_intent_watcher(papiea_url: string, filter: any, s2skey: st
     return res.data
 }
 
-async function wait_for_watcher_status(papiea_url: string, s2skey: string, watcher_ref: IntentWatcher, watcher_status: any, limit: number = 50): Promise<boolean> {
+async function wait_for_watcher_status(papiea_url: string, s2skey: string, watcher_ref: IntentWatcher, watcher_status: IntentfulStatus, timeout_secs: number, delay_millis: number): Promise<boolean> {
     const start_time: number = new Date().getTime()
     while (true) {
         const watcher = await get_intent_watcher(papiea_url, watcher_ref.uuid, s2skey)
-        if (watcher.status == watcher_status.status) {
+        if (watcher.status == watcher_status) {
             return true;
         }
         const end_time: number = new Date().getTime()
         const time_elapsed = (end_time - start_time)/1000
-        if (time_elapsed > limit) {
+        if (time_elapsed > timeout_secs) {
             throw new Error("Timeout waiting for intent watcher status")
         }
-        await delay(5000)
+        await delay(delay_millis)
     }
 }
 
@@ -216,7 +216,7 @@ export interface IntentWatcherClient {
 
     filter_iter(filter: any): Promise<FilterResults>
 
-    wait_for_status_change(watcher_ref: any, watcher_status: any, timeout: number): Promise<boolean>
+    wait_for_status_change(watcher_ref: any, watcher_status: IntentfulStatus, timeout_secs?: number, delay_millis?: number): Promise<boolean>
 }
 
 export function intent_watcher_client(papiea_url: string, s2skey?: string): IntentWatcherClient {
@@ -225,7 +225,7 @@ export function intent_watcher_client(papiea_url: string, s2skey?: string): Inte
         get: (id: string) => get_intent_watcher(papiea_url, id, the_s2skey),
         list_iter: () => filter_intent_watcher(papiea_url, "", the_s2skey),
         filter_iter: (filter: any) => filter_intent_watcher(papiea_url, filter, the_s2skey),
-        wait_for_status_change: (watcher_ref: any, watcher_status: any, timeout: number) => wait_for_watcher_status(papiea_url, the_s2skey, watcher_ref, watcher_status)
+        wait_for_status_change: (watcher_ref: any, watcher_status: IntentfulStatus, timeout_secs: number = 50, delay_millis: number = 500) => wait_for_watcher_status(papiea_url, the_s2skey, watcher_ref, watcher_status, timeout_secs, delay_millis)
     }
     return intent_watcher
 }
