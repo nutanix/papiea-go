@@ -17,7 +17,7 @@ class TestEntityOperations:
         papiea_test.logger.debug("Running test to create new unique bucket")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -38,14 +38,14 @@ class TestEntityOperations:
                 assert bucket1_entity.spec.name == bucket1_name
                 assert len(bucket1_entity.spec.objects) == 0
         finally:
-            await server.close()
+            await sdk.server.close()
 
     @pytest.mark.asyncio
     async def test_duplicate_bucket_create(self):
         papiea_test.logger.debug("Running test to create a duplicate bucket")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -72,14 +72,14 @@ class TestEntityOperations:
                 assert bucket1_entity.spec.name == bucket1_name
                 assert len(bucket1_entity.spec.objects) == 0
         finally:
-            await server.close()
+            await sdk.server.close()
 
     @pytest.mark.asyncio
     async def test_new_object_create(self):
         papiea_test.logger.debug("Running test to create a new unique object")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -113,14 +113,14 @@ class TestEntityOperations:
                 assert bucket1_entity.spec.objects[0].reference.uuid == b1_object1_entity.metadata.uuid
                 assert b1_object1_entity.spec.content == ""
         finally:
-            await server.close()
+            await sdk.server.close()
 
     @pytest.mark.asyncio
     async def test_duplicate_object_create(self):
         papiea_test.logger.debug("Running test to create a duplicate object in same bucket")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -154,14 +154,14 @@ class TestEntityOperations:
             papiea_test.logger.debug("Failed to perform entity operation : " + str(ex))
             assert str(ex) == "Object already exists in the bucket"
         finally:
-            await server.close()
+            await sdk.server.close()
 
     @pytest.mark.asyncio
     async def test_different_bucket_different_name_link(self):
         papiea_test.logger.debug("Running test to link to different object in a different bucket")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -216,14 +216,14 @@ class TestEntityOperations:
                 assert bucket2_entity.spec.objects[0].name == object2_name
                 assert bucket2_entity.spec.objects[0].reference.uuid == b1_object1_entity.metadata.uuid
         finally:
-            await server.close()
+            await sdk.server.close()
 
     @pytest.mark.asyncio
     async def test_different_bucket_same_name_link(self):
         papiea_test.logger.debug("Running test to link to same object in a different bucket")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -277,14 +277,14 @@ class TestEntityOperations:
                 assert bucket2_entity.spec.objects[0].name == object1_name
                 assert bucket2_entity.spec.objects[0].reference.uuid == b1_object1_entity.metadata.uuid
         finally:
-            await server.close()
+            await sdk.server.close()
 
     @pytest.mark.asyncio
     async def test_same_bucket_different_name_link(self):
         papiea_test.logger.debug("Running test to link to different object in the same bucket")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -333,14 +333,14 @@ class TestEntityOperations:
                 assert bucket1_entity.spec.objects[0].name == object1_name
                 assert bucket1_entity.spec.objects[0].reference.uuid == b1_object1_entity.metadata.uuid
         finally:
-            await server.close()
+            await sdk.server.close()
 
     @pytest.mark.asyncio
     async def test_same_bucket_same_name_link(self):
         papiea_test.logger.debug("Running test to link to same object in the same bucket")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -383,14 +383,14 @@ class TestEntityOperations:
             papiea_test.logger.debug("Failed to perform entity operation : " + str(ex))
             assert str(ex) == "Object already exists in the bucket"
         finally:
-            await server.close()
+            await sdk.server.close()
 
     @pytest.mark.asyncio
     async def test_different_bucket_different_name_exists_link(self):
         papiea_test.logger.debug("Running test to link to different object in a different bucket, different object already exists in the bucket")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -451,14 +451,14 @@ class TestEntityOperations:
             papiea_test.logger.debug("Failed to perform entity operation : " + str(ex))
             assert str(ex) == "Object already exists in the bucket"
         finally:
-            await server.close()
+            await sdk.server.close()
 
     @pytest.mark.asyncio
     async def test_non_existent_object_link(self):
         papiea_test.logger.debug("Running test to link to a non-existent object")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -490,14 +490,14 @@ class TestEntityOperations:
             papiea_test.logger.debug("Failed to perform entity operation : " + str(ex))
             assert str(ex) == "Entity shouldfailuuid not found"
         finally:
-            await server.close()
+            await sdk.server.close()
 
     @pytest.mark.asyncio
     async def test_object_unlink(self):
         papiea_test.logger.debug("Running test to unlink from a valid object")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -553,14 +553,14 @@ class TestEntityOperations:
                 assert bucket1_entity.spec.objects[0].name == object1_name
                 assert bucket1_entity.spec.objects[0].reference.uuid == b1_object1_entity.metadata.uuid
         finally:
-            await server.close()
+            await sdk.server.close()
 
     @pytest.mark.asyncio
     async def test_object_delete_unlink(self):
         papiea_test.logger.debug("Running test to unlink last reference for a valid object, delete the object")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -599,14 +599,14 @@ class TestEntityOperations:
 
                 assert len(bucket1_entity.spec.objects) == 0
         finally:
-            await server.close()
+            await sdk.server.close()
 
     @pytest.mark.asyncio
     async def test_non_existent_object_unlink(self):
         papiea_test.logger.debug("Running test to unlink from a non-existing object")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -633,14 +633,14 @@ class TestEntityOperations:
             papiea_test.logger.debug("Failed to perform entity operation : " + str(ex))
             assert str(ex) == "Object not found in the bucket"
         finally:
-            await server.close()
+            await sdk.server.close()
 
     @pytest.mark.asyncio
     async def test_bucket_create_intent(self):
         papiea_test.logger.debug("Running test to create bucket and validate intent resolver")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -669,14 +669,14 @@ class TestEntityOperations:
                 assert bucket_entity.spec.name == bucket1_name
                 assert len(bucket_entity.status.objects) == 0
         finally:
-            await server.close()
+            await sdk.server.close()
 
     @pytest.mark.asyncio
     async def test_bucket_name_change_intent(self):
         papiea_test.logger.debug("Running test to change bucket name and validate intent resolver")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -745,14 +745,14 @@ class TestEntityOperations:
                 assert len(b1_object1_entity.status.references) == 1
                 assert b1_object1_entity.status.references[0].bucket_name == new_bucket1_name
         finally:
-            await server.close()
+            await sdk.server.close()
 
     @pytest.mark.asyncio
     async def test_object_add_bucket_intent(self):
         papiea_test.logger.debug("Running test to add object to bucket and validate intent resolver")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -801,14 +801,14 @@ class TestEntityOperations:
                 assert b1_object1_entity.status.references[0].object_name == object1_name
                 assert b1_object1_entity.status.references[0].bucket_reference.uuid == bucket1_entity.metadata.uuid
         finally:
-            await server.close()
+            await sdk.server.close()
 
     @pytest.mark.asyncio
     async def test_object_remove_bucket_intent(self):
         papiea_test.logger.debug("Running test to remove object from bucket and validate intent resolver")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -872,14 +872,14 @@ class TestEntityOperations:
                 assert len(bucket1_entity.status.objects) == 0
                 assert len(object_list) == 0
         finally:
-            await server.close()
+            await sdk.server.close()
 
     @pytest.mark.asyncio
     async def test_object_create_intent(self):
         papiea_test.logger.debug("Running test to create object and validate intent resolver")
 
         try:
-            server = await provider.setup_and_register_sdk()
+            sdk = await provider.setup_and_register_sdk()
         except Exception as ex:
             papiea_test.logger.debug("Failed to setup/register sdk : " + str(ex))
             return
@@ -907,7 +907,7 @@ class TestEntityOperations:
                 assert object_entity.status.size == 4
                 assert len(object_entity.status.references) == 0
         finally:
-            await server.close()
+            await sdk.server.close()
 
     @pytest.mark.asyncio
     async def test_object_content_change_intent(self):

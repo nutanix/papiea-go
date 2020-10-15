@@ -5,6 +5,7 @@ WORKDIR /code/papiea-engine
 RUN cd /code \
     && apt-get update \
     && apt-get install -y build-essential \
+    && apt-get install python3.8 python3-pip python3.8-dev -y \
     && npm --prefix papiea-engine run build-clj
 
 # Install yarn
@@ -37,13 +38,7 @@ RUN cd /code \
     && apt-get install curl -y \
     && curl -sL https://deb.nodesource.com/setup_10.x -o nodesource_setup.sh \
     && bash nodesource_setup.sh \
-    && apt-get install nodejs -y \
-    && apt-get install python3-pip -y
-
-# Install python3.8
-RUN cd /code \
-    && apt-get update \
-    && apt-get install -y python3.8 python3-pip python3.8-dev
+    && apt-get install nodejs -y
 
 # Install yarn
 RUN curl -o- -L yarnpkg.com/install.sh | bash
