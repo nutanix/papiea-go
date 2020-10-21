@@ -108,7 +108,7 @@ class TestEntityOperations:
 
                 bucket1_entity = await bucket_entity_client.get(bucket_ref)
 
-                assert len(bucket1_entity.spec.objects) == 2
+                assert len(bucket1_entity.spec.objects) == 1
                 assert bucket1_entity.spec.objects[0].name == object1_name
                 assert bucket1_entity.spec.objects[0].reference.uuid == b1_object1_entity.metadata.uuid
                 assert b1_object1_entity.spec.content == ""
