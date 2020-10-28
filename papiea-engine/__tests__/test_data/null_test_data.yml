@@ -1,0 +1,14 @@
+Machine:
+    type: object
+    title: Machine
+    x-papiea-entity: basic
+    properties:
+      provider_ref:
+          type: object
+          required: 
+            - tenant_id
+          properties:
+            tenant_id:
+                type: string
+            account_id:
+                type: string

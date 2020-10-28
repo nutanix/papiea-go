@@ -58,6 +58,7 @@ describe("Provider Sdk tests", () => {
     const provider_version = "0.1.0";
     const location_yaml = load(readFileSync(resolve(__dirname, "../test_data/location_kind_test_data.yml"), "utf-8"));
     const location_array_yaml = load(readFileSync(resolve(__dirname, "../test_data/location_kind_test_data_array.yml"), "utf-8"));
+
     test("Yaml parses into walkable tree", (done) => {
         expect(location_yaml).not.toBeNull();
         expect(location_yaml.Location).not.toBeNull();
@@ -922,6 +923,50 @@ describe("Provider Sdk tests", () => {
             expect(e.response.data.error.errors[0].message).toBe("Cannot set property 'x' of undefined");
             expect(e.response.data.error.errors[0].stacktrace).not.toBeUndefined();
             expect(e.response.data.error.errors[0].stacktrace).toContain("TypeError: Cannot set property 'x' of undefined")
+        } finally {
+            sdk.server.close();
+        }
+    });
+
+    const null_test_yaml = load(readFileSync(resolve(__dirname, "../test_data/null_test_data.yml"), "utf-8"));
+    test("Test entity initialization after setting it to null", async () => {
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        try {
+            const machine = sdk.new_kind(null_test_yaml);
+            sdk.version(provider_version);
+            sdk.prefix("test_provider");
+            machine.entity_procedure(
+                "testProcedure",
+                {input_schema: loadYamlFromTestFactoryDir("./test_data/null_test_input.yml"),
+                 output_schema: loadYamlFromTestFactoryDir("./test_data/null_test_data.yml")},
+                async (ctx, entity, input) => {
+
+                const real_ref = {
+                    tenant_id: '1',
+                    account_id: input
+                }
+
+                await ctx.update_status(entity.metadata, {provider_ref: null})
+                await ctx.update_status(entity.metadata, {provider_ref: real_ref})
+
+                return entity.spec;
+            });
+
+            await sdk.register();
+            const kind_name = sdk.provider.kinds[0].name;
+            const { data: { metadata, spec } } = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}`, {
+                spec: {
+                    provider_ref: {
+                        tenant_id: '1',
+                        account_id: '2'
+                    }
+                }
+            });
+
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/testProcedure`, { input: '2' });
+            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`);
+        } catch(e) {
+            console.log(e.response.data.error)
         } finally {
             sdk.server.close();
         }
