@@ -7,12 +7,13 @@ import { Authorizer } from "../auth/authz";
 import { UserAuthInfo } from "../auth/authn";
 import { createHash } from "../auth/crypto";
 import { EventEmitter } from "events";
-import { Action, Entity_Reference, Provider, S2S_Key, Secret, Status, Version } from "papiea-core";
+import { Action, Entity_Reference, Kind, Provider, S2S_Key, Secret, Status, Version } from "papiea-core";
 import { Logger } from "papiea-backend-utils";
 import { Watchlist_DB } from "../databases/watchlist_db_interface";
 import { SpecOnlyUpdateStrategy } from "../intentful_core/intentful_strategies/status_update_strategy";
 import { IntentfulContext } from "../intentful_core/intentful_context";
 import uuid = require("uuid");
+import { isEmpty } from "lodash";
 
 export class Provider_API_Impl implements Provider_API {
     private providerDb: Provider_DB;
@@ -97,6 +98,9 @@ export class Provider_API_Impl implements Provider_API {
             mergedStatus = {...currentStatus, ...partialStatus}
         }
         await this.validator.validate_status(provider, entity_ref, mergedStatus);
+
+        const schemas: any = Object.assign({}, kind.kind_structure);
+        partialStatus = await this.fix_null_object(schemas[kind.name], partialStatus);
         return strategy.update({provider_prefix: provider_prefix, provider_version: version, ...entity_ref}, partialStatus)
     }
 
@@ -130,6 +134,18 @@ export class Provider_API_Impl implements Provider_API {
 
     async get_latest_provider_by_kind(user: UserAuthInfo, kind_name: string): Promise<Provider> {
         return await this.providerDb.get_latest_provider_by_kind(kind_name);
+    }
+
+    async fix_null_object(schemas: any, status: Status): Promise<Status> {
+        if (schemas.type === 'object' && (status === null || status === undefined || Object.keys(status).length === 0)) {
+            status = {}
+        } else if (schemas.type === 'object') {
+            const properties_schema = schemas.properties;
+            for (var key in status) {
+                status[key] = await this.fix_null_object(properties_schema[key], status[key])
+            }
+        }
+        return status
     }
 
     async update_auth(user: UserAuthInfo, provider_prefix: string, provider_version: Version, auth: any): Promise<void> {

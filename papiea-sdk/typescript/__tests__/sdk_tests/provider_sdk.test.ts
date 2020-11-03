@@ -930,6 +930,7 @@ describe("Provider Sdk tests", () => {
 
     const null_test_yaml = load(readFileSync(resolve(__dirname, "../test_data/null_test_data.yml"), "utf-8"));
     test("Test entity initialization after setting it to null", async () => {
+        expect.hasAssertions();
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
             const machine = sdk.new_kind(null_test_yaml);
@@ -965,6 +966,8 @@ describe("Provider Sdk tests", () => {
 
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/testProcedure`, { input: '2' });
             const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`);
+            expect(updatedEntity.data.status.provider_ref.tenant_id).toEqual('1')
+            expect(updatedEntity.data.status.provider_ref.account_id).toEqual('2')
         } catch(e) {
             console.log(e.response.data.error)
         } finally {
