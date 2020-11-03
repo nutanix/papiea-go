@@ -11,7 +11,7 @@ services:
                 ports:
                         - "3333:3000"
                 environment:
-                        - PAPIEA_ADMIN_KEY=${PAPIEA_ADMIN_S2S_KEY}
+                        - PAPIEA_ADMIN_KEY=${PAPIEA_ADMIN_KEY}
                         - PAPIEA_PUBLIC_URL=${PAPIEA_PUBLIC_URL}
                         - HOT_RELOAD=${HOT_RELOAD:-false}
                         - PAPIEA_LOGGING_LEVEL=${LOGGING_LEVEL:-info}

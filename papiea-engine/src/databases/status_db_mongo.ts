@@ -41,7 +41,7 @@ export class Status_DB_Mongo implements Status_DB {
 
     async update_status(entity_ref: Provider_Entity_Reference, status: Status): Promise<void> {
         let result: UpdateWriteOpResult
-        const partial_status_query = dotnotation({"status": status});
+        const partial_status_query = dotnotation({"status": status}, true);
         try {
             result = await this.collection.updateOne(
                 {

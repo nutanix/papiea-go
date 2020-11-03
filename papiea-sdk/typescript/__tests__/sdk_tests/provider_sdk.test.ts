@@ -16,11 +16,11 @@ import { InvocationError } from "../../src/provider_sdk/typescript_sdk_exception
 declare var process: {
     env: {
         SERVER_PORT: string,
-        PAPIEA_ADMIN_S2S_KEY: string
+        PAPIEA_ADMIN_KEY: string
     }
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
-const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
+const adminKey = process.env.PAPIEA_ADMIN_KEY || '';
 const papieaUrl = 'http://127.0.0.1:3000';
 
 const server_config = {

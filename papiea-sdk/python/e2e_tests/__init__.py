@@ -8,7 +8,7 @@ from papiea.client import EntityCRUD
 from papiea.core import AttributeDict
 
 SERVER_PORT = int(os.environ.get("SERVER_PORT", "3000"))
-PAPIEA_ADMIN_S2S_KEY = os.environ.get("PAPIEA_ADMIN_S2S_KEY", "")
+PAPIEA_ADMIN_S2S_KEY = os.environ.get("PAPIEA_ADMIN_KEY", "")
 PAPIEA_URL = os.getenv("PAPIEA_URL", "http://127.0.0.1:3000")
 
 SERVER_CONFIG_HOST = "127.0.0.1"

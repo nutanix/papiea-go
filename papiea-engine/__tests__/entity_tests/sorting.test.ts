@@ -9,11 +9,11 @@ import { Logger, LoggerFactory } from 'papiea-backend-utils';
 declare var process: {
     env: {
         SERVER_PORT: string,
-        PAPIEA_ADMIN_S2S_KEY: string
+        PAPIEA_ADMIN_KEY: string
     }
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
-const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
+const adminKey = process.env.PAPIEA_ADMIN_KEY || '';
 
 class MockedAuthorizer extends Authorizer {
     async checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void> {
