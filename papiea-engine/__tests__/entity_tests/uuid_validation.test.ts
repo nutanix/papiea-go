@@ -6,11 +6,11 @@ import { IntentfulBehaviour } from "papiea-core";
 declare var process: {
     env: {
         SERVER_PORT: string,
-        PAPIEA_ADMIN_KEY: string
+        PAPIEA_ADMIN_S2S_KEY: string
     }
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
-const adminKey = process.env.PAPIEA_ADMIN_KEY || '';
+const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
 
 const entityApi = axios.create({
     baseURL: `http://127.0.0.1:${serverPort}/services`,

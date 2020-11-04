@@ -3,7 +3,7 @@ import axios from "axios";
 import { Metadata, Spec } from "papiea-core";
 
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
-const adminKey = process.env.PAPIEA_ADMIN_KEY || '';
+const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
 
 const entityApi = axios.create({
     baseURL: `http://127.0.0.1:${serverPort}/services`,

@@ -13,7 +13,6 @@ import { Watchlist_DB } from "../databases/watchlist_db_interface";
 import { SpecOnlyUpdateStrategy } from "../intentful_core/intentful_strategies/status_update_strategy";
 import { IntentfulContext } from "../intentful_core/intentful_context";
 import uuid = require("uuid");
-import { isEmpty } from "lodash";
 
 export class Provider_API_Impl implements Provider_API {
     private providerDb: Provider_DB;
@@ -100,7 +99,7 @@ export class Provider_API_Impl implements Provider_API {
         await this.validator.validate_status(provider, entity_ref, mergedStatus);
 
         const schemas: any = Object.assign({}, kind.kind_structure);
-        partialStatus = await this.fix_null_object(schemas[kind.name], partialStatus);
+        partialStatus = this.fix_null_object(schemas[kind.name], partialStatus);
         return strategy.update({provider_prefix: provider_prefix, provider_version: version, ...entity_ref}, partialStatus)
     }
 
@@ -136,13 +135,13 @@ export class Provider_API_Impl implements Provider_API {
         return await this.providerDb.get_latest_provider_by_kind(kind_name);
     }
 
-    async fix_null_object(schemas: any, status: Status): Promise<Status> {
+    fix_null_object(schemas: any, status: Status): Promise<Status> {
         if (schemas.type === 'object' && (status === null || status === undefined || Object.keys(status).length === 0)) {
             status = {}
         } else if (schemas.type === 'object') {
             const properties_schema = schemas.properties;
             for (var key in status) {
-                status[key] = await this.fix_null_object(properties_schema[key], status[key])
+                status[key] = this.fix_null_object(properties_schema[key], status[key])
             }
         }
         return status

@@ -7,11 +7,11 @@ import get = Reflect.get;
 declare var process: {
     env: {
         SERVER_PORT: string,
-        PAPIEA_ADMIN_KEY: string
+        PAPIEA_ADMIN_S2S_KEY: string
     }
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
-const adminKey = process.env.PAPIEA_ADMIN_KEY || '';
+const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
 
 const providerApi = axios.create({
     baseURL: `http://127.0.0.1:${serverPort}/provider/`,
@@ -276,6 +276,9 @@ describe("Provider API tests", () => {
             },
             status: newStatus
         });
+
+        const res = await entityApi.get(`/${ provider.prefix }/${provider.version}/${ kind_name }/${ metadata.uuid }`);
+        expect(res.data.status).toEqual({});
     });
 
     test("Partial Update status with null values", async () => {

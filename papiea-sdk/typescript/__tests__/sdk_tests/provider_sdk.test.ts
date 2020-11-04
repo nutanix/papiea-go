@@ -16,11 +16,11 @@ import { InvocationError } from "../../src/provider_sdk/typescript_sdk_exception
 declare var process: {
     env: {
         SERVER_PORT: string,
-        PAPIEA_ADMIN_KEY: string
+        PAPIEA_ADMIN_S2S_KEY: string
     }
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
-const adminKey = process.env.PAPIEA_ADMIN_KEY || '';
+const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
 const papieaUrl = 'http://127.0.0.1:3000';
 
 const server_config = {
@@ -930,7 +930,7 @@ describe("Provider Sdk tests", () => {
 
     const null_test_yaml = load(readFileSync(resolve(__dirname, "../test_data/null_test_data.yml"), "utf-8"));
     test("Test entity initialization after setting it to null", async () => {
-        expect.hasAssertions();
+        expect.assertions(2);
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
             const machine = sdk.new_kind(null_test_yaml);
@@ -968,8 +968,6 @@ describe("Provider Sdk tests", () => {
             const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`);
             expect(updatedEntity.data.status.provider_ref.tenant_id).toEqual('1')
             expect(updatedEntity.data.status.provider_ref.account_id).toEqual('2')
-        } catch(e) {
-            console.log(e.response.data.error)
         } finally {
             sdk.server.close();
         }
