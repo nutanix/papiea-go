@@ -135,13 +135,15 @@ export class Provider_API_Impl implements Provider_API {
         return await this.providerDb.get_latest_provider_by_kind(kind_name);
     }
 
-    fix_null_object(schemas: any, status: Status): Promise<Status> {
-        if (schemas.type === 'object' && (status === null || status === undefined || Object.keys(status).length === 0)) {
-            status = {}
-        } else if (schemas.type === 'object') {
-            const properties_schema = schemas.properties;
-            for (var key in status) {
-                status[key] = this.fix_null_object(properties_schema[key], status[key])
+    fix_null_object(schemas: any, status: Status): Status {
+        if (schemas) {
+            if (schemas.type === 'object' && (status === null || status === undefined || Object.keys(status).length === 0)) {
+                status = {}
+            } else if (schemas.type === 'object' && schemas.properties) {
+                const properties_schema = schemas.properties;
+                for (var key in status) {
+                    status[key] = this.fix_null_object(properties_schema[key], status[key])
+                }
             }
         }
         return status
