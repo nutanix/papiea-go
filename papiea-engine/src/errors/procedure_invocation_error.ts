@@ -25,9 +25,13 @@ export class ProcedureInvocationError extends Error {
                 stacktrace: err.response?.data.stacktrace
             }], err.response?.status ?? 500)
         } else if (err instanceof ValidationError) {
-            return new ProcedureInvocationError(err.errors.map(e => {
-                return { message: e }
-            }), status || 500)
+            return new ProcedureInvocationError(
+                err.errors.map(e => ({
+                    message: e,
+                    errors: {},
+                    stacktrace: err.stack
+                }))
+            , status || 500)
         } else {
             return new ProcedureInvocationError([{
                 message: "Unknown error during procedure invocation",
