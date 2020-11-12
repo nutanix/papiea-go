@@ -3,6 +3,7 @@ import { load } from "js-yaml";
 import { resolve } from "path";
 import { plural } from "pluralize"
 import { loadYamlFromTestFactoryDir, OAuth2Server, ProviderBuilder } from "../../../../papiea-engine/__tests__/test_data_factory";
+import { timeout } from "../../../../papiea-engine/src/utils/utils"
 import axios from "axios"
 import { readFileSync } from "fs";
 import { Metadata, IntentfulBehaviour, Provider, Spec, Action, Entity_Reference, Entity } from "papiea-core";
@@ -1058,6 +1059,76 @@ describe("Provider Sdk tests", () => {
             sdk.server.close();
         }
     });
+
+    const STATUS_ONLY_TEST_SCHEMA = {
+        TestObject: {
+            type: 'object',
+            title: 'testobject',
+            'x-papiea-entity': 'differ',
+            required: ['test'],
+            properties: {
+                test: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            id: {
+                                type: 'string'
+                            },
+                            a: {
+                                'x-papiea': 'status-only',
+                                type: 'string'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    test("Diff resolver should not run if only diff field is a status-only field", async () => {
+        expect.assertions(3)
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        try {
+            const nested_object = sdk.new_kind(STATUS_ONLY_TEST_SCHEMA);
+            sdk.version(provider_version);
+            sdk.prefix("test_provider");
+            nested_object.on('test.+{id}', async(ctx, entity, diff) => {
+                await ctx.update_status(entity.metadata, {
+                    test: [{
+                        id: 'test-idval',
+                        a: 'test-aval'
+                    }]
+                })
+            })
+            nested_object.on('test.{id}', async (ctx, entity, diff) => {
+                throw new Error("Update intent handler should not be called")
+            });
+
+            await sdk.register();
+            const kind_name = sdk.provider.kinds[0].name;
+            const { data: { metadata, spec } } = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}`, {
+                spec: {
+                    test: [
+                        {
+                            id: 'test-idval'
+                        }
+                    ]
+                }
+            });
+
+            await timeout(5000)
+
+            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`);
+            expect(updatedEntity.data.spec.test[0].id).toEqual('test-idval')
+            expect(updatedEntity.data.status.test[0].id).toEqual('test-idval')
+            expect(updatedEntity.data.status.test[0].a).toEqual('test-aval')
+        } catch (e) {
+            expect(e.response.data).toBeDefined()
+            expect(e.response.data.error.message).toBe("Update intent handler should not be called")
+        } finally {
+            sdk.server.close();
+        }
+    })
 });
 
 describe("SDK + oauth provider tests", () => {
