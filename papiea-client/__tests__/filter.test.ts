@@ -1,7 +1,7 @@
 import { kind_client } from "../src/entity_client"
 import { ProviderBuilder } from "../../papiea-engine/__tests__/test_data_factory"
 import axios from "axios"
-import { EntitySpec } from "papiea-core"
+import { Spec } from "papiea-core"
 
 declare var process: {
     env: {
@@ -42,7 +42,7 @@ describe("Entity API tests", () => {
         for (let i of specs) {
             promises.push(location_client.create({x: i, y: i}))
         }
-        const res = await Promise.all<EntitySpec>(promises)
+        const res = await Promise.all<Spec>(promises)
         res.map(entity => uuids.push(entity.metadata.uuid))
         let entity_count = 0
         const iterator = await location_client.filter_iter({})
@@ -67,7 +67,7 @@ describe("Entity API tests", () => {
         for (let i of specs) {
             promises.push(location_client.create({x: i, y: i}))
         }
-        const res = await Promise.all<EntitySpec>(promises)
+        const res = await Promise.all<Spec>(promises)
         res.map(entity => uuids.push(entity.metadata.uuid))
         let entity_count = 0
         const iterator = await location_client.filter_iter({})
@@ -91,7 +91,7 @@ describe("Entity API tests", () => {
         for (let i of specs) {
             promises.push(location_client.create({x: i, y: i}))
         }
-        const res = await Promise.all<EntitySpec>(promises)
+        const res = await Promise.all<Spec>(promises)
         res.map(entity => uuids.push(entity.metadata.uuid))
         let entity_count = 0
         const iterator = await location_client.list_iter()

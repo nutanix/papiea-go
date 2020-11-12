@@ -26,7 +26,7 @@ export class InvocationError extends Error {
             return new InvocationError(e.status || 500, e.message, e.errors, e.stack)
         }
         if (isAxiosError(e)) {
-            return new InvocationError(e.response!.status, "Error while making request", e.response!.data.errors)
+            return new InvocationError(e.response!.status, "Error while making request", e.response!.data?.errors)
         }
         return new InvocationError(status_code, e.message, [], e.stack)
     }
@@ -58,7 +58,7 @@ export class SecurityApiError extends Error {
     static fromError(e: Error, message: string): SecurityApiError {
         if (isAxiosError(e)) {
             if (e.response!.data.error) {
-                return new SecurityApiError(e.response!.data.error.errors, message, e.response!.status)
+                return new SecurityApiError(e.response!.data?.error?.errors, message, e.response!.status)
             } else {
                 return new SecurityApiError([e.response!.data], message, e.response!.status)
             }

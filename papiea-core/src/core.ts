@@ -149,6 +149,9 @@ export interface Differ {
     // original dependency tree
     all_diffs(kind: Kind, spec: Spec, status: Status): Diff[];
 
+    // Removes status-only fields from the entity status using the schema
+    remove_status_only_fields(schema: any, status: Status): Status;
+
     // Get current value by path specified in diff fields
     get_diff_path_value(diff: DiffContent, spec: Spec): any
 }

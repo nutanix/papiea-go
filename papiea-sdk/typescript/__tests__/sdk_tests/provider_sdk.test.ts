@@ -1078,6 +1078,9 @@ describe("Provider Sdk tests", () => {
                             a: {
                                 'x-papiea': 'status-only',
                                 type: 'string'
+                            },
+                            b: {
+                                type: 'string'
                             }
                         }
                     }
@@ -1096,7 +1099,8 @@ describe("Provider Sdk tests", () => {
                 await ctx.update_status(entity.metadata, {
                     test: [{
                         id: 'test-idval',
-                        a: 'test-aval'
+                        a: 'test-aval',
+                        b: 'test-aval'
                     }]
                 })
             })
@@ -1110,7 +1114,8 @@ describe("Provider Sdk tests", () => {
                 spec: {
                     test: [
                         {
-                            id: 'test-idval'
+                            id: 'test-idval',
+                            b: 'test-aval'
                         }
                     ]
                 }

@@ -99,49 +99,22 @@ export class DiffResolver {
     private async rediff(entry_reference: EntryReference): Promise<RediffResult | null> {
         try {
             const [metadata, spec] = await this.specDb.get_spec(entry_reference.entity_reference)
-            let [, status] = await this.statusDb.get_status({...entry_reference.provider_reference, ...entry_reference.entity_reference})
+            const [, status] = await this.statusDb.get_status({...entry_reference.provider_reference, ...entry_reference.entity_reference})
             const provider = await this.providerDb.get_provider(entry_reference.provider_reference.provider_prefix, entry_reference.provider_reference.provider_version)
             const kind = this.providerDb.find_kind(provider, metadata.kind)
-            const schemas: any = Object.assign({}, kind.kind_structure);
-            status = this.remove_status_only_fields(schemas[kind.name], status);
+            let diff_status: any = {}
+            if (status !== undefined) {
+                diff_status = JSON.parse(JSON.stringify(status));
+            }
+            diff_status = this.differ.remove_status_only_fields(kind.kind_structure[kind.name], diff_status);
             return {
-                diffs: this.differ.all_diffs(kind, spec, status),
+                diffs: this.differ.all_diffs(kind, spec, diff_status),
                 metadata, provider, kind, spec, status,
             };
         } catch (e) {
             this.logger.debug(`Couldn't rediff entity with uuid ${entry_reference.entity_reference.uuid}: ${e}. Removing from watchlist`)
             return null
         }
-    }
-
-    private remove_status_only_fields(schema: any, status: Status): Status {
-        if (schema) {
-            // Return null for fields that are status-only
-            if (schema.hasOwnProperty('x-papiea') && schema['x-papiea'] === 'status-only') {
-                return null
-            }
-            if (schema.type === 'object' && status && Object.keys(status).length !== 0) {
-                const properties = schema['properties']
-                for (let name in properties) {
-                    status[name] = this.remove_status_only_fields(properties[name], status[name])
-                    // If received null i.e. a status-only field, delete the field from status object
-                    if (status[name] === null) {
-                        delete status[name]
-                    }
-                }
-            } else if (schema.type === 'array' && status && status.length !== 0) {
-                let i = 0;
-                // Loop through all values in array and inspect status-only for each
-                for (let item of status) {
-                    status[i] = this.remove_status_only_fields(schema['items'], item)
-                    i++
-                }
-                // If the array element has all status-only fields, it would be set to empty object
-                // based on the above logic, so remove the element from array to avoid empty values.
-                status = status.filter((item: any) => Object.keys(item).length !== 0);
-            }
-        }
-        return status
     }
 
     private async launchOperation({diff, metadata, spec, status}: DiffWithContext): Promise<Delay | null> {
