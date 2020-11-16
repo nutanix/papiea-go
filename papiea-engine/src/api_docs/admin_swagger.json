@@ -1,668 +1,683 @@
 {
-            "openapi": "3.0.0",
-            "info": {
-                "version": "1.0.0",
-                "title": "Swagger Papiea",
-                "description": "An API specification of Papiea-JS",
-                "license": {
-                    "name": "LICENSE",
-                    "url": "https://github.com/nutanix/papiea-js/blob/master/LICENSE"
+    "openapi": "3.0.0",
+    "info": {
+        "version": "1.0.0",
+        "title": "Swagger Papiea",
+        "description": "An API specification of Papiea-JS",
+        "license": {
+            "name": "LICENSE",
+            "url": "https://github.com/nutanix/papiea-js/blob/master/LICENSE"
+        }
+    },
+    "servers": [
+        {
+            "url": "/"
+        }
+    ],
+    "paths": {
+        "/provider/": {
+            "post": {
+                "description": "Creates a new provider",
+                "operationId": "addprovider",
+                "tags": ["/provider"],
+                "requestBody": {
+                    "description": "provider to add",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Provider"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Provider created"
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
                 }
-            },
-            "servers": [
-                {
-                    "url": "/"
-                }
-            ],
-            "paths": {
-                "/provider/": {
-                    "post": {
-                        "description": "Creates a new provider",
-                        "operationId": "addprovider",
-                        "tags": ["/provider"],
-                        "requestBody": {
-                            "description": "provider to add",
-                            "required": true,
-                            "content": {
-                                "application/json": {
-                                    "schema": {
-                                        "$ref": "#/components/schemas/Provider"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "/provider/{prefix}/{version}": {
-                    "delete": {
-                        "description": "Remove provider with prefix and version",
-                        "operationId": "deleteprovider",
-                        "tags": ["/:prefix/:version"],
-                        "parameters": [
-                            {
-                                "name": "prefix",
-                                "in": "path",
-                                "description": "prefix of the provider",
-                                "required": "true",
-                                "schema": {
-                                    "type": "string"
-                                }
-                            },
-                            {
-                                "name": "version",
-                                "in": "path",
-                                "description": "provider version",
-                                "required": "true",
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        ],
-                        "responses": {
-                            "204": {
-                                "description": "provider deleted"
-                            },
-                            "default": {
-                                "description": "Unexpected error",
-                                "content": {
-                                    "application/json": {
-                                        "schema": {
-                                            "$ref": "#/components/schemas/Error"
-                                        }
-                                    }
-                                }
-                            }
+            }
+        },
+        "/provider/{prefix}/{version}": {
+            "delete": {
+                "description": "Remove provider with prefix and version",
+                "operationId": "deleteprovider",
+                "tags": ["/:prefix/:version"],
+                "parameters": [
+                    {
+                        "name": "prefix",
+                        "in": "path",
+                        "description": "prefix of the provider",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
                         }
                     },
-                    "get": {
-                        "description": "Get provider with prefix and version",
-                        "operationId": "getprovider",
-                        "tags": ["/:prefix/:version"],
-                        "parameters": [
-                            {
-                                "name": "prefix",
-                                "in": "path",
-                                "description": "prefix of the provider",
-                                "required": "true",
-                                "schema": {
-                                    "type": "string"
-                                }
-                            },
-                            {
-                                "name": "version",
-                                "in": "path",
-                                "description": "provider version",
-                                "required": "true",
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        ],
-                        "responses": {
-                            "200": {
-                                "description": "Found provider",
-                                "content": {
-                                    "application/json": {
-                                        "schema": {
-                                            "$ref": "#/components/schemas/Provider"
-                                        }
-                                    }
-                                }
-                            },
-                            "default": {
-                                "description": "Unexpected error",
-                                "content": {
-                                    "application/json": {
-                                        "schema": {
-                                            "$ref": "#/components/schemas/Error"
-                                        }
-                                    }
-                                }
-                            }
+                    {
+                        "name": "version",
+                        "in": "path",
+                        "description": "provider version",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
                         }
                     }
-                },
-                "/provider/{prefix}": {
-                    "get": {
-                        "description": "Get providers versions by prefix",
-                        "operationId": "getprovidersbyprefix",
-                        "tags": ["/:prefix"],
-                        "parameters": [
-                            {
-                                "name": "prefix",
-                                "in": "path",
-                                "description": "prefix of the provider",
-                                "required": "true",
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        ],
-                        "responses": {
-                            "200": {
-                                "description": "Found provider versions",
-                                "content": {
-                                    "application/json": {
-                                        "schema": {
-                                            "type": "object",
-                                            "properties": {
-                                                "results": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "$ref": "#/components/schemas/Provider"
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            "default": {
-                                "description": "Unexpected error",
-                                "content": {
-                                    "application/json": {
-                                        "schema": {
-                                            "$ref": "#/components/schemas/Error"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "/provider/update_status": {
-                    "post": {
-                        "description": "Set entity status",
-                        "operationId": "setentitystatus",
-                        "tags": ["/update_status"],
-                        "requestBody": {
-                            "description": "Entity and status to set",
-                            "required": true,
-                            "content": {
-                                "application/json": {
-                                    "schema": {
-                                        "properties": {
-                                            "entity_ref": {
-                                                "$ref": "#/components/schemas/EntityReference"
-                                            },
-                                            "status": {
-                                                "type": "object"
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "responses": {
-                            "200": {
-                                "description": "Status set"
-                            },
-                            "default": {
-                                "description": "Unexpected error",
-                                "content": {
-                                    "application/json": {
-                                        "schema": {
-                                            "$ref": "#/components/schemas/Error"
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "provider deleted"
                     },
-                    "patch": {
-                        "description": "Update entity status",
-                        "operationId": "updateentitystatus",
-                        "tags": ["/update_status"],
-                        "requestBody": {
-                            "description": "Entity and status to update",
-                            "required": true,
-                            "content": {
-                                "application/json": {
-                                    "schema": {
-                                        "properties": {
-                                            "entity_ref": {
-                                                "$ref": "#/components/schemas/EntityReference"
-                                            },
-                                            "status": {
-                                                "type": "object"
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "responses": {
-                            "200": {
-                                "description": "Status updated"
-                            },
-                            "default": {
-                                "description": "Unexpected error",
-                                "content": {
-                                    "application/json": {
-                                        "schema": {
-                                            "$ref": "#/components/schemas/Error"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "/provider/{prefix}/{version}/auth": {
-                    "post": {
-                        "description": "Update provider auth",
-                        "operationId": "updateproviderauth",
-                        "tags": ["/:prefix/:version/auth"],
-                        "parameters": [
-                            {
-                                "name": "prefix",
-                                "in": "path",
-                                "description": "prefix of the provider",
-                                "required": "true",
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
                                 "schema": {
-                                    "type": "string"
-                                }
-                            },
-                            {
-                                "name": "version",
-                                "in": "path",
-                                "description": "provider version",
-                                "required": "true",
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        ],
-                        "requestBody": {
-                            "description": "Auth parameters to update",
-                            "required": "true",
-                            "content": {
-                                "application/json": {
-                                    "schema": {
-                                        "properties": {
-                                            "authModel": {
-                                                "type": "string"
-                                            },
-                                            "policy": {
-                                                "type": "string"
-                                            },
-                                            "oauth2": {
-                                                "type": "object"
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "responses": {
-                            "200": {
-                                "description": "Updated auth"
-                            },
-                            "default": {
-                                "description": "Unexpected error",
-                                "content": {
-                                    "application/json": {
-                                        "schema": {
-                                            "$ref": "#/components/schemas/Error"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "/provider/{prefix}/{version}/s2skey": {
-                    "get": {
-                        "description": "Get s2skeys list",
-                        "operationId": "gets2slist",
-                        "tags": ["/:prefix/:version/s2skey"],
-                        "parameters": [
-                            {
-                                "name": "prefix",
-                                "in": "path",
-                                "description": "prefix of the provider",
-                                "required": "true",
-                                "schema": {
-                                    "type": "string"
-                                }
-                            },
-                            {
-                                "name": "version",
-                                "in": "path",
-                                "description": "provider version",
-                                "required": "true",
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        ],
-                        "responses": {
-                            "200": {
-                                "description": "S2S key response",
-                                "content": {
-                                    "application/json": {
-                                        "schema": {
-                                            "$ref": "#/components/schemas/S2SKey"
-                                        }
-                                    }
-                                }
-                            },
-                            "default": {
-                                "description": "Unexpected error",
-                                "content": {
-                                    "application/json": {
-                                        "schema": {
-                                            "$ref": "#/components/schemas/Error"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "post": {
-                        "description": "Create s2skey",
-                        "operationId": "creates2s",
-                        "tags": ["/:prefix/:version/s2skey"],
-                        "parameters": [
-                            {
-                                "name": "prefix",
-                                "in": "path",
-                                "description": "prefix of the provider",
-                                "required": "true",
-                                "schema": {
-                                    "type": "string"
-                                }
-                            },
-                            {
-                                "name": "version",
-                                "in": "path",
-                                "description": "provider version",
-                                "required": "true",
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        ],
-                        "requestBody": {
-                            "description": "S2S key to save",
-                            "required": "true",
-                            "content": {
-                                "application/json": {
-                                    "schema": {
-                                        "$ref": "#/components/schemas/S2SKey"
-                                    }
-                                }
-                            }
-                        },
-                        "responses": {
-                            "200": {
-                                "description": "S2S key created",
-                                "content": {
-                                    "application/json": {
-                                        "schema": {
-                                            "$ref": "#/components/schemas/S2SKey"
-                                        }
-                                    }
-                                }
-                            },
-                            "default": {
-                                "description": "Unexpected error",
-                                "content": {
-                                    "application/json": {
-                                        "schema": {
-                                            "$ref": "#/components/schemas/Error"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "put": {
-                        "description": "Inactivate s2s key",
-                        "operationId": "inactivates2s",
-                        "tags": ["/:prefix/:version/s2skey"],
-                        "parameters": [
-                            {
-                                "name": "prefix",
-                                "in": "path",
-                                "description": "prefix of the provider",
-                                "required": "true",
-                                "schema": {
-                                    "type": "string"
-                                }
-                            },
-                            {
-                                "name": "version",
-                                "in": "path",
-                                "description": "provider version",
-                                "required": "true",
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        ],
-                        "requestBody": {
-                            "description": "S2S key UUID and \"active\" flag",
-                            "required": "true",
-                            "content": {
-                                "application/json": {
-                                    "schema": {
-                                        "properties": {
-                                            "uuid": {
-                                                "type": "string",
-                                                "format": "uuid"
-                                            },
-                                            "active": {
-                                                "type": "boolean"
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "responses": {
-                            "200": {
-                                "description": "S2S key inactivated"
-                            },
-                            "default": {
-                                "description": "Unexpected error",
-                                "content": {
-                                    "application/json": {
-                                        "schema": {
-                                            "$ref": "#/components/schemas/Error"
-                                        }
-                                    }
+                                    "$ref": "#/components/schemas/Error"
                                 }
                             }
                         }
                     }
                 }
             },
-            "components": {
-                "schemas": {
-                    "Error": {
-                        "required": [
-                            "error"
-                        ],
-                        "properties": {
-                            "error": {
-                                "type": "object",
-                                "required": [
-                                    "errors",
-                                    "code",
-                                    "message"
-                                ],
+            "get": {
+                "description": "Get provider with prefix and version",
+                "operationId": "getprovider",
+                "tags": ["/:prefix/:version"],
+                "parameters": [
+                    {
+                        "name": "prefix",
+                        "in": "path",
+                        "description": "prefix of the provider",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "version",
+                        "in": "path",
+                        "description": "provider version",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Found provider",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Provider"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/provider/{prefix}": {
+            "get": {
+                "description": "Get providers versions by prefix",
+                "operationId": "getprovidersbyprefix",
+                "tags": ["/:prefix"],
+                "parameters": [
+                    {
+                        "name": "prefix",
+                        "in": "path",
+                        "description": "prefix of the provider",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Found provider versions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Provider"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/provider/update_status": {
+            "post": {
+                "description": "Set entity status",
+                "operationId": "setentitystatus",
+                "tags": ["/update_status"],
+                "requestBody": {
+                    "description": "Entity and status to set",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
                                 "properties": {
-                                    "errors": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "object"
-                                        }
+                                    "entity_ref": {
+                                        "$ref": "#/components/schemas/EntityReference"
                                     },
-                                    "code": {
-                                        "type": "integer"
-                                    },
-                                    "message": {
-                                        "type": "string"
+                                    "status": {
+                                        "type": "object"
                                     }
                                 }
                             }
                         }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status set"
                     },
-                    "Nothing": {
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Update entity status",
+                "operationId": "updateentitystatus",
+                "tags": ["/update_status"],
+                "requestBody": {
+                    "description": "Entity and status to update",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "entity_ref": {
+                                        "$ref": "#/components/schemas/EntityReference"
+                                    },
+                                    "status": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status updated"
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/provider/{prefix}/{version}/auth": {
+            "post": {
+                "description": "Update provider auth",
+                "operationId": "updateproviderauth",
+                "tags": ["/:prefix/:version/auth"],
+                "parameters": [
+                    {
+                        "name": "prefix",
+                        "in": "path",
+                        "description": "prefix of the provider",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "version",
+                        "in": "path",
+                        "description": "provider version",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Auth parameters to update",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "authModel": {
+                                        "type": "string"
+                                    },
+                                    "policy": {
+                                        "type": "string"
+                                    },
+                                    "oauth2": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated auth"
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/provider/{prefix}/{version}/s2skey": {
+            "get": {
+                "description": "Get s2skeys list",
+                "operationId": "gets2slist",
+                "tags": ["/:prefix/:version/s2skey"],
+                "parameters": [
+                    {
+                        "name": "prefix",
+                        "in": "path",
+                        "description": "prefix of the provider",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "version",
+                        "in": "path",
+                        "description": "provider version",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "S2S key response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/S2SKey"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create s2skey",
+                "operationId": "creates2s",
+                "tags": ["/:prefix/:version/s2skey"],
+                "parameters": [
+                    {
+                        "name": "prefix",
+                        "in": "path",
+                        "description": "prefix of the provider",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "version",
+                        "in": "path",
+                        "description": "provider version",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "S2S key to save",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/S2SKey"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "S2S key created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/S2SKey"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Inactivate s2s key",
+                "operationId": "inactivates2s",
+                "tags": ["/:prefix/:version/s2skey"],
+                "parameters": [
+                    {
+                        "name": "prefix",
+                        "in": "path",
+                        "description": "prefix of the provider",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "version",
+                        "in": "path",
+                        "description": "provider version",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "S2S key UUID and \"active\" flag",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "uuid": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "active": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "S2S key inactivated"
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Error": {
+                "required": [
+                    "error"
+                ],
+                "properties": {
+                    "error": {
                         "type": "object",
-                        "description": "Representation of a 'void' type"
-                    },
-                    "Provider": {
                         "required": [
-                            "prefix",
-                            "version",
-                            "kinds",
-                            "procedures",
-                            "extension_structure",
-                            "authModel",
-                            "allowExtraProps"
+                            "errors",
+                            "code",
+                            "message"
                         ],
                         "properties": {
-                            "prefix": {
-                                "type": "string"
-                            },
-                            "version": {
-                                "type": "string"
-                            },
-                            "kinds": {
+                            "errors": {
                                 "type": "array",
                                 "items": {
-                                    "$ref": "#/components/schemas/Kind"
+                                    "type": "object"
                                 }
                             },
-                            "procedures": {
-                                "type": "object"
+                            "code": {
+                                "type": "integer"
                             },
-                            "extension_structure": {
-                                "type": "object"
-                            },
-                            "created_at": {
-                                "type": "string",
-                                "format": "date-time"
-                            },
-                            "policy": {
-                                "type": "string"
-                            },
-                            "oauth2": {
-                                "type": "object"
-                            },
-                            "authModel": {
-                                "type": "string"
-                            },
-                            "allowExtraProps": {
-                                "type": "boolean"
-                            }
-                        }
-                    },
-                    "Kind": {
-                        "required": [
-                            "name",
-                            "kind_structure",
-                            "intentful_signatures",
-                            "dependency_tree",
-                            "entity_procedures",
-                            "kind_procedures"
-                        ],
-                        "properties": {
-                            "name": {
-                                "type": "string"
-                            },
-                            "name_plural": {
-                                "type": "string"
-                            },
-                            "kind_structure": {
-                                "type": "object"
-                            },
-                            "intentful_signatures": {
-                                "type": "object"
-                            },
-                            "dependency_tree": {
-                                "type": "object"
-                            },
-                            "entity_procedures": {
-                                "type": "object"
-                            },
-                            "kind_procedures": {
-                                "type": "object"
-                            },
-                            "differ": {
-                                "type": "object"
-                            }
-                        }
-                    },
-                    "EntityReference": {
-                        "required": [
-                            "uuid",
-                            "kind"
-                        ],
-                        "properties": {
-                            "uuid": {
-                                "type": "string"
-                            },
-                            "kind": {
-                                "type": "string"
-                            },
-                            "name": {
+                            "message": {
                                 "type": "string"
                             }
                         }
-                    },
-                    "S2SKey": {
-                        "required": [
-                            "owner",
-                            "provider_prefix",
-                            "key",
-                            "uuid",
-                            "created_at",
-                            "user_info"
-                        ],
-                        "properties": {
-                            "name": {
-                                "type": "string"
-                            },
-                            "owner": {
-                                "type": "string"
-                            },
-                            "provider_prefix": {
-                                "type": "string"
-                            },
-                            "key": {
-                                "type": "string"
-                            },
-                            "uuid": {
-                                "type": "string"
-                            },
-                            "created_at": {
-                                "type": "string",
-                                "format": "date-time"
-                            },
-                            "deleted_at": {
-                                "type": "string",
-                                "format": "date-time"
-                            },
-                            "user_info": {
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "securitySchemes": {
-                    "bearerAuth": {
-                        "type": "http",
-                        "scheme": "bearer",
-                        "bearerFormat": "JWT"
                     }
                 }
             },
-            "security": [
-                {
-                    "bearerAuth": []
+            "Nothing": {
+                "type": "object",
+                "description": "Representation of a 'void' type"
+            },
+            "Provider": {
+                "required": [
+                    "prefix",
+                    "version",
+                    "kinds",
+                    "procedures",
+                    "extension_structure",
+                    "authModel",
+                    "allowExtraProps"
+                ],
+                "properties": {
+                    "prefix": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "string"
+                    },
+                    "kinds": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Kind"
+                        }
+                    },
+                    "procedures": {
+                        "type": "object"
+                    },
+                    "extension_structure": {
+                        "type": "object"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "policy": {
+                        "type": "string"
+                    },
+                    "oauth2": {
+                        "type": "object"
+                    },
+                    "authModel": {
+                        "type": "string"
+                    },
+                    "allowExtraProps": {
+                        "type": "boolean"
+                    }
                 }
-            ]
+            },
+            "Kind": {
+                "required": [
+                    "name",
+                    "kind_structure",
+                    "intentful_signatures",
+                    "dependency_tree",
+                    "entity_procedures",
+                    "kind_procedures"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "name_plural": {
+                        "type": "string"
+                    },
+                    "kind_structure": {
+                        "type": "object"
+                    },
+                    "intentful_signatures": {
+                        "type": "object"
+                    },
+                    "dependency_tree": {
+                        "type": "object"
+                    },
+                    "entity_procedures": {
+                        "type": "object"
+                    },
+                    "kind_procedures": {
+                        "type": "object"
+                    },
+                    "differ": {
+                        "type": "object"
+                    }
+                }
+            },
+            "EntityReference": {
+                "required": [
+                    "uuid",
+                    "kind"
+                ],
+                "properties": {
+                    "uuid": {
+                        "type": "string"
+                    },
+                    "kind": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                }
+            },
+            "S2SKey": {
+                "required": [
+                    "owner",
+                    "provider_prefix",
+                    "key",
+                    "uuid",
+                    "created_at",
+                    "user_info"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "owner": {
+                        "type": "string"
+                    },
+                    "provider_prefix": {
+                        "type": "string"
+                    },
+                    "key": {
+                        "type": "string"
+                    },
+                    "uuid": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "deleted_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "user_info": {
+                        "type": "object"
+                    }
+                }
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
         }
+    },
+    "security": [
+        {
+            "bearerAuth": []
+        }
+    ]
+}
