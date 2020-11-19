@@ -1,0 +1,629 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "version": "1.0.0",
+      "title": "Swagger Papiea",
+      "description": "An API specification of Papiea-JS",
+      "license": {
+        "name": "LICENSE",
+        "url": "https://github.com/nutanix/papiea-js/blob/master/LICENSE"
+      }
+    },
+    "servers": [
+      {
+        "url": "/"
+      }
+    ],
+    "externalDocs": {
+      "description": "Main page",
+      "url": "/api-docs"
+    },
+    "paths": {
+      "/services/0.1.0/object": {
+        "get": {
+          "description": "Returns all entities' specs of kind object",
+          "operationId": "findobject",
+          "tags": [
+            "/0.1.0/object"
+          ],
+          "parameters": [
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "offset of results to return",
+              "required": false,
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "maximum number of results to return",
+              "required": false,
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            {
+              "name": "spec",
+              "in": "query",
+              "description": "jsonified spec filter",
+              "required": false,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "object response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "results": {
+                        "type": "array",
+                        "items": {
+                          "required": [
+                            "metadata",
+                            "spec"
+                          ],
+                          "properties": {
+                            "metadata": {
+                              "$ref": "#/components/schemas/object-Metadata"
+                            },
+                            "spec": {
+                              "$ref": "#/components/schemas/object-Spec"
+                            },
+                            "status": {
+                              "$ref": "#/components/schemas/object-Status"
+                            }
+                          }
+                        }
+                      },
+                      "entity_count": {
+                        "type": "integer",
+                        "format": "int32"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "default": {
+              "description": "Unexpected error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "description": "Creates a new object",
+          "operationId": "addobject",
+          "tags": [
+            "/0.1.0/object"
+          ],
+          "requestBody": {
+            "description": "object to create",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "spec": {
+                      "$ref": "#/components/schemas/object-Spec"
+                    },
+                    "metadata": {
+                      "$ref": "#/components/schemas/object-Metadata"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "object response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "required": [
+                      "metadata",
+                      "spec"
+                    ],
+                    "properties": {
+                      "metadata": {
+                        "$ref": "#/components/schemas/object-Metadata"
+                      },
+                      "spec": {
+                        "$ref": "#/components/schemas/object-Spec"
+                      },
+                      "status": {
+                        "$ref": "#/components/schemas/object-Status"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "default": {
+              "description": "Unexpected error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/services/0.1.0/object/filter": {
+        "post": {
+          "description": "Returns all entities' specs of kind object",
+          "operationId": "findobjectFilter",
+          "tags": [
+            "/0.1.0/object"
+          ],
+          "parameters": [
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "offset of results to return",
+              "required": false,
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "maximum number of results to return",
+              "required": false,
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          ],
+          "requestBody": {
+            "description": "object to retrieve",
+            "required": false,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "spec": {
+                      "$ref": "#/components/schemas/object-Spec"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "object response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "results": {
+                        "type": "array",
+                        "items": {
+                          "required": [
+                            "metadata",
+                            "spec"
+                          ],
+                          "properties": {
+                            "metadata": {
+                              "$ref": "#/components/schemas/object-Metadata"
+                            },
+                            "spec": {
+                              "$ref": "#/components/schemas/object-Spec"
+                            },
+                            "status": {
+                              "$ref": "#/components/schemas/object-Status"
+                            }
+                          }
+                        }
+                      },
+                      "entity_count": {
+                        "type": "integer",
+                        "format": "int32"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "default": {
+              "description": "Unexpected error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/services/0.1.0/object/{uuid}": {
+        "get": {
+          "description": "Returns an entity of kind object by uuid",
+          "operationId": "findobjectByUuid",
+          "tags": [
+            "/0.1.0/object"
+          ],
+          "parameters": [
+            {
+              "name": "uuid",
+              "in": "path",
+              "description": "UUID of the entity",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "object response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "required": [
+                      "metadata",
+                      "spec"
+                    ],
+                    "properties": {
+                      "metadata": {
+                        "$ref": "#/components/schemas/object-Metadata"
+                      },
+                      "spec": {
+                        "$ref": "#/components/schemas/object-Spec"
+                      },
+                      "status": {
+                        "$ref": "#/components/schemas/object-Status"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "default": {
+              "description": "Unexpected error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "description": "Deletes an entity of kind object by uuid",
+          "operationId": "deleteobject",
+          "tags": [
+            "/0.1.0/object"
+          ],
+          "parameters": [
+            {
+              "name": "uuid",
+              "in": "path",
+              "description": "UUID of the entity",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "204": {
+              "description": "object deleted"
+            },
+            "default": {
+              "description": "Unexpected error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "description": "Replaces an entity of kind object by uuid",
+          "operationId": "replaceobject",
+          "tags": [
+            "/0.1.0/object"
+          ],
+          "parameters": [
+            {
+              "name": "uuid",
+              "in": "path",
+              "description": "UUID of the entity",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "requestBody": {
+            "description": "object to replace with",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "spec": {
+                      "$ref": "#/components/schemas/object-Spec"
+                    },
+                    "metadata": {
+                      "properties": {
+                        "spec_version": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "object response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "required": [
+                      "metadata",
+                      "spec"
+                    ],
+                    "properties": {
+                      "metadata": {
+                        "$ref": "#/components/schemas/object-Metadata"
+                      },
+                      "spec": {
+                        "$ref": "#/components/schemas/object-Spec"
+                      },
+                      "status": {
+                        "$ref": "#/components/schemas/object-Status"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "default": {
+              "description": "Unexpected error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "Error": {
+          "required": [
+            "error"
+          ],
+          "properties": {
+            "error": {
+              "type": "object",
+              "required": [
+                "errors",
+                "code",
+                "message"
+              ],
+              "properties": {
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "Metadata": {
+          "required": [
+            "uuid",
+            "kind",
+            "spec_version"
+          ],
+          "properties": {
+            "uuid": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "kind": {
+              "type": "string"
+            },
+            "spec_version": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "deleted_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "Nothing": {
+          "type": "object",
+          "description": "Representation of a 'void' type"
+        },
+        "object-Spec": {
+          "type": "object",
+          "title": "X/Y Location",
+          "description": "Stores an XY location of something",
+          "x-papiea-entity": "spec-only",
+          "required": [
+            "x",
+            "y"
+          ],
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "v": {
+              "type": "object",
+              "properties": {
+                "e": {
+                  "type": "number"
+                },
+                "d": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        "object-Status": {
+          "type": "object",
+          "title": "X/Y Location",
+          "description": "Stores an XY location of something",
+          "x-papiea-entity": "spec-only",
+          "required": [
+            "x",
+            "y"
+          ],
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "v": {
+              "type": "object",
+              "properties": {
+                "e": {
+                  "type": "number"
+                },
+                "d": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        "object": {
+          "type": "object",
+          "title": "X/Y Location",
+          "description": "Stores an XY location of something",
+          "x-papiea-entity": "spec-only",
+          "required": [
+            "x",
+            "y"
+          ],
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "v": {
+              "type": "object",
+              "properties": {
+                "e": {
+                  "type": "number"
+                },
+                "d": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        "object-Metadata": {
+          "required": [
+            "uuid",
+            "kind",
+            "spec_version"
+          ],
+          "properties": {
+            "uuid": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "kind": {
+              "type": "string"
+            },
+            "spec_version": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "deleted_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      },
+      "securitySchemes": {
+        "bearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "JWT"
+        }
+      }
+    },
+    "security": [
+      {
+        "bearerAuth": []
+      }
+    ]
+  }

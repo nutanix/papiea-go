@@ -1,5 +1,5 @@
 import "jest"
-import { unlinkSync, writeFileSync } from "fs";
+import { readFileSync, unlinkSync, writeFileSync } from "fs";
 import { validate } from "swagger-parser";
 import axios from "axios"
 import {
@@ -19,6 +19,7 @@ import {
 } from "papiea-core";
 import ApiDocsGenerator from "../../src/api_docs/api_docs_generator";
 import { IntentfulKindReference } from "../../src/databases/provider_db_mongo";
+import { strict } from "assert";
 
 declare var process: {
     env: {
@@ -104,6 +105,59 @@ describe("API Docs Tests", () => {
             expect(api.info.title).toEqual("Swagger Papiea");
         } finally {
             unlinkSync("api-docs.json");
+        }
+    });
+    test("Test duplicate required field in OpenAPI schema", async () => {
+        expect.assertions(1)
+        try {
+            const apiDocJson = JSON.parse(readFileSync("__tests__/test_data/customschema_swagger.json", {encoding:'utf8'}))
+            apiDocJson["paths"]["/services/0.1.0/object"]["get"]["responses"]["200"]["content"]["application/json"]["schema"]["properties"]["results"]["items"]["required"].push("spec")
+            writeFileSync("customschema_duplicatefield_swagger.json", JSON.stringify(apiDocJson))
+            await validate("customschema_duplicatefield_swagger.json");
+        } catch (e) {
+            expect(e.message).toContain("Array items are not unique")
+        } finally {
+            unlinkSync("customschema_duplicatefield_swagger.json")
+        }
+    });
+    test("Test wrong field in OpenAPI schema", async () => {
+        expect.assertions(1)
+        try {
+            const apiDocJson = JSON.parse(readFileSync("__tests__/test_data/customschema_swagger.json", {encoding:'utf8'}))
+            delete apiDocJson["paths"]["/services/0.1.0/object"]["get"]["description"]
+            apiDocJson["paths"]["/services/0.1.0/object"]["get"]["decription"] = "description"
+            writeFileSync("customschema_wrongspell_swagger.json", JSON.stringify(apiDocJson))
+            await validate("customschema_wrongspell_swagger.json");
+        } catch (e) {
+            expect(e.message).toContain("Additional properties not allowed: decription")
+        } finally {
+            unlinkSync("customschema_wrongspell_swagger.json")
+        }
+    });
+    test("Test empty required field in OpenAPI schema", async () => {
+        expect.assertions(1)
+        try {
+            const apiDocJson = JSON.parse(readFileSync("__tests__/test_data/customschema_swagger.json", {encoding:'utf8'}))
+            apiDocJson["paths"]["/services/0.1.0/object"]["get"]["responses"]["200"]["content"]["application/json"]["schema"]["properties"]["results"]["items"]["required"] = []
+            writeFileSync("customschema_emptyrequired_swagger.json", JSON.stringify(apiDocJson))
+            await validate("customschema_emptyrequired_swagger.json");
+        } catch (e) {
+            expect(e.message).toContain("Array is too short (0), minimum 1 at #/required")
+        } finally {
+            unlinkSync("customschema_emptyrequired_swagger.json")
+        }
+    });
+    test("Test missing required field in OpenAPI schema", async () => {
+        expect.assertions(1)
+        try {
+            const apiDocJson = JSON.parse(readFileSync("__tests__/test_data/customschema_swagger.json", {encoding:'utf8'}))
+            delete apiDocJson["info"]["title"]
+            writeFileSync("customschema_missingrequiredfield_swagger.json", JSON.stringify(apiDocJson))
+            await validate("customschema_missingrequiredfield_swagger.json");
+        } catch (e) {
+            expect(e.message).toContain("Missing required property: title at #/info")
+        } finally {
+            unlinkSync("customschema_missingrequiredfield_swagger.json")
         }
     });
     test("API Docs should contain paths for CRUD", async () => {
