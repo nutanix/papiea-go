@@ -107,7 +107,8 @@ export class ValidatorImpl {
         if (kind === undefined) {
             throw new Error("Kind not found");
         }
-        const schemas: any = Object.assign({}, kind.kind_structure);
+        let schemas: any = Object.assign({}, kind.kind_structure);
+        schemas[kind.name] = remove_required_tag(schemas[kind.name])
         this.validate(status, Object.values(kind.kind_structure)[0], schemas,
             allowExtraProps, Object.keys(kind.kind_structure)[0]);
     }
@@ -244,4 +245,22 @@ export class ValidatorImpl {
 
 function loadSchema(schemaPath: string): any {
     return load(readFileSync(resolve(__dirname, schemaPath), "utf-8"));
+}
+
+function remove_required_tag(schemas: Data_Description) {
+    if (schemas) {
+        if (schemas.hasOwnProperty('required')) {
+            delete schemas['required']
+        }
+        if (schemas.type === 'object' && schemas.properties) {
+            const properties_schema = schemas.properties;
+            for (let key in properties_schema) {
+                schemas.properties[key] = remove_required_tag(schemas.properties[key])
+            }
+        }
+        if (schemas.type === 'array' && schemas.items) {
+            schemas.items = remove_required_tag(schemas.items)
+        }
+    }
+    return schemas
 }

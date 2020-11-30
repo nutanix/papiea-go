@@ -1058,6 +1058,81 @@ describe("Provider Sdk tests", () => {
             sdk.server.close();
         }
     });
+
+    const REQUIRED_TEST_SCHEMA = {
+        Test: {
+            type: 'object',
+            title: 'Test',
+            'x-papiea-entity': 'basic',
+            required: ['a_id'],
+            properties: {
+                a_id: {
+                    type: 'string'
+                },
+                b_id: {
+                    'x-papiea': 'status-only',
+                    type: 'object',
+                    required: ['c_id', 'd_id'],
+                    properties: {
+                        c_id: {
+                            type: 'string'
+                        },
+                        d_id: {
+                            type: 'string'
+                        }
+                    }
+                }
+            }
+        }
+    }
+    test("Update status for entity should work without required field", async () => {
+        expect.assertions(5);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        try {
+            const machine = sdk.new_kind(REQUIRED_TEST_SCHEMA);
+            sdk.version(provider_version);
+            sdk.prefix("test_provider");
+            machine.entity_procedure(
+                "testProcedure",
+                {input_schema: {TestProcedureInput: {type: 'string', title: 'Input value to test procedure'}},
+                 output_schema: REQUIRED_TEST_SCHEMA},
+                async (ctx, entity, input) => {
+
+                const real_ref = {
+                    a_id: '1',
+                    b_id: {
+                        c_id: input
+                    }
+                }
+
+                await ctx.update_status(entity.metadata, real_ref)
+
+                return entity.spec;
+            });
+
+            await sdk.register();
+            const kind_name = sdk.provider.kinds[0].name;
+            const { data: { metadata, spec } } = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}`, {
+                spec: {
+                    a_id: '1',
+                    b_id: {
+                        c_id: '2',
+                        d_id: '3'
+                    }
+                }
+            });
+
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/testProcedure`, {input: '2'});
+            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`);
+            expect(updatedEntity.data.spec.a_id).toEqual('1')
+            expect(updatedEntity.data.spec.b_id.c_id).toEqual('2')
+            expect(updatedEntity.data.spec.b_id.d_id).toEqual('3')
+            expect(updatedEntity.data.status.a_id).toEqual('1')
+            expect(updatedEntity.data.status.b_id.c_id).toEqual('2')
+        } finally {
+            sdk.server.close();
+        }
+    });
 });
 
 describe("SDK + oauth provider tests", () => {
