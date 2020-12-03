@@ -268,17 +268,19 @@ describe("Provider API tests", () => {
         });
 
         const newStatus = { ip: undefined, name: undefined };
-        await providerApi.patch(`/${ provider.prefix }/${ provider.version }/update_status`, {
-            context: "some context",
-            entity_ref: {
-                uuid: metadata.uuid,
-                kind: kind_name
-            },
-            status: newStatus
-        });
-
-        const res = await entityApi.get(`/${ provider.prefix }/${provider.version}/${ kind_name }/${ metadata.uuid }`);
-        expect(res.data.status).toEqual({});
+        try {
+            await providerApi.patch(`/${ provider.prefix }/${ provider.version }/update_status`, {
+                context: "some context",
+                entity_ref: {
+                    uuid: metadata.uuid,
+                    kind: kind_name
+                },
+                status: newStatus
+            });
+        } catch (e) {
+            expect(e).toBeDefined()
+            expect(e.response.data.error.message).toEqual("Error parsing update query. Update body might be 'undefined', if this is expected, please use 'null'.")
+        }
     });
 
     test("Partial Update status with null values", async () => {
@@ -303,7 +305,7 @@ describe("Provider API tests", () => {
         });
 
         const res = await entityApi.get(`/${ provider.prefix }/${provider.version}/${ kind_name }/${ metadata.uuid }`);
-        expect(res.data.status).toEqual({host: "small", ...newStatus});
+        expect(res.data.status).toEqual({host: "small"});
     });
 
     test("Update status with malformed status should fail validation", async () => {

@@ -33,8 +33,6 @@ export interface Provider_API {
 
     get_latest_provider(user: UserAuthInfo, provider_prefix: string): Promise<Provider>
 
-    fix_null_object(schemas: any, status: Status): Promise<Status>;
-
     update_auth(user: UserAuthInfo, provider_prefix: string, provider_version: Version, auth: any): Promise<void>;
 
     on_auth_change(callbackfn: (provider: Provider) => void): void;

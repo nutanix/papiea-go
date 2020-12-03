@@ -98,8 +98,6 @@ export class Provider_API_Impl implements Provider_API {
         }
         await this.validator.validate_status(provider, entity_ref, mergedStatus);
 
-        const schemas: any = Object.assign({}, kind.kind_structure);
-        partialStatus = this.fix_null_object(schemas[kind.name], partialStatus);
         return strategy.update({provider_prefix: provider_prefix, provider_version: version, ...entity_ref}, partialStatus)
     }
 
@@ -133,20 +131,6 @@ export class Provider_API_Impl implements Provider_API {
 
     async get_latest_provider_by_kind(user: UserAuthInfo, kind_name: string): Promise<Provider> {
         return await this.providerDb.get_latest_provider_by_kind(kind_name);
-    }
-
-    fix_null_object(schemas: any, status: Status): Status {
-        if (schemas) {
-            if (schemas.type === 'object' && (status === null || status === undefined || Object.keys(status).length === 0)) {
-                status = {}
-            } else if (schemas.type === 'object' && schemas.properties) {
-                const properties_schema = schemas.properties;
-                for (var key in status) {
-                    status[key] = this.fix_null_object(properties_schema[key], status[key])
-                }
-            }
-        }
-        return status
     }
 
     async update_auth(user: UserAuthInfo, provider_prefix: string, provider_version: Version, auth: any): Promise<void> {

@@ -3,7 +3,7 @@
 import { add } from "winston";
 
 // Need to add tests to this
-function encode(value: any, keyChain: string[], result: any, addEmptyObjects: boolean) {
+function encode(value: any, keyChain: string[], result: any) {
     const isObject = (value: any)=> value && value.toString() === '[object Object]'
     const isArray = (value: any)=>  Array.isArray(value);
     let _key:any;
@@ -23,11 +23,6 @@ function encode(value: any, keyChain: string[], result: any, addEmptyObjects: bo
         if (!result) {
             result = {};
         }
-        if (addEmptyObjects) {
-            if (keyChain.length > 0 && Object.keys(value).length === 0) {
-                result[keyChain.join('.')] = value
-            }
-        }
         Object.keys(value).forEach(function (key) {
             let _keyChain = ([] as string[]).concat(keyChain);
             _keyChain.push(key);
@@ -41,9 +36,9 @@ function encode(value: any, keyChain: string[], result: any, addEmptyObjects: bo
                         if (!result[_key]) {
                             result[_key] = {};
                         }
-                        encode(value[key], [key], result[_key], addEmptyObjects);
+                        encode(value[key], [key], result[_key]);
                     } else {
-                        encode(value[key], [key], result, addEmptyObjects);
+                        encode(value[key], [key], result);
                     }
                 } else {
                     _key = keyChain.join('.');
@@ -59,9 +54,9 @@ function encode(value: any, keyChain: string[], result: any, addEmptyObjects: bo
                 if (isArray(value[key])) {
                     _key = _keyChain.join('.');
                     result[_key] = [];
-                    encode(value[key], [], result[_key], addEmptyObjects);
+                    encode(value[key], [], result[_key]);
                 } else if (isObject(value[key])) {
-                    encode(value[key], _keyChain, result, addEmptyObjects);
+                    encode(value[key], _keyChain, result);
                 } else {
                     result[_keyChain.join('.')] = value[key];
                 }
@@ -74,7 +69,7 @@ function encode(value: any, keyChain: string[], result: any, addEmptyObjects: bo
     return result;
 }
 
-const dotnotation = (x:any, addEmptyObjects: boolean = false)=>encode(x, [], undefined, addEmptyObjects)
+const dotnotation = (x:any)=>encode(x, [], undefined)
 
 export {
     dotnotation

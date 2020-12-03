@@ -41,7 +41,17 @@ export class Status_DB_Mongo implements Status_DB {
 
     async update_status(entity_ref: Provider_Entity_Reference, status: Status): Promise<void> {
         let result: UpdateWriteOpResult
-        const partial_status_query = dotnotation({"status": status}, true);
+        const partial_status_query = dotnotation({"status": status});
+
+        let aggregrate_fields = []
+        const {set_status_fields, unset_status_fields} = separate_null_fields(partial_status_query)
+        if (Object.keys(set_status_fields).length !== 0) {
+            aggregrate_fields.push({ $set: set_status_fields })
+        }
+        if (Object.keys(unset_status_fields).length !== 0) {
+            aggregrate_fields.push({ $unset: unset_status_fields })
+        }
+
         try {
             result = await this.collection.updateOne(
                 {
@@ -49,7 +59,7 @@ export class Status_DB_Mongo implements Status_DB {
                     "metadata.provider_version": entity_ref.provider_version,
                     "metadata.uuid": entity_ref.uuid,
                     "metadata.kind": entity_ref.kind
-                }, { $set: partial_status_query });
+                }, aggregrate_fields);
         } catch (e) {
             if (e.code === 9) {
                 throw new Error(`Error parsing update query. Update body might be 'undefined', if this is expected, please use 'null'.`)
@@ -117,4 +127,19 @@ export class Status_DB_Mongo implements Status_DB {
             }
         });
     }
+}
+
+function separate_null_fields(status_dot_notation: any): any {
+    let set_fields: any = {}
+    let unset_fields: any = []
+
+    for (const key in status_dot_notation) {
+        if (status_dot_notation[key] === null) {
+            unset_fields.push(key)
+        } else {
+            set_fields[key] = status_dot_notation[key]
+        }
+    }
+    return { set_status_fields: set_fields,
+            unset_status_fields: unset_fields }
 }
