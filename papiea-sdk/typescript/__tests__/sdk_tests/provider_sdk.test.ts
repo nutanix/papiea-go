@@ -452,7 +452,7 @@ describe("Provider Sdk tests", () => {
             {input_schema: loadYamlFromTestFactoryDir("./test_data/procedure_move_input.yml"),
              output_schema: kind_copy},
             async (ctx, entity, input) => {
-            await ctx.replace_status(entity.metadata, [{
+            await ctx.update_status(entity.metadata, [{
                 x: 10,
                 y: 15,
                 v: {
@@ -479,7 +479,49 @@ describe("Provider Sdk tests", () => {
         }
     });
 
-    test("Provider with kind level procedures replace status with nested object", async () => {
+    test("Provider with kind level procedures replace status with nested object using update_status", async () => {
+        expect.hasAssertions()
+        const kind_copy = JSON.parse(JSON.stringify(location_yaml))
+        kind_copy["Location"]["x-papiea-entity"] = "basic"
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(kind_copy);
+        sdk.version(provider_version);
+        sdk.prefix("location_provider");
+        location.entity_procedure(
+            "moveX",
+            {input_schema: loadYamlFromTestFactoryDir("./test_data/procedure_move_input.yml"),
+             output_schema: loadYamlFromTestFactoryDir("./test_data/location_kind_test_data.yml")},
+            async (ctx, entity, input) => {
+            entity.spec.v = {
+                e: 15
+            };
+            await ctx.update_status(entity.metadata, {
+                x: 10,
+                y: 15,
+                v: {
+                    e: 15
+                }
+            })
+            return entity.spec;
+        });
+        try {
+            await sdk.register();
+            const kind_name = sdk.provider.kinds[ 0 ].name;
+            const { data: { metadata, spec } } = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { input: 5 });
+            const result = await entityApi.get(`${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
+            expect(result.data.status["v"]).toEqual({e: 15})
+        } finally {
+            sdk.server.close();
+        }
+    });
+
+    test("Provider with kind level procedures replace status with nested object using replace_status", async () => {
         expect.hasAssertions()
         const kind_copy = JSON.parse(JSON.stringify(location_yaml))
         kind_copy["Location"]["x-papiea-entity"] = "basic"

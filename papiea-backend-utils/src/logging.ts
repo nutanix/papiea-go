@@ -9,7 +9,7 @@ export const LOG_LEVELS = {
     crit: 2,
     error: 3,
     audit: 4,
-    warning: 5,
+    warn: 5,
     notice: 6,
     info: 7,
     debug: 8,
@@ -30,7 +30,7 @@ export interface Logger {
     crit(msg: any, ...messages: any[]): void
     error(msg: any, ...messages: any[]): void
     audit(msg: any, ...messages: any[]): void
-    warning(msg: any, ...messages: any[]): void
+    warn(msg: any, ...messages: any[]): void
     notice(msg: any, ...messages: any[]): void
     info(msg: any, ...messages: any[]): void
     debug(msg: any, ...messages: any[]): void
@@ -191,8 +191,8 @@ class LoggerImpl implements Logger {
     audit(msg: any, ...messages: any[]): void {
         this._logger.log('audit', msg, ...messages)
     }
-    warning(msg: any, ...messages: any[]): void {
-        this._logger.warning(msg, ...messages)
+    warn(msg: any, ...messages: any[]): void {
+        this._logger.warn(msg, ...messages)
     }
     notice(msg: any, ...messages: any[]): void {
         this._logger.notice(msg, ...messages)

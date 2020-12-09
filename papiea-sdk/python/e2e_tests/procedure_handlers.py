@@ -277,6 +277,7 @@ async def bucket_create_handler(ctx, entity_bucket):
             name=entity_bucket.name,
             objects=list()
         )
+
         return ConstructorResult(spec=status, status=status, metadata={
             "extension": {
                 "owner": entity_bucket.owner

@@ -59,7 +59,9 @@ export class Status_DB_Mongo implements Status_DB {
                     "metadata.provider_version": entity_ref.provider_version,
                     "metadata.uuid": entity_ref.uuid,
                     "metadata.kind": entity_ref.kind
-                }, aggregrate_fields);
+                }, aggregrate_fields, {
+                    upsert: true
+                });
         } catch (e) {
             if (e.code === 9) {
                 throw new Error(`Error parsing update query. Update body might be 'undefined', if this is expected, please use 'null'.`)

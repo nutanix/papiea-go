@@ -72,19 +72,30 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
             status: status
         });
         if (res.status != 200) {
-            console.error("Could not update status:", entity_reference, status, res.status, res.data);
+            this.get_logger().error("Could not update status:", entity_reference, status, res.status, res.data);
             return false
         }
         return true
     }
 
+    /**
+     * Function which calls post on the update_status endpoint
+     * which internally calls the mongo update function with upsert
+     * flag set to true.
+     *
+     * This functions inserts a new document if no matching document
+     * is found for the query.
+     *
+     * @deprecated Will be deleted in version 0.11.0. Use update_status instead.
+    */
     async replace_status(entity_reference: Entity_Reference, status: Status, provider_prefix: string = this.provider.get_prefix(), provider_version: Version = this.provider.get_version()): Promise<boolean> {
+        this.get_logger().warn("Calling a deprecated method!!!")
         const res = await this.providerApiAxios.post(`${this.provider_url}/${provider_prefix}/${provider_version}/update_status`,{
             entity_ref: entity_reference,
             status: status
         });
         if (res.status != 200) {
-            console.error("Could not update status:", entity_reference, status, res.status, res.data);
+            this.get_logger().error("Could not update status:", entity_reference, status, res.status, res.data);
             return false
         }
         return true
