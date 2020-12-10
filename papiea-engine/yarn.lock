@@ -1435,9 +1435,9 @@ domexception@^1.0.1:
     webidl-conversions "^4.0.2"
 
 dot-prop@^4.1.0:
-  version "4.2.0"
-  resolved "https://registry.yarnpkg.com/dot-prop/-/dot-prop-4.2.0.tgz#1f19e0c2e1aa0e32797c49799f2837ac6af69c57"
-  integrity sha512-tUMXrxlExSW6U2EXiiKGSBVdYgtV8qlHL+C10TsW4PURY/ic+eaysnSkwB4kA/mBlCyy/IKDJ+Lc3wbWeaXtuQ==
+  version "4.2.1"
+  resolved "https://registry.yarnpkg.com/dot-prop/-/dot-prop-4.2.1.tgz#45884194a71fc2cda71cbb4bceb3a4dd2f433ba4"
+  integrity sha512-l0p4+mIuJIua0mhxGoh4a+iNL9bmeK5DvnSVQa6T0OhrVmaEa1XScX5Etc673FePCJOArq/4Pa2cLGODUWTPOQ==
   dependencies:
     is-obj "^1.0.0"
 
@@ -4085,14 +4085,14 @@ package-json@^4.0.0:
     semver "^5.1.0"
 
 "papiea-backend-utils@file:../papiea-backend-utils":
-  version "0.8.7"
+  version "0.9.0"
   dependencies:
     logform "^2.1.2"
-    papiea-core "file:../../../Library/Caches/Yarn/v6/npm-papiea-backend-utils-0.8.7-4e71a44c-6a1f-4301-ba6b-89efcbe44c2c-1607337132681/node_modules/papiea-core"
+    papiea-core "file:../papiea-core"
     winston "^3.3.3"
 
 "papiea-core@file:../papiea-core":
-  version "0.8.7"
+  version "0.9.0"
 
 parse-glob@^3.0.4:
   version "3.0.4"
