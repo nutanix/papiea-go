@@ -94,8 +94,24 @@ export class ValidatorImpl {
 
     public validate_spec(spec: Spec, kind: Kind, allowExtraProps: boolean) {
         const schemas: any = Object.assign({}, kind.kind_structure);
+        // remove any status-only field from the schema to pass to validator
+        this.remove_schema_fields(schemas, "status-only")
         this.validate(spec, Object.values(kind.kind_structure)[0], schemas,
             allowExtraProps, Object.keys(kind.kind_structure)[0]);
+    }
+
+   /**
+     * Recursively removes a field from properties if it has to be shown only for the opposite type.
+     * @param schema - schema to remove the fields from.
+     * @param fieldName - type of x-papiea value spec-only|status-only.
+     */
+    remove_schema_fields(schema: any, fieldName: string) {
+        for (let prop in schema) {
+            if (typeof schema[prop] === 'object' && "x-papiea" in schema[prop] && schema[prop]["x-papiea"] === fieldName) {
+                delete schema[prop]
+            } else if (typeof schema[prop] === 'object')
+                this.remove_schema_fields(schema[prop], fieldName)
+        }
     }
 
     public async validate_status(provider: Provider, entity_ref: Entity_Reference, status: Status) {
@@ -165,6 +181,8 @@ export class ValidatorImpl {
         // x_papiea_field property have only status_only_value value
         this.validate_field_value(schema, x_papiea_field, [status_only_value])
         this.validate_spec_only_structure(schema)
+        // status-only fields cannot be required in schema
+        this.validate_status_only_field({"schema": schema})
     }
 
     validate_field_value(schema: Data_Description, field_name: string, possible_values: string[]) {
@@ -199,6 +217,42 @@ export class ValidatorImpl {
         if (typeof entity === "object" && entity.hasOwnProperty(x_papiea_entity_field) && entity[x_papiea_entity_field] === spec_only_value) {
             // spec-only entity can't have x_papiea_field values
             this.validate_field_value(entity.properties, x_papiea_field, [])
+        }
+    }
+
+    validate_status_only_field(schema: Data_Description) {
+        try{
+            for(let field in schema) {
+                const field_schema = schema[field]
+                if (field_schema["type"] === "object") {
+                    if (field_schema.hasOwnProperty("required") && field_schema.hasOwnProperty("properties")) {
+                        for (let req_field of field_schema["required"]) {
+                            if (field_schema["properties"][req_field].hasOwnProperty("x-papiea") && field_schema["properties"][req_field]["x-papiea"] === "status-only") {
+                                throw new ValidationError([{
+                                    name: "ValidationError",
+                                    message: `${req_field} of type 'status-only' is set to be required. Required fields cannot be 'status-only'`
+                                }])
+                            }
+                        }
+                    }
+                    this.validate_status_only_field(field_schema["properties"])
+                }
+                if (field_schema.type === "array") {
+                    if (field_schema["items"]["type"].includes("object") && field_schema["items"].hasOwnProperty("required") && field_schema["items"].hasOwnProperty("properties")) {
+                        for (let req_field of field_schema["items"]["required"]) {
+                            if (field_schema["items"]["properties"][req_field].hasOwnProperty("x-papiea") && field_schema["items"]["properties"][req_field]["x-papiea"] === "status-only") {
+                                throw new ValidationError([{
+                                    name: "ValidationError",
+                                    message: `${req_field} of type 'status-only' is set to be required. Required fields cannot be 'status-only'`
+                                }])
+                            }
+                        }
+                        this.validate_status_only_field(field_schema["items"]["properties"])
+                    }
+                }
+            }
+        } catch (e) {
+            throw (e)
         }
     }
 

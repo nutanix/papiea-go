@@ -369,13 +369,16 @@ async def object_create_handler(ctx, entity_object):
     try:
         papiea_test.logger.debug("Executing object create intent handler...")
 
+        spec = AttributeDict(
+            content=entity_object.content
+        )
         status = AttributeDict(
             content=entity_object.content,
             size=len(entity_object.content),
             last_modified=str(datetime.now(timezone.utc)),
             references=list()
         )
-        return ConstructorResult(spec=status, status=status, metadata={
+        return ConstructorResult(spec=spec, status=status, metadata={
             "extension": {
                 "owner": entity_object.owner
             }

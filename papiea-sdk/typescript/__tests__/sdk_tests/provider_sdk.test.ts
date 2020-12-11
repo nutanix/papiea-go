@@ -1006,7 +1006,6 @@ describe("Provider Sdk tests", () => {
             properties: {
                 a: {
                     type: 'object',
-                    'x-papiea': 'status-only',
                     properties: {
                         b: {
                             type: 'object',
@@ -1161,6 +1160,70 @@ describe("Provider Sdk tests", () => {
             sdk.server.close();
         }
     })
+
+    test("Provider with provider level procedures should correctly handle exceptions in the provider", async () => {
+        expect.assertions(1)
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        let status_only_required_schema = JSON.parse(JSON.stringify(STATUS_ONLY_TEST_SCHEMA))
+        status_only_required_schema.TestObject.properties.test.items.required = ['a']
+        sdk.new_kind(status_only_required_schema);
+        sdk.version(provider_version);
+        sdk.prefix("status_only_required_provider");
+        try {
+            await sdk.register();
+        } catch (e) {
+            expect(e.response.data.error.errors[0].message).toBe("a of type 'status-only' is set to be required. Required fields cannot be 'status-only'")
+        }
+    });
+
+    test("Create entity spec with status-only field set should fail", async () => {
+        expect.assertions(1)
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const test_object = sdk.new_kind(STATUS_ONLY_TEST_SCHEMA);
+        sdk.version(provider_version);
+        sdk.prefix("test_status_only_field_update_spec");
+        test_object.on_create({input_schema}, async (ctx, input) => {
+            return {
+                spec: {
+                    test: input.test
+                },
+                status: {
+                    test: []
+                }
+            }
+        })
+        test_object.on('test.+{id}', async(ctx, entity, diff) => {
+            await ctx.update_status(entity.metadata, {
+                test: [{
+                    id: 'test-idval',
+                    a: 'test-aval',
+                    b: 'test-aval'
+                }]
+            })
+        })
+        try {
+            await sdk.register();
+            const kind_name = sdk.provider.kinds[0].name;
+            await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}`, {
+                test: [
+                    {
+                        id: "test-idval",
+                        a: "test-aval",
+                        b: "test-aval"
+                    }
+                ]
+            }, {
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${adminKey}`
+                }
+            })
+        } catch (e) {
+            expect(e.response.data.error.errors[0].message).toBe("Target property 'a' is not in the model")
+        } finally {
+            sdk.server.close();
+        }
+    });
 });
 
 describe("SDK + oauth provider tests", () => {
