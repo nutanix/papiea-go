@@ -40,7 +40,7 @@ describe("Entity API tests", () => {
         let promises = []
         const specs = [1,2,3,4]
         for (let i of specs) {
-            promises.push(location_client.create({x: i, y: i}))
+            promises.push(location_client.create({spec: {x: i, y: i}}))
         }
         const res = await Promise.all<Spec>(promises)
         res.map(entity => uuids.push(entity.metadata.uuid))
@@ -65,7 +65,7 @@ describe("Entity API tests", () => {
         let promises = []
         const specs = [1,2,3,4]
         for (let i of specs) {
-            promises.push(location_client.create({x: i, y: i}))
+            promises.push(location_client.create({spec: {x: i, y: i}}))
         }
         const res = await Promise.all<Spec>(promises)
         res.map(entity => uuids.push(entity.metadata.uuid))
@@ -89,7 +89,7 @@ describe("Entity API tests", () => {
         let promises = []
         const specs = [1,2,3,4]
         for (let i of specs) {
-            promises.push(location_client.create({x: i, y: i}))
+            promises.push(location_client.create({spec: {x: i, y: i}}))
         }
         const res = await Promise.all<Spec>(promises)
         res.map(entity => uuids.push(entity.metadata.uuid))

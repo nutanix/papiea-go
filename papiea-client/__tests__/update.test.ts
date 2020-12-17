@@ -42,7 +42,7 @@ describe("Entity API tests", () => {
     test("Update should return entity watcher", async () => {
         expect.assertions(1)
         const location_client = kind_client("http://localhost:3000", providerPrefix, kind_name, providerVersion, '')
-        const entity = await location_client.create({x: 10, y: 10})
+        const entity = await location_client.create({spec: {x: 10, y: 10}})
         const watcher = await location_client.update(entity.metadata, {x: 12, y: 10})
         expect(watcher!.status).toEqual(IntentfulStatus.Active)
         await location_client.delete(entity.metadata)

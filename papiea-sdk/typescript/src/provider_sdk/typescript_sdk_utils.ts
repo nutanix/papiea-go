@@ -10,3 +10,9 @@ export function validate_error_codes(error_desc: ErrorSchemas | undefined) {
         }
     }
 }
+
+export function get_papiea_version(): string {
+    const packageJSON = require('../../package.json');
+    const sdk_version: string = packageJSON.version.split('+')[0];
+    return sdk_version;
+}

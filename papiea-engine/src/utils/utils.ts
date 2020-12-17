@@ -146,3 +146,9 @@ export function getEntropyFn(papieaDebug: boolean) {
         return getRandomInt(min, max)
     }
 }
+
+export function getPapieaVersion(): string {
+    const packageJSON = require('../../package.json');
+    const engineSDKVersion: string = packageJSON.version.split('+')[0];
+    return engineSDKVersion
+}

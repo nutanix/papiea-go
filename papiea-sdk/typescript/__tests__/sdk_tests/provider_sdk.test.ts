@@ -1266,6 +1266,107 @@ describe("Provider Sdk tests", () => {
             sdk.server.close();
         }
     });
+
+    test("Papiea version equal to the supported version should pass", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        try {
+            const location = sdk.new_kind(location_yaml);
+            sdk.version(provider_version);
+            sdk.prefix("location_provider");
+            location.on_create({input_schema: location_yaml}, async (ctx, input) => {
+                expect(input).toBeDefined()
+                return {
+                    spec: input,
+                    status: input
+                }
+            })
+            await sdk.register();
+            const kind_name = sdk.provider.kinds[0].name;
+            const { data: { metadata, spec } } = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}`, {
+                    x: 10,
+                    y: 11
+            }, {
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${adminKey}`,
+                  "Papiea-Version": sdk.get_sdk_version()
+                }
+            });
+
+            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`);
+            expect(updatedEntity.data.spec.x).toEqual(10);
+        } finally {
+            sdk.server.close();
+        }
+    });
+
+    test("Papiea version compatible with the supported version should pass", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        try {
+            const location = sdk.new_kind(location_yaml);
+            sdk.version(provider_version);
+            sdk.prefix("location_provider");
+            location.on_create({input_schema: location_yaml}, async (ctx, input) => {
+                expect(input).toBeDefined()
+                return {
+                    spec: input,
+                    status: input
+                }
+            })
+            await sdk.register();
+            const kind_name = sdk.provider.kinds[0].name;
+            const { data: { metadata, spec } } = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}`, {
+                    x: 10,
+                    y: 11
+            }, {
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${adminKey}`,
+                  "Papiea-Version": "0.8.5"
+                }
+            });
+
+            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`);
+            expect(updatedEntity.data.spec.x).toEqual(10);
+        } finally {
+            sdk.server.close();
+        }
+    });
+
+    test("Papiea version incompatible with the supported version should fail", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        try {
+            const location = sdk.new_kind(location_yaml);
+            sdk.version(provider_version);
+            sdk.prefix("location_provider");
+            location.on_create({input_schema: location_yaml}, async (ctx, input) => {
+                expect(input).toBeDefined()
+                return {
+                    spec: input,
+                    status: input
+                }
+            })
+            await sdk.register();
+            const kind_name = sdk.provider.kinds[0].name;
+            const { data: { metadata, spec } } = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}`, {
+                    x: 10,
+                    y: 11
+            }, {
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${adminKey}`,
+                  "Papiea-Version": "1.0.0"
+                }
+            });
+        } catch (e) {
+            expect(e.response.data.error.errors[0].message).toBe("Received incompatible papiea version: 1.0.0")
+        } finally {
+            sdk.server.close();
+        }
+    });
 });
 
 describe("SDK + oauth provider tests", () => {

@@ -31,6 +31,9 @@ type EntitySpec = Pick<Entity, Metadata | Spec>
 
 const BATCH_SIZE = 20
 
+const packageJSON = require('../package.json');
+const PAPIEA_VERSION: string = packageJSON.version.split('+')[0];
+
 function delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );
 }
@@ -63,7 +66,7 @@ function make_request<T = any, Y = AxiosPromise<T>>(f: (url: string, data?: any,
 }
 
 async function create_entity(provider: string, kind: string, version: string, payload: any, papiea_url: string, s2skey: string): Promise<EntityCreationResult> {
-    const { data: { metadata, spec, intent_watcher, status } } = await make_request<EntityCreationResult>(axios.post, `${ papiea_url }/services/${ provider }/${ version }/${ kind }`, payload, { headers: { "Authorization": `Bearer ${ s2skey }` } });
+    const { data: { metadata, spec, intent_watcher, status } } = await make_request<EntityCreationResult>(axios.post, `${ papiea_url }/services/${ provider }/${ version }/${ kind }`, payload, { headers: { "Authorization": `Bearer ${ s2skey }`, "Papiea-Version": `${ PAPIEA_VERSION }` } });
     return { metadata, spec, intent_watcher, status };
 }
 
@@ -73,32 +76,32 @@ async function update_entity(provider: string, kind: string, version: string, re
         metadata: {
             spec_version: request_metadata.spec_version
         }
-    }, { headers: { "Authorization": `Bearer ${ s2skey }` } });
+    }, { headers: { "Authorization": `Bearer ${ s2skey }`, "Papiea-Version": `${ PAPIEA_VERSION }` } });
     return watcher
 }
 
 async function get_entity(provider: string, kind: string, version: string, entity_reference: Entity_Reference, papiea_url: string, s2skey: string): Promise<Entity> {
     const { data: { metadata, spec, status } } = await make_request(axios.get, `${ papiea_url }/services/${ provider }/${ version }/${ kind }/${ entity_reference.uuid }`,
-        { headers: { "Authorization": `Bearer ${ s2skey }` } });
+        { headers: { "Authorization": `Bearer ${ s2skey }`, "Papiea-Version": `${ PAPIEA_VERSION }` } });
     return { metadata, spec, status }
 }
 
 async function delete_entity(provider: string, kind: string, version: string, entity_reference: Entity_Reference, papiea_url: string, s2skey: string): Promise<void> {
-    await make_request(axios.delete, `${ papiea_url }/services/${ provider }/${ version }/${ kind }/${ entity_reference.uuid }`, { headers: { "Authorization": `Bearer ${ s2skey }` } });
+    await make_request(axios.delete, `${ papiea_url }/services/${ provider }/${ version }/${ kind }/${ entity_reference.uuid }`, { headers: { "Authorization": `Bearer ${ s2skey }`, "Papiea-Version": `${ PAPIEA_VERSION }` } });
 }
 
 async function invoke_entity_procedure(provider: string, kind: string, version: string, procedure_name: string, input: any, entity_reference: Entity_Reference, papiea_url: string, s2skey: string): Promise<any> {
-    const res = await make_request(axios.post, `${ papiea_url }/services/${ provider }/${ version }/${ kind }/${ entity_reference.uuid }/procedure/${ procedure_name }`, { input }, { headers: { "Authorization": `Bearer ${ s2skey }` } });
+    const res = await make_request(axios.post, `${ papiea_url }/services/${ provider }/${ version }/${ kind }/${ entity_reference.uuid }/procedure/${ procedure_name }`, { input }, { headers: { "Authorization": `Bearer ${ s2skey }`, "Papiea-Version": `${ PAPIEA_VERSION }` } });
     return res.data;
 }
 
 async function invoke_kind_procedure(provider: string, kind: string, version: string, procedure_name: string, input: any, papiea_url: string, s2skey: string): Promise<any> {
-    const res = await make_request(axios.post, `${ papiea_url }/services/${ provider }/${ version }/${ kind }/procedure/${ procedure_name }`, { input }, { headers: { "Authorization": `Bearer ${ s2skey }` } });
+    const res = await make_request(axios.post, `${ papiea_url }/services/${ provider }/${ version }/${ kind }/procedure/${ procedure_name }`, { input }, { headers: { "Authorization": `Bearer ${ s2skey }`, "Papiea-Version": `${ PAPIEA_VERSION }` } });
     return res.data;
 }
 
 export async function invoke_provider_procedure(provider: string, version: string, procedure_name: string, input: any, papiea_url: string, s2skey: string): Promise<any> {
-    const res = await make_request(axios.post, `${ papiea_url }/services/${ provider }/${ version }/procedure/${ procedure_name }`, { input }, { headers: { "Authorization": `Bearer ${ s2skey }` } });
+    const res = await make_request(axios.post, `${ papiea_url }/services/${ provider }/${ version }/procedure/${ procedure_name }`, { input }, { headers: { "Authorization": `Bearer ${ s2skey }`, "Papiea-Version": `${ PAPIEA_VERSION }` } });
     return res.data;
 }
 
@@ -108,12 +111,12 @@ export interface FilterResults {
 }
 
 export async function filter_entity_iter(provider: string, kind: string, version: string, filter: any, papiea_url: string, s2skey: string): Promise<(batch_size?: number, offset?: number) => AsyncGenerator<any, undefined, any>> {
-    const iter_func = await make_request(iter_filter, `${ papiea_url }/services/${ provider }/${ version }/${ kind }/filter`, filter, { headers: { "Authorization": `Bearer ${ s2skey }` } });
+    const iter_func = await make_request(iter_filter, `${ papiea_url }/services/${ provider }/${ version }/${ kind }/filter`, filter, { headers: { "Authorization": `Bearer ${ s2skey }`, "Papiea-Version": `${ PAPIEA_VERSION }` } });
     return iter_func
 }
 
 export async function filter_entity(provider: string, kind: string, version: string, filter: any, papiea_url: string, s2skey: string): Promise<FilterResults> {
-    const res = await make_request(axios.post, `${ papiea_url }/services/${ provider }/${ version }/${ kind }/filter`, filter, { headers: { "Authorization": `Bearer ${ s2skey }` } });
+    const res = await make_request(axios.post, `${ papiea_url }/services/${ provider }/${ version }/${ kind }/filter`, filter, { headers: { "Authorization": `Bearer ${ s2skey }`, "Papiea-Version": `${ PAPIEA_VERSION }` } });
     return res.data
 }
 
@@ -135,13 +138,13 @@ export async function iter_filter(url: string, data: any, config?: AxiosRequestC
 
 async function get_intent_watcher(papiea_url: string, id: string, s2skey: string): Promise<IntentWatcher> {
     const res = await make_request(axios.get, `${ papiea_url }/services/intent_watcher/${ id }`,
-        { headers: { "Authorization": `Bearer ${ s2skey }` } });
+        { headers: { "Authorization": `Bearer ${ s2skey }` }, "Papiea-Version": `${ PAPIEA_VERSION }` });
     return res.data
 }
 
 // filter_intent_watcher({'status':'Pending'})
 async function filter_intent_watcher(papiea_url: string, filter: any, s2skey: string): Promise<FilterResults> {
-    const res = await make_request(axios.post, `${ papiea_url }/services/intent_watcher/filter`, filter, { headers: { "Authorization": `Bearer ${ s2skey }` } });
+    const res = await make_request(axios.post, `${ papiea_url }/services/intent_watcher/filter`, filter, { headers: { "Authorization": `Bearer ${ s2skey }`, "Papiea-Version": `${ PAPIEA_VERSION }` } });
     return res.data
 }
 

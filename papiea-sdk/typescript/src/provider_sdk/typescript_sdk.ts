@@ -30,7 +30,7 @@ import {
 } from "papiea-core"
 import { LoggerFactory } from 'papiea-backend-utils'
 import { InvocationError, SecurityApiError } from "./typescript_sdk_exceptions"
-import { validate_error_codes } from "./typescript_sdk_utils"
+import { validate_error_codes, get_papiea_version } from "./typescript_sdk_utils"
 
 class SecurityApiImpl implements SecurityApi {
     readonly provider: ProviderSdk;
@@ -98,6 +98,7 @@ export class ProviderSdk implements ProviderImpl {
     protected readonly _securityApi : SecurityApi;
     protected readonly _intentWatcherClient : IntentWatcherClient
     protected allowExtraProps: boolean;
+    protected readonly _sdk_version: Version;
 
     constructor(papiea_url: string, s2skey: Secret, server_manager?: Provider_Server_Manager, allowExtraProps?: boolean) {
         this._version = null;
@@ -122,6 +123,7 @@ export class ProviderSdk implements ProviderImpl {
                 'Authorization': `Bearer ${this._s2skey}`
             }
         });
+        this._sdk_version = get_papiea_version()
     }
 
     get provider() {
@@ -330,6 +332,10 @@ export class ProviderSdk implements ProviderImpl {
 
     public get_intent_watcher_client(): IntentWatcherClient {
         return this._intentWatcherClient
+    }
+
+    public get_sdk_version(): Version {
+        return this._sdk_version;
     }
 }
 
