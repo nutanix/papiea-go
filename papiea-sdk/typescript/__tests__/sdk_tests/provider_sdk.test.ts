@@ -1822,8 +1822,8 @@ describe("SDK + oauth provider tests", () => {
             }
         }
     }
-    test.only("Intent watcher check permission read should succeed", async () => {
-        // expect.hasAssertions();
+    test("Intent watcher check permission read should succeed", async () => {
+        expect.hasAssertions();
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(WATCHER_TEST_SCHEMA);
         sdk.version(provider_version);
@@ -1873,13 +1873,78 @@ describe("SDK + oauth provider tests", () => {
             },
             { headers: { 'Authorization': `Bearer ${token}` }})
 
-            console.log(JSON.stringify(watcher, null, 4))
-            /*
-            await timeout(3000)
             const watcherApi = sdk.get_intent_watcher_client()
             const intent_watcher = await watcherApi.get(watcher.uuid)
             expect(intent_watcher.status).toEqual(IntentfulStatus.Active)
-            */
+        } finally {
+            sdk.server.close();
+            await providerApiAdmin.post(`/${ sdk.provider.prefix }/${ sdk.provider.version }/auth`, {
+                policy: null
+            });
+        }
+    });
+
+    test.only("Intent watcher check permission read should fail if owner is incorrect", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(WATCHER_TEST_SCHEMA);
+        sdk.version(provider_version);
+        sdk.prefix("permissioned_intent_watcher_read_fail");
+        location.on("x", async (ctx, entity, input) => {
+            await providerApiAdmin.post(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
+                context: "some context",
+                entity_ref: {
+                    uuid: entity.metadata.uuid,
+                    kind: entity.metadata.kind
+                },
+                status: {
+                    x: 11,
+                    y: 11
+                }
+            })
+        })
+        sdk.secure_with(oauth, modelText, "xxx");
+        try {
+            await sdk.register();
+            const kind_name_local: string = sdk.provider.kinds[0].name
+            // Use correct policy to create entity
+            await providerApiAdmin.post(`/${sdk.provider.prefix}/${sdk.provider.version}/auth`, {
+                policy: `p, alice, owner, ${kind_name_local}, *, allow`
+            });
+            const {data: {token}} = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+            const {
+                data: {
+                    metadata,
+                    spec
+                }
+            } = await entityApi.post(`/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name_local}`, {
+                metadata: {
+                    extension: {
+                        owner: "alice",
+                        tenant_uuid: tenant_uuid
+                    }
+                },
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            }, {headers: {'Authorization': `Bearer ${token}`}});
+            const {data: {watcher}} = await entityApi.put(`/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name_local}/${metadata.uuid}`, {
+                spec: {
+                    x: 11,
+                    y: 11
+                }, metadata: {
+                    spec_version: 1
+                }
+            }, {headers: {'Authorization': `Bearer ${token}`}})
+            // Change policy to assure that get intent watcher fails
+            await providerApiAdmin.post(`/${sdk.provider.prefix}/${sdk.provider.version}/auth`, {
+                policy: `p, carol, owner, ${kind_name_local}, *, allow`
+            });
+            const watcherApi = sdk.get_intent_watcher_client()
+            const intent_watcher = await watcherApi.get(watcher.uuid)
+        } catch (e) {
+            expect(e).toBeDefined()
         } finally {
             sdk.server.close();
             await providerApiAdmin.post(`/${ sdk.provider.prefix }/${ sdk.provider.version }/auth`, {

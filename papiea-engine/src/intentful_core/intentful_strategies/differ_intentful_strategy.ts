@@ -49,8 +49,6 @@ export class DifferIntentfulStrategy extends IntentfulStrategy {
         for (let diff of this.differ.diffs(this.kind!, spec, status)) {
             watcher.diffs.push(diff)
         }
-        await this.intentWatcherAuthorizer.checkPermission(this.user!, watcher, Action.Create)
-        console.log("Nitesh - This should not print!!")
         await this.intentWatcherDb.save_watcher(watcher)
         const watchlist = await this.watchlistDb.get_watchlist()
         const ent = create_entry(metadata)
