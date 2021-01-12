@@ -6,7 +6,7 @@ import { loadYamlFromTestFactoryDir, OAuth2Server, ProviderBuilder } from "../..
 import { timeout } from "../../../../papiea-engine/src/utils/utils"
 import axios from "axios"
 import { readFileSync } from "fs";
-import { Metadata, IntentfulBehaviour, Provider, Spec, Action, Entity_Reference, Entity } from "papiea-core";
+import { Metadata, IntentfulBehaviour, Provider, Spec, Action, Entity_Reference, Entity, IntentfulStatus } from "papiea-core";
 import { Logger, LoggerFactory } from "papiea-backend-utils";
 import {kind_client, ProviderClient} from "papiea-client"
 import { Kind_Builder, ProceduralCtx_Interface, ProviderSdk, SecurityApi } from "../../src/provider_sdk/typescript_sdk";
@@ -1302,7 +1302,7 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Papiea version compatible with the supported version should pass", async () => {
-        expect.hasAssertions();
+        expect.assertions(1);
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
             const location = sdk.new_kind(location_yaml);
@@ -1336,7 +1336,7 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Papiea version incompatible with the supported version should fail", async () => {
-        expect.hasAssertions();
+        expect.assertions(1);
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
             const location = sdk.new_kind(location_yaml);
@@ -1803,6 +1803,88 @@ describe("SDK + oauth provider tests", () => {
             expect(e.response.data.error.errors[0].errors[0].message).toEqual('provider_prefix should not be specified in the request body')
         } finally {
             sdk.server.close()
+        }
+    });
+
+    const WATCHER_TEST_SCHEMA = {
+        Location: {
+            type: 'object',
+            title: 'Location',
+            'x-papiea-entity': 'differ',
+            required: ['x', 'y'],
+            properties: {
+                x: {
+                    type: 'number'
+                },
+                y: {
+                    type: 'number'
+                }
+            }
+        }
+    }
+    test.only("Intent watcher check permission read should succeed", async () => {
+        // expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(WATCHER_TEST_SCHEMA);
+        sdk.version(provider_version);
+        sdk.prefix("permissioned_intent_watcher_read_succeed");
+        location.on("x", async (ctx, entity, input) => {
+            await providerApiAdmin.post(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
+                context: "some context",
+                entity_ref: {
+                    uuid: entity.metadata.uuid,
+                    kind: entity.metadata.kind
+                },
+                status: {
+                    x: 11,
+                    y: 11
+                }
+            })
+        })
+        sdk.secure_with(oauth, modelText, "xxx");
+        try {
+            await sdk.register();
+            const kind_name_local: string = sdk.provider.kinds[0].name
+            await providerApiAdmin.post(`/${ sdk.provider.prefix }/${ sdk.provider.version }/auth`, {
+                policy: `p, alice, owner, ${ kind_name_local }, *, allow`
+            });
+            const { data: { token } } = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
+            const { data: { metadata, spec } } = await entityApi.post(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name_local }`, {
+                metadata: {
+                    extension: {
+                        owner: "alice",
+                        tenant_uuid: tenant_uuid
+                    }
+                },
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            },
+            { headers: { 'Authorization': `Bearer ${token}` }});
+            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name_local }/${ metadata.uuid }`, {
+                spec: {
+                    x: 11,
+                    y: 11
+                },
+                metadata: {
+                    spec_version: 1
+                }
+            },
+            { headers: { 'Authorization': `Bearer ${token}` }})
+
+            console.log(JSON.stringify(watcher, null, 4))
+            /*
+            await timeout(3000)
+            const watcherApi = sdk.get_intent_watcher_client()
+            const intent_watcher = await watcherApi.get(watcher.uuid)
+            expect(intent_watcher.status).toEqual(IntentfulStatus.Active)
+            */
+        } finally {
+            sdk.server.close();
+            await providerApiAdmin.post(`/${ sdk.provider.prefix }/${ sdk.provider.version }/auth`, {
+                policy: null
+            });
         }
     });
 });

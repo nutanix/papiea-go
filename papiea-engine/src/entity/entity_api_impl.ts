@@ -3,7 +3,7 @@ import {Status_DB} from "../databases/status_db_interface"
 import {Spec_DB} from "../databases/spec_db_interface"
 import {Entity_API, OperationSuccess} from "./entity_api_interface"
 import {Validator} from "../validator"
-import {Authorizer} from "../auth/authz"
+import {Authorizer, IntentWatcherAuthorizer} from "../auth/authz"
 import {UserAuthInfo} from "../auth/authn"
 import {
     Action,
@@ -34,18 +34,20 @@ export class Entity_API_Impl implements Entity_API {
     private spec_db: Spec_DB;
     private intent_watcher_db: IntentWatcher_DB
     private authorizer: Authorizer;
+    private intentWatcherAuthorizer: IntentWatcherAuthorizer;
     private logger: Logger;
     private validator: Validator
     private readonly intentfulCtx: IntentfulContext
     private providerDb: Provider_DB
     private graveyardDb: Graveyard_DB
 
-    constructor(logger: Logger, status_db: Status_DB, spec_db: Spec_DB, graveyardDb: Graveyard_DB, provider_db: Provider_DB, intent_watcher_db: IntentWatcher_DB, authorizer: Authorizer, validator: Validator, intentfulCtx: IntentfulContext) {
+    constructor(logger: Logger, status_db: Status_DB, spec_db: Spec_DB, graveyardDb: Graveyard_DB, provider_db: Provider_DB, intent_watcher_db: IntentWatcher_DB, authorizer: Authorizer, intentWatcherAuthorizer: IntentWatcherAuthorizer, validator: Validator, intentfulCtx: IntentfulContext) {
         this.status_db = status_db;
         this.spec_db = spec_db;
         this.graveyardDb = graveyardDb
         this.providerDb = provider_db;
         this.authorizer = authorizer;
+        this.intentWatcherAuthorizer = intentWatcherAuthorizer;
         this.logger = logger;
         this.validator = validator;
         this.intentfulCtx = intentfulCtx
@@ -59,14 +61,14 @@ export class Entity_API_Impl implements Entity_API {
     async get_intent_watcher(user: UserAuthInfo, id: string): Promise<Partial<IntentWatcher>> {
         const intent_watcher = await this.intent_watcher_db.get_watcher(id)
         // TODO: this should be a separate authorizer not a PerProvider one
-        // await this.authorizer.checkPermission(user, { "metadata": metadata }, Action.Update);
+        await this.intentWatcherAuthorizer.checkPermission(user, intent_watcher, Action.Read);
         return IntentWatcherMapper.toResponse(intent_watcher)
     }
 
     async filter_intent_watcher(user: UserAuthInfo, fields: any, sortParams?: SortParams): Promise<Partial<IntentWatcher>[]> {
         const intent_watchers = await this.intent_watcher_db.list_watchers(fields, sortParams)
         // TODO: this should be a separate authorizer not a PerProvider one
-        // const filteredRes = await this.authorizer.filter(user, entities, Action.Update, x => { return { "metadata": x[0] } });
+        // const filteredRes = await this.intentWatcherAuthorizer.filter(user, entities, Action.Update, x => { return { "metadata": x[0] } });
         // const filteredWatchers = IntentWatcherMapper.filter(intent_watchers, filteredRes)
         return IntentWatcherMapper.toResponses(intent_watchers)
     }

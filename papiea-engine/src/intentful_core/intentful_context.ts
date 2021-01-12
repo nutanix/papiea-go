@@ -20,7 +20,7 @@ import {EntityCreationStrategy} from "./entity_creation_strategies/entity_creati
 import {ConstructorEntityCreationStrategy} from "./entity_creation_strategies/constructor_entity_creation_strategy"
 import {BasicEntityCreationStrategy} from "./entity_creation_strategies/basic_entity_creation_strategy"
 import {Validator} from "../validator"
-import {Authorizer} from "../auth/authz"
+import {Authorizer, IntentWatcherAuthorizer} from "../auth/authz"
 
 export type BehaviourStrategyMap = Map<IntentfulBehaviour, IntentfulStrategy>
 export type DiffSelectionStrategyMap = Map<DiffSelectionStrategy, DiffSelectionStrategyInterface>
@@ -33,11 +33,11 @@ export class IntentfulContext {
     private readonly statusUpdateStrategyMap: StatusUpdateStrategyMap
     private readonly entityCreationStrategyMap: EntityCreationStrategyMap
 
-    constructor(specDb: Spec_DB, statusDb: Status_DB, graveyardDb: Graveyard_DB, differ: Differ, intentWatcherDb: IntentWatcher_DB, watchlistDb: Watchlist_DB, validator: Validator, authorizer: Authorizer) {
+    constructor(specDb: Spec_DB, statusDb: Status_DB, graveyardDb: Graveyard_DB, differ: Differ, intentWatcherDb: IntentWatcher_DB, watchlistDb: Watchlist_DB, validator: Validator, authorizer: Authorizer, intentWatcherAuthorizer: Authorizer) {
         this.behaviourStrategyMap = new Map()
-        this.behaviourStrategyMap.set(IntentfulBehaviour.Basic, new DifferIntentfulStrategy(specDb, statusDb, graveyardDb, differ, intentWatcherDb, watchlistDb))
+        this.behaviourStrategyMap.set(IntentfulBehaviour.Basic, new DifferIntentfulStrategy(specDb, statusDb, graveyardDb, differ, intentWatcherDb, watchlistDb, intentWatcherAuthorizer))
         this.behaviourStrategyMap.set(IntentfulBehaviour.SpecOnly, new SpecOnlyIntentfulStrategy(specDb, statusDb, graveyardDb))
-        this.behaviourStrategyMap.set(IntentfulBehaviour.Differ, new DifferIntentfulStrategy(specDb, statusDb, graveyardDb, differ, intentWatcherDb, watchlistDb))
+        this.behaviourStrategyMap.set(IntentfulBehaviour.Differ, new DifferIntentfulStrategy(specDb, statusDb, graveyardDb, differ, intentWatcherDb, watchlistDb, intentWatcherAuthorizer))
 
         this.diffSelectionStrategyMap = new Map()
         this.diffSelectionStrategyMap.set(DiffSelectionStrategy.Basic, new BasicDiffSelectionStrategy())

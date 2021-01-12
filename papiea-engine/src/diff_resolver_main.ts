@@ -41,7 +41,7 @@ async function setUpDiffResolver() {
     const noopAuthorizer: Authorizer = new NoAuthAuthorizer();
 
     const differ = new BasicDiffer()
-    const intentfulContext = new IntentfulContext(specDb, statusDb, graveyardDb, differ, intentWatcherDB, watchlistDb, validator, noopAuthorizer)
+    const intentfulContext = new IntentfulContext(specDb, statusDb, graveyardDb, differ, intentWatcherDB, watchlistDb, validator, noopAuthorizer, noopAuthorizer)
     const watchlist: Watchlist = new Watchlist()
 
     const intentfulListenerMongo = new IntentfulListenerMongo(statusDb, specDb, watchlist)
