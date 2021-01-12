@@ -1268,14 +1268,13 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Papiea version equal to the supported version should pass", async () => {
-        expect.hasAssertions();
+        expect.assertions(1);
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
             const location = sdk.new_kind(location_yaml);
             sdk.version(provider_version);
             sdk.prefix("location_provider");
             location.on_create({input_schema: location_yaml}, async (ctx, input) => {
-                expect(input).toBeDefined()
                 return {
                     spec: input,
                     status: input
@@ -1309,7 +1308,6 @@ describe("Provider Sdk tests", () => {
             sdk.version(provider_version);
             sdk.prefix("location_provider");
             location.on_create({input_schema: location_yaml}, async (ctx, input) => {
-                expect(input).toBeDefined()
                 return {
                     spec: input,
                     status: input
@@ -1317,6 +1315,12 @@ describe("Provider Sdk tests", () => {
             })
             await sdk.register();
             const kind_name = sdk.provider.kinds[0].name;
+            let sdk_version_list = sdk.get_sdk_version().split('.')
+            if (sdk_version_list[2] === '0') {
+                sdk_version_list[2] = '1'
+            } else {
+                sdk_version_list[2] = (parseInt(sdk_version_list[2]) - 1).toString()
+            }
             const { data: { metadata, spec } } = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}`, {
                     x: 10,
                     y: 11
@@ -1324,7 +1328,7 @@ describe("Provider Sdk tests", () => {
                 headers: {
                   "Content-Type": "application/json",
                   "Authorization": `Bearer ${adminKey}`,
-                  "Papiea-Version": "0.8.5"
+                  "Papiea-Version": sdk_version_list.join('.')
                 }
             });
 
@@ -1343,7 +1347,6 @@ describe("Provider Sdk tests", () => {
             sdk.version(provider_version);
             sdk.prefix("location_provider");
             location.on_create({input_schema: location_yaml}, async (ctx, input) => {
-                expect(input).toBeDefined()
                 return {
                     spec: input,
                     status: input
@@ -1351,6 +1354,12 @@ describe("Provider Sdk tests", () => {
             })
             await sdk.register();
             const kind_name = sdk.provider.kinds[0].name;
+            let sdk_version_list = sdk.get_sdk_version().split('.')
+            if (sdk_version_list[0] === '0') {
+                sdk_version_list[0] = '1'
+            } else {
+                sdk_version_list[0] = (parseInt(sdk_version_list[0]) - 1).toString()
+            }
             const { data: { metadata, spec } } = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}`, {
                     x: 10,
                     y: 11
@@ -1358,11 +1367,11 @@ describe("Provider Sdk tests", () => {
                 headers: {
                   "Content-Type": "application/json",
                   "Authorization": `Bearer ${adminKey}`,
-                  "Papiea-Version": "1.0.0"
+                  "Papiea-Version": sdk_version_list.join('.')
                 }
             });
         } catch (e) {
-            expect(e.response.data.error.errors[0].message).toBe("Received incompatible papiea version: 1.0.0")
+            expect(e.response.data.error.errors[0].message).toContain("Received incompatible papiea version")
         } finally {
             sdk.server.close();
         }
@@ -1823,7 +1832,7 @@ describe("SDK + oauth provider tests", () => {
         }
     }
     test("Intent watcher check permission read should succeed", async () => {
-        expect.hasAssertions();
+        expect.assertions(1);
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(WATCHER_TEST_SCHEMA);
         sdk.version(provider_version);
@@ -1884,8 +1893,8 @@ describe("SDK + oauth provider tests", () => {
         }
     });
 
-    test.only("Intent watcher check permission read should fail if owner is incorrect", async () => {
-        expect.hasAssertions();
+    test("Intent watcher check permission read should fail if owner is incorrect", async () => {
+        expect.assertions(1);
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         const location = sdk.new_kind(WATCHER_TEST_SCHEMA);
         sdk.version(provider_version);
@@ -1909,15 +1918,10 @@ describe("SDK + oauth provider tests", () => {
             const kind_name_local: string = sdk.provider.kinds[0].name
             // Use correct policy to create entity
             await providerApiAdmin.post(`/${sdk.provider.prefix}/${sdk.provider.version}/auth`, {
-                policy: `p, alice, owner, ${kind_name_local}, *, allow`
+                policy: `p, carol, owner, ${kind_name_local}, *, allow`
             });
             const {data: {token}} = await providerApi.get(`/${provider.prefix}/${provider.version}/auth/login`);
-            const {
-                data: {
-                    metadata,
-                    spec
-                }
-            } = await entityApi.post(`/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name_local}`, {
+            const { data: { metadata, spec } } = await entityApi.post(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name_local }`, {
                 metadata: {
                     extension: {
                         owner: "alice",
@@ -1928,23 +1932,23 @@ describe("SDK + oauth provider tests", () => {
                     x: 10,
                     y: 11
                 }
-            }, {headers: {'Authorization': `Bearer ${token}`}});
-            const {data: {watcher}} = await entityApi.put(`/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name_local}/${metadata.uuid}`, {
+            },
+            { headers: { 'Authorization': `Bearer ${token}` }});
+            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name_local }/${ metadata.uuid }`, {
                 spec: {
                     x: 11,
                     y: 11
-                }, metadata: {
+                },
+                metadata: {
                     spec_version: 1
                 }
-            }, {headers: {'Authorization': `Bearer ${token}`}})
-            // Change policy to assure that get intent watcher fails
-            await providerApiAdmin.post(`/${sdk.provider.prefix}/${sdk.provider.version}/auth`, {
-                policy: `p, carol, owner, ${kind_name_local}, *, allow`
-            });
+            },
+            { headers: { 'Authorization': `Bearer ${token}` }})
+
             const watcherApi = sdk.get_intent_watcher_client()
-            const intent_watcher = await watcherApi.get(watcher.uuid)
+            await watcherApi.get(watcher.uuid)
         } catch (e) {
-            expect(e).toBeDefined()
+            expect(e.response.data.error.errors[0].message).toBe("Permission denied.")
         } finally {
             sdk.server.close();
             await providerApiAdmin.post(`/${ sdk.provider.prefix }/${ sdk.provider.version }/auth`, {

@@ -62,7 +62,7 @@ async function setUpApplication(): Promise<express.Express> {
     const entityApiAuthorizer: PerProviderAuthorizer = new PerProviderAuthorizer(logger, new ProviderCasbinAuthorizerFactory(logger));
     const adminAuthorizer: Authorizer = new AdminAuthorizer()
     const intentWatcherAuthorizer: IntentWatcherAuthorizer = new IntentWatcherAuthorizer(logger, entityApiAuthorizer, specDb, providerDb);
-    const intentfulContext = new IntentfulContext(specDb, statusDb, graveyardDb, differ, intentWatcherDB, watchlistDb, validator, entityApiAuthorizer, intentWatcherAuthorizer)
+    const intentfulContext = new IntentfulContext(specDb, statusDb, graveyardDb, differ, intentWatcherDB, watchlistDb, validator, entityApiAuthorizer)
     const providerApi = new Provider_API_Impl(logger, providerDb, statusDb, s2skeyDb, watchlistDb, intentfulContext, adminAuthorizer, [adminAuthorizer, entityApiAuthorizer], validator)
     const sessionKeyApi = new SessionKeyAPI(sessionKeyDb)
     const userAuthInfoExtractor = new CompositeUserAuthInfoExtractor([

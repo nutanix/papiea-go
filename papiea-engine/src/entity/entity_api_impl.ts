@@ -60,17 +60,14 @@ export class Entity_API_Impl implements Entity_API {
 
     async get_intent_watcher(user: UserAuthInfo, id: string): Promise<Partial<IntentWatcher>> {
         const intent_watcher = await this.intent_watcher_db.get_watcher(id)
-        // TODO: this should be a separate authorizer not a PerProvider one
         await this.intentWatcherAuthorizer.checkPermission(user, intent_watcher, Action.Read);
         return IntentWatcherMapper.toResponse(intent_watcher)
     }
 
     async filter_intent_watcher(user: UserAuthInfo, fields: any, sortParams?: SortParams): Promise<Partial<IntentWatcher>[]> {
         const intent_watchers = await this.intent_watcher_db.list_watchers(fields, sortParams)
-        // TODO: this should be a separate authorizer not a PerProvider one
-        // const filteredRes = await this.intentWatcherAuthorizer.filter(user, entities, Action.Update, x => { return { "metadata": x[0] } });
-        // const filteredWatchers = IntentWatcherMapper.filter(intent_watchers, filteredRes)
-        return IntentWatcherMapper.toResponses(intent_watchers)
+        const filteredRes = await this.intentWatcherAuthorizer.filter(user, intent_watchers, Action.Read);
+        return IntentWatcherMapper.toResponses(filteredRes)
     }
 
     async save_entity(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, input: unknown): Promise<{

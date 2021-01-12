@@ -3,6 +3,7 @@ import {Spec_DB} from "../databases/spec_db_interface"
 import {Provider_DB} from "../databases/provider_db_interface"
 import {Action, Provider, IntentWatcher, Entity, Provider_Entity_Reference} from "papiea-core"
 import {PermissionDeniedError, UnauthorizedError} from "../errors/permission_error"
+import {BadRequestError} from "../errors/bad_request_error"
 import {Logger} from "papiea-backend-utils"
 
 function mapAsync<T, U>(array: T[], callbackfn: (value: T, index: number, array: T[]) => Promise<U>): Promise<U[]> {
@@ -70,16 +71,16 @@ export class IntentWatcherAuthorizer extends Authorizer {
     async checkPermission(user: UserAuthInfo, object: IntentWatcher, action: Action): Promise<void> {
         if (user === undefined || user === null) {
             // We shouldn't reach this under normal circumstances
-            throw new Error("No user provided for the authorizer")
+            throw new PermissionDeniedError()
         }
         if (object === undefined || object === null) {
             // We shouldn't reach this under normal circumstances
-            throw new Error("No intent watcher provided in the authorizer")
+            throw new BadRequestError("No intent watcher provided in the authorizer")
         }
         const entity_ref: Provider_Entity_Reference = object.entity_ref;
         if (entity_ref === undefined || object === null) {
             // We shouldn't reach this under normal circumstances
-            throw new Error("No entity ref present in the watcher object")
+            throw new BadRequestError("No entity ref present in the watcher object")
         }
 
         const provider: Provider = await this.provider_db.get_provider(entity_ref.provider_prefix, entity_ref.provider_version);
@@ -122,8 +123,7 @@ export class PerProviderAuthorizer extends Authorizer {
     async checkPermission(user: UserAuthInfo, object: any, action: Action, provider?: Provider): Promise<void> {
         if (provider === undefined || provider === null) {
             // We shouldn't reach this under normal circumstances
-            // TODO: this should hidden, leaving it with this error till we have proper logging
-            throw new Error("No provider provided in the authorizer")
+            throw new BadRequestError("No provider found for the input entity.")
         }
         const authorizer: Authorizer | null = await this.getAuthorizerByObject(provider!)
         if (authorizer === null) {

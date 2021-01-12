@@ -8,20 +8,18 @@ import { Watchlist_DB } from "../../databases/watchlist_db_interface";
 import uuid = require("uuid")
 import { create_entry } from "../../intentful_engine/watchlist";
 import { Graveyard_DB } from "../../databases/graveyard_db_interface"
-import { Authorizer, IntentWatcherAuthorizer } from "../../auth/authz"
+import { Authorizer } from "../../auth/authz"
 
 export class DifferIntentfulStrategy extends IntentfulStrategy {
     protected differ: Differ
     protected intentWatcherDb: IntentWatcher_DB
     protected watchlistDb: Watchlist_DB;
-    protected intentWatcherAuthorizer: Authorizer;
 
-    constructor(specDb: Spec_DB, statusDb: Status_DB, graveyardDb: Graveyard_DB, differ: Differ, intentWatcherDb: IntentWatcher_DB, watchlistDb: Watchlist_DB, intentWatcherAuthorizer: Authorizer) {
+    constructor(specDb: Spec_DB, statusDb: Status_DB, graveyardDb: Graveyard_DB, differ: Differ, intentWatcherDb: IntentWatcher_DB, watchlistDb: Watchlist_DB) {
         super(specDb, statusDb, graveyardDb)
         this.differ = differ
         this.intentWatcherDb = intentWatcherDb
         this.watchlistDb = watchlistDb
-        this.intentWatcherAuthorizer = intentWatcherAuthorizer
     }
 
     async update_entity(metadata: Metadata, spec: Spec): Promise<[Metadata, Spec]> {
