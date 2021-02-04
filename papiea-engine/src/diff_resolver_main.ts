@@ -6,7 +6,7 @@ import { BasicDiffer } from "./intentful_core/differ_impl";
 import { IntentfulContext } from "./intentful_core/intentful_context";
 import { IntentResolver } from "./intentful_engine/intent_resolver";
 import { IntentfulListenerMongo } from "./intentful_engine/intentful_listener_mongo_simple";
-import { getCalculateBackoffFn, getEntropyFn } from "./utils/utils"
+import { getEntropyFn } from "./utils/utils"
 import { getConfig } from "./utils/arg_parser"
 import {ValidatorImpl} from "./validator"
 import {Authorizer, NoAuthAuthorizer, PerProviderAuthorizer} from "./auth/authz"
@@ -23,7 +23,6 @@ const papieaDebug = config.debug
 const entityPollDelay = config.entity_poll_delay
 const intentResolveDelay = config.intent_resolve_delay
 const diffResolveDelay = config.diff_resolve_delay
-const diffRetryExponent = config.diff_retry_exponent
 const verbosityOptions = config.logging_verbosity
 
 async function setUpDiffResolver() {
@@ -48,13 +47,13 @@ async function setUpDiffResolver() {
     const intentfulListenerMongo = new IntentfulListenerMongo(statusDb, specDb, watchlist)
     intentfulListenerMongo.run(entityPollDelay)
     const entropyFunction = getEntropyFn(papieaDebug)
-    const calculateBackoffFunction = getCalculateBackoffFn(diffRetryExponent, logger)
 
-    const diffResolver = new DiffResolver(watchlist, watchlistDb, specDb, statusDb, providerDb, differ, intentfulContext, logger, batchSize, entropyFunction, calculateBackoffFunction)
+    const diffResolver = new DiffResolver(watchlist, watchlistDb, specDb, statusDb, providerDb, differ, intentfulContext, logger, batchSize, entropyFunction)
 
     const intentResolver = new IntentResolver(specDb, statusDb, intentWatcherDB, providerDb, intentfulListenerMongo, differ, watchlist, logger)
 
     console.log("Running diff resolver")
+
     intentResolver.run(intentResolveDelay, deletedWatcherPersists)
     await diffResolver.run(diffResolveDelay)
 }
