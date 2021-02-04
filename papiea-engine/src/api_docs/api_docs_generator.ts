@@ -754,8 +754,14 @@ export default class ApiDocsGenerator {
                        proceduralSignature: Procedural_Signature,
                        schemas: any,
                        transformNameFn: (provider: Provider, kind: Kind, procedure: Procedural_Signature) => [string, string]) {
-        const inputName = Object.keys(proceduralSignature.argument)[0]
-        const outputName = Object.keys(proceduralSignature.result)[0]
+        let inputName: string = 'input'
+        let outputName: string = 'output'
+        if (Object.keys(proceduralSignature.argument).length === 1) {
+            inputName = Object.keys(proceduralSignature.argument)[0]
+        }
+        if (Object.keys(proceduralSignature.result).length === 1) {
+            outputName = Object.keys(proceduralSignature.result)[0]
+        }
         const [transformedInputName, transformedOutputName] = transformNameFn(provider, kind, proceduralSignature)
         const inputSchemaDesc = proceduralSignature.argument[inputName]
         const outputSchemaDesc = proceduralSignature.result[outputName]
