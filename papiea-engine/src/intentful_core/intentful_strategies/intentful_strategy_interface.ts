@@ -9,6 +9,7 @@ import {
     GraveyardConflictingEntityError
 } from "../../databases/utils/errors"
 import {RequestContext, spanOperation} from "papiea-backend-utils"
+import {UnauthorizedError} from "../../errors/permission_error"
 
 export abstract class IntentfulStrategy {
     protected readonly specDb: Spec_DB
@@ -52,7 +53,7 @@ export abstract class IntentfulStrategy {
         if (this.kind) {
             if (this.kind.kind_procedures[procedure_name]) {
                 if (this.user === undefined) {
-                    throw OnActionError.create("User not specified", procedure_name, this.kind.name)
+                    throw new UnauthorizedError(`No user provided in the delete entity request for kind: ${this.kind.name}`)
                 }
                 try {
                     const span = spanOperation(`destructor`,
@@ -68,7 +69,7 @@ export abstract class IntentfulStrategy {
                 }
             }
         } else {
-            throw OnActionError.create("Insufficient params specified", procedure_name)
+            throw OnActionError.create(`Could not delete the entity since kind is not registered`, procedure_name)
         }
     }
 

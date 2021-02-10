@@ -73,11 +73,11 @@ export class Provider_API_Impl implements Provider_API {
         const provider: Provider = await this.providerDb.get_provider(provider_prefix, version);
         span.finish()
         const kind = this.providerDb.find_kind(provider, entity_ref.kind)
-        const strategy = this.intentfulContext.getStatusUpdateStrategy(kind, user)
+        const strategy = this.intentfulContext.getStatusUpdateStrategy(provider, kind, user)
         // if this is not critical, we can swap the order of checkPermission() and update()
         // to remove the verbose check
         if (strategy instanceof SpecOnlyUpdateStrategy) {
-            throw new Error("Cannot change status of a spec-only kind")
+            throw new Error(`Cannot replace status for spec-only entity with uuid: ${entity_ref.uuid} and kind: ${entity_ref.kind}`)
         }
         await this.authorizer.checkPermission(user, provider, Action.UpdateStatus);
         await this.validator.validate_status(provider, entity_ref, status);
@@ -90,11 +90,11 @@ export class Provider_API_Impl implements Provider_API {
         const provider: Provider = await this.providerDb.get_provider(provider_prefix, version);
         getProviderSpan.finish()
         const kind = this.providerDb.find_kind(provider, entity_ref.kind)
-        const strategy = this.intentfulContext.getStatusUpdateStrategy(kind, user)
+        const strategy = this.intentfulContext.getStatusUpdateStrategy(provider, kind, user)
         // if this is not critical, we can swap the order of checkPermission() and update()
         // to remove the verbose check
         if (strategy instanceof SpecOnlyUpdateStrategy) {
-            throw new Error("Cannot change status of a spec-only kind")
+            throw new Error(`Cannot update status for spec-only entity with uuid: ${entity_ref.uuid} and kind: ${entity_ref.kind}`)
         }
         await this.authorizer.checkPermission(user, provider, Action.UpdateStatus);
         // We receive update in form of partial status
@@ -109,7 +109,7 @@ export class Provider_API_Impl implements Provider_API {
         let mergedStatus: any
         // Replace status if dealing with arrays
         if (Array.isArray(currentStatus) && Array.isArray(partialStatus)) {
-            this.logger.debug("Trying to update status as array, using replace semantics!")
+            this.logger.debug(`Status for entity with uuid: ${entity_ref.uuid} and kind: ${entity_ref.kind} if an array, using the replace semantics!`)
             mergedStatus = partialStatus
         } else {
             mergedStatus = {...currentStatus, ...partialStatus}

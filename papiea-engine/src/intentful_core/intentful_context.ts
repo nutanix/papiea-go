@@ -53,10 +53,10 @@ export class IntentfulContext {
         this.entityCreationStrategyMap.set("basic", new BasicEntityCreationStrategy(specDb, statusDb, graveyardDb, watchlistDb, validator, authorizer))
     }
 
-    getIntentfulStrategy(kind: Kind, user: UserAuthInfo): IntentfulStrategy {
+    getIntentfulStrategy(provider: Provider, kind: Kind, user: UserAuthInfo): IntentfulStrategy {
         const strategy = this.behaviourStrategyMap.get(kind.intentful_behaviour)
         if (strategy === undefined) {
-            throw new Error(`Strategy associated with behaviour: ${kind.intentful_behaviour} not found`)
+            throw new Error(`Strategy associated with behaviour: ${kind.intentful_behaviour} not found for kind: ${kind.name} in provider with prefix: ${provider.prefix} and version: ${provider.version}`)
         }
         strategy.setKind(kind)
         strategy.setUser(user)
@@ -68,10 +68,10 @@ export class IntentfulContext {
         return strategy!
     }
 
-    getStatusUpdateStrategy(kind: Kind, user: UserAuthInfo): StatusUpdateStrategy {
+    getStatusUpdateStrategy(provider: Provider, kind: Kind, user: UserAuthInfo): StatusUpdateStrategy {
         const strategy = this.statusUpdateStrategyMap.get(kind.kind_structure[kind.name]['x-papiea-entity'])
         if (strategy === undefined) {
-            throw new Error(`Strategy associated with behaviour: ${kind.intentful_behaviour} not found`)
+            throw new Error(`Strategy associated with behaviour: ${kind.intentful_behaviour} not found for kind: ${kind.name} in provider with prefix: ${provider.prefix} and version: ${provider.version}`)
         }
         strategy.setKind(kind)
         strategy.setUser(user)

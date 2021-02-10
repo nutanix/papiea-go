@@ -37,7 +37,7 @@ export class SessionKeyDbMongo implements SessionKeyDb {
             "key": key,
         });
         if (result === null) {
-            throw new Error("key not found");
+            throw new Error("MongoDBError: Key not found");
         }
         return result;
     }
@@ -47,10 +47,10 @@ export class SessionKeyDbMongo implements SessionKeyDb {
             "key": key
         }, );
         if (result.result.n === undefined || result.result.ok !== 1) {
-            throw new Error("Failed to inactivate key");
+            throw new Error("MongoDBError: Failed to inactivate key");
         }
         if (result.result.n !== 1 && result.result.n !== 0) {
-            throw new Error(`Amount of key inactivated must be 0 or 1, found: ${result.result.n}`);
+            throw new Error(`MongoDBError: Amount of key inactivated must be 0 or 1, found: ${result.result.n}`);
         }
         return;
     }
@@ -62,7 +62,7 @@ export class SessionKeyDbMongo implements SessionKeyDb {
             $set: query
         })
         if (result.result.n !== 1) {
-            throw new Error(`Amount of updated entries doesn't equal to 1: ${result.result.n}`)
+            throw new Error(`MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`)
         }
     }
 }

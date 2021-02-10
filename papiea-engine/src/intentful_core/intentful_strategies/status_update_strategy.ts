@@ -38,11 +38,11 @@ export class SpecOnlyUpdateStrategy extends StatusUpdateStrategy {
     }
 
     async update(entity_ref: Entity_Reference, status: Status): Promise<any> {
-        throw new Error("Cannot change status of a spec-only kind")
+        throw new Error(`Cannot update status for spec-only entity with uuid: ${entity_ref.uuid} and kind: ${entity_ref.kind}`)
     }
 
     async replace(entity_ref: Entity_Reference, status: Status): Promise<any> {
-        throw new Error("Cannot change status of a spec-only kind")
+        throw new Error(`Cannot replace status for spec-only entity with uuid: ${entity_ref.uuid} and kind: ${entity_ref.kind}`)
     }
 }
 

@@ -251,7 +251,7 @@ describe("Provider Sdk tests", () => {
 
             await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, "5");
         } catch (err) {
-            expect(err.response.data.error.errors[0].message).toContain("moveX with schema MoveInput was expecting non-empty input")
+            expect(err.response.data.error.errors[0].message).toEqual("Procedure: moveX with schema: MoveInput for kind: Location in provider with prefix: location_provider and version: 0.1.0 was expecting non-empty input")
         } finally {
             sdk.cleanup();
         }
@@ -813,9 +813,9 @@ describe("Provider Sdk tests", () => {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { "a": 5, "b": 5 });
         } catch (e) {
-            expect(e.response.data.error.errors[0].message).toBe("Unable to validate a model with a type: string, expected: number");
+            expect(e.response.data.error.errors[0].message).toContain("Input field has type: string, schema expected type: number");
             expect(e.response.data.error.errors[0].stacktrace).not.toBeUndefined();
-            expect(e.response.data.error.errors[0].stacktrace).toContain("Unable to validate a model with a type: string, expected: number")
+            expect(e.response.data.error.errors[0].stacktrace).toContain("Input field has type: string, schema expected type: number")
             expect(e.response.data.error.code).toBe(500);
         } finally {
             sdk.cleanup()
@@ -915,7 +915,7 @@ describe("Provider Sdk tests", () => {
             await sdk.register();
             await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithInput`, {'key': 'value'});
         } catch(e) {
-            expect(e.response.data.error.errors[0].message).toBe("computeSumWithInput with schema undefined was expecting type void")
+            expect(e.response.data.error.errors[0].message).toEqual("Procedure: computeSumWithInput with schema: undefined for kind: ProviderProcedure in provider with prefix: location_provider_undefined_input_schema_input and version: 0.1.0 was expecting type void, received: {\"key\":\"value\"}")
         } finally {
             sdk.cleanup();
         }
@@ -956,7 +956,7 @@ describe("Provider Sdk tests", () => {
             await sdk.register();
             await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithInput`, {'key': 'value'});
         } catch(e) {
-            expect(e.response.data.error.errors[0].message).toBe("computeSumWithInput with schema undefined was expecting type void")
+            expect(e.response.data.error.errors[0].message).toEqual("Procedure: computeSumWithInput with schema: undefined for kind: ProviderProcedure in provider with prefix: location_provider_null_input_schema_input and version: 0.1.0 was expecting type void, received: {\"key\":\"value\"}")
         } finally {
             sdk.cleanup()
         }
@@ -979,7 +979,7 @@ describe("Provider Sdk tests", () => {
             await sdk.register();
             const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithEmptyOutput`, {});
         } catch(e) {
-            expect(e.response.data.error.errors[0].message).toBe("computeSumWithEmptyOutput with schema input was expecting empty object")
+            expect(e.response.data.error.errors[0].message).toEqual("Procedure: computeSumWithEmptyOutput with schema: input for kind: ProviderProcedure in provider with prefix: location_provider_empty_input_fail and version: 0.1.0 was expecting empty object, received: \"\"")
         } finally {
             sdk.cleanup()
         }
@@ -1001,7 +1001,7 @@ describe("Provider Sdk tests", () => {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumWithNoValidation`, { "a": 5, "b": 5 });
         } catch (e) {
-            expect(e.response.data.error.errors[0].message).toBe("computeSumWithNoValidation with schema undefined was expecting type void");
+            expect(e.response.data.error.errors[0].message).toEqual("Procedure: computeSumWithNoValidation with schema: undefined for kind: ProviderProcedure in provider with prefix: location_provider_no_validation_scheme and version: 0.1.0 was expecting type void, received: {\"a\":5,\"b\":5}");
         } finally {
             sdk.cleanup()
         }
@@ -1300,7 +1300,7 @@ describe("Provider Sdk tests", () => {
         try {
             await sdk.register();
         } catch (e) {
-            expect(e.response.data.error.errors[0].message).toBe("a of type 'status-only' is set to be required. Required fields cannot be 'status-only'")
+            expect(e.response.data.error.errors[0].message).toBe("Field: a of type 'status-only' is set to be required for entity: TestObject. Required fields cannot be 'status-only'")
         }
         sdk.cleanup()
     });
@@ -1348,7 +1348,7 @@ describe("Provider Sdk tests", () => {
                 }
             })
         } catch (e) {
-            expect(e.response.data.error.errors[0].message).toBe("Target property 'a' is not in the model")
+            expect(e.response.data.error.errors[0].message).toContain("Input has additional field: 'a' not present in the schema")
         } finally {
             sdk.cleanup()
         }
@@ -1397,7 +1397,7 @@ describe("Provider Sdk tests", () => {
                 }
             })
         } catch (e) {
-            expect(e.response.data.error.errors[0].message).toBe("Target property 'a' is not in the model")
+            expect(e.response.data.error.errors[0].message).toContain("Input has additional field: 'a' not present in the schema")
         } finally {
             sdk.cleanup()
         }
@@ -1945,7 +1945,7 @@ describe("SDK + oauth provider tests", () => {
             await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithErrorMessagePropagationCheck`, { "a": 5, "b": 5 },
                 { headers: { 'Authorization': `Bearer ${token}` }});
         } catch (e) {
-            expect(e.response.data.error.errors[0].errors[0].message).toEqual('provider_prefix should not be specified in the request body')
+            expect(e.response.data.error.errors[0].errors[0].message).toEqual('provider_prefix should not be specified in the user info to create s2skey for provider with prefix: location_provider_throws_error_with_correct_description and version: 0.1.0')
         } finally {
             sdk.cleanup()
         }
@@ -2084,7 +2084,7 @@ describe("SDK + oauth provider tests", () => {
             const watcherApi = sdk.get_intent_watcher_client()
             await watcherApi.get(watcher.uuid)
         } catch (e) {
-            expect(e.response.data.error.errors[0].message).toBe("Permission denied.")
+            expect(e.response.data.error.errors[0].message).toContain("Authorizer failed to execute")
         } finally {
             sdk.cleanup();
             await providerApiAdmin.post(`/${ sdk.provider.prefix }/${ sdk.provider.version }/auth`, {
@@ -2293,7 +2293,7 @@ describe("SDK callback tests", () => {
                 }
             });
         } catch (e) {
-            expect(e.response.data.error.errors[0].message).toEqual("Spec was not provided or was provided in an incorrect format")
+            expect(e.response.data.error.errors[0].message).toContain(`Spec is missing for entity`)
         } finally {
             sdk.cleanup()
         }

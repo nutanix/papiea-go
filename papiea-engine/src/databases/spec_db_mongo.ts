@@ -54,7 +54,7 @@ export class Spec_DB_Mongo implements Spec_DB {
                     upsert: true
                 });
             if (result.result.n !== 1) {
-                throw new Error(`Amount of updated entries doesn't equal to 1: ${result.result.n}`)
+                throw new Error(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for entity with uuid: ${entity_metadata.uuid}, kind: ${entity_metadata.kind}, provider_prefix: ${entity_metadata.provider_prefix}, provider_version: ${entity_metadata.provider_version}`)
             }
             return this.get_spec(entity_metadata);
         } catch (err) {
@@ -63,10 +63,10 @@ export class Spec_DB_Mongo implements Spec_DB {
                 try {
                   res = await this.get_spec(entity_metadata);
                 } catch (e) {
-                    throw new Error(`Cannot create entity ${e}, ${err}`)
+                    throw new Error(`MongoDBError: Cannot create entity with uuid: ${entity_metadata.uuid}, kind: ${entity_metadata.kind}, provider_prefix: ${entity_metadata.provider_prefix}, provider_version: ${entity_metadata.provider_version}\n${e}, ${err}`)
                 }
                 const [metadata, spec] = res
-                throw new ConflictingEntityError("Spec with this version already exists", metadata, spec);
+                throw new ConflictingEntityError(`MongoDBError: Spec with this version already exists for entity with uuid: ${entity_metadata.uuid}, kind: ${entity_metadata.kind}, provider_prefix: ${entity_metadata.provider_prefix}, provider_version: ${entity_metadata.provider_version}`, metadata, spec);
             } else {
                 throw err;
             }
@@ -99,7 +99,7 @@ export class Spec_DB_Mongo implements Spec_DB {
             if (x.spec !== null) {
                 return [x.metadata, x.spec]
             } else {
-                throw new Error("No valid entities found");
+                throw new Error("MongoDBError: No valid entities found");
             }
         });
     }
@@ -116,7 +116,7 @@ export class Spec_DB_Mongo implements Spec_DB {
             if (x.spec !== null) {
                 return [x.metadata, x.spec]
             } else {
-                throw new Error("No valid entities found");
+                throw new Error("MongoDBError: No valid entities found");
             }
         });
     }
@@ -127,7 +127,7 @@ export class Spec_DB_Mongo implements Spec_DB {
             if (x.spec !== null) {
                 return [x.metadata, x.spec]
             } else {
-                throw new Error("No valid entities found");
+                throw new Error("MongoDBError: No valid entities found");
             }
         });
     }
@@ -153,7 +153,7 @@ export class Spec_DB_Mongo implements Spec_DB {
             if (x.spec !== null) {
                 return [x.metadata, x.spec]
             } else {
-                throw new Error("No valid entities found");
+                throw new Error("MongoDBError: No valid entities found");
             }
         });
     }

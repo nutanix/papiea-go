@@ -46,10 +46,10 @@ export class Graveyard_DB_Mongo implements Graveyard_DB {
                 "metadata.provider_version": entity_ref.provider_version
             })
         if (result.result.n === undefined || result.result.ok !== 1) {
-            throw new Error("Failed to remove entity");
+            throw new Error(`MongoDBError: Failed to remove entity with uuid: ${entity_ref.uuid}, kind: ${entity_ref.kind}, provider_prefix: ${entity_ref.provider_prefix}, provider_version: ${entity_ref.provider_version}`);
         }
         if (result.result.n !== 1 && result.result.n !== 0) {
-            throw new Error(`Amount of entities deleted must be 0 or 1, found: ${result.result.n}`);
+            throw new Error(`MongoDBError: Amount of entities deleted must be 0 or 1, found: ${result.result.n} for entity with uuid: ${entity_ref.uuid}, kind: ${entity_ref.kind}, provider_prefix: ${entity_ref.provider_prefix}, provider_version: ${entity_ref.provider_version}`);
         }
         return;
     }
@@ -71,7 +71,7 @@ export class Graveyard_DB_Mongo implements Graveyard_DB {
         entity.metadata.deleted_at = new Date()
         const result = await this.collection.insertOne(entity)
         if (result.result.n !== 1) {
-            throw new Error(`Amount of saved entries doesn't equal to 1: ${result.result.n}`)
+            throw new Error(`MongoDBError: Amount of saved entries doesn't equal to 1: ${result.result.n} for entity with uuid: ${entity.metadata.uuid}, kind: ${entity.metadata.kind}, provider_prefix: ${entity.metadata.provider_prefix}, provider_version: ${entity.metadata.provider_version}`)
         }
     }
 
@@ -97,7 +97,7 @@ export class Graveyard_DB_Mongo implements Graveyard_DB {
             }
         );
         if (result === null) {
-            throw new Error("Entity not found");
+            throw new Error(`MongoDBError: Could not find entity with uuid: ${entity_ref.uuid}, kind: ${entity_ref.kind}, provider_prefix: ${entity_ref.provider_prefix}, provider_version: ${entity_ref.provider_version}`);
         }
         return result;
     }

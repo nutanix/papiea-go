@@ -5,6 +5,7 @@ import {
 
 import {dotnotation} from './dotnotation'
 import {getTracer, getTracingMiddleware, TracingCtx, spanOperation, spanEntityOperation, getTraceHeaders} from "./tracing"
+import { Provider } from 'papiea-core';
 
 interface RequestContext {
     tracing_ctx: TracingCtx

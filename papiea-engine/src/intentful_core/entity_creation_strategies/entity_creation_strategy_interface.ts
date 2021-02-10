@@ -68,7 +68,7 @@ export abstract class EntityCreationStrategy {
         } catch (e) {
             // Hiding details of the error for security reasons
             // since it is not supposed to occur under normal circumstances
-            throw new Error("uuid is not valid")
+            throw new Error(`Entity with kind: ${kind_name} has invalid uuid: ${uuid} in provider with prefix: ${provider.prefix} and version: ${provider.version}`)
         }
     }
 
@@ -80,13 +80,13 @@ export abstract class EntityCreationStrategy {
             if (this.kind.uuid_validation_pattern === undefined) {
                 request_metadata.uuid = uuid();
             } else {
-                throw new Error("Uuid is not provided, but supposed to be since validation pattern is specified")
+                throw new Error(`Metadata uuid is undefined but kind: ${this.kind.name} in provider with prefix: ${request_metadata.provider_prefix} and version: ${request_metadata.provider_version} has validation pattern set to ${this.kind.uuid_validation_pattern}`)
             }
         } else {
             const result = await this.get_existing_entities(this.provider, request_metadata.uuid, request_metadata.kind)
             if (result.length !== 0) {
                 const [metadata, spec, status] = result
-                throw new ConflictingEntityError("An entity with this uuid already exists", metadata, spec, status)
+                throw new ConflictingEntityError(`Entity with uuid: ${uuid} and kind: ${this.kind.name} already exists`, metadata, spec, status)
             }
         }
         if (request_metadata.spec_version === undefined || request_metadata.spec_version === null) {
@@ -104,7 +104,7 @@ export abstract class EntityCreationStrategy {
 
     protected validate_entity(entity: Entity) {
         this.validator.validate_metadata_extension(this.provider.extension_structure, entity.metadata, this.provider.allowExtraProps);
-        this.validator.validate_spec(entity.spec, this.kind, this.provider.allowExtraProps)
+        this.validator.validate_spec(this.provider, entity.spec, this.kind, this.provider.allowExtraProps)
         this.validator.validate_uuid(this.kind, entity.metadata.uuid)
         this.validator.validate_status(this.provider, entity.metadata, entity.status)
     }

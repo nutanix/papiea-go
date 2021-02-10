@@ -18,12 +18,12 @@ export class Handler<T extends Function> {
     async call(...args: any[]) {
         try {
             if (this._fn === null) {
-                throw new Error("Function for handling is not defined")
+                throw new Error("Function for resolving changes is not defined")
             } else {
                 await this._fn.apply(this, args)
             }
         } catch (e) {
-            console.error(e)
+            console.error(`Unknown error in intent listener call method: ${e}`)
             throw e
         }
     }

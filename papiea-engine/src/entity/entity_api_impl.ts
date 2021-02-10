@@ -154,14 +154,14 @@ export class Entity_API_Impl implements Entity_API {
     async update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, extension: {[key: string]: any}, kind_name: string, version: Version, spec_description: Spec, ctx: RequestContext): Promise<IntentWatcher | null> {
         const provider = await this.get_provider(prefix, version, ctx);
         const kind = this.providerDb.find_kind(provider, kind_name);
-        this.validator.validate_spec(spec_description, kind, provider.allowExtraProps);
+        this.validator.validate_spec(provider, spec_description, kind, provider.allowExtraProps);
         const entity_ref: Provider_Entity_Reference = { kind: kind_name, uuid: uuid, provider_prefix: prefix, provider_version: version };
         const metadata: Metadata = (await this.spec_db.get_spec(entity_ref))[0];
         await this.authorizer.checkPermission(user, {"metadata": metadata}, Action.Update, provider);
         metadata.spec_version = spec_version;
         metadata.provider_prefix = prefix
         metadata.provider_version = version
-        const strategy = this.intentfulCtx.getIntentfulStrategy(kind, user)
+        const strategy = this.intentfulCtx.getIntentfulStrategy(provider, kind, user)
         const watcher = await strategy.update(metadata, spec_description, ctx)
         return watcher;
     }
@@ -173,7 +173,7 @@ export class Entity_API_Impl implements Entity_API {
         const [metadata, spec] = await this.spec_db.get_spec(entity_ref);
         const [_, status] = await this.status_db.get_status(entity_ref);
         await this.authorizer.checkPermission(user, {"metadata": metadata}, Action.Delete, provider);
-        const strategy = this.intentfulCtx.getIntentfulStrategy(kind, user)
+        const strategy = this.intentfulCtx.getIntentfulStrategy(provider, kind, user)
         await strategy.delete({ metadata, spec, status }, ctx)
     }
 
@@ -185,13 +185,14 @@ export class Entity_API_Impl implements Entity_API {
             user, prefix, version, kind_name, entity_uuid, ctx);
         const procedure: Procedural_Signature | undefined = kind.entity_procedures[procedure_name];
         if (procedure === undefined) {
-            throw new Error(`Procedure ${procedure_name} not found for kind ${kind.name}`);
+            throw new Error(`Entity procedure: ${procedure_name} not found for kind: ${kind.name} in provider with prefix: ${prefix} and version: ${version}`);
         }
         const schemas: any = {};
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
         try {
-            this.validator.validate(input, Object.values(procedure.argument)[0], schemas,
+            this.validator.validate(provider.prefix, provider.version, kind.name,
+                input, Object.values(procedure.argument)[0], schemas,
                 provider.allowExtraProps, Object.keys(procedure.argument)[0], procedure_name);
         } catch (err) {
             throw ProcedureInvocationError.fromError(err, 400)
@@ -210,7 +211,8 @@ export class Entity_API_Impl implements Entity_API {
                     headers: {...getTraceHeaders(ctx.tracing_ctx.headers), ...user}
                 });
             span.finish()
-            this.validator.validate(data, Object.values(procedure.result)[0], schemas,
+            this.validator.validate(provider.prefix, provider.version, kind.name,
+                data, Object.values(procedure.result)[0], schemas,
                 provider.allowExtraProps, Object.keys(procedure.argument)[0], procedure_name);
             return data;
         } catch (err) {
@@ -221,17 +223,18 @@ export class Entity_API_Impl implements Entity_API {
     async call_provider_procedure(user: UserAuthInfo, prefix: string, version: Version, procedure_name: string, input: any, ctx: RequestContext): Promise<any> {
         const provider = await this.get_provider(prefix, version, ctx);
         if (provider.procedures === undefined) {
-            throw new Error(`Procedure ${procedure_name} not found for provider ${prefix}`);
+            throw new Error(`No provider procedures exist for provider with prefix: ${prefix} and version: ${version}`);
         }
         const procedure: Procedural_Signature | undefined = provider.procedures[procedure_name];
         if (procedure === undefined) {
-            throw new Error(`Procedure ${procedure_name} not found for provider ${prefix}`);
+            throw new Error(`Provider procedure: ${procedure_name} not found for provider with prefix: ${prefix} and version: ${version}`);
         }
         const schemas: any = {};
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
         try {
-            this.validator.validate(input, Object.values(procedure.argument)[0], schemas,
+            this.validator.validate(provider.prefix, provider.version, 'ProviderProcedure',
+                input, Object.values(procedure.argument)[0], schemas,
                 provider.allowExtraProps, Object.keys(procedure.argument)[0], procedure_name);
         } catch (err) {
             throw ProcedureInvocationError.fromError(err, 400)
@@ -246,7 +249,8 @@ export class Entity_API_Impl implements Entity_API {
                     headers: {...getTraceHeaders(ctx.tracing_ctx.headers), ...user}
                 });
             span.finish()
-            this.validator.validate(data, Object.values(procedure.result)[0], schemas,
+            this.validator.validate(provider.prefix, provider.version, 'ProviderProcedure',
+                data, Object.values(procedure.result)[0], schemas,
                 provider.allowExtraProps, Object.keys(procedure.argument)[0], procedure_name);
             return data;
         } catch (err) {
@@ -259,13 +263,14 @@ export class Entity_API_Impl implements Entity_API {
         const kind = this.providerDb.find_kind(provider, kind_name);
         const procedure: Procedural_Signature | undefined = kind.kind_procedures[procedure_name];
         if (procedure === undefined) {
-            throw new Error(`Procedure ${procedure_name} not found for kind ${kind.name}`);
+            throw new Error(`Kind procedure: ${procedure_name} not found for kind: ${kind.name} in provider with prefix: ${prefix} and version: ${version}`);
         }
         const schemas: any = {};
         Object.assign(schemas, procedure.argument);
         Object.assign(schemas, procedure.result);
         try {
-            this.validator.validate(input, Object.values(procedure.argument)[0], schemas,
+            this.validator.validate(provider.prefix, provider.version, kind.name,
+                input, Object.values(procedure.argument)[0], schemas,
                 provider.allowExtraProps, Object.keys(procedure.argument)[0], procedure_name);
         } catch (err) {
             throw ProcedureInvocationError.fromError(err, 400)
@@ -280,7 +285,8 @@ export class Entity_API_Impl implements Entity_API {
                     headers: {...getTraceHeaders(ctx.tracing_ctx.headers), ...user}
                 });
             span.finish()
-            this.validator.validate(data, Object.values(procedure.result)[0], schemas,
+            this.validator.validate(provider.prefix, provider.version, kind.name,
+                data, Object.values(procedure.result)[0], schemas,
                 provider.allowExtraProps, Object.keys(procedure.argument)[0], procedure_name);
             return data;
         } catch (err) {
@@ -304,7 +310,7 @@ export class Entity_API_Impl implements Entity_API {
             if (has_perm) {
                 return {"success": "Ok"}
             } else {
-                throw new PermissionDeniedError()
+                throw new PermissionDeniedError(`User: ${JSON.stringify(user)} does not have create permission on entity with uuid: ${entityRef.uuid} and kind: ${entityRef.kind} in provider with prefix: ${provider.prefix} and version: ${provider.version}`)
             }
         } else {
             const [metadata, _] = await this.spec_db.get_spec(entityRef);
@@ -312,7 +318,7 @@ export class Entity_API_Impl implements Entity_API {
             if (has_perm) {
                 return {"success": "Ok"}
             } else {
-                throw new PermissionDeniedError()
+                throw new PermissionDeniedError(`User: ${JSON.stringify(user)} does not have ${action} permission on entity with uuid: ${entityRef.uuid} and kind: ${entityRef.kind} in provider with prefix: ${provider.prefix} and version: ${provider.version}`)
             }
         }
     }
@@ -331,7 +337,7 @@ export class Entity_API_Impl implements Entity_API {
         if (has_perm) {
             return { "success": "Ok" }
         } else {
-            throw new PermissionDeniedError()
+            throw new PermissionDeniedError(`User: ${JSON.stringify(user)} does not have permission to one or all of the entities`)
         }
     }
 

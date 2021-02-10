@@ -193,7 +193,7 @@ async function wait_for_watcher_status(papiea_url: string, s2skey: string, watch
         const end_time: number = new Date().getTime()
         const time_elapsed = (end_time - start_time)/1000
         if (time_elapsed > timeout_secs) {
-            throw new Error("Timeout waiting for intent watcher status")
+            throw new Error(`Timeout waiting for intent watcher status change with watcher uuid: ${watcher_ref.uuid} for entity with uuid: ${watcher_ref.entity_ref.uuid} and kind: ${watcher_ref.entity_ref.kind} in provider with prefix: ${watcher_ref.entity_ref.provider_prefix} and version: ${watcher_ref.entity_ref.provider_version}`)
         }
         await delay(delay_millis)
     }

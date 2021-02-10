@@ -14,7 +14,7 @@ export class BasicEntityCreationStrategy extends EntityCreationStrategy {
     public async create(input: {metadata: Metadata, spec: Spec}, ctx: RequestContext): Promise<EntityCreationResult> {
         const metadata = await this.create_metadata(input.metadata ?? {})
         if (input.spec === undefined || input.spec === null) {
-            throw new ValidationError([new Error("Spec was not provided or was provided in an incorrect format")])
+            throw new ValidationError([new Error(`Spec is missing for entity with uuid: ${metadata.uuid} and kind: ${metadata.kind}`)])
         }
         await this.validate_entity({metadata, spec: input.spec, status: input.spec})
         const span = spanOperation(`save_entity_db`,
