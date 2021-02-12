@@ -21,6 +21,7 @@ import {ConstructorEntityCreationStrategy} from "./entity_creation_strategies/co
 import {BasicEntityCreationStrategy} from "./entity_creation_strategies/basic_entity_creation_strategy"
 import {Validator} from "../validator"
 import {Authorizer, IntentWatcherAuthorizer} from "../auth/authz"
+import { EntityLoggingInfo } from "papiea-backend-utils"
 
 export type BehaviourStrategyMap = Map<IntentfulBehaviour, IntentfulStrategy>
 export type DiffSelectionStrategyMap = Map<DiffSelectionStrategy, DiffSelectionStrategyInterface>
@@ -56,7 +57,8 @@ export class IntentfulContext {
     getIntentfulStrategy(provider: Provider, kind: Kind, user: UserAuthInfo): IntentfulStrategy {
         const strategy = this.behaviourStrategyMap.get(kind.intentful_behaviour)
         if (strategy === undefined) {
-            throw new Error(`Strategy associated with behaviour: ${kind.intentful_behaviour} not found for kind: ${kind.name} in provider with prefix: ${provider.prefix} and version: ${provider.version}`)
+            const additional_info = { "intentful_behavior": kind.intentful_behaviour }
+            throw new Error(`Strategy associated with the intentful behaviour not found\nEntity Info:${ new EntityLoggingInfo(provider.prefix, provider.version, kind.name, additional_info).toString() }`)
         }
         strategy.setKind(kind)
         strategy.setUser(user)
@@ -71,7 +73,8 @@ export class IntentfulContext {
     getStatusUpdateStrategy(provider: Provider, kind: Kind, user: UserAuthInfo): StatusUpdateStrategy {
         const strategy = this.statusUpdateStrategyMap.get(kind.kind_structure[kind.name]['x-papiea-entity'])
         if (strategy === undefined) {
-            throw new Error(`Strategy associated with behaviour: ${kind.intentful_behaviour} not found for kind: ${kind.name} in provider with prefix: ${provider.prefix} and version: ${provider.version}`)
+            const additional_info = { "intentful_behavior": kind.intentful_behaviour }
+           throw new Error(`Strategy associated with the intentful behaviour not found\nEntity Info:${ new EntityLoggingInfo(provider.prefix, provider.version, kind.name, additional_info).toString() }`)
         }
         strategy.setKind(kind)
         strategy.setUser(user)

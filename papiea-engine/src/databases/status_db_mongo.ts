@@ -2,7 +2,7 @@ import { Status_DB } from "./status_db_interface";
 import { Db, Collection, UpdateWriteOpResult } from "mongodb"
 import { Entity_Reference, Status, Metadata, Entity, Provider_Entity_Reference } from "papiea-core";
 import { SortParams } from "../entity/entity_api_impl";
-import { Logger, dotnotation } from "papiea-backend-utils";
+import { Logger, dotnotation, EntityLoggingInfo } from "papiea-backend-utils";
 import { build_filter_query } from "./utils/filtering"
 import { EntityNotFoundError } from "./utils/errors";
 
@@ -36,7 +36,7 @@ export class Status_DB_Mongo implements Status_DB {
                 upsert: true
             });
         if (result.result.n !== 1) {
-            throw new Error(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for entity with uuid: ${entity_ref.uuid}, kind: ${entity_ref.kind}, provider_prefix: ${entity_ref.provider_prefix}, provider_version: ${entity_ref.provider_version}`);
+            throw new Error(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n}\nEntity Info:${ new EntityLoggingInfo(entity_ref.provider_prefix, entity_ref.provider_version, entity_ref.kind, { "entity_uuid": entity_ref.uuid}).toString() }`);
         }
     }
 
@@ -65,12 +65,12 @@ export class Status_DB_Mongo implements Status_DB {
                 });
         } catch (e) {
             if (e.code === 9) {
-                throw new Error(`MongoDBError: Update body might be 'undefined', if this is expected, please use 'null' for entity with uuid: ${entity_ref.uuid}, kind: ${entity_ref.kind}, provider_prefix: ${entity_ref.provider_prefix}, provider_version: ${entity_ref.provider_version}`)
+                throw new Error(`MongoDBError: Update body might be 'undefined', if this is expected, please use 'null'\nEntity Info:${ new EntityLoggingInfo(entity_ref.provider_prefix, entity_ref.provider_version, entity_ref.kind, { "entity_uuid": entity_ref.uuid}).toString() }`)
             }
             throw e
         }
         if (result.result.n !== 1) {
-            throw new Error(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for entity with uuid: ${entity_ref.uuid}, kind: ${entity_ref.kind}, provider_prefix: ${entity_ref.provider_prefix}, provider_version: ${entity_ref.provider_version}`)
+            throw new Error(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n}\nEntity Info:${ new EntityLoggingInfo(entity_ref.provider_prefix, entity_ref.provider_version, entity_ref.kind, { "entity_uuid": entity_ref.uuid}).toString() }`)
         }
     }
 
@@ -82,7 +82,7 @@ export class Status_DB_Mongo implements Status_DB {
             "metadata.kind": entity_ref.kind
         });
         if (result === null) {
-            throw new EntityNotFoundError(entity_ref.kind, entity_ref.uuid);
+            throw new EntityNotFoundError(entity_ref.kind, entity_ref.uuid, entity_ref.provider_prefix, entity_ref.provider_version);
         }
         return [result.metadata, result.status]
     }

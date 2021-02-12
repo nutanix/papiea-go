@@ -16,8 +16,8 @@ export class SFSCompiler {
             sfs_parser(signature)
         } catch(e) {
             throw new ValidationError([
-                new Error(`SFS: '${signature}' parsing on kind: ${kind_name} failed with error: ${e.message}`)
-            ])
+                new Error(`SFS parsing on kind failed with error: ${e.message}`)
+            ], '', '', kind_name, { "signature": signature })
         }
     }
 

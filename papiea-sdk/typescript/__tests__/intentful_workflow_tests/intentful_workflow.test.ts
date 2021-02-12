@@ -1009,8 +1009,7 @@ describe("Intentful Workflow test sfs validation", () => {
             await sdk.register();
         } catch (e) {
             expect(e.response.status).toEqual(400)
-            expect(e.response.data.error.errors[ 0 ].message).toContain("SFS: 'wrong, wrong2' parsing on kind:" +
-                ` ${Object.keys(locationDataDescription)[0]} failed with error: Parse error at line 1,`)
+            expect(e.response.data.error.errors[ 0 ].message).toContain("SFS parsing on kind failed with error: Parse error at line 1,")
         } finally {
             sdk.cleanup()
         }

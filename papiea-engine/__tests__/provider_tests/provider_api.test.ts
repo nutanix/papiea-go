@@ -252,7 +252,7 @@ describe("Provider API tests", () => {
         } catch (e) {
             expect(e).toBeDefined()
             expect(e.response.data.error.message).toEqual("Validation failed.")
-            expect(e.response.data.error.errors[0].message).toEqual(`Status body is undefined for entity with uuid: ${metadata.uuid} and kind: ${kind_name}, please use null fields instead`)
+            expect(e.response.data.error.errors[0].message).toEqual(`Status body is undefined for entity, please use null fields instead`)
         }
     });
 

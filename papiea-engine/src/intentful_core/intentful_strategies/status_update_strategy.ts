@@ -4,7 +4,7 @@ import { UserAuthInfo } from "../../auth/authn";
 import { Spec_DB } from "../../databases/spec_db_interface";
 import { Watchlist_DB } from "../../databases/watchlist_db_interface";
 import { create_entry } from "../../intentful_engine/watchlist";
-import {RequestContext, spanOperation} from "papiea-backend-utils"
+import {RequestContext, spanOperation, EntityLoggingInfo} from "papiea-backend-utils"
 
 export abstract class StatusUpdateStrategy {
     statusDb: Status_DB
@@ -38,11 +38,11 @@ export class SpecOnlyUpdateStrategy extends StatusUpdateStrategy {
     }
 
     async update(entity_ref: Entity_Reference, status: Status): Promise<any> {
-        throw new Error(`Cannot update status for spec-only entity with uuid: ${entity_ref.uuid} and kind: ${entity_ref.kind}`)
+        throw new Error(`Cannot update status for spec-only entity\nEntity Info:${ new EntityLoggingInfo('', '', entity_ref.kind, { "entity_uuid": entity_ref.uuid }).toString() }`)
     }
 
     async replace(entity_ref: Entity_Reference, status: Status): Promise<any> {
-        throw new Error(`Cannot replace status for spec-only entity with uuid: ${entity_ref.uuid} and kind: ${entity_ref.kind}`)
+        throw new Error(`Cannot replace status for spec-only entity\nEntity Info:${ new EntityLoggingInfo('', '', entity_ref.kind, { "entity_uuid": entity_ref.uuid }).toString() }`)
     }
 }
 

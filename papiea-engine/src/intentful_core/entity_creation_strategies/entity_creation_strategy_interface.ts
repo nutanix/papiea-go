@@ -17,7 +17,7 @@ import {Watchlist_DB} from "../../databases/watchlist_db_interface"
 import {Validator} from "../../validator"
 import uuid = require("uuid")
 import {Authorizer} from "../../auth/authz"
-import {RequestContext} from "papiea-backend-utils"
+import {RequestContext, EntityLoggingInfo} from "papiea-backend-utils"
 
 export interface EntityCreationResult {
     intent_watcher: IntentWatcher | null,
@@ -68,7 +68,7 @@ export abstract class EntityCreationStrategy {
         } catch (e) {
             // Hiding details of the error for security reasons
             // since it is not supposed to occur under normal circumstances
-            throw new Error(`Entity with kind: ${kind_name} has invalid uuid: ${uuid} in provider with prefix: ${provider.prefix} and version: ${provider.version}`)
+            throw new Error(`Entity has invalid uuid\nEntity Info:${ new EntityLoggingInfo(provider.prefix, provider.version, kind_name, { "entity_uuid": uuid }).toString() }`)
         }
     }
 
@@ -80,13 +80,14 @@ export abstract class EntityCreationStrategy {
             if (this.kind.uuid_validation_pattern === undefined) {
                 request_metadata.uuid = uuid();
             } else {
-                throw new Error(`Metadata uuid is undefined but kind: ${this.kind.name} in provider with prefix: ${request_metadata.provider_prefix} and version: ${request_metadata.provider_version} has validation pattern set to ${this.kind.uuid_validation_pattern}`)
+                const additional_info = { "entity_uuid": request_metadata.uuid, "uuid_validation_pattern": this.kind.uuid_validation_pattern}
+                throw new Error(`Metadata uuid is undefined but kind has validation pattern set\nEntity Info:${ new EntityLoggingInfo(request_metadata.provider_prefix, request_metadata.provider_version, request_metadata.kind, additional_info).toString() }`)
             }
         } else {
             const result = await this.get_existing_entities(this.provider, request_metadata.uuid, request_metadata.kind)
             if (result.length !== 0) {
                 const [metadata, spec, status] = result
-                throw new ConflictingEntityError(`Entity with uuid: ${uuid} and kind: ${this.kind.name} already exists`, metadata, spec, status)
+                throw new ConflictingEntityError(`Entity already exists`, metadata, spec, status)
             }
         }
         if (request_metadata.spec_version === undefined || request_metadata.spec_version === null) {

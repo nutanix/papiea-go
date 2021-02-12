@@ -18,6 +18,8 @@ import { load } from "js-yaml"
 import { readFileSync } from "fs"
 import { resolve } from "path"
 import { cloneDeep } from "lodash"
+import { EntityLoggingInfo } from "papiea-backend-utils";
+import uuid = require("uuid");
 
 // We can receive model in 2 forms:
 // As user specified in definition, which means it has "properties" field ( { properties: {} } } )
@@ -121,12 +123,13 @@ export class ValidatorImpl {
         const validation_pattern = kind.uuid_validation_pattern
         if (validation_pattern === undefined) {
             if (!uuid_validate(uuid)) {
-                throw new Error(`Invalid UUID: ${uuid} for kind: ${kind.name}`)
+                throw new Error(`Invalid entity UUID\nEntity Info:${ new EntityLoggingInfo('', '', kind.name, { "entity_uuid": uuid }).toString() }`)
             }
         } else {
             const regex = new RegExp(validation_pattern, 'g')
             if (!regex.test(uuid)) {
-                throw new Error(`UUID: ${uuid} for kind: ${kind.name} does not match the pattern: ${validation_pattern}`)
+                const additional_info = { "entity_uuid": uuid, "uuid_validation_pattern": validation_pattern }
+                throw new Error(`Entity UUID does not match the pattern\nEntity Info:${ new EntityLoggingInfo('', '', kind.name, additional_info).toString() }`)
             }
         }
     }
@@ -139,14 +142,15 @@ export class ValidatorImpl {
             return
         }
         if (metadata.extension !== undefined && metadata.extension !== null && typeof metadata.extension !== "object") {
-            throw new ValidationError([{"name": "Error", message: `Metadata extension: ${JSON.stringify(metadata.extension)} should be an object for entity of kind: ${metadata.kind} in provider with prefix: ${metadata.provider_prefix} and version: ${metadata.provider_version}`}])
+            const additional_info = { "entity_uuid": uuid.toString(), "metadata_extension": JSON.stringify(metadata.extension) }
+            throw new ValidationError([{"name": "Error", message: `Metadata extension should be an object for entity`}], metadata.provider_prefix, metadata.provider_version, metadata.kind, additional_info)
         }
         if (metadata.extension === undefined || metadata.extension === null || isEmpty(metadata.extension)) {
-            throw new ValidationError([{"name": "Error", message: `Metadata extension is not specified for entity with uuid: ${metadata.uuid} and kind: ${metadata.kind}`}])
+            throw new ValidationError([{"name": "Error", message: `Metadata extension is not specified for entity`}], metadata.provider_prefix, metadata.provider_version, metadata.kind, { "entity_uuid": metadata.uuid})
         }
         const schemas: any = Object.assign({}, extension_structure);
         this.validate(metadata.provider_prefix, metadata.provider_version, metadata.kind, metadata.extension, Object.values(extension_structure)[0], schemas,
-            allowExtraProps, Object.keys(extension_structure)[0]);
+            allowExtraProps, Object.keys(extension_structure)[0], this.validate_metadata_extension.name);
     }
 
     public validate_spec(provider: Provider, spec: Spec, kind: Kind, allowExtraProps: boolean) {
@@ -154,7 +158,7 @@ export class ValidatorImpl {
         // remove any status-only field from the schema to pass to validator
         this.remove_schema_fields(schemas, "status-only")
         this.validate(provider.prefix, provider.version, kind.name, spec, Object.values(schemas)[0], schemas,
-            allowExtraProps, Object.keys(schemas)[0]);
+            allowExtraProps, Object.keys(schemas)[0], this.validate_spec.name);
     }
 
    /**
@@ -173,16 +177,16 @@ export class ValidatorImpl {
 
     public async validate_status(provider: Provider, entity_ref: Entity_Reference, status: Status) {
         if (status === undefined || isEmpty(status)) {
-            throw new ValidationError([new Error(`Status body is undefined for entity with uuid: ${entity_ref.uuid} and kind: ${entity_ref.kind}, please use null fields instead`)])
+            throw new ValidationError([new Error(`Status body is undefined for entity, please use null fields instead`)], provider.prefix, provider.version, entity_ref.kind, { "entity_uuid": entity_ref.uuid })
         }
         const kind = provider.kinds.find((kind: Kind) => kind.name === entity_ref.kind);
         const allowExtraProps = provider.allowExtraProps;
         if (kind === undefined) {
-            throw new Error(`Unable to find kind: ${entity_ref.kind} in provider with prefix: ${provider.prefix} and version: ${provider.version}`);
+            throw new Error(`Unable to find kindin provider\nEntity Info:${ new EntityLoggingInfo(provider.prefix, provider.version, entity_ref.kind, { "entity_uuid": entity_ref.uuid }).toString() }`);
         }
         const schemas: any = Object.assign({}, kind.kind_structure);
         this.validate(provider.prefix, provider.version, kind.name, status, Object.values(kind.kind_structure)[0], schemas,
-            allowExtraProps, Object.keys(kind.kind_structure)[0]);
+            allowExtraProps, Object.keys(kind.kind_structure)[0], this.validate_status.name);
     }
 
     public validate_sfs(provider: Provider) {
@@ -201,35 +205,35 @@ export class ValidatorImpl {
         this.validate(
             provider.prefix, provider.version, 'Provider',
             provider, Object.values(this.provider_schema)[0],
-            schemas, true, Object.keys(this.provider_schema)[0], undefined, true)
+            schemas, true, Object.keys(this.provider_schema)[0], this.validate_provider.name, true)
         Object.values(provider.procedures).forEach(proc => {
             this.validate(
                 provider.prefix, provider.version, 'ProviderProcedure',
                 proc, Object.values(this.procedural_signature_schema)[0],
-                schemas, true, proc.name,
-                undefined, true)
+                schemas, true, Object.keys(this.procedural_signature_schema)[0],
+                proc.name, true)
         })
         provider.kinds.forEach(kind => {
             Object.values(kind.kind_procedures).forEach(proc => {
                 this.validate(
                     provider.prefix, provider.version, kind.name,
                     proc, Object.values(this.procedural_signature_schema)[0],
-                    schemas, true, proc.name,
-                    undefined, true)
+                    schemas, true, Object.keys(this.procedural_signature_schema)[0],
+                    proc.name, true)
             })
             Object.values(kind.entity_procedures).forEach(proc => {
                 this.validate(
                     provider.prefix, provider.version, kind.name,
                     proc, Object.values(this.procedural_signature_schema)[0],
-                    schemas, true, proc.name,
-                    undefined, true)
+                    schemas, true, Object.keys(this.procedural_signature_schema)[0],
+                    proc.name, true)
             })
             Object.values(kind.intentful_signatures).forEach(proc => {
                 this.validate(
                     provider.prefix, provider.version, kind.name,
                     proc, Object.values(this.procedural_signature_schema)[0],
-                    schemas, true, proc.name,
-                    undefined, true)
+                    schemas, true, Object.keys(this.procedural_signature_schema)[0],
+                    proc.name, true)
             })
             // Assumption: Kind cannot have more than one kind structure associated with it
             const entity_name = Object.keys(kind.kind_structure)[0]
@@ -262,7 +266,7 @@ export class ValidatorImpl {
                         throw new ValidationError([{
                             name: "Error",
                             message: message
-                        }])
+                        }], '', '', '')
                     }
                 } else {
                     this.validate_field_value(schema[prop], field_name, possible_values)
@@ -294,7 +298,7 @@ export class ValidatorImpl {
                                     throw new ValidationError([{
                                         name: "ValidationError",
                                         message: `Field: ${req_field} of type 'status-only' is set to be required for entity: ${entity_name}. Required fields cannot be 'status-only'`
-                                    }])
+                                    }], '', '', '')
                                 }
                             }
                         }
@@ -308,7 +312,7 @@ export class ValidatorImpl {
                                         throw new ValidationError([{
                                             name: "ValidationError",
                                             message: `Field: ${req_field} of type 'status-only' is set to be required for entity: ${entity_name}. Required fields cannot be 'status-only'`
-                                        }])
+                                        }], '', '', '')
                                     }
                                 }
                                 this.validate_status_only_field(field_schema["items"]["properties"], entity_name)
@@ -332,12 +336,13 @@ export class ValidatorImpl {
             if (isEmpty(data)) {
                 return {valid: true}
             } else {
+                const additional_info = { "procedure_name": procedureName ?? '', "schema_name": schemaName, "received_input": JSON.stringify(data) }
                 throw new ValidationError([{
                     name: "Error",
                     message: procedureName !== undefined
-                        ? `Procedure: ${procedureName} with schema: ${schemaName} for kind: ${kind_name} in provider with prefix: ${provider_prefix} and version: ${provider_version} was expecting empty object, received: ${JSON.stringify(data)}`
-                        : `Schema: ${schemaName} for kind: ${kind_name} in provider with prefix: ${provider_prefix} and version: ${provider_version} was expecting empty object, received: ${JSON.stringify(data)}`
-                }])
+                        ? `Procedure was expecting empty object`
+                        : `Schema was expecting empty object`
+                }], provider_prefix, provider_version, kind_name, additional_info)
             }
         }
         if (model !== undefined && model !== null) {
@@ -346,30 +351,32 @@ export class ValidatorImpl {
                     // Model has fields but none of those are required
                     return {valid: true}
                 } else {
-                    // Model has required fields expecting non-empty input
+                    // Model has required fields expecting non-empty inputON.stringify(data))
+                    const additional_info = { "procedure_name": procedureName ?? '', "schema_name": schemaName, "received_input": JSON.stringify(data) }
                     throw new ValidationError([{
                         name: "Error",
                         message: procedureName !== undefined
-                            ? `Procedure: ${procedureName} with schema: ${schemaName} for kind: ${kind_name} in provider with prefix: ${provider_prefix} and version: ${provider_version} was expecting non-empty input`
-                            : `Schema: ${schemaName} for kind: ${kind_name} in provider with prefix: ${provider_prefix} and version: ${provider_version} was expecting non-empty input`
-                    }])
+                            ? `Procedure was expecting non-empty object`
+                            : `Schema was expecting non-empty object`
+                    }], provider_prefix, provider_version, kind_name, additional_info)
                 }
             }
 
             const res = this.validator.validate(data, model, models, allowBlankTarget, validatorDenyExtraProps);
             if (!res.valid) {
                 convertValidatorMessagesToPapieaMessages(provider_prefix, provider_version, kind_name, procedureName ?? 'Procedure', res.errors, data, model)
-                throw new ValidationError(res.errors);
+                throw new ValidationError(res.errors, provider_prefix, provider_version, kind_name, { "procedure_name": procedureName ?? '' });
             }
             return res
         } else {
             if (data !== undefined && data !== null && data !== "" && !(Object.entries(data).length === 0 && data.constructor === Object)) {
+                const additional_info = { "procedure_name": procedureName ?? '', "schema_name": schemaName, "received_input": JSON.stringify(data) }
                 throw new ValidationError([{
                     name: "Error",
                     message: procedureName !== undefined
-                        ? `Procedure: ${procedureName} with schema: ${schemaName} for kind: ${kind_name} in provider with prefix: ${provider_prefix} and version: ${provider_version} was expecting type void, received: ${JSON.stringify(data)}`
-                        : `Schema: ${schemaName} for kind: ${kind_name} in provider with prefix: ${provider_prefix} and version: ${provider_version} was expecting type void, received: ${JSON.stringify(data)}`
-                }])
+                        ? `Procedure was expecting type void`
+                        : `Schema was expecting type void`
+                }], provider_prefix, provider_version, kind_name, additional_info)
             }
         }
     }

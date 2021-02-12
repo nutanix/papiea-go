@@ -7,7 +7,7 @@ import { Authorizer } from "../auth/authz";
 import { UserAuthInfo } from "../auth/authn";
 import { createHash } from "../auth/crypto";
 import { Action, Entity_Reference, Provider, S2S_Key, Secret, Status, Version } from "papiea-core";
-import {Logger, RequestContext, spanOperation} from "papiea-backend-utils"
+import {Logger, RequestContext, spanOperation, EntityLoggingInfo} from "papiea-backend-utils"
 import { Watchlist_DB } from "../databases/watchlist_db_interface";
 import { SpecOnlyUpdateStrategy } from "../intentful_core/intentful_strategies/status_update_strategy";
 import { IntentfulContext } from "../intentful_core/intentful_context";
@@ -77,7 +77,7 @@ export class Provider_API_Impl implements Provider_API {
         // if this is not critical, we can swap the order of checkPermission() and update()
         // to remove the verbose check
         if (strategy instanceof SpecOnlyUpdateStrategy) {
-            throw new Error(`Cannot replace status for spec-only entity with uuid: ${entity_ref.uuid} and kind: ${entity_ref.kind}`)
+            throw new Error(`Cannot replace status for spec-only entity\nEntity Info:${ new EntityLoggingInfo(provider.prefix, provider.version, kind.name, { "entity_uuid": entity_ref.uuid }).toString() }`)
         }
         await this.authorizer.checkPermission(user, provider, Action.UpdateStatus);
         await this.validator.validate_status(provider, entity_ref, status);
@@ -94,7 +94,7 @@ export class Provider_API_Impl implements Provider_API {
         // if this is not critical, we can swap the order of checkPermission() and update()
         // to remove the verbose check
         if (strategy instanceof SpecOnlyUpdateStrategy) {
-            throw new Error(`Cannot update status for spec-only entity with uuid: ${entity_ref.uuid} and kind: ${entity_ref.kind}`)
+            throw new Error(`Cannot update status for spec-only entity\nEntity Info:${ new EntityLoggingInfo(provider.prefix, provider.version, kind.name, { "entity_uuid": entity_ref.uuid }).toString() }`)
         }
         await this.authorizer.checkPermission(user, provider, Action.UpdateStatus);
         // We receive update in form of partial status
@@ -109,7 +109,7 @@ export class Provider_API_Impl implements Provider_API {
         let mergedStatus: any
         // Replace status if dealing with arrays
         if (Array.isArray(currentStatus) && Array.isArray(partialStatus)) {
-            this.logger.debug(`Status for entity with uuid: ${entity_ref.uuid} and kind: ${entity_ref.kind} if an array, using the replace semantics!`)
+            this.logger.debug(`Status for entity is an array, using the replace semantics!\nEntity Info:${ new EntityLoggingInfo(provider.prefix, provider.version, kind.name, { "entity_uuid": entity_ref.uuid }).toString() }`)
             mergedStatus = partialStatus
         } else {
             mergedStatus = {...currentStatus, ...partialStatus}

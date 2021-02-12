@@ -3,7 +3,7 @@ import { Collection, Db } from "mongodb";
 import { ConflictingEntityError, EntityNotFoundError } from "./utils/errors";
 import {Entity_Reference, Metadata, Spec, Entity, Provider_Entity_Reference} from "papiea-core"
 import { SortParams } from "../entity/entity_api_impl";
-import { Logger, dotnotation } from "papiea-backend-utils";
+import { Logger, dotnotation, EntityLoggingInfo } from "papiea-backend-utils";
 import { IntentfulKindReference } from "./provider_db_mongo";
 import { build_filter_query } from "./utils/filtering"
 
@@ -54,7 +54,7 @@ export class Spec_DB_Mongo implements Spec_DB {
                     upsert: true
                 });
             if (result.result.n !== 1) {
-                throw new Error(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for entity with uuid: ${entity_metadata.uuid}, kind: ${entity_metadata.kind}, provider_prefix: ${entity_metadata.provider_prefix}, provider_version: ${entity_metadata.provider_version}`)
+                throw new Error(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for entity\nEntity Info:${ new EntityLoggingInfo(entity_metadata.provider_prefix, entity_metadata.provider_version, entity_metadata.kind, { "entity_uuid": entity_metadata.uuid }).toString() }`)
             }
             return this.get_spec(entity_metadata);
         } catch (err) {
@@ -63,10 +63,10 @@ export class Spec_DB_Mongo implements Spec_DB {
                 try {
                   res = await this.get_spec(entity_metadata);
                 } catch (e) {
-                    throw new Error(`MongoDBError: Cannot create entity with uuid: ${entity_metadata.uuid}, kind: ${entity_metadata.kind}, provider_prefix: ${entity_metadata.provider_prefix}, provider_version: ${entity_metadata.provider_version}\n${e}, ${err}`)
+                    throw new Error(`MongoDBError: Cannot create entity\nEntity Info:${ new EntityLoggingInfo(entity_metadata.provider_prefix, entity_metadata.provider_version, entity_metadata.kind, { "entity_uuid": entity_metadata.uuid }).toString() }\n${e}, ${err}`)
                 }
                 const [metadata, spec] = res
-                throw new ConflictingEntityError(`MongoDBError: Spec with this version already exists for entity with uuid: ${entity_metadata.uuid}, kind: ${entity_metadata.kind}, provider_prefix: ${entity_metadata.provider_prefix}, provider_version: ${entity_metadata.provider_version}`, metadata, spec);
+                throw new ConflictingEntityError(`MongoDBError: Spec with this version already exists for entity`, metadata, spec);
             } else {
                 throw err;
             }
@@ -83,7 +83,7 @@ export class Spec_DB_Mongo implements Spec_DB {
                 "metadata.deleted_at": null
             });
         if (result === null) {
-            throw new EntityNotFoundError(entity_ref.kind, entity_ref.uuid)
+            throw new EntityNotFoundError(entity_ref.kind, entity_ref.uuid, entity_ref.provider_prefix, entity_ref.provider_version)
         }
         return [result.metadata, result.spec];
     }

@@ -121,7 +121,7 @@ describe("Procedures tests", () => {
             const res = err.response;
             expect(res.status).toEqual(400);
             expect(res.data.error.errors.length).toEqual(1);
-            expect(res.data.error.errors[0].message).toBe(`Procedure: moveX with schema: MoveInput for kind: ${kind_name} in provider with prefix: ${provider.prefix} and version: ${provider.version} was expecting non-empty input`);
+            expect(res.data.error.errors[0].message).toBe(`Procedure was expecting non-empty object`);
         }
     });
     test("Procedure result validation", async () => {

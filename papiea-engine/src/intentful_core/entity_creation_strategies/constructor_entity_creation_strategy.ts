@@ -22,7 +22,7 @@ import {Authorizer} from "../../auth/authz"
 import {ValidationError} from "../../errors/validation_error"
 import deepEqual = require("deep-equal")
 import uuid = require("uuid")
-import {RequestContext, spanOperation} from "papiea-backend-utils"
+import {RequestContext, spanOperation, EntityLoggingInfo} from "papiea-backend-utils"
 import {UnauthorizedError} from "../../errors/permission_error"
 
 export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
@@ -48,10 +48,18 @@ export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
     public async create(input: any, ctx: RequestContext): Promise<EntityCreationResult> {
         const entity = await this.invoke_constructor(`__${this.kind.name}_create`, input, ctx)
         entity.metadata = await this.create_metadata(entity.metadata ?? {})
-        await this.validate_entity(entity)
+        try {
+            this.validate_entity(entity)
+        } catch (err) {
+            if (err instanceof ValidationError) {
+                throw OnActionError.create(`Entity returned by the custom constructor is not valid due to errors: ${(err as ValidationError).errors}`, `__${this.kind.name}_create`, this.provider.prefix, this.provider.version, this.kind.name, { "entity_uuid": entity.metadata.uuid, "procedure_name": `__${this.kind.name}_create` })
+            } else {
+                throw err
+            }
+        }
         const spec_status_equal = deepEqual(entity.spec, entity.status)
         if (!spec_status_equal && this.kind.intentful_behaviour === IntentfulBehaviour.SpecOnly) {
-            throw OnActionError.create(`Spec-only entity constructor returned spec not matching status for entity with uuid: ${entity.metadata.uuid}`, "Constructor", this.kind.name)
+            throw OnActionError.create(`Spec-only entity constructor returned spec not matching status for entity with uuid: ${entity.metadata.uuid}`, `__${this.kind.name}_create`, this.provider.prefix, this.provider.version, this.kind.name, { "entity_uuid": entity.metadata.uuid, "procedure_name": `__${this.kind.name}_create` })
         }
         const span = spanOperation(`save_entity_db`,
                                    ctx.tracing_ctx)
@@ -97,7 +105,7 @@ export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
             const constructor = this.kind.kind_procedures[procedure_name]
             if (constructor !== undefined && constructor !== null) {
                 if (this.user === undefined) {
-                    throw new UnauthorizedError(`No user provided in the create entity request for kind: ${this.kind.name} in provider with prefix: ${this.provider.prefix} and version: ${this.provider.version}`)
+                    throw new UnauthorizedError(`No user provided in the create entity request`, this.provider.prefix, this.provider.version, this.kind.name, { "procedure_name": procedure_name })
                 }
                 try {
                     const schemas: any = {}
@@ -105,7 +113,7 @@ export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
                     this.validator.validate(this.provider.prefix, this.provider.version, this.kind.name,
                                             input, Object.values(constructor.argument)[0], schemas,
                                             this.provider.allowExtraProps,
-                                            Object.keys(constructor.argument)[0], "Constructor procedure")
+                                            Object.keys(constructor.argument)[0], "Custom Constructor")
                     const span = spanOperation(`custom_constructor`,
                                                ctx.tracing_ctx)
                     const {data} = await axios.post<Entity>(this.kind.kind_procedures[procedure_name].procedure_callback, {
@@ -117,22 +125,22 @@ export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
                     if (e instanceof ValidationError) {
                         throw e
                     } else {
-                        throw OnActionError.create(e.response.data.message, procedure_name, this.kind.name)
+                        throw OnActionError.create(e.response.data.message, procedure_name, this.provider.prefix, this.provider.version, this.kind.name, { "procedure_name": procedure_name })
                     }
                 }
                 if (
                     entity.spec === undefined || entity.spec === null ||
                     entity.status === undefined || entity.status === null
                 ) {
-                    throw OnActionError.create("Constructor return value is missing the spec or status field for entity", procedure_name, this.kind.name)
+                    throw OnActionError.create("Constructor return value is missing the spec or status field for entity", procedure_name, this.provider.prefix, this.provider.version, this.kind.name, { "procedure_name": procedure_name })
                 }
                 return entity
             } else {
                 // We should not reach this exception under normal condition because of pre checks while choosing strategy
-                throw new Error(`Entity creation was expecting a constructor but couldn't find it for kind: ${this.kind.name} in provider with prefix: ${this.provider.prefix} and version: ${this.provider.version}`)
+                throw new Error(`Entity creation was expecting a constructor but couldn't find it\nEntity Info:${ new EntityLoggingInfo(this.provider.prefix, this.provider.version, this.kind.name, { "procedure_name": procedure_name }) }`)
             }
         } else {
-            throw OnActionError.create(`Provider with prefix: ${this.provider.prefix} and version: ${this.provider.version} does not have any kind registered`, procedure_name)
+            throw OnActionError.create(`Provider does not have any kind registered`, procedure_name, this.provider.prefix, this.provider.version, '', { "procedure_name": procedure_name })
         }
     }
 }

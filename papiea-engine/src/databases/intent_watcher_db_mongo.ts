@@ -35,7 +35,7 @@ export class IntentWatcher_DB_Mongo implements IntentWatcher_DB {
             "uuid": uuid,
         });
         if (result === null) {
-            throw new EntityNotFoundError('IntentWatcher', uuid);
+            throw new EntityNotFoundError('IntentWatcher', uuid, '', '');
         }
         return result;
     }

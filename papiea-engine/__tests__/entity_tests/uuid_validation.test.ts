@@ -70,7 +70,7 @@ describe("Uuid validation tests", () => {
                 }
             })
         } catch (e) {
-            expect(e.response.data.error.message).toEqual(`UUID: b for kind: ${kind_name} does not match the pattern: ${specOnlyEntityKind.uuid_validation_pattern}`)
+            expect(e.response.data.error.message).toContain(`Entity UUID does not match the pattern`)
         }
     })
 
@@ -109,7 +109,7 @@ describe("Uuid validation tests", () => {
                 }
             })
         } catch (e) {
-            expect(e.response.data.error.message).toEqual(`Metadata uuid is undefined but kind: ${kind_name} in provider with prefix: ${providerPrefix} and version: ${providerVersion} has validation pattern set to ${specOnlyEntityKind.uuid_validation_pattern}`)
+            expect(e.response.data.error.message).toContain(`Metadata uuid is undefined but kind has validation pattern set`)
         }
     })
 });

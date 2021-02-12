@@ -251,7 +251,7 @@ describe("Provider Sdk tests", () => {
 
             await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, "5");
         } catch (err) {
-            expect(err.response.data.error.errors[0].message).toEqual("Procedure: moveX with schema: MoveInput for kind: Location in provider with prefix: location_provider and version: 0.1.0 was expecting non-empty input")
+            expect(err.response.data.error.errors[0].message).toEqual("Procedure was expecting non-empty object")
         } finally {
             sdk.cleanup();
         }
@@ -915,7 +915,7 @@ describe("Provider Sdk tests", () => {
             await sdk.register();
             await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithInput`, {'key': 'value'});
         } catch(e) {
-            expect(e.response.data.error.errors[0].message).toEqual("Procedure: computeSumWithInput with schema: undefined for kind: ProviderProcedure in provider with prefix: location_provider_undefined_input_schema_input and version: 0.1.0 was expecting type void, received: {\"key\":\"value\"}")
+            expect(e.response.data.error.errors[0].message).toEqual("Procedure was expecting type void")
         } finally {
             sdk.cleanup();
         }
@@ -956,7 +956,7 @@ describe("Provider Sdk tests", () => {
             await sdk.register();
             await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithInput`, {'key': 'value'});
         } catch(e) {
-            expect(e.response.data.error.errors[0].message).toEqual("Procedure: computeSumWithInput with schema: undefined for kind: ProviderProcedure in provider with prefix: location_provider_null_input_schema_input and version: 0.1.0 was expecting type void, received: {\"key\":\"value\"}")
+            expect(e.response.data.error.errors[0].message).toEqual("Procedure was expecting type void")
         } finally {
             sdk.cleanup()
         }
@@ -979,7 +979,7 @@ describe("Provider Sdk tests", () => {
             await sdk.register();
             const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithEmptyOutput`, {});
         } catch(e) {
-            expect(e.response.data.error.errors[0].message).toEqual("Procedure: computeSumWithEmptyOutput with schema: input for kind: ProviderProcedure in provider with prefix: location_provider_empty_input_fail and version: 0.1.0 was expecting empty object, received: \"\"")
+            expect(e.response.data.error.errors[0].message).toEqual("Procedure was expecting empty object")
         } finally {
             sdk.cleanup()
         }
@@ -1001,7 +1001,7 @@ describe("Provider Sdk tests", () => {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumWithNoValidation`, { "a": 5, "b": 5 });
         } catch (e) {
-            expect(e.response.data.error.errors[0].message).toEqual("Procedure: computeSumWithNoValidation with schema: undefined for kind: ProviderProcedure in provider with prefix: location_provider_no_validation_scheme and version: 0.1.0 was expecting type void, received: {\"a\":5,\"b\":5}");
+            expect(e.response.data.error.errors[0].message).toEqual("Procedure was expecting type void");
         } finally {
             sdk.cleanup()
         }
@@ -1945,7 +1945,7 @@ describe("SDK + oauth provider tests", () => {
             await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithErrorMessagePropagationCheck`, { "a": 5, "b": 5 },
                 { headers: { 'Authorization': `Bearer ${token}` }});
         } catch (e) {
-            expect(e.response.data.error.errors[0].errors[0].message).toEqual('provider_prefix should not be specified in the user info to create s2skey for provider with prefix: location_provider_throws_error_with_correct_description and version: 0.1.0')
+            expect(e.response.data.error.errors[0].errors[0].message).toContain('provider_prefix should not be specified in the user info to create s2skey for provider')
         } finally {
             sdk.cleanup()
         }
@@ -2264,6 +2264,90 @@ describe("SDK callback tests", () => {
                 }
             })
         } finally {
+            sdk.cleanup()
+        }
+    });
+
+    test("On create callback with invalid constructor input should fail validation", async () => {
+        expect.assertions(2);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        prefix = "provider_on_create_callback_invalid_constructor_input"
+        sdk.version(provider_version);
+        sdk.prefix(prefix);
+        location.on_create({input_schema: location_yaml}, async (ctx, input) => {
+            expect(input).toBeDefined()
+            return {
+                spec: input,
+                status: input
+            }
+        })
+        try {
+            await sdk.register()
+            kind_name = sdk.provider.kinds[0].name
+            const {data: {metadata}} = await entityApi.post(
+                `/${prefix}/${provider_version}/${kind_name}`,
+                {
+                    x: 10,
+                    y: 11,
+                    v: 4
+                },
+                {
+                    headers: {
+                        "Authorization": `Bearer ${adminKey}`
+                    }
+                }
+            )
+            await entityApi.delete(`/${prefix}/${provider_version}/${kind_name}/${metadata.uuid}`, {
+                headers: {
+                    "Authorization": `Bearer ${adminKey}`
+                }
+            })
+        } catch (err) {
+            expect(err.response.data.error.code).toBe(400)
+            expect(err.response.data.error.errors[0].message).toContain("Input field: v has type: number, schema expected type object for procedure: Custom Constructor")
+        }finally {
+            sdk.cleanup()
+        }
+    });
+
+    test("On create callback with invalid constructor return entity should fail", async () => {
+        expect.assertions(2);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(location_yaml);
+        prefix = "provider_on_create_callback_invalid_constructor_return_entity"
+        sdk.version(provider_version);
+        sdk.prefix(prefix);
+        location.on_create({input_schema: location_yaml}, async (ctx, input) => {
+            return {
+                spec: { x: input.x },
+                status: input
+            }
+        })
+        try {
+            await sdk.register()
+            kind_name = sdk.provider.kinds[0].name
+            const {data: {metadata}} = await entityApi.post(
+                `/${prefix}/${provider_version}/${kind_name}`,
+                {
+                    x: 10,
+                    y: 11
+                },
+                {
+                    headers: {
+                        "Authorization": `Bearer ${adminKey}`
+                    }
+                }
+            )
+            await entityApi.delete(`/${prefix}/${provider_version}/${kind_name}/${metadata.uuid}`, {
+                headers: {
+                    "Authorization": `Bearer ${adminKey}`
+                }
+            })
+        } catch (err) {
+            expect(err.response.data.error.code).toBe(500)
+            expect(err.response.data.error.errors[0].message).toContain("On Create couldn't be called; Entity returned by the custom constructor is not valid due to errors: Input is missing required field: y")
+        }finally {
             sdk.cleanup()
         }
     });

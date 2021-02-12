@@ -9,12 +9,12 @@ const semver = require('semver')
 function validatePaginationParams(offset: number | undefined, limit: number | undefined) {
     if (offset !== undefined) {
         if (offset < 0) {
-            throw new ValidationError([new Error(`Offset should be greater than or equal to zero, received: ${offset}`)])
+            throw new ValidationError([new Error(`Offset should be greater than or equal to zero, received: ${offset}`)], '', '', '')
         }
     }
     if (limit !== undefined) {
         if (limit <= 0) {
-            throw new ValidationError([new Error(`Limit should be greater than zero, received: ${limit}`)])
+            throw new ValidationError([new Error(`Limit should be greater than zero, received: ${limit}`)], '', '', '')
         }
     }
 }
@@ -63,7 +63,7 @@ export function processSortQuery(query: string | undefined): undefined | SortPar
                 processedQuery[field] = 1;
                 break;
             default:
-                throw new ValidationError([new Error(`Sorting key's value must be either 'asc' or 'desc', received: ${sortOrd}`)])
+                throw new ValidationError([new Error(`Sorting key's value must be either 'asc' or 'desc', received: ${sortOrd}`)], '', '', '')
         }
     });
     return processedQuery;
@@ -174,10 +174,10 @@ export function getVersionVerifier(enginePapieaVersion: string) {
         const headersPapieaVersion = req.headers['papiea-version']
         if (headersPapieaVersion) {
             if (semver.valid(headersPapieaVersion) === null) {
-                throw new BadRequestError(`Received invalid papiea version: ${headersPapieaVersion}, valid example: ${enginePapieaVersion}`)
+                throw new BadRequestError(`Received invalid papiea version: ${headersPapieaVersion}, valid example: ${enginePapieaVersion}`, '', '', '')
             }
             if (semver.diff(headersPapieaVersion, enginePapieaVersion) === 'major') {
-                throw new BadRequestError(`Received incompatible papiea version: ${headersPapieaVersion}, expected version compatible with ${headersPapieaVersion}`)
+                throw new BadRequestError(`Received incompatible papiea version: ${headersPapieaVersion}, expected version compatible with ${headersPapieaVersion}`, '', '', '')
             }
         }
         next();

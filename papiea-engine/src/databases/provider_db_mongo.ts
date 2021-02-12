@@ -1,8 +1,9 @@
 import { Provider_DB } from "./provider_db_interface";
 import { Collection, Db } from "mongodb"
 import { IntentfulBehaviour, Kind, Provider, Version } from "papiea-core";
-import { Logger } from "papiea-backend-utils"
+import { Logger, EntityLoggingInfo } from "papiea-backend-utils"
 import { EntityNotFoundError } from "./utils/errors";
+import e = require("express");
 
 export interface IntentfulKindReference {
     provider_prefix: string,
@@ -52,7 +53,7 @@ export class Provider_DB_Mongo implements Provider_DB {
                 upsert: true
             });
         if (result.result.n !== 1) {
-            throw new Error(`MongoDBError: Amount of updated entries doesn't equal to 1: ${ result.result.n } for provider with prefix: ${provider.prefix}, version: ${provider.version}`)
+            throw new Error(`MongoDBError: Amount of updated entries doesn't equal to 1: ${ result.result.n }\nEntity Info:${ new EntityLoggingInfo(provider.prefix, provider.version, '').toString() }`)
         }
         const intentful_kinds = provider.kinds
             .filter(kind => kind.intentful_behaviour === IntentfulBehaviour.Differ)
@@ -84,7 +85,7 @@ export class Provider_DB_Mongo implements Provider_DB {
         const filter: any = { prefix: provider_prefix, version };
         const provider: Provider | null = await this.collection.findOne(filter);
         if (provider === null) {
-            throw new EntityNotFoundError('Provider', '')
+            throw new EntityNotFoundError('Provider', '', provider_prefix, version)
         } else {
             return provider;
         }
@@ -98,13 +99,13 @@ export class Provider_DB_Mongo implements Provider_DB {
         const result = await this.collection.findOneAndDelete({ "prefix": provider_prefix, version });
         const provider: Provider = result.value
         if (result.ok !== 1) {
-            throw new Error(`MongoDBError: Failed to remove provider with prefix: ${provider_prefix}, version: ${version}`);
+            throw new Error(`MongoDBError: Failed to remove provider\nEntity Info:${ new EntityLoggingInfo(provider_prefix, version, '').toString() }`);
         }
         if (result.lastErrorObject.n === 0) {
-            throw new Error(`MongoDBError: Failed to remove provider with prefix: ${provider_prefix}, version: ${version}`)
+            throw new Error(`MongoDBError: Failed to remove provider\nEntity Info:${ new EntityLoggingInfo(provider_prefix, version, '').toString() }`)
         }
         if (!provider) {
-            this.logger.debug(`MongoDBError: Didn't return provider after delete with prefix: ${provider_prefix}, version: ${version}`)
+            this.logger.debug(`MongoDBError: Didn't return provider after delete\nEntity Info:${ new EntityLoggingInfo(provider_prefix, version, '').toString() }`)
             return
         }
         const intentful_kinds = provider.kinds
@@ -145,7 +146,7 @@ export class Provider_DB_Mongo implements Provider_DB {
     find_kind(provider: Provider, kind_name: string): Kind {
         const found_kind: Kind | undefined = provider.kinds.find(elem => elem.name === kind_name);
         if (found_kind === undefined) {
-            throw new Error(`MongoDBError: Kind: ${kind_name} not found for provider with prefix: ${provider.prefix}, version: ${provider.version}`);
+            throw new Error(`MongoDBError: Kind not found for provider\nEntity Info:${ new EntityLoggingInfo(provider.prefix, provider.version, kind_name).toString() }`);
         }
         return found_kind;
     }
