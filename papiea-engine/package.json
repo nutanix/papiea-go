@@ -1,6 +1,6 @@
 {
   "name": "papiea-engine",
-  "version": "0.9.24+1964",
+  "version": "0.9.26+1985",
   "description": "",
   "main": "build/main.js",
   "files": [
@@ -33,6 +33,7 @@
     "@types/btoa": "^1.2.3",
     "@types/deep-equal": "^1.0.1",
     "@types/jaeger-client": "^3.15.4",
+    "ajv": "^7.1.0",
     "atob": "^2.1.2",
     "axios": "^0.18.1",
     "btoa": "^1.2.1",
