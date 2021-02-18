@@ -28,7 +28,7 @@ import {
     Version,
     IntentWatcher, ErrorSchemas, Status, Spec, Metadata,
 } from "papiea-core"
-import {getTracer, LoggerFactory, EntityLoggingInfo} from "papiea-backend-utils"
+import {getTracer, LoggerFactory} from "papiea-backend-utils"
 import { InvocationError, SecurityApiError } from "./typescript_sdk_exceptions"
 import {validate_error_codes, get_papiea_version, spanSdkOperation} from "./typescript_sdk_utils"
 import {Tracer} from "opentracing"
@@ -47,7 +47,7 @@ class SecurityApiImpl implements SecurityApi {
             const {data: user_info } = await this.provider.provider_api_axios.get(`${url}/auth/user_info`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return user_info
         } catch (e) {
-            throw SecurityApiError.fromError(e, `Cannot get user info for provider\nEntity Info:${ new EntityLoggingInfo(this.provider.get_prefix(), this.provider.get_version(), '').toString() }`)
+            throw SecurityApiError.fromError(e, `Cannot get user info for provider`)
         }
     }
 
@@ -57,7 +57,7 @@ class SecurityApiImpl implements SecurityApi {
             const {data: keys } = await this.provider.provider_api_axios.get(`${url}/s2skey`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return keys
         } catch (e) {
-            throw SecurityApiError.fromError(e, `Cannot list s2s keys for provider\nEntity Info:${ new EntityLoggingInfo(this.provider.get_prefix(), this.provider.get_version(), '').toString() }`)
+            throw SecurityApiError.fromError(e, `Cannot list s2s keys for provider`)
         }
     }
 
@@ -67,7 +67,7 @@ class SecurityApiImpl implements SecurityApi {
             const {data: s2skey } = await this.provider.provider_api_axios.post(`${url}/s2skey`, new_key, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return s2skey
         } catch (e) {
-            throw SecurityApiError.fromError(e, `Cannot create s2s key for provider\nEntity Info:${ new EntityLoggingInfo(this.provider.get_prefix(), this.provider.get_version(), '').toString() }`)
+            throw SecurityApiError.fromError(e, `Cannot create s2s key for provider`)
         }
     }
 
@@ -77,7 +77,7 @@ class SecurityApiImpl implements SecurityApi {
             const {data: r } = await this.provider.provider_api_axios.put(`${url}/s2skey`, {key: key_to_deactivate, active:false}, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return r
         } catch (e) {
-            throw SecurityApiError.fromError(e, `Cannot deactivate s2s key for provider\nEntity Info:${ new EntityLoggingInfo(this.provider.get_prefix(), this.provider.get_version(), '').toString() }`)
+            throw SecurityApiError.fromError(e, `Cannot deactivate s2s key for provider`)
         }
     }
 }
@@ -175,7 +175,7 @@ export class ProviderSdk implements ProviderImpl {
 
     new_kind(entity_description: Data_Description): Kind_Builder {
         if (Object.keys(entity_description).length === 0) {
-            throw new Error(`Kind registration is missing entity description for provider\nEntity Info:${ new EntityLoggingInfo(this.provider.prefix, this.provider.version, '').toString() }`)
+            throw new Error(`Kind registration is missing entity description for provider`)
         }
         const name = Object.keys(entity_description)[0];
         if (entity_description[name].hasOwnProperty("x-papiea-entity")) {

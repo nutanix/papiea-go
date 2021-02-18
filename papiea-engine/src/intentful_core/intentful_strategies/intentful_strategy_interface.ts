@@ -8,7 +8,7 @@ import { Graveyard_DB } from "../../databases/graveyard_db_interface"
 import {
     GraveyardConflictingEntityError
 } from "../../databases/utils/errors"
-import {RequestContext, spanOperation, EntityLoggingInfo} from "papiea-backend-utils"
+import {RequestContext, spanOperation} from "papiea-backend-utils"
 import {UnauthorizedError} from "../../errors/permission_error"
 
 export abstract class IntentfulStrategy {
@@ -53,7 +53,7 @@ export abstract class IntentfulStrategy {
         if (this.kind) {
             if (this.kind.kind_procedures[procedure_name]) {
                 if (this.user === undefined) {
-                    throw new UnauthorizedError(`No user provided in the delete entity request`, entity.metadata?.provider_prefix ?? '', entity.metadata?.provider_version ?? '', entity.metadata?.kind ?? '', { "entity_uuid": entity.metadata?.uuid ?? '', "procedure_name": procedure_name })
+                    throw new UnauthorizedError(`No user provided in the delete entity request`, { provider_prefix: entity.metadata?.provider_prefix, provider_version: entity.metadata?.provider_version, kind_name: entity.metadata?.kind, additional_info: { "entity_uuid": entity.metadata?.uuid ?? '', "procedure_name": procedure_name }})
                 }
                 try {
                     const span = spanOperation(`destructor`,
@@ -65,11 +65,11 @@ export abstract class IntentfulStrategy {
                     span.finish()
                     return data
                 } catch (e) {
-                    throw OnActionError.create(e.response.data.message, procedure_name, entity.metadata?.provider_prefix ?? '', entity.metadata?.provider_version ?? '', entity.metadata?.kind ?? '', { "entity_uuid": entity.metadata?.uuid ?? '', "procedure_name": procedure_name })
+                    throw OnActionError.create(e.response.data.message, procedure_name, { provider_prefix: entity.metadata?.provider_prefix, provider_version: entity.metadata?.provider_version, kind_name: entity.metadata?.kind, additional_info: { "entity_uuid": entity.metadata?.uuid ?? '', "procedure_name": procedure_name }})
                 }
             }
         } else {
-            throw OnActionError.create(`Could not delete the entity since kind is not registered`, procedure_name, entity.metadata?.provider_prefix ?? '', entity.metadata?.provider_version ?? '', entity.metadata?.kind ?? '', { "entity_uuid": entity.metadata?.uuid ?? '', "procedure_name": procedure_name })
+            throw OnActionError.create(`Could not delete the entity since kind is not registered`, procedure_name, { provider_prefix: entity.metadata?.provider_prefix, provider_version: entity.metadata?.provider_version, kind_name: entity.metadata?.kind, additional_info: { "entity_uuid": entity.metadata?.uuid ?? '', "procedure_name": procedure_name }})
         }
     }
 

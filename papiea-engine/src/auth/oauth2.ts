@@ -106,7 +106,7 @@ export function createOAuth2Router(logger: Logger, redirect_uri: string, provide
                 return res.status(200).json({ token: sessionKey.key });
             }
         } catch (e) {
-            logger.error(`Failed to access token for user with code: ${code} in provider with prefix: ${provider.prefix} and version: ${provider.version} due to error: ${e.message}`);
+            logger.error(`Failed to access token for user with code: ${code} in provider: ${provider.prefix}/${provider.version} due to error: ${e.message}`);
             return res.status(500).json('Authentication failed');
         }
     }));

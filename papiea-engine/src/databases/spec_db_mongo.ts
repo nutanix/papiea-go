@@ -3,9 +3,10 @@ import { Collection, Db } from "mongodb";
 import { ConflictingEntityError, EntityNotFoundError } from "./utils/errors";
 import {Entity_Reference, Metadata, Spec, Entity, Provider_Entity_Reference} from "papiea-core"
 import { SortParams } from "../entity/entity_api_impl";
-import { Logger, dotnotation, EntityLoggingInfo } from "papiea-backend-utils";
+import { Logger, dotnotation } from "papiea-backend-utils";
 import { IntentfulKindReference } from "./provider_db_mongo";
 import { build_filter_query } from "./utils/filtering"
+import { PapieaException } from "../errors/papiea_exception"
 
 export class Spec_DB_Mongo implements Spec_DB {
     collection: Collection;
@@ -54,7 +55,7 @@ export class Spec_DB_Mongo implements Spec_DB {
                     upsert: true
                 });
             if (result.result.n !== 1) {
-                throw new Error(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for entity\nEntity Info:${ new EntityLoggingInfo(entity_metadata.provider_prefix, entity_metadata.provider_version, entity_metadata.kind, { "entity_uuid": entity_metadata.uuid }).toString() }`)
+                throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n}`, { provider_prefix: entity_metadata.provider_prefix, provider_version: entity_metadata.provider_version, kind_name: entity_metadata.kind, additional_info: { "entity_uuid": entity_metadata.uuid }})
             }
             return this.get_spec(entity_metadata);
         } catch (err) {
@@ -63,10 +64,10 @@ export class Spec_DB_Mongo implements Spec_DB {
                 try {
                   res = await this.get_spec(entity_metadata);
                 } catch (e) {
-                    throw new Error(`MongoDBError: Cannot create entity\nEntity Info:${ new EntityLoggingInfo(entity_metadata.provider_prefix, entity_metadata.provider_version, entity_metadata.kind, { "entity_uuid": entity_metadata.uuid }).toString() }\n${e}, ${err}`)
+                    throw new PapieaException(`MongoDBError: Cannot create entity`, { provider_prefix: entity_metadata.provider_prefix, provider_version: entity_metadata.provider_version, kind_name: entity_metadata.kind, additional_info: { "entity_uuid": entity_metadata.uuid }})
                 }
                 const [metadata, spec] = res
-                throw new ConflictingEntityError(`MongoDBError: Spec with this version already exists for entity`, metadata, spec);
+                throw new ConflictingEntityError(`MongoDBError: Spec with this version already exists`, metadata, spec);
             } else {
                 throw err;
             }
@@ -99,7 +100,7 @@ export class Spec_DB_Mongo implements Spec_DB {
             if (x.spec !== null) {
                 return [x.metadata, x.spec]
             } else {
-                throw new Error("MongoDBError: No valid entities found");
+                throw new PapieaException("MongoDBError: No valid entities found");
             }
         });
     }
@@ -116,7 +117,7 @@ export class Spec_DB_Mongo implements Spec_DB {
             if (x.spec !== null) {
                 return [x.metadata, x.spec]
             } else {
-                throw new Error("MongoDBError: No valid entities found");
+                throw new PapieaException("MongoDBError: No valid entities found");
             }
         });
     }
@@ -127,7 +128,7 @@ export class Spec_DB_Mongo implements Spec_DB {
             if (x.spec !== null) {
                 return [x.metadata, x.spec]
             } else {
-                throw new Error("MongoDBError: No valid entities found");
+                throw new PapieaException("MongoDBError: No valid entities found");
             }
         });
     }
@@ -153,7 +154,7 @@ export class Spec_DB_Mongo implements Spec_DB {
             if (x.spec !== null) {
                 return [x.metadata, x.spec]
             } else {
-                throw new Error("MongoDBError: No valid entities found");
+                throw new PapieaException("MongoDBError: No valid entities found");
             }
         });
     }

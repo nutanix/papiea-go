@@ -1,25 +1,30 @@
-import { EntityLoggingInfo } from "papiea-backend-utils";
+import { PapieaException } from "./papiea_exception";
+import { PapieaExceptionContext } from "papiea-core"
 
-export class PermissionDeniedError extends Error {
+export class PermissionDeniedError extends PapieaException {
     message: string;
-    entity_info: EntityLoggingInfo;
 
-    constructor(message: string, provider_prefix: string, provider_version: string, kind_name: string, additional_info?: { [key: string]: string; }) {
-        super("Permission Denied");
+    constructor(message: string, context: PapieaExceptionContext = {}) {
+        super("Permission Denied", context);
         this.message = message;
-        this.entity_info = new EntityLoggingInfo(provider_prefix, provider_version, kind_name, additional_info);
         Object.setPrototypeOf(this, PermissionDeniedError.prototype);
+    }
+
+    toErrors(): { [key: string]: any }[] {
+        return [{ message: this.message }];
     }
 }
 
-export class UnauthorizedError extends Error {
+export class UnauthorizedError extends PapieaException {
     message: string;
-    entity_info: EntityLoggingInfo;
 
-    constructor(message: string, provider_prefix: string, provider_version: string, kind_name: string, additional_info?: { [key: string]: string; }) {
-        super("Unauthorized");
+    constructor(message: string, context: PapieaExceptionContext = {}) {
+        super("Unauthorized", context);
         this.message = message;
-        this.entity_info = new EntityLoggingInfo(provider_prefix, provider_version, kind_name, additional_info);
         Object.setPrototypeOf(this, UnauthorizedError.prototype);
+    }
+
+    toErrors(): { [key: string]: any }[] {
+        return [{ message: this.message }];
     }
 }

@@ -7,14 +7,15 @@ import {Graveyard_DB} from "../../databases/graveyard_db_interface"
 import {Watchlist_DB} from "../../databases/watchlist_db_interface"
 import {Validator} from "../../validator"
 import {Authorizer} from "../../auth/authz"
-import {RequestContext, spanOperation, EntityLoggingInfo} from "papiea-backend-utils"
+import {RequestContext, spanOperation} from "papiea-backend-utils"
 import {ValidationError} from "../../errors/validation_error"
+import { PapieaException } from "../../errors/papiea_exception"
 
 export class BasicEntityCreationStrategy extends EntityCreationStrategy {
     public async create(input: {metadata: Metadata, spec: Spec}, ctx: RequestContext): Promise<EntityCreationResult> {
         const metadata = await this.create_metadata(input.metadata ?? {})
         if (input.spec === undefined || input.spec === null) {
-            throw new ValidationError([new Error(`Spec is missing for entity`)], metadata.provider_prefix, metadata.provider_version, metadata.kind, { "entity_uuid": metadata.uuid })
+            throw new ValidationError([new PapieaException(`Spec is missing for entity`, { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }})])
         }
         await this.validate_entity({metadata, spec: input.spec, status: input.spec})
         const span = spanOperation(`save_entity_db`,

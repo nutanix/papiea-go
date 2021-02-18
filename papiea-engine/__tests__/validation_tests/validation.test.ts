@@ -209,16 +209,16 @@ describe("Validation tests", () => {
 
     test("Validator validate incorrect spec only kind structure with x-papiea=spec-only", () => {
         const desc = new DescriptionBuilder().withBehaviour(IntentfulBehaviour.SpecOnly).withSpecOnlyField().build()
-        expect(() => validator.validate_kind_structure(desc, Object.keys(desc)[0])).toThrow()
+        expect(() => validator.validate_kind_structure(desc, '', '',  Object.keys(desc)[0])).toThrow()
     })
 
     test("Validator validate incorrect spec only kind structure with x-papiea=status-only", () => {
         const desc = new DescriptionBuilder().withBehaviour(IntentfulBehaviour.SpecOnly).withStatusOnlyField().build()
-        expect(()=>validator.validate_kind_structure(desc, Object.keys(desc)[0])).toThrow()
+        expect(()=>validator.validate_kind_structure(desc, '', '',  Object.keys(desc)[0])).toThrow()
     })
 
     test("Validator validate correct spec only kind structure", () => {
         const desc = new DescriptionBuilder().withBehaviour(IntentfulBehaviour.SpecOnly).build()
-        validator.validate_kind_structure(desc, Object.keys(desc)[0])
+        validator.validate_kind_structure(desc, '', '',  Object.keys(desc)[0])
     })
 });

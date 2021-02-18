@@ -1,14 +1,19 @@
-import { EntityLoggingInfo } from "papiea-backend-utils";
+import { PapieaException } from "./papiea_exception";
+import { PapieaExceptionContext } from "papiea-core"
 
-export class ValidationError extends Error {
+export class ValidationError extends PapieaException {
     errors: string[];
-    entity_info: EntityLoggingInfo;
 
-    constructor(errors: Error[], provider_prefix: string, provider_version: string, kind_name: string, additional_info?: { [key: string]: string; }) {
+    constructor(errors: Error[], context: PapieaExceptionContext = {}) {
         const messages = errors.map(x => x.message);
-        super(JSON.stringify(messages));
+        super(JSON.stringify(messages), context);
         Object.setPrototypeOf(this, ValidationError.prototype);
         this.errors = messages;
-        this.entity_info = new EntityLoggingInfo(provider_prefix, provider_version, kind_name, additional_info);
+    }
+
+    toErrors(): { [key: string]: any }[] {
+        return this.errors.map(description => {
+            return { message: description }
+        });
     }
 }

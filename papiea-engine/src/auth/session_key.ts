@@ -3,7 +3,7 @@ import { UserAuthInfo, UserAuthInfoExtractor } from "./authn"
 import { SessionKey, Secret } from "papiea-core"
 import { Provider_DB } from "../databases/provider_db_interface"
 import { getOAuth2 } from "./oauth2"
-import { EntityLoggingInfo } from "papiea-backend-utils"
+import { PapieaException } from "../errors/papiea_exception"
 
 export class SessionKeyAPI {
     private static EXPIRATION_WINDOW_IN_SECONDS = 300
@@ -65,7 +65,7 @@ export class SessionKeyAPI {
             sessionKey.idpToken = accessToken
             return sessionKey
         } catch (e) {
-            throw new Error(`Couldn't refresh the session token for user: ${e.message}\nEntity Info:${ new EntityLoggingInfo(provider_prefix, provider_version, '', { "user": JSON.stringify(sessionKey.user_info) }).toString()}`)
+            throw new PapieaException(`Couldn't refresh the session token for user due to error: ${e.message}`, {provider_prefix: provider_prefix, provider_version: provider_version, additional_info: { "user": JSON.stringify(sessionKey.user_info) }})
         }
     }
 }

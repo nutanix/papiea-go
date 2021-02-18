@@ -17,7 +17,8 @@ import {Watchlist_DB} from "../../databases/watchlist_db_interface"
 import {Validator} from "../../validator"
 import uuid = require("uuid")
 import {Authorizer} from "../../auth/authz"
-import {RequestContext, EntityLoggingInfo} from "papiea-backend-utils"
+import {RequestContext} from "papiea-backend-utils"
+import { PapieaException } from "../../errors/papiea_exception"
 
 export interface EntityCreationResult {
     intent_watcher: IntentWatcher | null,
@@ -68,7 +69,7 @@ export abstract class EntityCreationStrategy {
         } catch (e) {
             // Hiding details of the error for security reasons
             // since it is not supposed to occur under normal circumstances
-            throw new Error(`Entity has invalid uuid\nEntity Info:${ new EntityLoggingInfo(provider.prefix, provider.version, kind_name, { "entity_uuid": uuid }).toString() }`)
+            throw new PapieaException(`Entity has invalid uuid`, { provider_prefix: provider.prefix, provider_version: provider.version, kind_name: kind_name, additional_info: { "entity_uuid": uuid }})
         }
     }
 
@@ -80,8 +81,7 @@ export abstract class EntityCreationStrategy {
             if (this.kind.uuid_validation_pattern === undefined) {
                 request_metadata.uuid = uuid();
             } else {
-                const additional_info = { "entity_uuid": request_metadata.uuid, "uuid_validation_pattern": this.kind.uuid_validation_pattern}
-                throw new Error(`Metadata uuid is undefined but kind has validation pattern set\nEntity Info:${ new EntityLoggingInfo(request_metadata.provider_prefix, request_metadata.provider_version, request_metadata.kind, additional_info).toString() }`)
+                throw new PapieaException(`Metadata uuid is undefined but kind has validation pattern set`, { provider_prefix: request_metadata.provider_prefix, provider_version: request_metadata.provider_version, kind_name: request_metadata.kind, additional_info: { "entity_uuid": request_metadata.uuid, "uuid_validation_pattern": this.kind.uuid_validation_pattern}})
             }
         } else {
             const result = await this.get_existing_entities(this.provider, request_metadata.uuid, request_metadata.kind)

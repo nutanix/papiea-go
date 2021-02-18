@@ -321,7 +321,9 @@ export enum PapieaError {
     Unauthorized = "unauthorized_error",
     PermissionDenied = "permission_denied_error",
     ConflictingEntity = "conflicting_entity_error",
-    ServerError = "server_error"
+    ServerError = "server_error",
+    OnActionError = "on_action_error",
+    PapieaException = "papiea_exception"
 }
 
 export interface PapieaResponse {
@@ -335,6 +337,14 @@ export interface PapieaErrorResponse {
     code: number
     message: string
     type: PapieaError
+    entity_info: { [key: string]: any}
+}
+
+export interface PapieaExceptionContext {
+    provider_prefix?: string
+    provider_version?: string
+    kind_name?: string
+    additional_info?: { [key: string]: string}
 }
 
 export enum Action {

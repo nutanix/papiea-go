@@ -70,7 +70,7 @@ describe("Uuid validation tests", () => {
                 }
             })
         } catch (e) {
-            expect(e.response.data.error.message).toContain(`Entity UUID does not match the pattern`)
+            expect(e.response.data.error.errors[0].message).toBe(`Entity UUID does not match the pattern`)
         }
     })
 
@@ -109,7 +109,7 @@ describe("Uuid validation tests", () => {
                 }
             })
         } catch (e) {
-            expect(e.response.data.error.message).toContain(`Metadata uuid is undefined but kind has validation pattern set`)
+            expect(e.response.data.error.errors[0].message).toBe(`Metadata uuid is undefined but kind has validation pattern set`)
         }
     })
 });

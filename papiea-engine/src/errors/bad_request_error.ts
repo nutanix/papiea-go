@@ -1,13 +1,16 @@
-import { EntityLoggingInfo } from "papiea-backend-utils";
+import { PapieaException } from "./papiea_exception";
+import { PapieaExceptionContext } from "papiea-core"
 
-export class BadRequestError extends Error {
+export class BadRequestError extends PapieaException {
     message: string;
-    entity_info: EntityLoggingInfo;
 
-    constructor(message: string, provider_prefix: string, provider_version: string, kind_name: string, additional_info?: { [key: string]: string; }) {
-        super("Bad Request");
+    constructor(message: string, context: PapieaExceptionContext = {}) {
+        super("Bad Request", context);
         this.message = message;
-        this.entity_info = new EntityLoggingInfo(provider_prefix, provider_version, kind_name, additional_info)
         Object.setPrototypeOf(this, BadRequestError.prototype);
+    }
+
+    toErrors(): { [key: string]: any }[] {
+        return [{ message: this.message }]
     }
 }

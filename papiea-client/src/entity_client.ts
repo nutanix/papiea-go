@@ -17,10 +17,11 @@ import {
     ProcedureInvocationError,
     PapieaServerError,
     UnauthorizedError,
-    ValidationError
+    ValidationError,
+    PapieaException
 } from "./errors/errors";
 import {Tracer} from "opentracing"
-import {getTracer, spanOperation, EntityLoggingInfo} from "papiea-backend-utils"
+import {getTracer, spanOperation} from "papiea-backend-utils"
 
 interface EntityCreationResult {
     intent_watcher: IntentWatcher | null,
@@ -65,6 +66,8 @@ function make_request<T = any, Y = AxiosPromise<T>>(f: (url: string, data?: any,
                 throw new BadRequestError(e.response.data.error.message, e)
             case PapieaError.ServerError:
                 throw new PapieaServerError(e.response.data.error.message, e)
+            case PapieaError.PapieaException:
+                throw new PapieaException(e.response.data.error.message, e)
             default:
                 throw new Error(e)
         }
@@ -193,8 +196,7 @@ async function wait_for_watcher_status(papiea_url: string, s2skey: string, watch
         const end_time: number = new Date().getTime()
         const time_elapsed = (end_time - start_time)/1000
         if (time_elapsed > timeout_secs) {
-            const additional_info = { "entity_uuid": watcher_ref.entity_ref.uuid, "watcher_uuid": watcher_ref.uuid }
-            throw new Error(`Timeout waiting for intent watcher status change\nEntityInfo:${new EntityLoggingInfo(watcher_ref.entity_ref.provider_prefix, watcher_ref.entity_ref.provider_version, watcher_ref.entity_ref.kind, additional_info).toString()}`)
+            throw new Error(`Timeout waiting for intent watcher status change with uuid: ${watcher.uuid} and entity uuid: ${watcher.entity_ref.uuid} for kind: ${watcher.entity_ref.kind} in provider with prefix: ${watcher.entity_ref.provider_prefix} and version: ${watcher.entity_ref.provider_version}`)
         }
         await delay(delay_millis)
     }

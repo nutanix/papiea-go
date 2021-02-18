@@ -20,8 +20,8 @@ import {EntityCreationStrategy} from "./entity_creation_strategies/entity_creati
 import {ConstructorEntityCreationStrategy} from "./entity_creation_strategies/constructor_entity_creation_strategy"
 import {BasicEntityCreationStrategy} from "./entity_creation_strategies/basic_entity_creation_strategy"
 import {Validator} from "../validator"
-import {Authorizer, IntentWatcherAuthorizer} from "../auth/authz"
-import { EntityLoggingInfo } from "papiea-backend-utils"
+import {Authorizer} from "../auth/authz"
+import {PapieaException} from "../errors/papiea_exception"
 
 export type BehaviourStrategyMap = Map<IntentfulBehaviour, IntentfulStrategy>
 export type DiffSelectionStrategyMap = Map<DiffSelectionStrategy, DiffSelectionStrategyInterface>
@@ -57,8 +57,7 @@ export class IntentfulContext {
     getIntentfulStrategy(provider: Provider, kind: Kind, user: UserAuthInfo): IntentfulStrategy {
         const strategy = this.behaviourStrategyMap.get(kind.intentful_behaviour)
         if (strategy === undefined) {
-            const additional_info = { "intentful_behavior": kind.intentful_behaviour }
-            throw new Error(`Strategy associated with the intentful behaviour not found\nEntity Info:${ new EntityLoggingInfo(provider.prefix, provider.version, kind.name, additional_info).toString() }`)
+            throw new PapieaException(`Strategy associated with the intentful behaviour not found`, { provider_prefix: provider.prefix, provider_version: provider.version, kind_name: kind.name, additional_info: { "intentful_behavior": kind.intentful_behaviour }})
         }
         strategy.setKind(kind)
         strategy.setUser(user)
@@ -73,8 +72,7 @@ export class IntentfulContext {
     getStatusUpdateStrategy(provider: Provider, kind: Kind, user: UserAuthInfo): StatusUpdateStrategy {
         const strategy = this.statusUpdateStrategyMap.get(kind.kind_structure[kind.name]['x-papiea-entity'])
         if (strategy === undefined) {
-            const additional_info = { "intentful_behavior": kind.intentful_behaviour }
-           throw new Error(`Strategy associated with the intentful behaviour not found\nEntity Info:${ new EntityLoggingInfo(provider.prefix, provider.version, kind.name, additional_info).toString() }`)
+           throw new PapieaException(`Strategy associated with the intentful behaviour not found`, { provider_prefix: provider.prefix, provider_version: provider.version, kind_name: kind.name, additional_info: { "intentful_behavior": kind.intentful_behaviour }})
         }
         strategy.setKind(kind)
         strategy.setUser(user)
