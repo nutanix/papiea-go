@@ -33,11 +33,11 @@ export class CasbinAuthorizer extends Authorizer {
     async checkPermission(user: UserAuthInfo, object: any, action: Action, provider?: Provider): Promise<void> {
         try {
             if (!this.enforcer.enforce(user, object, action)) {
-                throw new PermissionDeniedError(`User does not have permission for the entity`, { provider_prefix: provider?.prefix, provider_version: provider?.version, additional_info: { "user": JSON.stringify(user), "action": action, "entity": JSON.stringify(object) }});
+                throw new PermissionDeniedError(`User does not have permission for the entity on provider ${provider?.prefix}/${provider?.version}`, { provider_prefix: provider?.prefix, provider_version: provider?.version, additional_info: { "user": JSON.stringify(user), "action": action, "entity": JSON.stringify(object) }});
             }
         } catch (e) {
             this.logger.error("CasbinAuthorizer checkPermission error", e);
-            throw new PermissionDeniedError(`Authorizer failed to execute for user`, { provider_prefix: provider?.prefix, provider_version: provider?.version, additional_info: { "user": JSON.stringify(user), "action": action, "entity": JSON.stringify(object) }});
+            throw new PermissionDeniedError(`Authorizer failed to execute for user on provider ${provider?.prefix}/${provider?.version}`, { provider_prefix: provider?.prefix, provider_version: provider?.version, additional_info: { "user": JSON.stringify(user), "action": action, "entity": JSON.stringify(object) }});
         }
     }
 }
@@ -96,7 +96,7 @@ export class ProviderCasbinAuthorizerFactory implements ProviderAuthorizerFactor
             throw new BadRequestError("No provider provided to create authorizer");
         }
         if (!provider.authModel || !provider.policy) {
-            throw new PermissionDeniedError(`Provider is missing auth model or policy, failed to create authorizer`, { provider_prefix: provider.prefix, provider_version: provider.version });
+            throw new PermissionDeniedError(`Provider is missing auth model or policy, failed to create authorizer for provider ${provider.prefix}/${provider.version}`, { provider_prefix: provider.prefix, provider_version: provider.version });
         }
         const authorizer = new CasbinAuthorizer(this.logger, provider.authModel, provider.policy);
         await authorizer.init();

@@ -362,7 +362,7 @@ export enum Action {
     UpdateStatus = "update_status",
 }
 
-export enum SwaggerValidatorErrorMessage {
+export enum SwaggerModelValidatorErrorMessage {
     undefined_value_str = 'Unable to validate an undefined value of property: ',
     empty_value_str = 'Unable to validate an empty value for property: ',
     undefined_model_str = 'Unable to validate against an undefined model.',

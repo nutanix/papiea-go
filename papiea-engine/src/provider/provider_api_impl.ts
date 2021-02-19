@@ -78,7 +78,7 @@ export class Provider_API_Impl implements Provider_API {
         // if this is not critical, we can swap the order of checkPermission() and update()
         // to remove the verbose check
         if (strategy instanceof SpecOnlyUpdateStrategy) {
-            throw new PapieaException(`Cannot replace status for spec-only entity`, { provider_prefix: provider.prefix, provider_version: provider.version, kind_name: kind.name, additional_info: { "entity_uuid": entity_ref.uuid }})
+            throw new PapieaException(`Cannot replace status for spec-only entity of kind ${provider.prefix}/${provider.version}/${kind.name}`, { provider_prefix: provider.prefix, provider_version: provider.version, kind_name: kind.name, additional_info: { "entity_uuid": entity_ref.uuid }})
         }
         await this.authorizer.checkPermission(user, provider, Action.UpdateStatus, provider);
         await this.validator.validate_status(provider, entity_ref, status);
@@ -95,7 +95,7 @@ export class Provider_API_Impl implements Provider_API {
         // if this is not critical, we can swap the order of checkPermission() and update()
         // to remove the verbose check
         if (strategy instanceof SpecOnlyUpdateStrategy) {
-            throw new PapieaException(`Cannot update status for spec-only entity`, { provider_prefix: provider.prefix, provider_version: provider.version, kind_name: kind.name, additional_info: { "entity_uuid": entity_ref.uuid }})
+            throw new PapieaException(`Cannot update status for spec-only entity of kind ${provider.prefix}/${provider.version}/${kind.name}`, { provider_prefix: provider.prefix, provider_version: provider.version, kind_name: kind.name, additional_info: { "entity_uuid": entity_ref.uuid }})
         }
         await this.authorizer.checkPermission(user, provider, Action.UpdateStatus, provider);
         // We receive update in form of partial status

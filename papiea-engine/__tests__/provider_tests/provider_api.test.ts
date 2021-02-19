@@ -252,7 +252,7 @@ describe("Provider API tests", () => {
         } catch (e) {
             expect(e).toBeDefined()
             expect(e.response.data.error.message).toEqual("Validation failed.")
-            expect(e.response.data.error.errors[0].message).toEqual(`Status body has undefined value for one/more fields which is not supported in papiea, use null value instead to remove the field from status`)
+            expect(e.response.data.error.errors[0].message).toContain(`Status body has undefined value for one/more fields which is not supported in papiea, use null value instead to remove the field from status`)
         }
     });
 

@@ -37,7 +37,7 @@ export class Status_DB_Mongo implements Status_DB {
                 upsert: true
             });
         if (result.result.n !== 1) {
-            throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n}`, { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }})
+            throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for kind ${entity_ref.provider_prefix}/${entity_ref.provider_version}/${entity_ref.kind}`, { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }})
         }
     }
 
@@ -66,12 +66,12 @@ export class Status_DB_Mongo implements Status_DB {
                 });
         } catch (e) {
             if (e.code === 9) {
-                throw new PapieaException(`MongoDBError: Update body might be 'undefined', if this is expected, please use 'null'`,  { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }})
+                throw new PapieaException(`MongoDBError: Update body might be 'undefined', if this is expected, please use 'null' for kind ${entity_ref.provider_prefix}/${entity_ref.provider_version}/${entity_ref.kind}`,  { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }})
             }
             throw e
         }
         if (result.result.n !== 1) {
-            throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n}`,  { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }})
+            throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for kind ${entity_ref.provider_prefix}/${entity_ref.provider_version}/${entity_ref.kind}`,  { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }})
         }
     }
 

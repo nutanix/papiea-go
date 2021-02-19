@@ -26,39 +26,6 @@ export class PapieaExceptionContextImpl implements PapieaExceptionContext {
         this.additional_info = additional_info;
     }
 
-    toString(): string {
-        let entity_info_str: string = '';
-
-        if (this.provider_prefix !== '') {
-            entity_info_str = entity_info_str + "provider_prefix: " + this.provider_prefix;
-        }
-        if (this.provider_version !== '') {
-            if (entity_info_str !== '') {
-                entity_info_str = entity_info_str + ', '
-            }
-            entity_info_str = entity_info_str + "provider_version: " + this.provider_version;
-        }
-        if (this.kind_name !== '') {
-            if (entity_info_str !== '') {
-                entity_info_str = entity_info_str + ', '
-            }
-            entity_info_str = entity_info_str + "kind_name: " + this.kind_name;
-        }
-        if (this.additional_info && Object.keys(this.additional_info).length > 0) {
-            for (let field in this.additional_info) {
-                if (entity_info_str !== '') {
-                    entity_info_str = entity_info_str + ', '
-                }    
-                entity_info_str = entity_info_str + field + ": " + this.additional_info[field];
-            }
-        }
-        if (entity_info_str !== '') {
-            entity_info_str = "{ " + entity_info_str + " }";
-        }
-
-        return entity_info_str;
-    }
-
     toResponse(): { [key: string]: any } {
         let entity_info_response: { [key: string]: any} = {};
 

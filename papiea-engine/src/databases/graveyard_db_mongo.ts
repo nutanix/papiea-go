@@ -47,10 +47,10 @@ export class Graveyard_DB_Mongo implements Graveyard_DB {
                 "metadata.provider_version": entity_ref.provider_version
             })
         if (result.result.n === undefined || result.result.ok !== 1) {
-            throw new PapieaException(`MongoDBError: Failed to remove entity`, { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }});
+            throw new PapieaException(`MongoDBError: Failed to remove entity for kind ${entity_ref.provider_prefix}/${entity_ref.provider_version}/${entity_ref.kind}`, { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }});
         }
         if (result.result.n !== 1 && result.result.n !== 0) {
-            throw new PapieaException(`MongoDBError: Amount of entities deleted must be 0 or 1, found: ${result.result.n}`, { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }});
+            throw new PapieaException(`MongoDBError: Amount of entities deleted must be 0 or 1, found: ${result.result.n} for kind ${entity_ref.provider_prefix}/${entity_ref.provider_version}/${entity_ref.kind}`, { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }});
         }
         return;
     }
@@ -72,7 +72,7 @@ export class Graveyard_DB_Mongo implements Graveyard_DB {
         entity.metadata.deleted_at = new Date()
         const result = await this.collection.insertOne(entity)
         if (result.result.n !== 1) {
-            throw new PapieaException(`MongoDBError: Amount of saved entries doesn't equal to 1: ${result.result.n}`, { provider_prefix: entity.metadata.provider_prefix, provider_version: entity.metadata.provider_version, kind_name: entity.metadata.kind, additional_info: { "entity_uuid": entity.metadata.uuid }})
+            throw new PapieaException(`MongoDBError: Amount of saved entries doesn't equal to 1: ${result.result.n} for kind ${entity.metadata.provider_prefix}/${entity.metadata.provider_version}/${entity.metadata.kind}`, { provider_prefix: entity.metadata.provider_prefix, provider_version: entity.metadata.provider_version, kind_name: entity.metadata.kind, additional_info: { "entity_uuid": entity.metadata.uuid }})
         }
     }
 
@@ -98,7 +98,7 @@ export class Graveyard_DB_Mongo implements Graveyard_DB {
             }
         );
         if (result === null) {
-            throw new PapieaException(`MongoDBError: Could not find entity`, { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }});
+            throw new PapieaException(`MongoDBError: Could not find entity of kind ${entity_ref.provider_prefix}/${entity_ref.provider_version}/${entity_ref.kind}`, { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }});
         }
         return result;
     }

@@ -121,7 +121,7 @@ describe("Procedures tests", () => {
             const res = err.response;
             expect(res.status).toEqual(400);
             expect(res.data.error.errors.length).toEqual(1);
-            expect(res.data.error.errors[0].message).toBe(`Procedure was expecting non-empty object, received null/empty object`);
+            expect(res.data.error.errors[0].message).toContain(`Procedure was expecting non-empty object, received null/empty object`);
         }
     });
     test("Procedure result validation", async () => {

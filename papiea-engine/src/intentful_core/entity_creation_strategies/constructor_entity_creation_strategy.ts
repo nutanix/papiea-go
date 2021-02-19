@@ -53,14 +53,14 @@ export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
             this.validate_entity(entity)
         } catch (err) {
             if (err instanceof ValidationError) {
-                throw OnActionError.create(`Entity returned by the custom constructor is not valid due to errors: ${(err as ValidationError).errors}`, `__${this.kind.name}_create`, { provider_prefix: this.provider.prefix, provider_version: this.provider.version, kind_name: this.kind.name, additional_info: { "entity_uuid": entity.metadata.uuid, "procedure_name": `__${this.kind.name}_create` }})
+                throw OnActionError.create(`Entity returned by the custom constructor of kind ${this.provider.prefix}/${this.provider.version}/${this.kind.name} is not valid due to errors: ${(err as ValidationError).errors}`, `__${this.kind.name}_create`, { provider_prefix: this.provider.prefix, provider_version: this.provider.version, kind_name: this.kind.name, additional_info: { "entity_uuid": entity.metadata.uuid, "procedure_name": `__${this.kind.name}_create` }})
             } else {
                 throw err
             }
         }
         const spec_status_equal = deepEqual(entity.spec, entity.status)
         if (!spec_status_equal && this.kind.intentful_behaviour === IntentfulBehaviour.SpecOnly) {
-            throw OnActionError.create(`Spec-only entity constructor returned spec not matching status`, `__${this.kind.name}_create`, { provider_prefix: this.provider.prefix, provider_version: this.provider.version, kind_name: this.kind.name, additional_info: { "entity_uuid": entity.metadata.uuid, "procedure_name": `__${this.kind.name}_create` }})
+            throw OnActionError.create(`Spec-only entity constructor returned of kind ${this.provider.prefix}/${this.provider.version}/${this.kind.name} spec not matching status`, `__${this.kind.name}_create`, { provider_prefix: this.provider.prefix, provider_version: this.provider.version, kind_name: this.kind.name, additional_info: { "entity_uuid": entity.metadata.uuid, "procedure_name": `__${this.kind.name}_create` }})
         }
         const span = spanOperation(`save_entity_db`,
                                    ctx.tracing_ctx)
@@ -106,7 +106,7 @@ export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
             const constructor = this.kind.kind_procedures[procedure_name]
             if (constructor !== undefined && constructor !== null) {
                 if (this.user === undefined) {
-                    throw new UnauthorizedError(`No user provided in the create entity request`, { provider_prefix: this.provider.prefix, provider_version: this.provider.version, kind_name: this.kind.name, additional_info: { "procedure_name": procedure_name }})
+                    throw new UnauthorizedError(`No user provided in the create entity request for kind ${this.provider.prefix}/${this.provider.version}/${this.kind.name}`, { provider_prefix: this.provider.prefix, provider_version: this.provider.version, kind_name: this.kind.name, additional_info: { "procedure_name": procedure_name }})
                 }
                 try {
                     const schemas: any = {}
@@ -133,15 +133,15 @@ export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
                     entity.spec === undefined || entity.spec === null ||
                     entity.status === undefined || entity.status === null
                 ) {
-                    throw OnActionError.create("Constructor return value is missing the spec or status field for entity", procedure_name, { provider_prefix: this.provider.prefix, provider_version: this.provider.version, kind_name: this.kind.name, additional_info: { "procedure_name": procedure_name }})
+                    throw OnActionError.create(`Constructor return value is missing the spec or status field for entity of kind ${this.provider.prefix}/${this.provider.version}/${this.kind.name}`, procedure_name, { provider_prefix: this.provider.prefix, provider_version: this.provider.version, kind_name: this.kind.name, additional_info: { "procedure_name": procedure_name }})
                 }
                 return entity
             } else {
                 // We should not reach this exception under normal condition because of pre checks while choosing strategy
-                throw new PapieaException(`Entity creation was expecting a constructor but couldn't find it`, { provider_prefix: this.provider.prefix, provider_version: this.provider.version, kind_name: this.kind.name, additional_info: { "procedure_name": procedure_name }})
+                throw new PapieaException(`Entity creation was expecting a constructor but couldn't find it for kind ${this.provider.prefix}/${this.provider.version}/${this.kind.name}`, { provider_prefix: this.provider.prefix, provider_version: this.provider.version, kind_name: this.kind.name, additional_info: { "procedure_name": procedure_name }})
             }
         } else {
-            throw OnActionError.create(`Provider does not have any kind registered`, procedure_name, { provider_prefix: this.provider.prefix, provider_version: this.provider.version, additional_info: { "procedure_name": procedure_name }})
+            throw OnActionError.create(`Provider does not have any kind registered for provider ${this.provider.prefix}/${this.provider.version}`, procedure_name, { provider_prefix: this.provider.prefix, provider_version: this.provider.version, additional_info: { "procedure_name": procedure_name }})
         }
     }
 }

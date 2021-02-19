@@ -55,7 +55,7 @@ export class Spec_DB_Mongo implements Spec_DB {
                     upsert: true
                 });
             if (result.result.n !== 1) {
-                throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n}`, { provider_prefix: entity_metadata.provider_prefix, provider_version: entity_metadata.provider_version, kind_name: entity_metadata.kind, additional_info: { "entity_uuid": entity_metadata.uuid }})
+                throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for kind ${entity_metadata.provider_prefix}/${entity_metadata.provider_version}/${entity_metadata.kind}`, { provider_prefix: entity_metadata.provider_prefix, provider_version: entity_metadata.provider_version, kind_name: entity_metadata.kind, additional_info: { "entity_uuid": entity_metadata.uuid }})
             }
             return this.get_spec(entity_metadata);
         } catch (err) {
@@ -64,7 +64,7 @@ export class Spec_DB_Mongo implements Spec_DB {
                 try {
                   res = await this.get_spec(entity_metadata);
                 } catch (e) {
-                    throw new PapieaException(`MongoDBError: Cannot create entity`, { provider_prefix: entity_metadata.provider_prefix, provider_version: entity_metadata.provider_version, kind_name: entity_metadata.kind, additional_info: { "entity_uuid": entity_metadata.uuid }})
+                    throw new PapieaException(`MongoDBError: Cannot create entity for kind ${entity_metadata.provider_prefix}/${entity_metadata.provider_version}/${entity_metadata.kind}`, { provider_prefix: entity_metadata.provider_prefix, provider_version: entity_metadata.provider_version, kind_name: entity_metadata.kind, additional_info: { "entity_uuid": entity_metadata.uuid }})
                 }
                 const [metadata, spec] = res
                 throw new ConflictingEntityError(`MongoDBError: Spec with this version already exists`, metadata, spec);

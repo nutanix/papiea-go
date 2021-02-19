@@ -123,7 +123,7 @@ describe("Entity API with metadata extension tests", () => {
             const res = err.response;
             expect(res.status).toEqual(400);
             expect(res.data.error.errors.length).toEqual(1);
-            expect(res.data.error.errors[0].message).toEqual(`Metadata extension should be an object for entity`)
+            expect(res.data.error.errors[0].message).toContain(`Metadata extension should be an object for entity`)
 
         }
     });

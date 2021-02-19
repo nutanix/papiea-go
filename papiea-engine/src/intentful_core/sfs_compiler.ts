@@ -17,7 +17,7 @@ export class SFSCompiler {
             sfs_parser(sfs)
         } catch(e) {
             throw new ValidationError([
-                new PapieaException(`SFS parsing on kind failed with error: ${e.message}`, { provider_prefix: provider_prefix, provider_version: provider_version, kind_name: kind_name, additional_info: { "sfs": sfs }})
+                new PapieaException(`SFS parsing on kind ${provider_prefix}/${provider_version}/${kind_name} failed with error: ${e.message}`, { provider_prefix: provider_prefix, provider_version: provider_version, kind_name: kind_name, additional_info: { "sfs": sfs }})
             ])
         }
     }
