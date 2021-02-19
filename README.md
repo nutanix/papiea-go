@@ -13,9 +13,9 @@ Please see [Papiea's design document](https://nutanix.github.io/papiea/Papiea-de
 
 | Component  | Version |
 | ------------- | ------------- |
-  | Engine (docker) | nutanix-docker.jfrog.io/papiea:0.9.24_1964 |
-  | Client/SDK (typescript)  | 0.9.24+1964 |
-  | Client/SDK (python)  | 0.9.24+1964 |
+  | Engine (docker) | nutanix-docker.jfrog.io/papiea:0.9.30_2013 |
+  | Client/SDK (typescript)  | 0.9.30+2013 |
+  | Client/SDK (python)  | 0.9.30+2013 |
 
 ## Build Instructions Papiea
 
@@ -142,7 +142,9 @@ tracing_config: {
     sampler: {
         type: string,
         param: number
-    }
+    },
+    # Log messages to standard logger output (default: false)
+    logMessages: boolean
 }
 ```
 

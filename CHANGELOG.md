@@ -1,3 +1,9 @@
+- Version 0.9.30+2013: End-to-end tests for papiea client in typescript sdk (#597) PR url: git@github.com:nutanix/papiea.git/pull/597
+- Version 0.9.29+2008: Remove more jaeger debug logs (#632) PR url: git@github.com:nutanix/papiea.git/pull/632
+- Version 0.9.28+2002: Added validator and swagger error message translate function in api docs (#629) PR url: git@github.com:nutanix/papiea.git/pull/629
+- Version 0.9.27+1994: Jaeger suppress messages config (#631) PR url: git@github.com:nutanix/papiea.git/pull/631
+- Version 0.9.26+1985: Add argument validation (#630)
+- Version 0.9.25+1974: Fix client tracing issues (#624) PR url: git@github.com:nutanix/papiea.git/pull/624
 - Version 0.9.24+1964: Fixed client tests and added sdk tests to verify status-only fields in spec create
 - Version 0.9.23+1958: Fixed deep copy bug in validate spec module in validator
 - Version 0.9.22+1955: Removed input tag from the constructor procedure schema in api docs (#616) PR url: git@github.com:nutanix/papiea.git/pull/616

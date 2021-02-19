@@ -362,6 +362,13 @@ export enum Action {
     UpdateStatus = "update_status",
 }
 
+export enum SwaggerValidatorErrorMessages {
+    missing_required_ref_str = "Missing required property: $ref",
+    additional_props_not_allowed_str = "Additional properties not allowed: ",
+    array_short_str = "Array is too short (",
+    array_items_not_unique_str = "Array items are not unique (indexes "
+}
+
 export enum SwaggerModelValidatorErrorMessage {
     undefined_value_str = 'Unable to validate an undefined value of property: ',
     empty_value_str = 'Unable to validate an empty value for property: ',
