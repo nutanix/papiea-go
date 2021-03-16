@@ -1,3 +1,4 @@
+- Version 0.9.46+2113: hotfix for parallel execution (don't wait in handlers) (#655) PR url: git@github.com:nutanix/papiea.git/pull/655
 - Version 0.9.45+2109: Fixed nullable schema bug in python sdk
 - Version 0.9.44+2103: fix custom field bugs & added metadata extension adjustment (#653) PR url: git@github.com:nutanix/papiea.git/pull/653
 - Version 0.9.43+2097: Fixed undefined properties in schema bug in remove status-only fields module
