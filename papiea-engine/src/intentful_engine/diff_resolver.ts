@@ -164,6 +164,7 @@ export class DiffResolver {
 
     private async resolveDiffs() {
         const entries = this.watchlist.entries()
+        const promises = []
 
         for (let key in entries) {
             if (!entries.hasOwnProperty(key)) {
@@ -198,8 +199,10 @@ export class DiffResolver {
                     }
                 }
             }
-            await this.startDiffsResolution(diff_results, rediff)
+            const promise = this.startDiffsResolution(diff_results, rediff)
+            promises.push(promise)
         }
+        await Promise.all(promises)
         await this.watchlistDb.update_watchlist(this.watchlist)
     }
 
@@ -221,16 +224,21 @@ export class DiffResolver {
         const backoff: Backoff | null = diff_results[idx][1]
         if (!backoff) {
             diff_results[idx][0].handler_url = `${next_diff.intentful_signature.base_callback}/healthcheck`
-            try {
-                const delay = await this.launchOperation({diff: next_diff, ...rediff})
-                const backoff = this.createDiffBackoff(kind, delay)
-                this.logger.info(`Starting to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind}`)
-                diff_results[idx][1] = backoff
-            } catch (e) {
-                this.logger.debug(`Couldn't invoke intent handler to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
-                const backoff = this.createDiffBackoff(kind, null)
-                diff_results[idx][1] = backoff
+            const getBackoff = (index: number) => {
+                return (delay: Delay | null | undefined) => {
+                    const backoff = this.createDiffBackoff(kind, delay)
+                    this.logger.info(`Starting to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind}`)
+                    diff_results[index][1] = backoff
+                }
             }
+            const getBackoffErrorHandler = (index: number) => {
+                return (e: Error) => {
+                    this.logger.debug(`Couldn't invoke intent handler to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
+                    const backoff = this.createDiffBackoff(kind, null)
+                    diff_results[index][1] = backoff
+                }
+            }
+            return this.launchOperation({diff: next_diff, ...rediff}).then(getBackoff(idx)).catch(getBackoffErrorHandler(idx))
         } else {
             // Delay for rediffing
             if ((new Date().getTime() - backoff.delay.delay_set_time.getTime()) / 1000 > backoff.delay.delay_seconds) {
@@ -243,8 +251,18 @@ export class DiffResolver {
                             return
                         }
                         this.logger.info(`Starting to retry resolving diff for entity with uuid: ${rediff.metadata!.uuid} and kind: ${rediff.metadata!.kind}`)
-                        const delay = await this.launchOperation({diff: rediff.diffs[diff_index], ...rediff})
-                        diff_results[idx][1] = this.incrementDiffBackoff(backoff, delay, rediff.kind)
+                        const getBackoff = (index: number) => {
+                            return (delay: Delay | null | undefined) => {
+                                diff_results[index][1] = this.incrementDiffBackoff(backoff, delay, rediff.kind)
+                            }
+                        }
+                        const getBackoffErrorHandler = (index: number) => {
+                            return (e: Error) => {
+                                this.logger.debug(`Couldn't invoke retry intent handler for entity with uuid: ${rediff.metadata!.uuid} and: kind ${rediff.kind!.name} due to error: ${e}`)
+                                diff_results[index][1] = this.incrementDiffBackoff(backoff, null, rediff.kind)
+                            }
+                        }
+                        return this.launchOperation({diff: rediff.diffs[diff_index], ...rediff}).then(getBackoff(idx)).catch(getBackoffErrorHandler(idx))
                     } catch (e) {
                         this.logger.debug(`Couldn't invoke retry intent handler for entity with uuid: ${rediff.metadata!.uuid} and: kind ${rediff.kind!.name} due to error: ${e}`)
                         diff_results[idx][1] = this.incrementDiffBackoff(backoff, null, rediff.kind)
