@@ -1,3 +1,4 @@
+- Version 0.9.47+2119: Fix hard-coded pretty-printing (and some trailing whitespace) (#657) PR url: git@github.com:nutanix/papiea.git/pull/657
 - Version 0.9.46+2113: hotfix for parallel execution (don't wait in handlers) (#655) PR url: git@github.com:nutanix/papiea.git/pull/655
 - Version 0.9.45+2109: Fixed nullable schema bug in python sdk
 - Version 0.9.44+2103: fix custom field bugs & added metadata extension adjustment (#653) PR url: git@github.com:nutanix/papiea.git/pull/653
