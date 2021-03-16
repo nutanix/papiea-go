@@ -477,7 +477,7 @@ export class BackgroundTaskBuilder {
 
     static create_task(provider: ProviderSdk, name: string, delay_sec: number, callback: BackgroundTaskCallback, tracer: Tracer, metadata_extension?: any, custom_schema?: any): BackgroundTaskBuilder {
         if (provider.get_metadata_extension() !== null && (metadata_extension === null || metadata_extension === undefined)) {
-            throw new Error(`Attempting to create background task (${this.name}) on provider: 
+            throw new Error(`Attempting to create background task (${this.name}) on provider:
                             ${provider.get_prefix()}, ${provider.get_version()} without the required metadata extension.`)
         }
         const schema: any = {
@@ -543,7 +543,7 @@ export class BackgroundTaskBuilder {
     async stop_task() {
         const states = BackgroundTaskBuilder.BackgroundTaskState
         if (this.task_entity === null) {
-            throw new Error(`Attempting to stop missing background task (${this.name}) on provider: 
+            throw new Error(`Attempting to stop missing background task (${this.name}) on provider:
                             ${this.provider.get_prefix()}, ${this.provider.get_version()}`)
         } else {
             await this.update_task_entity()
@@ -559,7 +559,7 @@ export class BackgroundTaskBuilder {
 
     async kill_task() {
         if (this.task_entity === null) {
-            throw new Error(`Attempting to kill missing background task (${this.name}) on provider: 
+            throw new Error(`Attempting to kill missing background task (${this.name}) on provider:
                             ${this.provider.get_prefix()}, ${this.provider.get_version()}`)
         } else {
             await this.update_task_entity()
@@ -591,7 +591,7 @@ export class BackgroundTaskBuilder {
 
     async update_task(context: any) {
         if (this.task_entity === null) {
-            throw new Error(`Attempting to update missing background task (${this.name}) on provider: 
+            throw new Error(`Attempting to update missing background task (${this.name}) on provider:
                             ${this.provider.get_prefix()}, ${this.provider.get_version()}`)
         } else {
             await this.update_task_entity()
@@ -781,7 +781,7 @@ export class Kind_Builder {
     on_create(description: {input_schema?: any, error_schemas?: ErrorSchemas}, handler: (ctx: ProceduralCtx_Interface, input: any) => Promise<{spec: Spec, status: Status, metadata?: Partial<Metadata>}>): Kind_Builder {
         const name = `__${this.kind.name}_create`
         const loggerFactory = new LoggerFactory({logPath: name})
-        const [logger, handle] = loggerFactory.createLogger({pretty_print: true})
+        const [logger, handle] = loggerFactory.createLogger()
         logger.info(`You are registering on create handler for kind: ${this.kind.name}. Note, this is a post create handler. The behaviour is due to change`)
         if (!description.input_schema) {
             logger.info(`Input schema is undefined for on_create handler, using the schema for kind: ${this.kind.name}`)
@@ -795,7 +795,7 @@ export class Kind_Builder {
     on_delete(handler: (ctx: ProceduralCtx_Interface, entity: Partial<Entity>) => Promise<void>): Kind_Builder {
         const name = `__${this.kind.name}_delete`
         const loggerFactory = new LoggerFactory({logPath: name})
-        const [logger, handle] = loggerFactory.createLogger({pretty_print: true})
+        const [logger, handle] = loggerFactory.createLogger()
         logger.info(`You are registering on delete handler for kind: ${this.kind.name}. Note, this is a pre delete handler. The behaviour is due to change`)
         handle.cleanup()
         this.kind_procedure(name, {}, handler)
