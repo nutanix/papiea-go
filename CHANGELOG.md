@@ -1,3 +1,4 @@
+- Version 0.9.50+2130: Added validator check for untyped object not marked as status-only and related test. (#651) PR url: git@github.com:nutanix/papiea.git/pull/651
 - Version 0.9.49+2127: Add context to background task (#659) PR url: git@github.com:nutanix/papiea.git/pull/659
 - Version 0.9.48+2122: Squash a couple more pretty_prints
 - Version 0.9.47+2119: Fix hard-coded pretty-printing (and some trailing whitespace) (#657) PR url: git@github.com:nutanix/papiea.git/pull/657
