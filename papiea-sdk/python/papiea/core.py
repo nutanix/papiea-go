@@ -1,5 +1,5 @@
 import enum
-from typing import Any, Optional, Dict, Union, List, TypedDict
+from typing import Any, Callable, Optional, Dict, Union, List, TypedDict
 
 
 class AttributeDict(dict):
@@ -258,3 +258,5 @@ class IntentfulStatus(str):
     Completed_Partially = "Completed Partially"
     Failed = "Failed"
     Outdated = "Outdated"
+
+BackgroundTaskCallback = Callable[[Optional[Any]], Any]
