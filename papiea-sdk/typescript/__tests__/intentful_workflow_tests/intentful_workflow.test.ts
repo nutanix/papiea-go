@@ -3,6 +3,7 @@ import axios from "axios"
 import { timeout } from "../../../../papiea-engine/src/utils/utils"
 import {IntentfulBehaviour, IntentfulStatus, Metadata, Version} from "papiea-core"
 import { ProviderSdk } from "../../src/provider_sdk/typescript_sdk";
+import { IntentfulCtx_Interface } from "../../src/provider_sdk/typescript_sdk_interface";
 import uuid = require("uuid");
 
 declare var process: {
@@ -373,7 +374,7 @@ describe("Intentful Workflow tests single provider", () => {
             const location = sdk.new_kind(locationDataDescription);
             sdk.version(provider_version);
             sdk.prefix(first_provider_prefix);
-            const task = sdk.background_task("sample-task", 5, async (ctx) => {
+            const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface) => {
                 times_invoked++
             })
             try {
@@ -410,7 +411,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             try {
-                const task = sdk.background_task("sample-task", 5, async (ctx) => {
+                const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface) => {
                 })
             } catch (e) {
                 console.log(e.message)
@@ -438,7 +439,7 @@ describe("Intentful Workflow tests single provider", () => {
                     }
                 }
             })
-            const task = sdk.background_task("sample-task", 5, async (ctx) => {
+            const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface) => {
             }, {sample: "test"})
             try {
                 await sdk.register();
@@ -462,7 +463,7 @@ describe("Intentful Workflow tests single provider", () => {
             const location = sdk.new_kind(locationDataDescription);
             sdk.version(provider_version);
             sdk.prefix(first_provider_prefix);
-            const task = sdk.background_task("sample-task", 5, async (ctx, task_ctx: any | undefined) => {
+            const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface, task_ctx: any | undefined) => {
                 if (task_ctx) {
                     count = task_ctx.count
                 }
