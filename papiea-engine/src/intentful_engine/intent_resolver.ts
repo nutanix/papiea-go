@@ -4,6 +4,7 @@ import {IntentWatcher_DB} from "../databases/intent_watcher_db_interface"
 import {Provider_DB} from "../databases/provider_db_interface"
 import {Handler, IntentfulListener} from "./intentful_listener_interface"
 import {Watchlist} from "./watchlist"
+import { Watchlist_DB } from "../databases/watchlist_db_interface";
 import {Diff, DiffContent, Differ, Entity, IntentfulStatus, IntentWatcher} from "papiea-core"
 import {timeout} from "../utils/utils"
 import {Logger} from "papiea-backend-utils"
@@ -18,13 +19,13 @@ export class IntentResolver {
     private intentfulListener: IntentfulListener
     private differ: Differ
     private logger: Logger;
-    private watchlist: Watchlist;
+    private watchlistDb: Watchlist_DB;
     private static TERMINAL_STATES = [IntentfulStatus.Completed_Partially, IntentfulStatus.Completed_Successfully, IntentfulStatus.Outdated]
 
     constructor(specDb: Spec_DB, statusDb: Status_DB,
                 intentWatcherDb: IntentWatcher_DB, providerDb: Provider_DB,
                 intentfulListener: IntentfulListener, differ: Differ,
-                watchlist: Watchlist, logger: Logger)
+                watchlist: Watchlist_DB, logger: Logger)
     {
         this.specDb = specDb
         this.statusDb = statusDb
@@ -34,7 +35,7 @@ export class IntentResolver {
 
         this.onChange = this.onChange.bind(this)
 
-        this.watchlist = watchlist
+        this.watchlistDb = watchlist
         this.differ = differ
         this.intentfulListener = intentfulListener
         this.intentfulListener.onChange = new Handler(this.onChange)
@@ -169,7 +170,8 @@ export class IntentResolver {
     }
 
     private async updateActiveWatchersStatuses() {
-        let entries = this.watchlist.entries();
+        let entries = await this.watchlistDb.edit_watchlist(
+            async watchlist => watchlist.entries());
         for (let key in entries) {
             if (!entries.hasOwnProperty(key)) {
                 continue

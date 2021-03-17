@@ -62,12 +62,13 @@ export class DifferIntentfulStrategy extends IntentfulStrategy {
         await this.intentWatcherDb.save_watcher(watcher)
         console.debug(`[DELAY_DEBUG] Saved the intent watcher for update entity: ${metadata.uuid} with id: ${watcher.uuid}`)
         watcherSpan.finish()
-        const watchlist = await this.watchlistDb.get_watchlist()
-        const ent = create_entry(metadata)
-        if (!watchlist.has(ent)) {
-            watchlist.set([ent, []])
-            await this.watchlistDb.update_watchlist(watchlist)
-        }
+        const ent = await this.watchlistDb.edit_watchlist(async watchlist => {
+            const ent = create_entry(metadata)
+            if (!watchlist.has(ent)) {
+                watchlist.set([ent, []])
+            }
+            return ent;
+        });
         console.debug(`[DELAY_DEBUG] Added entry in watchlist for entity: ${metadata.uuid}`)
         console.debug(`[DELAY_DEBUG] ${JSON.stringify(ent)}`)
         return {
