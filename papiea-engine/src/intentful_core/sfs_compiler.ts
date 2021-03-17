@@ -83,21 +83,21 @@ function remove_undefined_or_null_values(entity: any, logger?: Logger, kind_name
 }
 
 function cleanup_spec_for_sfs_run(spec: Spec, kind_name: string, logger?: Logger): Spec {
-    if (logger !== undefined) {
-        logger.debug(`Running sanitizer function for ${kind_name}/spec.`);
-    } else {
-        console.debug(`Running sanitizer function for ${kind_name}/spec.`)
-    }
+    // if (logger !== undefined) {
+    //     logger.debug(`Running sanitizer function for ${kind_name}/spec.`);
+    // } else {
+    //     console.debug(`Running sanitizer function for ${kind_name}/spec.`)
+    // }
     const diff_spec = remove_undefined_or_null_values(spec, logger, kind_name, "spec")
     return diff_spec
 }
 
 function cleanup_status_for_sfs_run(status: Status, schema: any, kind_name: string, logger?: Logger): Status {
-    if (logger !== undefined) {
-        logger.debug(`Running sanitizer function for ${kind_name}/status.`);
-    } else {
-        console.debug(`Running sanitizer function for ${kind_name}/status.`)
-    }
+    // if (logger !== undefined) {
+    //     logger.debug(`Running sanitizer function for ${kind_name}/status.`);
+    // } else {
+    //     console.debug(`Running sanitizer function for ${kind_name}/status.`)
+    // }
     let diff_status = remove_undefined_or_null_values(status, logger, kind_name, "status")
     diff_status = remove_status_only_fields(schema, diff_status)
     return diff_status
