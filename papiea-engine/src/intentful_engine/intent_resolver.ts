@@ -4,6 +4,7 @@ import {IntentWatcher_DB} from "../databases/intent_watcher_db_interface"
 import {Provider_DB} from "../databases/provider_db_interface"
 import {Handler, IntentfulListener} from "./intentful_listener_interface"
 import {Watchlist} from "./watchlist"
+import { Watchlist_DB } from "../databases/watchlist_db_interface";
 import {Diff, DiffContent, Differ, Entity, IntentfulStatus, IntentWatcher} from "papiea-core"
 import {timeout} from "../utils/utils"
 import {Logger} from "papiea-backend-utils"
@@ -17,13 +18,13 @@ export class IntentResolver {
     private intentfulListener: IntentfulListener
     private differ: Differ
     private logger: Logger;
-    private watchlist: Watchlist;
+    private watchlistDb: Watchlist_DB;
     private static TERMINAL_STATES = [IntentfulStatus.Completed_Partially, IntentfulStatus.Completed_Successfully, IntentfulStatus.Outdated]
 
     constructor(specDb: Spec_DB, statusDb: Status_DB,
                 intentWatcherDb: IntentWatcher_DB, providerDb: Provider_DB,
                 intentfulListener: IntentfulListener, differ: Differ,
-                watchlist: Watchlist, logger: Logger)
+                watchlist: Watchlist_DB, logger: Logger)
     {
         this.specDb = specDb
         this.statusDb = statusDb
@@ -33,7 +34,7 @@ export class IntentResolver {
 
         this.onChange = this.onChange.bind(this)
 
-        this.watchlist = watchlist
+        this.watchlistDb = watchlist
         this.differ = differ
         this.intentfulListener = intentfulListener
         this.intentfulListener.onChange = new Handler(this.onChange)
@@ -137,28 +138,39 @@ export class IntentResolver {
     }
 
     private async onChange(entity: Entity) {
+        const watchers = await this.intentWatcherDb.list_watchers(
+            {
+                entity_ref: {
+                    uuid: entity.metadata.uuid,
+                    kind: entity.metadata.kind,
+                    provider_prefix: entity.metadata.provider_prefix,
+                    provider_version: entity.metadata.provider_version
+                },
+                status: IntentfulStatus.Active
+            }
+        )
         try {
-            const watchers = await this.intentWatcherDb.list_watchers(
-                {
-                    entity_ref: {
-                        uuid: entity.metadata.uuid,
-                        kind: entity.metadata.kind,
-                        provider_prefix: entity.metadata.provider_prefix,
-                        provider_version: entity.metadata.provider_version
-                    },
-                    status: IntentfulStatus.Active
-                }
-            )
             for (let watcher of watchers) {
                 await this.processActiveWatcher(watcher, entity)
             }
         } catch (e) {
-            this.logger.debug(`Couldn't process onChange for entity with uuid: ${entity.metadata.uuid} and kind: ${entity.metadata.kind} for provider with prefix: ${entity.metadata.provider_prefix} and version: ${entity.metadata.provider_version}`)
+            this.logger.debug(`Couldn't process onChange for entity`, {
+                entity: {
+                    uuid: entity.metadata.uuid,
+                    kind: entity.metadata.kind,
+                    provider: entity.metadata.provider_prefix,
+                    provider_version: entity.metadata.provider_version,
+                },
+                error: e.toString(),
+                stack: e.stack,
+                watchers,
+            });
         }
     }
 
     private async updateActiveWatchersStatuses() {
-        let entries = this.watchlist.entries();
+        let entries = await this.watchlistDb.edit_watchlist(
+            async watchlist => watchlist.entries());
         for (let key in entries) {
             if (!entries.hasOwnProperty(key)) {
                 continue
@@ -176,13 +188,9 @@ export class IntentResolver {
                 }
             )
             if (watchers.length !== 0) {
-                try {
-                    const [metadata, spec] = await this.specDb.get_spec({...entry_ref.provider_reference, ...entry_ref.entity_reference})
-                    const [, status] = await this.statusDb.get_status({...entry_ref.provider_reference, ...entry_ref.entity_reference})
-                    this.onChange({ metadata, spec, status })
-                } catch (e) {
-
-                }
+                const [metadata, spec] = await this.specDb.get_spec({...entry_ref.provider_reference, ...entry_ref.entity_reference})
+                const [, status] = await this.statusDb.get_status({...entry_ref.provider_reference, ...entry_ref.entity_reference})
+                this.onChange({ metadata, spec, status })
             }
         }
     }

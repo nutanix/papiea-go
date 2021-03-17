@@ -2,7 +2,7 @@
 import { timeout } from "../utils/utils"
 import { Spec_DB } from "../databases/spec_db_interface"
 import { Status_DB } from "../databases/status_db_interface"
-import { create_entry, Backoff, EntryReference, Watchlist, Delay } from "./watchlist"
+import { create_entry, Backoff, EntryReference, Watchlist, Delay, Watch } from "./watchlist"
 import { Watchlist_DB } from "../databases/watchlist_db_interface";
 import { Differ, Diff, Metadata, Spec, Status, Kind, Provider } from "papiea-core";
 import { Provider_DB } from "../databases/provider_db_interface";
@@ -26,7 +26,6 @@ export class DiffResolver {
     protected readonly statusDb: Status_DB
     private readonly watchlistDb: Watchlist_DB
     private readonly providerDb: Provider_DB
-    protected watchlist: Watchlist
     private differ: Differ
     private intentfulContext: IntentfulContext;
     private logger: Logger;
@@ -35,12 +34,11 @@ export class DiffResolver {
     private entropyFn: (diff_delay?: number) => number
     private calculateBackoffFn: (retries?: number, maximumBackoff?: number, entropy?: number, kind_retry_exponent?: number, kind_name?: string) => number
 
-    constructor(watchlist: Watchlist, watchlistDb: Watchlist_DB, specDb: Spec_DB, statusDb: Status_DB, providerDb: Provider_DB, differ: Differ, intentfulContext: IntentfulContext, logger: Logger, batchSize: number, entropyFn: (diff_delay?: number) => number, calculateBackoffFn: (retries?: number, maximumBackoff?: number, entropy?: number) => number) {
+    constructor(watchlistDb: Watchlist_DB, specDb: Spec_DB, statusDb: Status_DB, providerDb: Provider_DB, differ: Differ, intentfulContext: IntentfulContext, logger: Logger, batchSize: number, entropyFn: (diff_delay?: number) => number, calculateBackoffFn: (retries?: number, maximumBackoff?: number, entropy?: number) => number) {
         this.specDb = specDb
         this.statusDb = statusDb
         this.watchlistDb = watchlistDb
         this.providerDb = providerDb
-        this.watchlist = watchlist
         this.differ = differ
         this.intentfulContext = intentfulContext
         this.logger = logger
@@ -60,21 +58,33 @@ export class DiffResolver {
 
     private async _run(delay: number) {
         while (true) {
+            const start = Date.now()
+            this.logger.debug("[DELAY_DEBUG] diff_resolver.run - start delay")
             await timeout(delay)
-            await this.updateWatchlist()
+            // this.logger.debug("[DELAY_DEBUG] diff_resolver.run - start updateWatchList")
+            // await this.updateWatchlist()
+            this.logger.debug("[DELAY_DEBUG] diff_resolver.run - start resolveDiffs")
             await this.resolveDiffs()
+            this.logger.debug("[DELAY_DEBUG] diff_resolver.run - start addRandomEntities")
             await this.addRandomEntities()
+            this.logger.debug(`[DELAY_DEBUG] diff_resolver.run - end (total loop time = ${Date.now() - start}`)
         }
     }
 
-    private async updateWatchlist() {
-        try {
-            const updated_watchlist = await this.watchlistDb.get_watchlist()
-            this.watchlist.update(updated_watchlist)
-        } catch (e) {
-            return
-        }
-    }
+    // private async updateWatchlist() {
+    //     try {
+    //         const updated_watchlist = await this.watchlistDb.get_watchlist()
+    //         this.logger.debug("[DELAY_DEBUG] Updating in-memory watchlist", {
+    //             new_watchlist: updated_watchlist
+    //         });
+    //         this.watchlist.update(updated_watchlist)
+    //     } catch (e) {
+    //         this.logger.debug("[DELAY_DEBUG] Updating in-memory watchlist FAILED", {
+    //             error: e.toString(),
+    //             stack: e.stack,
+    //         });
+    //     }
+    // }
 
     private createDiffBackoff(kind: Kind, delay: Delay | null | undefined, retries: number = 0): Backoff {
         if (delay !== undefined && delay !== null) {
@@ -151,8 +161,20 @@ export class DiffResolver {
     }
 
     private async removeFromWatchlist(ref: EntryReference) {
-        this.watchlist.delete(ref)
-        await this.watchlistDb.update_watchlist(this.watchlist)
+        return this.watchlistDb.edit_watchlist(async watchlist => {
+            watchlist.delete(ref);
+        });
+        // await this.updateWatchlist();
+        // this.watchlist.delete(ref)
+        // await this.watchlistDb.update_watchlist(this.watchlist)
+    }
+
+    private async updateWatchlistItem(key: string, editor: (entry: Watch) => void) {
+        return this.watchlistDb.edit_watchlist(async watchlist => {
+            editor(watchlist.entries()[key]);
+        })
+        // await this.updateWatchlist();
+        // await this.watchlistDb.update_watchlist(this.watchlist);
     }
 
     private static includesDiff(diffs: Diff[], diff: Diff) {
@@ -165,8 +187,12 @@ export class DiffResolver {
     }
 
     private async resolveDiffs() {
-        const entries = this.watchlist.entries()
+        const watchlist = await this.watchlistDb.edit_watchlist(
+            async watchlist => watchlist);
+        const entries = watchlist.entries();
         const promises = []
+
+        this.logger.debug("[DELAY_DEBUG] Entering resolveDiffs", {entries});
 
         for (let key in entries) {
             if (!entries.hasOwnProperty(key)) {
@@ -192,14 +218,14 @@ export class DiffResolver {
                 for (let diff of rediff.diffs) {
                     const watched_diffs = diff_results.map(watch => watch[0])
                     if (!DiffResolver.includesDiff(watched_diffs, diff)) {
-                        entries[key][1].push([diff, null])
+                        await this.updateWatchlistItem(key, ent => { ent[1].push([diff, null]); });
                     }
                 }
             } else if (diff_results.length > rediff.diffs.length) {
                 const watched_diffs = diff_results.map(watch => watch[0])
                 for (let idx = 0; idx <= watched_diffs.length; idx++) {
                     if (!DiffResolver.includesDiff(rediff.diffs, watched_diffs[idx])) {
-                        entries[key][1].splice(idx, 1)
+                        await this.updateWatchlistItem(key, ent => { ent[1].splice(idx, 1); });
                     }
                 }
             }
@@ -209,7 +235,6 @@ export class DiffResolver {
             promises.push(promise)
         }
         await Promise.all(promises)
-        await this.watchlistDb.update_watchlist(this.watchlist)
     }
 
     private async calculate_batch_size(): Promise<number> {
@@ -247,7 +272,7 @@ export class DiffResolver {
                 }
             }
             this.logger.info(`[DELAY_DEBUG] Launching operation to resolve diff for entity with uuid: ${metadata.uuid}`)
-            this.logger.info(`[DELAY_DEBUG] ${JSON.stringify(next_diff.diff_fields)}`)    
+            this.logger.info(`[DELAY_DEBUG] ${JSON.stringify(next_diff.diff_fields)}`)
             return this.launchOperation({diff: next_diff, ...rediff}).then(getBackoff(idx)).catch(getBackoffErrorHandler(idx))
         } else {
             // Delay for rediffing
@@ -288,16 +313,18 @@ export class DiffResolver {
     // when diffs may be added between the check and removing from the watchlist
     // the batch size maybe static or dynamic
     private async addRandomEntities() {
-        const batch_size = await this.calculate_batch_size()
-        const intentful_kind_refs = await this.providerDb.get_intentful_kinds()
-        const entities = await this.specDb.list_random_intentful_specs(batch_size, intentful_kind_refs)
+        return this.watchlistDb.edit_watchlist(async watchlist => {
+            const batch_size = await this.calculate_batch_size()
+            const intentful_kind_refs = await this.providerDb.get_intentful_kinds()
+            const entities = await this.specDb.list_random_intentful_specs(batch_size, intentful_kind_refs)
 
-        for (let [metadata, _] of entities) {
-            const ent = create_entry(metadata)
-            if (!this.watchlist.has(ent)) {
-                this.watchlist.set([ent, []])
+            for (let [metadata, _] of entities) {
+                const ent = create_entry(metadata)
+                if (! watchlist.has(ent)) {
+                    watchlist.set([ent, []])
+                }
             }
-        }
-        return this.watchlistDb.update_watchlist(this.watchlist)
+        })
+        // return this.watchlistDb.update_watchlist(this.watchlist)
     }
 }

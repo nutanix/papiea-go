@@ -41,7 +41,7 @@ export function create_entry(metadata: Metadata): EntryReference {
 
 export type SerializedWatchlist = {[key: string]: Watch}
 export type WatchlistEntries = Watch[]
-type Watch = [EntryReference, [Diff, Backoff | null][]]
+export type Watch = [EntryReference, [Diff, Backoff | null][]]
 
 export class Watchlist {
     private _entries: SerializedWatchlist
