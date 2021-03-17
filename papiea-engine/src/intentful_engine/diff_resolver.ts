@@ -204,14 +204,20 @@ export class DiffResolver {
                 for (let diff of rediff.diffs) {
                     const watched_diffs = diff_results.map(watch => watch[0])
                     if (!DiffResolver.includesDiff(watched_diffs, diff)) {
-                        await this.updateWatchlistItem(key, ent => { ent[1].push([diff, null]); });
+                        await this.updateWatchlistItem(key, ent => {
+                            entries[key][1].push([diff, null]);
+                            ent[1].push([diff, null]);
+                        });
                     }
                 }
             } else if (diff_results.length > rediff.diffs.length) {
                 const watched_diffs = diff_results.map(watch => watch[0])
                 for (let idx = 0; idx <= watched_diffs.length; idx++) {
                     if (!DiffResolver.includesDiff(rediff.diffs, watched_diffs[idx])) {
-                        await this.updateWatchlistItem(key, ent => { ent[1].splice(idx, 1); });
+                        await this.updateWatchlistItem(key, ent => {
+                            entries[key][1].splice(idx, 1);
+                            ent[1].splice(idx, 1);
+                        });
                     }
                 }
             }
