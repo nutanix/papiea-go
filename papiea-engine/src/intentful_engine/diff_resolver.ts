@@ -160,7 +160,7 @@ export class DiffResolver {
         }
     }
 
-    private async removeFromWatchlist(ref: EntryReference) {
+    private removeFromWatchlist(ref: EntryReference) {
         return this.watchlistDb.edit_watchlist(async watchlist => {
             watchlist.delete(ref);
         });
@@ -169,7 +169,7 @@ export class DiffResolver {
         // await this.watchlistDb.update_watchlist(this.watchlist)
     }
 
-    private async updateWatchlistItem(key: string, editor: (entry: Watch) => void) {
+    private updateWatchlistItem(key: string, editor: (entry: Watch) => void) {
         return this.watchlistDb.edit_watchlist(async watchlist => {
             editor(watchlist.entries()[key]);
         })
@@ -313,11 +313,11 @@ export class DiffResolver {
     // when diffs may be added between the check and removing from the watchlist
     // the batch size maybe static or dynamic
     private async addRandomEntities() {
-        return this.watchlistDb.edit_watchlist(async watchlist => {
-            const batch_size = await this.calculate_batch_size()
-            const intentful_kind_refs = await this.providerDb.get_intentful_kinds()
-            const entities = await this.specDb.list_random_intentful_specs(batch_size, intentful_kind_refs)
+        const batch_size = await this.calculate_batch_size()
+        const intentful_kind_refs = await this.providerDb.get_intentful_kinds()
+        const entities = await this.specDb.list_random_intentful_specs(batch_size, intentful_kind_refs)
 
+        return this.watchlistDb.edit_watchlist(async watchlist => {
             for (let [metadata, _] of entities) {
                 const ent = create_entry(metadata)
                 if (! watchlist.has(ent)) {
