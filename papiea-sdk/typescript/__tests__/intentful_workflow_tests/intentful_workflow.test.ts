@@ -373,7 +373,7 @@ describe("Intentful Workflow tests single provider", () => {
             const location = sdk.new_kind(locationDataDescription);
             sdk.version(provider_version);
             sdk.prefix(first_provider_prefix);
-            const task = sdk.background_task("sample-task", 5, async () => {
+            const task = sdk.background_task("sample-task", 5, async (ctx) => {
                 times_invoked++
             })
             try {
@@ -410,7 +410,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             try {
-                const task = sdk.background_task("sample-task", 5, async () => {
+                const task = sdk.background_task("sample-task", 5, async (ctx) => {
                 })
             } catch (e) {
                 console.log(e.message)
@@ -438,7 +438,7 @@ describe("Intentful Workflow tests single provider", () => {
                     }
                 }
             })
-            const task = sdk.background_task("sample-task", 5, async () => {
+            const task = sdk.background_task("sample-task", 5, async (ctx) => {
             }, {sample: "test"})
             try {
                 await sdk.register();
@@ -462,9 +462,9 @@ describe("Intentful Workflow tests single provider", () => {
             const location = sdk.new_kind(locationDataDescription);
             sdk.version(provider_version);
             sdk.prefix(first_provider_prefix);
-            const task = sdk.background_task("sample-task", 5, async (context: any | undefined) => {
-                if (context) {
-                    count = context.count
+            const task = sdk.background_task("sample-task", 5, async (ctx, task_ctx: any | undefined) => {
+                if (task_ctx) {
+                    count = task_ctx.count
                 }
                 times_invoked++
             }, null, {

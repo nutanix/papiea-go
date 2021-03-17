@@ -440,7 +440,7 @@ class Provider_Server_Manager {
     }
 }
 
-type BackgroundTaskCallback = (() => Promise<any>) | ((context: any | undefined) => Promise<any>)
+export type BackgroundTaskCallback = ((ctx: IntentfulCtx_Interface) => Promise<any>) | ((ctx: IntentfulCtx_Interface, task_ctx: any | undefined) => Promise<any>)
 
 export class BackgroundTaskBuilder {
     private provider: ProviderSdk
@@ -495,7 +495,7 @@ export class BackgroundTaskBuilder {
         }
         const kind = provider.new_kind({[name]: schema})
         kind.on("state", async (ctx, entity, input) => {
-            await callback(entity?.status?.provider_fields ?? undefined)
+            await callback(ctx, entity?.status?.provider_fields ?? undefined)
             return {
                 delay_secs: delay_sec
             }
@@ -589,7 +589,7 @@ export class BackgroundTaskBuilder {
         }
     }
 
-    async update_task(context: any) {
+    async update_task(task_ctx: any) {
         if (this.task_entity === null) {
             throw new Error(`Attempting to update missing background task (${this.name}) on provider:
                             ${this.provider.get_prefix()}, ${this.provider.get_version()}`)
@@ -597,7 +597,7 @@ export class BackgroundTaskBuilder {
             await this.update_task_entity()
             await this.provider.provider_api_axios.patch(`${this.provider.provider_url}/${this.provider.get_prefix()}/${this.provider.get_version()}/update_status`,{
                 entity_ref: this.task_entity.metadata,
-                status: {provider_fields: context}
+                status: {provider_fields: task_ctx}
             });
         }
     }
