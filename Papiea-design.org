@@ -1,5 +1,5 @@
 #+Title: Papiea Design
-#+SETUPFILE: https://fniessen.github.io/org-html-themes/src/theme-readtheorg.setup
+#+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 #+Options: H:5
 #+HTML_MATHJAX: align: left indent: 5em tagside: left font: Neo-Euler
 
