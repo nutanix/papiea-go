@@ -57,6 +57,7 @@ export class DiffResolver {
     }
 
     private async _run(delay: number) {
+        const inFlightKeys = new Map<string, Promise<void | null>>();
         while (true) {
             const start = Date.now()
             this.logger.debug("[DELAY_DEBUG] diff_resolver.run - start delay")
@@ -64,9 +65,15 @@ export class DiffResolver {
             // this.logger.debug("[DELAY_DEBUG] diff_resolver.run - start updateWatchList")
             // await this.updateWatchlist()
             this.logger.debug("[DELAY_DEBUG] diff_resolver.run - start resolveDiffs")
-            await this.resolveDiffs()
-            this.logger.debug("[DELAY_DEBUG] diff_resolver.run - start addRandomEntities")
-            await this.addRandomEntities()
+            await this.startResolvingMoreDiffs(inFlightKeys);
+            if (inFlightKeys.size > 0) {
+                this.logger.debug("[DELAY_DEBUG] diff_resolver.run - waiting for at least one diff to complete")
+                await Promise.race(inFlightKeys.values());
+                this.logger.debug("[DELAY_DEBUG] diff_resolver.run - done waiting for a diff to complete")
+            } else {
+                this.logger.debug("[DELAY_DEBUG] diff_resolver.run - looking for more to do; addRandomEntities")
+                await this.addRandomEntities()
+            }
             this.logger.debug(`[DELAY_DEBUG] diff_resolver.run - end (total loop time = ${Date.now() - start}`)
         }
     }
@@ -190,11 +197,10 @@ export class DiffResolver {
         return false
     }
 
-    private async resolveDiffs() {
+    private async startResolvingMoreDiffs(inFlightKeys: Map<string, Promise<void | null>>) {
         const watchlist = await this.watchlistDb.edit_watchlist(
             async watchlist => watchlist);
         const entries = watchlist.entries();
-        const promises = []
 
         this.logger.debug("[DELAY_DEBUG] Entering resolveDiffs", {entries});
 
@@ -202,6 +208,7 @@ export class DiffResolver {
             if (!entries.hasOwnProperty(key)) {
                 continue
             }
+            if (inFlightKeys.has(key)) continue;
 
             let [entry_reference, diff_results] = entries[key]
             this.logger.debug(`Diff engine resolving diffs for entity with uuid: ${entry_reference.entity_reference.uuid} and kind: ${entry_reference.entity_reference.kind}`)
@@ -241,10 +248,14 @@ export class DiffResolver {
             }
             this.logger.info(`[DELAY_DEBUG] Starting diff resolution for entity with uuid: ${rediff.metadata.uuid}`)
             this.logger.info(`[DELAY_DEBUG] ${JSON.stringify(rediff.diffs.map(diff => { return diff.diff_fields }))}`)
+            // TODO we need to update the diff backoff in the watchlist, so we know how long to delay before retrying
             const promise = this.startDiffsResolution(diff_results, rediff)
-            promises.push(promise)
+                .finally((() => { // IILE to avoid capturing mutable /key/ variable
+                    const k = key;
+                    return () => inFlightKeys.delete(k);
+                })())
+            inFlightKeys.set(key, promise);
         }
-        await Promise.all(promises)
     }
 
     private async calculate_batch_size(): Promise<number> {
