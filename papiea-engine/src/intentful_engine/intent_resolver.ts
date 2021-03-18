@@ -100,6 +100,7 @@ export class IntentResolver {
             // All the spec fields recorded by the watcher got changed as a series of spec changes
             // but none of the diffs (on the watcher fields) got resolved, only affected, thus Outdated
             let affected_diff_count = 0
+            // this.logger.debug(`processActiveWatcher`, {current_diffs, active})
             for (let watcher_diff of active.diffs) {
                 // Current set of diff fields are more up to date, thus replacing
                 const existing_diff = IntentResolver.getExisting(current_diffs, watcher_diff)
