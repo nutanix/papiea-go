@@ -24,7 +24,7 @@ class Mutex {
                 fn().then(resolve, reject)
                     .finally(() => {
                         this._q.shift();
-                        console.log(`[Mutex ${this.name}] Finished task -- ${this._q.length} remaining`);
+                        // console.log(`[Mutex ${this.name}] Finished task -- ${this._q.length} remaining`);
                         if (this._q.length > 0) this.next();
                     });
             });
@@ -33,7 +33,7 @@ class Mutex {
     }
 
     private next() {
-        console.log(`[Mutex ${this.name}] Starting next task`);
+        // console.log(`[Mutex ${this.name}] Starting next task`);
         this._q[0]();
     }
 }

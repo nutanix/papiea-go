@@ -131,7 +131,11 @@ export class DiffResolver {
                 spec: spec,
                 status: status,
                 input: diff.diff_fields})
-        this.logger.info(`[DELAY_DEBUG] Invoking diff handler for entity with uuid: ${metadata.uuid}`)
+        this.logger.info(`[DELAY_DEBUG] Invoking diff handler for entity`, {
+            entity: {provider_prefix: metadata.provider_prefix, kind: metadata.kind, uuid: metadata.uuid},
+            callback: diff.intentful_signature.procedure_callback,
+            diffs: diff.diff_fields,
+    })
         this.logger.info(`[DELAY_DEBUG] ${JSON.stringify(diff.diff_fields)}`)
         // This yields delay
         const result = await axios.post(diff.intentful_signature.procedure_callback, {

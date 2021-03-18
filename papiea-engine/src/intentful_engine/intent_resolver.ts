@@ -96,6 +96,7 @@ export class IntentResolver {
             // All the spec fields recorded by the watcher got changed as a series of spec changes
             // but none of the diffs (on the watcher fields) got resolved, only affected, thus Outdated
             let affected_diff_count = 0
+            // this.logger.debug(`processActiveWatcher`, {current_diffs, active})
             for (let watcher_diff of active.diffs) {
                 // Current set of diff fields are more up to date, thus replacing
                 const existing_diff = IntentResolver.getExisting(current_diffs, watcher_diff)
@@ -154,17 +155,12 @@ export class IntentResolver {
                 await this.processActiveWatcher(watcher, entity)
             }
         } catch (e) {
-            this.logger.debug(`Couldn't process onChange for entity`, {
-                entity: {
-                    uuid: entity.metadata.uuid,
-                    kind: entity.metadata.kind,
-                    provider: entity.metadata.provider_prefix,
-                    provider_version: entity.metadata.provider_version,
-                },
-                error: e.toString(),
-                stack: e.stack,
-                watchers,
-            });
+            // this.logger.debug(`Couldn't process onChange for entity`, {
+            //     error: e.toString(),
+            //     stack: e.stack,
+            //     entity,
+            //     watchers,
+            // });
         }
     }
 
