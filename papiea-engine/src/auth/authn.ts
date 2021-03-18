@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response, Router } from "express";
 import { UnauthorizedError } from "../errors/permission_error";
-import { Secret } from "papiea-core"
+import { PapieaEngineTags, Secret } from "papiea-core"
 import { Logger } from 'papiea-backend-utils'
 
 export interface UserAuthInfoExtractor {
@@ -28,15 +28,20 @@ export class CompositeUserAuthInfoExtractor implements UserAuthInfoExtractor {
 
 export class AdminUserAuthInfoExtractor implements UserAuthInfoExtractor {
     private readonly adminKey: Secret;
+    private logger: Logger
 
-    constructor(adminKey: Secret) {
+    constructor(logger: Logger, adminKey: Secret) {
         this.adminKey = adminKey;
+        this.logger = logger
     }
 
     async getUserAuthInfo(token: Secret, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null> {
+        this.logger.debug(`BEGIN ${this.getUserAuthInfo.name} for admin`, { tags: [PapieaEngineTags.Auth] })
         if (token === this.adminKey) {
+            this.logger.debug(`END ${this.getUserAuthInfo.name} for admin`, { tags: [PapieaEngineTags.Auth] })
             return { is_admin: true }
         } else {
+            this.logger.debug(`END ${this.getUserAuthInfo.name} for admin`, { tags: [PapieaEngineTags.Auth] })
             return null;
         }
     }
@@ -78,6 +83,7 @@ export function createAuthnRouter(logger: Logger, userAuthInfoExtractor: UserAut
     const router = Router();
 
     async function injectUserInfo(req: UserAuthInfoRequest, res: Response, next: NextFunction): Promise<void> {
+        logger.debug(`BEGIN ${injectUserInfo.name}`, { tags: [PapieaEngineTags.Auth] })
         const token = getToken(req);
         if (token === null) {
             return next();
@@ -101,6 +107,7 @@ export function createAuthnRouter(logger: Logger, userAuthInfoExtractor: UserAut
         }
         req.user = user_info;
         next();
+        logger.debug(`END ${injectUserInfo.name}`, { tags: [PapieaEngineTags.Auth] })
     }
 
     router.use('/services/:prefix', asyncHandler(injectUserInfo));

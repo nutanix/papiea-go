@@ -1,12 +1,13 @@
 import axios from "axios";
 import { promisify } from "util"
+import { PapieaEngineTags } from "papiea-core"
 import { MongoClient, Db } from "mongodb";
 import { Spec_DB_Mongo } from "./spec_db_mongo";
 import { Status_DB_Mongo } from "./status_db_mongo";
 import { Provider_DB_Mongo } from "./provider_db_mongo";
 import { S2S_Key_DB_Mongo } from "./s2skey_db_mongo";
 import { SessionKeyDbMongo } from "./session_key_db_mongo"
-import { Logger } from 'papiea-backend-utils'
+import { Logger, LoggerFactory } from 'papiea-backend-utils'
 import { IntentWatcher_DB_Mongo } from "./intent_watcher_db_mongo"
 import { Watchlist_Db_Mongo } from "./watchlist_db_mongo";
 import { Graveyard_DB } from "./graveyard_db_interface"
@@ -30,8 +31,9 @@ export class MongoConnection {
     intentWatcherDb: IntentWatcher_DB_Mongo | undefined
     watchlistDb: Watchlist_Db_Mongo | undefined;
     graveyardDb: Graveyard_DB_Mongo | undefined
+    logger: Logger
 
-    constructor(url: string, dbName: string) {
+    constructor(url: string, dbName: string, logger?: Logger) {
         this.url = url;
         this.dbName = dbName;
         this.client = new MongoClient(this.url, {
@@ -47,6 +49,7 @@ export class MongoConnection {
         this.s2skeyDb = undefined;
         this.intentWatcherDb = undefined
         this.graveyardDb = undefined
+        this.logger = logger ?? LoggerFactory.makeLogger({})
     }
 
     async download_rds_cert(): Promise<void> {
@@ -69,12 +72,14 @@ export class MongoConnection {
     }
 
     async connect(): Promise<void> {
+        this.logger.debug(`BEGIN ${this.connect.name} in mongo`, { tags: [PapieaEngineTags.Database] })
         const parsedUrl = url.parse(this.url, true);
         if (parsedUrl.query && parsedUrl.query.ssl_ca_certs === 'rds-combined-ca-bundle.pem') {
             await this.download_rds_cert();
         }
         await this.client.connect();
         this.db = this.client.db(this.dbName);
+        this.logger.debug(`END ${this.connect.name} in mongo`, { tags: [PapieaEngineTags.Database] })
     }
 
     async close(): Promise<void> {
@@ -82,82 +87,98 @@ export class MongoConnection {
     }
 
     async get_spec_db(logger: Logger): Promise<Spec_DB_Mongo> {
+        this.logger.debug(`BEGIN ${this.get_spec_db.name} in mongo`, { tags: [PapieaEngineTags.Database] })
         if (this.specDb !== undefined)
             return this.specDb;
         if (this.db === undefined)
             throw new PapieaException("MongoDBError: Not connected to spec database");
         this.specDb = new Spec_DB_Mongo(logger, this.db);
         await this.specDb.init();
+        this.logger.debug(`END ${this.get_spec_db.name} in mongo`, { tags: [PapieaEngineTags.Database] })
         return this.specDb;
     }
 
     async get_provider_db(logger: Logger): Promise<Provider_DB_Mongo> {
+        this.logger.debug(`BEGIN ${this.get_provider_db.name} in mongo`, { tags: [PapieaEngineTags.Database] })
         if (this.providerDb !== undefined)
             return this.providerDb;
         if (this.db === undefined)
             throw new PapieaException("MongoDBError: Not connected to provider database");
         this.providerDb = new Provider_DB_Mongo(logger, this.db);
         await this.providerDb.init();
+        this.logger.debug(`END ${this.get_provider_db.name} in mongo`, { tags: [PapieaEngineTags.Database] })
         return this.providerDb;
     }
 
     async get_status_db(logger: Logger): Promise<Status_DB_Mongo> {
+        this.logger.debug(`BEGIN ${this.get_status_db.name} in mongo`, { tags: [PapieaEngineTags.Database] })
         if (this.statusDb !== undefined)
             return this.statusDb;
         if (this.db === undefined)
             throw new PapieaException("MongoDBError: Not connected to status database");
         this.statusDb = new Status_DB_Mongo(logger, this.db);
         await this.statusDb.init();
+        this.logger.debug(`END ${this.get_status_db.name} in mongo`, { tags: [PapieaEngineTags.Database] })
         return this.statusDb;
     }
 
     async get_s2skey_db(logger: Logger): Promise<S2S_Key_DB_Mongo> {
+        this.logger.debug(`BEGIN ${this.get_s2skey_db.name} in mongo`, { tags: [PapieaEngineTags.Database] })
         if (this.s2skeyDb !== undefined)
             return this.s2skeyDb;
         if (this.db === undefined)
             throw new PapieaException("MongoDBError: Not connected to s2skey database");
         this.s2skeyDb = new S2S_Key_DB_Mongo(logger, this.db);
         await this.s2skeyDb.init();
+        this.logger.debug(`END ${this.get_s2skey_db.name} in mongo`, { tags: [PapieaEngineTags.Database] })
         return this.s2skeyDb;
     }
 
     async get_session_key_db(logger: Logger): Promise<SessionKeyDbMongo> {
+        this.logger.debug(`BEGIN ${this.get_session_key_db.name} in mongo`, { tags: [PapieaEngineTags.Database] })
         if (this.sessionKeyDb !== undefined)
             return this.sessionKeyDb;
         if (this.db === undefined)
             throw new PapieaException("MongoDBError: Not connected to session key database");
         this.sessionKeyDb = new SessionKeyDbMongo(logger, this.db);
         await this.sessionKeyDb.init();
+        this.logger.debug(`END ${this.get_session_key_db.name} in mongo`, { tags: [PapieaEngineTags.Database] })
         return this.sessionKeyDb;
     }
 
     async get_intent_watcher_db(logger: Logger): Promise<IntentWatcher_DB_Mongo> {
+        this.logger.debug(`BEGIN ${this.get_intent_watcher_db.name} in mongo`, { tags: [PapieaEngineTags.Database] })
         if (this.intentWatcherDb !== undefined)
             return this.intentWatcherDb;
         if (this.db === undefined)
             throw new PapieaException("MongoDBError: Not connected to intent watcher database");
         this.intentWatcherDb = new IntentWatcher_DB_Mongo(logger, this.db);
         await this.intentWatcherDb.init();
+        this.logger.debug(`END ${this.get_intent_watcher_db.name} in mongo`, { tags: [PapieaEngineTags.Database] })
         return this.intentWatcherDb;
     }
 
     async get_watchlist_db(logger: Logger): Promise<Watchlist_Db_Mongo> {
+        this.logger.debug(`BEGIN ${this.get_watchlist_db.name} in mongo`, { tags: [PapieaEngineTags.Database] })
         if (this.watchlistDb !== undefined)
             return this.watchlistDb;
         if (this.db === undefined)
             throw new PapieaException("MongoDBError: Not connected to watchlist database");
         this.watchlistDb = new Watchlist_Db_Mongo(logger, this.db);
         await this.watchlistDb.init();
+        this.logger.debug(`END ${this.get_watchlist_db.name} in mongo`, { tags: [PapieaEngineTags.Database] })
         return this.watchlistDb;
     }
 
     async get_graveyard_db(logger: Logger): Promise<Graveyard_DB> {
+        this.logger.debug(`BEGIN ${this.get_graveyard_db.name} in mongo`, { tags: [PapieaEngineTags.Database] })
         if (this.graveyardDb !== undefined)
             return this.graveyardDb;
         if (this.db === undefined)
             throw new PapieaException("MongoDBError: Not connected to graveyard database");
         this.graveyardDb = new Graveyard_DB_Mongo(logger, this.db, this.client);
         await this.graveyardDb.init();
+        this.logger.debug(`END ${this.get_graveyard_db.name} in mongo`, { tags: [PapieaEngineTags.Database] })
         return this.graveyardDb;
     }
 }

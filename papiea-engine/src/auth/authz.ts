@@ -1,7 +1,7 @@
 import {UserAuthInfo} from "./authn"
 import {Spec_DB} from "../databases/spec_db_interface"
 import {Provider_DB} from "../databases/provider_db_interface"
-import {Action, Provider, IntentWatcher, Entity, Provider_Entity_Reference} from "papiea-core"
+import {Action, Provider, IntentWatcher, PapieaEngineTags, Provider_Entity_Reference} from "papiea-core"
 import {PermissionDeniedError, UnauthorizedError} from "../errors/permission_error"
 import {BadRequestError} from "../errors/bad_request_error"
 import {Logger} from "papiea-backend-utils"
@@ -69,6 +69,7 @@ export class IntentWatcherAuthorizer extends Authorizer {
     }
 
     async checkPermission(user: UserAuthInfo, object: IntentWatcher, action: Action): Promise<void> {
+        this.logger.debug(`BEGIN ${this.checkPermission.name} for intent watcher`, { tags: [PapieaEngineTags.Auth] })
         if (object === undefined || object === null) {
             // We shouldn't reach this under normal circumstances
             throw new BadRequestError("No intent watcher provided in the authorizer permission check")
@@ -85,7 +86,8 @@ export class IntentWatcherAuthorizer extends Authorizer {
 
         const provider: Provider = await this.provider_db.get_provider(entity_ref.provider_prefix, entity_ref.provider_version);
         const [entity_metadata, ] = await this.spec_db.get_spec(entity_ref);
-        return await this.perProviderAuthorizer.checkPermission(user, entity_metadata, action, provider)
+        await this.perProviderAuthorizer.checkPermission(user, entity_metadata, action, provider)
+        this.logger.debug(`END ${this.checkPermission.name} for intent watcher`, { tags: [PapieaEngineTags.Auth] })
     }
 }
 
@@ -108,51 +110,69 @@ export class PerProviderAuthorizer extends Authorizer {
     }
 
     private async getAuthorizerByObject(provider: Provider): Promise<Authorizer | null> {
+        this.logger.debug(`BEGIN ${this.getAuthorizerByObject.name} for per provider`, { tags: [PapieaEngineTags.Auth] })
         if (provider.prefix in this.providerToAuthorizer) {
+            this.logger.debug(`END ${this.getAuthorizerByObject.name} for per provider`, { tags: [PapieaEngineTags.Auth] })
             return this.providerToAuthorizer[provider.prefix];
         }
         if (!provider.authModel || !provider.policy) {
             this.providerToAuthorizer[provider.prefix] = null;
+            this.logger.debug(`END ${this.getAuthorizerByObject.name} for per provider`, { tags: [PapieaEngineTags.Auth] })
             return null;
         }
         const authorizer = await this.providerAuthorizerFactory.createAuthorizer(provider);
         this.providerToAuthorizer[provider.prefix] = authorizer;
+        this.logger.debug(`END ${this.getAuthorizerByObject.name} for per provider`, { tags: [PapieaEngineTags.Auth] })
         return authorizer;
     }
 
     async checkPermission(user: UserAuthInfo, object: any, action: Action, provider?: Provider): Promise<void> {
+        this.logger.debug(`BEGIN ${this.checkPermission.name} for per provider`, { tags: [PapieaEngineTags.Auth] })
         if (provider === undefined || provider === null) {
             // We shouldn't reach this under normal circumstances
             throw new BadRequestError("No provider exists in the provider check permission")
         }
         const authorizer: Authorizer | null = await this.getAuthorizerByObject(provider!)
         if (authorizer === null) {
+            this.logger.debug(`END ${this.checkPermission.name} for per provider`, { tags: [PapieaEngineTags.Auth] })
             return;
         }
         if (!user) {
             throw new UnauthorizedError(`No user provided in the provider check permission for provider ${provider.prefix}/${provider.version}`, { provider_prefix: provider.prefix, provider_version: provider.version });
         }
         if (user.is_admin) {
+            this.logger.debug(`END ${this.checkPermission.name} for per provider`, { tags: [PapieaEngineTags.Auth] })
             return;
         }
         if (user.is_provider_admin) {
             // For provider-admin provider_prefix must be set
             if (user.provider_prefix === provider!.prefix) {
+                this.logger.debug(`END ${this.checkPermission.name} for per provider`, { tags: [PapieaEngineTags.Auth] })
                 return;
             } else {
                 throw new PermissionDeniedError(`Provider admin has wrong prefix for the provider in check permission ${provider.prefix}/${provider.version}`, { provider_prefix: provider.prefix, provider_version: provider.version, additional_info: { "provider_admin": JSON.stringify(user) }});
             }
         }
-        return authorizer.checkPermission(user, object, action, provider);
+        await authorizer.checkPermission(user, object, action, provider);
+        this.logger.debug(`END ${this.checkPermission.name} for per provider`, { tags: [PapieaEngineTags.Auth] })
     }
 }
 
 export class AdminAuthorizer extends Authorizer {
+    private logger: Logger
+
+    constructor(logger: Logger) {
+        super()
+        this.logger = logger
+    }
+
     async checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void> {
+        this.logger.debug(`BEGIN ${this.checkPermission.name} for admin`, { tags: [PapieaEngineTags.Auth] })
         if (!user) {
             throw new UnauthorizedError("No user provided in the admin authorizer permission check");
         }
         if (user.is_admin) {
+            this.logger.debug(`END ${this.checkPermission.name} for admin`, { tags: [PapieaEngineTags.Auth] })
             return;
         }
         if (action === Action.CreateS2SKey) {
@@ -166,12 +186,14 @@ export class AdminAuthorizer extends Authorizer {
                 throw new PermissionDeniedError(`User has wrong provider prefix for the object in admin permission check to create s2skey for provider ${object.provider_prefix}`, { provider_prefix: object.provider_prefix, additional_info: { "user": JSON.stringify(user) }});
             }
             if (user.is_provider_admin) {
+                this.logger.debug(`END ${this.checkPermission.name} for admin`, { tags: [PapieaEngineTags.Auth] })
                 return;
             }
             if (object.user_info.is_provider_admin
                 || object.user_info.owner !== user.owner) {
                 throw new PermissionDeniedError(`User has wrong owner for the object's user info in admin permission check to create s2skey`, { additional_info: { "user": JSON.stringify(user), "object_owner": object.owner }});
             }
+            this.logger.debug(`END ${this.checkPermission.name} for admin`, { tags: [PapieaEngineTags.Auth] })
             return;
         }
         if (action === Action.ReadS2SKey || action === Action.InactivateS2SKey) {
@@ -179,10 +201,12 @@ export class AdminAuthorizer extends Authorizer {
                 || (user.provider_prefix !== undefined && object.provider_prefix !== user.provider_prefix)) {
                 throw new PermissionDeniedError(`User has wrong provider prefix for the object in admin permission check to read/inactivate s2skey for provider ${object.provider_prefix}`, { provider_prefix: object.provider_prefix, additional_info:{ "user": JSON.stringify(user) }});
             } else {
+                this.logger.debug(`END ${this.checkPermission.name} for admin`, { tags: [PapieaEngineTags.Auth] })
                 return;
             }
         }
         if (user.is_provider_admin && object.prefix === user.provider_prefix) {
+            this.logger.debug(`END ${this.checkPermission.name} for admin`, { tags: [PapieaEngineTags.Auth] })
             return;
         }
         throw new PermissionDeniedError(`Something went wrong in admin permission check`, { additional_info: { "user": JSON.stringify(user), "action": action, "entity": JSON.stringify(object) }});

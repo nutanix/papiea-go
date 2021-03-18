@@ -4,7 +4,7 @@ import {IntentWatcher_DB} from "../databases/intent_watcher_db_interface"
 import {Provider_DB} from "../databases/provider_db_interface"
 import {Handler, IntentfulListener} from "./intentful_listener_interface"
 import {Watchlist} from "./watchlist"
-import {Diff, DiffContent, Differ, Entity, IntentfulStatus, IntentWatcher} from "papiea-core"
+import {Diff, DiffContent, Differ, Entity, IntentfulStatus, IntentWatcher, PapieaEngineTags} from "papiea-core"
 import {timeout} from "../utils/utils"
 import {Logger} from "papiea-backend-utils"
 
@@ -39,16 +39,19 @@ export class IntentResolver {
         this.intentfulListener.onChange = new Handler(this.onChange)
     }
 
-    private static getExisting(current_diffs: Diff[], watcher_diff: Diff): Diff | null {
+    private static getExisting(logger: Logger, current_diffs: Diff[], watcher_diff: Diff): Diff | null {
+        logger.debug(`BEGIN ${this.getExisting.name} in intent resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
         for (let diff of current_diffs) {
             for (let idx in watcher_diff.diff_fields) {
                 const watcher_diff_path = JSON.stringify(watcher_diff.diff_fields[idx].path)
                 const current_diff_path = JSON.stringify(diff.diff_fields[idx].path)
                 if (watcher_diff_path === current_diff_path) {
+                    logger.debug(`END ${this.getExisting.name} in intent resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
                     return diff
                 }
             }
         }
+        logger.debug(`END ${this.getExisting.name} in intent resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
         return null
     }
 
@@ -79,12 +82,16 @@ export class IntentResolver {
     }
 
     private async rediff(entity: Entity): Promise<Diff[]> {
+        this.logger.debug(`BEGIN ${this.rediff.name} in intent resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
         const provider = await this.providerDb.get_provider(entity.metadata.provider_prefix, entity.metadata.provider_version)
         const kind = this.providerDb.find_kind(provider, entity.metadata.kind)
-        return this.differ.all_diffs(kind, entity.spec, entity.status, this.logger)
+        const diffs = await this.differ.all_diffs(kind, entity.spec, entity.status, this.logger)
+        this.logger.debug(`END ${this.rediff.name} in intent resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
+        return diffs
     }
 
     private async processActiveWatcher(active: IntentWatcher, entity: Entity): Promise<void> {
+        this.logger.debug(`BEGIN ${this.processActiveWatcher.name} in intent resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
         const current_spec_version = entity.metadata.spec_version
         const watcher_spec_version = active.spec_version
         const current_diffs = await this.rediff(entity)
@@ -97,7 +104,7 @@ export class IntentResolver {
             let affected_diff_count = 0
             for (let watcher_diff of active.diffs) {
                 // Current set of diff fields are more up to date, thus replacing
-                const existing_diff = IntentResolver.getExisting(current_diffs, watcher_diff)
+                const existing_diff = IntentResolver.getExisting(this.logger, current_diffs, watcher_diff)
                 if (!this.pathValuesEqual(watcher_diff.diff_fields, entity)) {
                     affected_diff_count++
                 } else if (existing_diff) {
@@ -110,7 +117,7 @@ export class IntentResolver {
         } else {
             for (let watcher_diff of active.diffs) {
                 // Current set of diff fields are more up to date, thus replacing
-                const existing_diff = IntentResolver.getExisting(current_diffs, watcher_diff)
+                const existing_diff = IntentResolver.getExisting(this.logger, current_diffs, watcher_diff)
                 if (existing_diff) {
                     unresolved_diffs.push(existing_diff)
                 } else {
@@ -120,6 +127,7 @@ export class IntentResolver {
             status = IntentResolver.determineWatcherStatus(0, resolved_diff_count, active)
         }
         await this.intentWatcherDb.update_watcher(active.uuid, { status: status, last_status_changed: new Date(), diffs: unresolved_diffs })
+        this.logger.debug(`END ${this.processActiveWatcher.name} in intent resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
     }
 
     private static determineWatcherStatus(affected_diff_count: number, resolved_diff_count: number, active: IntentWatcher): IntentfulStatus {
@@ -138,6 +146,7 @@ export class IntentResolver {
 
     private async onChange(entity: Entity) {
         try {
+            this.logger.debug(`BEGIN ${this.onChange.name} in intent resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
             const watchers = await this.intentWatcherDb.list_watchers(
                 {
                     entity_ref: {
@@ -152,12 +161,15 @@ export class IntentResolver {
             for (let watcher of watchers) {
                 await this.processActiveWatcher(watcher, entity)
             }
+            this.logger.debug(`END ${this.onChange.name} in intent resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
         } catch (e) {
             this.logger.debug(`Couldn't process onChange for entity with uuid: ${entity.metadata.uuid} and kind: ${entity.metadata.kind} for provider with prefix: ${entity.metadata.provider_prefix} and version: ${entity.metadata.provider_version}`)
+            this.logger.debug(`END ${this.onChange.name} in intent resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
         }
     }
 
     private async updateActiveWatchersStatuses() {
+        this.logger.debug(`BEGIN ${this.updateActiveWatchersStatuses.name} in intent resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
         let entries = this.watchlist.entries();
         for (let key in entries) {
             if (!entries.hasOwnProperty(key)) {
@@ -185,22 +197,25 @@ export class IntentResolver {
                 }
             }
         }
+        this.logger.debug(`END ${this.updateActiveWatchersStatuses.name} in intent resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
     }
 
     public async run(delay: number, watcherExpirySeconds: number) {
         try {
             await this._run(delay, watcherExpirySeconds)
         } catch (e) {
-            console.error(`Error in run method for intent resolver: ${e}`)
+            this.logger.error(`Error in run method for intent resolver: ${e}`)
             throw e
         }
     }
 
     protected async _run(delay: number, watcherExpirySeconds: number) {
         while (true) {
+            this.logger.debug(`BEGIN ${this._run.name} in intent resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
             await timeout(delay)
             this.clearTerminalStateWatchers(watcherExpirySeconds)
             this.updateActiveWatchersStatuses()
+            this.logger.debug(`END ${this._run.name} in intent resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
         }
     }
 }

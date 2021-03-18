@@ -1,7 +1,7 @@
 import { ValidationError } from "../errors/validation_error"
 import {DiffContent, Spec, Status} from "papiea-core"
 import { PapieaException } from "../errors/papiea_exception";
-import { Logger } from "papiea-backend-utils";
+import { Logger, LoggerFactory } from "papiea-backend-utils";
 
 // TODO: add d.ts for type annotations
 const papi_clj = require("../../papiea-lib-clj/papiea-lib-clj.js").papiea_lib_clj;
@@ -44,7 +44,7 @@ function remove_status_only_fields(schema: any, status: Status): Status {
 }
 
 // Removes all the null and undefined fields from the entity
-function remove_undefined_or_null_values(entity: any, logger?: Logger, kind_name: string = '', entity_name: string = '', field_name: string = ''): any {
+function remove_undefined_or_null_values(entity: any, logger: Logger, kind_name: string = '', entity_name: string = '', field_name: string = ''): any {
     if (entity === null || entity === undefined) {
         return null
     } else if (Array.isArray(entity)) {
@@ -54,11 +54,7 @@ function remove_undefined_or_null_values(entity: any, logger?: Logger, kind_name
             if (ret_val !== null) {
                 newArray.push(ret_val)
             } else {
-                if (logger !== undefined) {
-                    logger.debug(`Removing undefined/null list item from field: ${field_name} from ${kind_name}/${entity_name}.`);
-                } else {
-                    console.debug(`Removing undefined/null list item from field: ${field_name} from ${kind_name}/${entity_name}.`)
-                }
+                logger.debug(`Removing undefined/null list item from field: ${field_name} from ${kind_name}/${entity_name}.`);
             }
         });
         return newArray
@@ -69,11 +65,7 @@ function remove_undefined_or_null_values(entity: any, logger?: Logger, kind_name
             if (ret_val !== null) {
                 newObject[k] = ret_val
             } else {
-                if (logger !== undefined) {
-                    logger.debug(`Removing undefined/null field: ${field_name}/${k} from ${kind_name}/${entity_name}.`);
-                } else {
-                    console.debug(`Removing undefined/null field: ${field_name}/${k} from ${kind_name}/${entity_name}.`)
-                }
+                logger.debug(`Removing undefined/null field: ${field_name}/${k} from ${kind_name}/${entity_name}.`);
             }
         })
         return newObject
@@ -82,22 +74,14 @@ function remove_undefined_or_null_values(entity: any, logger?: Logger, kind_name
     }
 }
 
-function cleanup_spec_for_sfs_run(spec: Spec, kind_name: string, logger?: Logger): Spec {
-    if (logger !== undefined) {
-        logger.debug(`Running sanitizer function for ${kind_name}/spec.`);
-    } else {
-        console.debug(`Running sanitizer function for ${kind_name}/spec.`)
-    }
+function cleanup_spec_for_sfs_run(spec: Spec, kind_name: string, logger: Logger): Spec {
+    logger.debug(`Running sanitizer function for ${kind_name}/spec.`);
     const diff_spec = remove_undefined_or_null_values(spec, logger, kind_name, "spec")
     return diff_spec
 }
 
-function cleanup_status_for_sfs_run(status: Status, schema: any, kind_name: string, logger?: Logger): Status {
-    if (logger !== undefined) {
-        logger.debug(`Running sanitizer function for ${kind_name}/status.`);
-    } else {
-        console.debug(`Running sanitizer function for ${kind_name}/status.`)
-    }
+function cleanup_status_for_sfs_run(status: Status, schema: any, kind_name: string, logger: Logger): Status {
+    logger.debug(`Running sanitizer function for ${kind_name}/status.`);
     let diff_status = remove_undefined_or_null_values(status, logger, kind_name, "status")
     diff_status = remove_status_only_fields(schema, diff_status)
     return diff_status
@@ -120,6 +104,9 @@ export class SFSCompiler {
     }
 
     static run_sfs(compiled_sfs: any, spec: any, status: any, schema: any, kind_name: string, logger?: Logger): DiffContent[] | null {
+        if (logger === undefined) {
+            logger = LoggerFactory.makeLogger({});
+        }
         const diff_spec = cleanup_spec_for_sfs_run(spec, kind_name, logger)
         const diff_status = cleanup_status_for_sfs_run(status, schema, kind_name, logger)
         return run_compiled_sfs(compiled_sfs, diff_spec, diff_status)

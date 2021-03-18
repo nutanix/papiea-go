@@ -6,7 +6,7 @@ import { Validator } from "../validator";
 import { Authorizer } from "../auth/authz";
 import { UserAuthInfo } from "../auth/authn";
 import { createHash } from "../auth/crypto";
-import { Action, Entity_Reference, Provider, S2S_Key, Secret, Status, Version } from "papiea-core";
+import { Action, Entity_Reference, PapieaEngineTags, Provider, S2S_Key, Secret, Status, Version } from "papiea-core";
 import {Logger, RequestContext, spanOperation} from "papiea-backend-utils"
 import { Watchlist_DB } from "../databases/watchlist_db_interface";
 import { SpecOnlyUpdateStrategy } from "../intentful_core/intentful_strategies/status_update_strategy";
@@ -43,6 +43,7 @@ export class Provider_API_Impl implements Provider_API {
     }
 
     async register_provider(user: UserAuthInfo, provider: Provider, ctx: RequestContext): Promise<void> {
+        this.logger.debug(`BEGIN ${this.register_provider.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
         await this.authorizer.checkPermission(user, provider, Action.RegisterProvider, provider);
         this.validator.validate_provider(provider)
         this.validator.validate_sfs(provider)
@@ -50,25 +51,32 @@ export class Provider_API_Impl implements Provider_API {
                                    ctx.tracing_ctx)
         await this.providerDb.save_provider(provider);
         span.finish()
+        this.logger.debug(`END ${this.register_provider.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
     }
 
     async list_providers(user: UserAuthInfo, ctx: RequestContext): Promise<Provider[]> {
+        this.logger.debug(`BEGIN ${this.list_providers.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
         const span = spanOperation(`list_providers_db`,
                                    ctx.tracing_ctx)
         const providers = await this.providerDb.list_providers();
         span.finish()
-        return this.authorizer.filter(user, providers, Action.ReadProvider);
+        const provider_list = await this.authorizer.filter(user, providers, Action.ReadProvider);
+        this.logger.debug(`END ${this.list_providers.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
+        return provider_list
     };
 
     async unregister_provider(user: UserAuthInfo, provider_prefix: string, version: Version, ctx: RequestContext): Promise<void> {
+        this.logger.debug(`BEGIN ${this.unregister_provider.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
         await this.authorizer.checkPermission(user, {prefix: provider_prefix}, Action.UnregisterProvider);
         const span = spanOperation(`delete_provider_db`,
                                    ctx.tracing_ctx)
         await this.providerDb.delete_provider(provider_prefix, version);
         span.finish()
+        this.logger.debug(`END ${this.unregister_provider.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
     }
 
     async replace_status(user: UserAuthInfo, provider_prefix: string, version: Version, entity_ref: Entity_Reference, status: Status, ctx: RequestContext): Promise<void> {
+        this.logger.debug(`BEGIN ${this.replace_status.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
         const span = spanOperation(`get_provider_db`,
                                    ctx.tracing_ctx)
         const provider: Provider = await this.providerDb.get_provider(provider_prefix, version);
@@ -82,10 +90,12 @@ export class Provider_API_Impl implements Provider_API {
         }
         await this.authorizer.checkPermission(user, provider, Action.UpdateStatus, provider);
         await this.validator.validate_status(provider, entity_ref, status);
-        return strategy.replace({provider_prefix: provider_prefix, provider_version: version, ...entity_ref}, status, ctx)
+        await strategy.replace({provider_prefix: provider_prefix, provider_version: version, ...entity_ref}, status, ctx)
+        this.logger.debug(`END ${this.replace_status.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
     }
 
     async update_status(user: UserAuthInfo, provider_prefix: string, version: Version, entity_ref: Entity_Reference, partialStatus: Status, ctx: RequestContext): Promise<void> {
+        this.logger.debug(`BEGIN ${this.update_status.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
         const getProviderSpan = spanOperation(`get_provider_db`,
                                    ctx.tracing_ctx)
         const provider: Provider = await this.providerDb.get_provider(provider_prefix, version);
@@ -116,8 +126,8 @@ export class Provider_API_Impl implements Provider_API {
             mergedStatus = {...currentStatus, ...partialStatus}
         }
         await this.validator.validate_status(provider, entity_ref, mergedStatus);
-
-        return await strategy.update({provider_prefix: provider_prefix, provider_version: version, ...entity_ref}, partialStatus, ctx)
+        await strategy.update({provider_prefix: provider_prefix, provider_version: version, ...entity_ref}, partialStatus, ctx)
+        this.logger.debug(`END ${this.update_status.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
     }
 
     async update_progress(user: UserAuthInfo, provider_prefix: string, version: Version, message: string, done_percent: number, ctx: RequestContext): Promise<void> {
@@ -131,31 +141,39 @@ export class Provider_API_Impl implements Provider_API {
     }
 
     private async get_provider_unchecked(provider_prefix: string, provider_version: Version, ctx: RequestContext): Promise<Provider> {
+        this.logger.debug(`BEGIN ${this.get_provider_unchecked.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
         const span = spanOperation(`get_provider_unchecked_db`,
                                    ctx.tracing_ctx)
         const provider = await this.providerDb.get_provider(provider_prefix, provider_version);
         span.finish()
+        this.logger.debug(`END ${this.get_provider_unchecked.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
         return provider
     }
 
     async get_provider(user: UserAuthInfo, provider_prefix: string, provider_version: Version, ctx: RequestContext): Promise<Provider> {
+        this.logger.debug(`BEGIN ${this.get_provider.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
         await this.authorizer.checkPermission(user, {prefix: provider_prefix}, Action.ReadProvider);
         const span = spanOperation(`get_provider_db`,
                                    ctx.tracing_ctx)
         const provider = await this.providerDb.get_provider(provider_prefix, provider_version);
         span.finish()
+        this.logger.debug(`END ${this.get_provider.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
         return provider
     }
 
     async list_providers_by_prefix(user: UserAuthInfo, provider_prefix: string, ctx: RequestContext): Promise<Provider[]> {
+        this.logger.debug(`BEGIN ${this.list_providers_by_prefix.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
         const span = spanOperation(`get_providers_db`,
                                    ctx.tracing_ctx)
         const res = await this.providerDb.find_providers(provider_prefix);
         span.finish()
-        return this.authorizer.filter(user, res, Action.ReadProvider);
+        const provider_list = await this.authorizer.filter(user, res, Action.ReadProvider);
+        this.logger.debug(`END ${this.list_providers_by_prefix.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
+        return provider_list
     }
 
     async update_auth(user: UserAuthInfo, provider_prefix: string, provider_version: Version, auth: any, ctx: RequestContext): Promise<void> {
+        this.logger.debug(`BEGIN ${this.update_auth.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
         const provider: Provider = await this.get_provider_unchecked(provider_prefix, provider_version, ctx);
         await this.authorizer.checkPermission(user, provider, Action.UpdateAuth, provider);
         if (auth.authModel !== undefined) {
@@ -174,6 +192,7 @@ export class Provider_API_Impl implements Provider_API {
         for (let authorizer of this.registeredAuthorizers) {
             authorizer.on_auth_changed(provider)
         }
+        this.logger.debug(`END ${this.update_auth.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
     }
 
     async create_key(user: UserAuthInfo, name: string, owner: string, provider_prefix: string, ctx: RequestContext, user_info?: any, key?: Secret): Promise<S2S_Key> {
@@ -188,6 +207,7 @@ export class Provider_API_Impl implements Provider_API {
         // A.extension.provider_prefix, A.extension.tenant, etc.
         // In other words user with s2skey A talks on behalf of user in A.extension
         // All rules who can talk on behalf of whom are defined in AdminAuthorizer
+        this.logger.debug(`BEGIN ${this.create_key.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
         const s2skey: S2S_Key = {
             name: name,
             uuid: uuid(),
@@ -208,19 +228,23 @@ export class Provider_API_Impl implements Provider_API {
                                    ctx.tracing_ctx)
         const resKey = await this.s2skeyDb.get_key(s2skey.uuid);
         getKeySpan.finish()
+        this.logger.debug(`END ${this.create_key.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
         return resKey
     }
 
     async get_key(user: UserAuthInfo, uuid: string, ctx: RequestContext): Promise<S2S_Key> {
+        this.logger.debug(`BEGIN ${this.get_key.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
         const span = spanOperation(`get_key_db`,
                                    ctx.tracing_ctx)
         const s2skey = await this.s2skeyDb.get_key(uuid);
         span.finish()
         await this.authorizer.checkPermission(user, s2skey, Action.ReadS2SKey);
+        this.logger.debug(`END ${this.get_key.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
         return s2skey;
     }
 
     async inactivate_key(user: UserAuthInfo, uuid: string, ctx: RequestContext): Promise<void> {
+        this.logger.debug(`BEGIN ${this.inactivate_key.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
         const getKeySpan = spanOperation(`get_key_db`,
                                    ctx.tracing_ctx)
         const s2skey: S2S_Key = await this.s2skeyDb.get_key(uuid);
@@ -230,9 +254,11 @@ export class Provider_API_Impl implements Provider_API {
                                    ctx.tracing_ctx)
         await this.s2skeyDb.inactivate_key(s2skey.uuid);
         inactivateKeySpan.finish()
+        this.logger.debug(`END ${this.inactivate_key.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
     }
 
     async filter_keys(user: UserAuthInfo, fields: any, ctx: RequestContext): Promise<S2S_Key[]> {
+        this.logger.debug(`BEGIN ${this.filter_keys.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
         const span = spanOperation(`list_key_db`,
                                    ctx.tracing_ctx)
         const res = await this.s2skeyDb.list_keys(fields);
@@ -242,6 +268,8 @@ export class Provider_API_Impl implements Provider_API {
             secret = s2s_key.key;
             s2s_key.key = secret.slice(0, 2) + "*****" + secret.slice(-2);
         }
-        return this.authorizer.filter(user, res, Action.ReadS2SKey);
+        const s2s_key_list = this.authorizer.filter(user, res, Action.ReadS2SKey);
+        this.logger.debug(`END ${this.filter_keys.name} in provider API`, { tags: [PapieaEngineTags.Provider] })
+        return s2s_key_list
     }
 }

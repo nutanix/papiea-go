@@ -22,6 +22,7 @@ import {BasicEntityCreationStrategy} from "./entity_creation_strategies/basic_en
 import {Validator} from "../validator"
 import {Authorizer} from "../auth/authz"
 import {PapieaException} from "../errors/papiea_exception"
+import { Logger } from "papiea-backend-utils"
 
 export type BehaviourStrategyMap = Map<IntentfulBehaviour, IntentfulStrategy>
 export type DiffSelectionStrategyMap = Map<DiffSelectionStrategy, DiffSelectionStrategyInterface>
@@ -34,24 +35,24 @@ export class IntentfulContext {
     private readonly statusUpdateStrategyMap: StatusUpdateStrategyMap
     private readonly entityCreationStrategyMap: EntityCreationStrategyMap
 
-    constructor(specDb: Spec_DB, statusDb: Status_DB, graveyardDb: Graveyard_DB, differ: Differ, intentWatcherDb: IntentWatcher_DB, watchlistDb: Watchlist_DB, validator: Validator, authorizer: Authorizer) {
+    constructor(logger: Logger, specDb: Spec_DB, statusDb: Status_DB, graveyardDb: Graveyard_DB, differ: Differ, intentWatcherDb: IntentWatcher_DB, watchlistDb: Watchlist_DB, validator: Validator, authorizer: Authorizer) {
         this.behaviourStrategyMap = new Map()
-        this.behaviourStrategyMap.set(IntentfulBehaviour.Basic, new DifferIntentfulStrategy(specDb, statusDb, graveyardDb, differ, intentWatcherDb, watchlistDb))
-        this.behaviourStrategyMap.set(IntentfulBehaviour.SpecOnly, new SpecOnlyIntentfulStrategy(specDb, statusDb, graveyardDb))
-        this.behaviourStrategyMap.set(IntentfulBehaviour.Differ, new DifferIntentfulStrategy(specDb, statusDb, graveyardDb, differ, intentWatcherDb, watchlistDb))
+        this.behaviourStrategyMap.set(IntentfulBehaviour.Basic, new DifferIntentfulStrategy(logger, specDb, statusDb, graveyardDb, differ, intentWatcherDb, watchlistDb))
+        this.behaviourStrategyMap.set(IntentfulBehaviour.SpecOnly, new SpecOnlyIntentfulStrategy(logger, specDb, statusDb, graveyardDb))
+        this.behaviourStrategyMap.set(IntentfulBehaviour.Differ, new DifferIntentfulStrategy(logger, specDb, statusDb, graveyardDb, differ, intentWatcherDb, watchlistDb))
 
         this.diffSelectionStrategyMap = new Map()
         this.diffSelectionStrategyMap.set(DiffSelectionStrategy.Basic, new BasicDiffSelectionStrategy())
         this.diffSelectionStrategyMap.set(DiffSelectionStrategy.Random, new RandomDiffSelectionStrategy())
 
         this.statusUpdateStrategyMap = new Map()
-        this.statusUpdateStrategyMap.set(IntentfulBehaviour.Basic, new BasicUpdateStrategy(statusDb))
-        this.statusUpdateStrategyMap.set(IntentfulBehaviour.SpecOnly, new SpecOnlyUpdateStrategy(statusDb))
-        this.statusUpdateStrategyMap.set(IntentfulBehaviour.Differ, new DifferUpdateStrategy(statusDb, specDb, differ, watchlistDb))
+        this.statusUpdateStrategyMap.set(IntentfulBehaviour.Basic, new BasicUpdateStrategy(logger, statusDb))
+        this.statusUpdateStrategyMap.set(IntentfulBehaviour.SpecOnly, new SpecOnlyUpdateStrategy(logger, statusDb))
+        this.statusUpdateStrategyMap.set(IntentfulBehaviour.Differ, new DifferUpdateStrategy(logger, statusDb, specDb, differ, watchlistDb))
 
         this.entityCreationStrategyMap = new Map()
-        this.entityCreationStrategyMap.set("constructor", new ConstructorEntityCreationStrategy(specDb, statusDb, graveyardDb, watchlistDb, validator, authorizer, differ, intentWatcherDb))
-        this.entityCreationStrategyMap.set("basic", new BasicEntityCreationStrategy(specDb, statusDb, graveyardDb, watchlistDb, validator, authorizer))
+        this.entityCreationStrategyMap.set("constructor", new ConstructorEntityCreationStrategy(logger, specDb, statusDb, graveyardDb, watchlistDb, validator, authorizer, differ, intentWatcherDb))
+        this.entityCreationStrategyMap.set("basic", new BasicEntityCreationStrategy(logger, specDb, statusDb, graveyardDb, watchlistDb, validator, authorizer))
     }
 
     getIntentfulStrategy(provider: Provider, kind: Kind, user: UserAuthInfo): IntentfulStrategy {

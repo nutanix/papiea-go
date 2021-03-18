@@ -1,8 +1,10 @@
 import { deepMerge, isEmpty } from "../../utils/utils"
-import { dotnotation } from "papiea-backend-utils"
+import { dotnotation, Logger } from "papiea-backend-utils"
 import { datestringToFilter } from "./date"
+import { PapieaEngineTags } from "papiea-core"
 
-export function build_filter_query(fields_map: any, exact_match: boolean) {
+export function build_filter_query(logger: Logger, fields_map: any, exact_match: boolean) {
+    logger.debug(`BEGIN ${build_filter_query.name}`, { tags: [PapieaEngineTags.Database] })
     let filter: any = {}
     if (fields_map.metadata && fields_map.metadata.deleted_at) {
         filter["metadata.deleted_at"] = datestringToFilter(fields_map.metadata.deleted_at);
@@ -39,5 +41,6 @@ export function build_filter_query(fields_map: any, exact_match: boolean) {
             dotnotation({status: fields_map.status})
         )
     }
+    logger.debug(`END ${build_filter_query.name}`, { tags: [PapieaEngineTags.Database] })
     return filter
 }

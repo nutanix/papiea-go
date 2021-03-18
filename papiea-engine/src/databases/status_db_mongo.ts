@@ -1,6 +1,6 @@
 import { Status_DB } from "./status_db_interface";
 import { Db, Collection, UpdateWriteOpResult } from "mongodb"
-import { Entity_Reference, Status, Metadata, Entity, Provider_Entity_Reference } from "papiea-core";
+import { PapieaEngineTags, Status, Metadata, Entity, Provider_Entity_Reference } from "papiea-core";
 import { SortParams } from "../entity/entity_api_impl";
 import { Logger, dotnotation } from "papiea-backend-utils";
 import { build_filter_query } from "./utils/filtering"
@@ -21,6 +21,7 @@ export class Status_DB_Mongo implements Status_DB {
     }
 
     async replace_status(entity_ref: Provider_Entity_Reference, status: Status): Promise<void> {
+        this.logger.debug(`BEGIN ${this.replace_status.name} in status database`, { tags: [PapieaEngineTags.Database] })
         const result = await this.collection.updateOne({
             "metadata.provider_prefix": entity_ref.provider_prefix,
             "metadata.provider_version": entity_ref.provider_version,
@@ -39,9 +40,11 @@ export class Status_DB_Mongo implements Status_DB {
         if (result.result.n !== 1) {
             throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for kind ${entity_ref.provider_prefix}/${entity_ref.provider_version}/${entity_ref.kind}`, { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }})
         }
+        this.logger.debug(`END ${this.replace_status.name} in status database`, { tags: [PapieaEngineTags.Database] })
     }
 
     async update_status(entity_ref: Provider_Entity_Reference, status: Status): Promise<void> {
+        this.logger.debug(`BEGIN ${this.update_status.name} in status database`, { tags: [PapieaEngineTags.Database] })
         let result: UpdateWriteOpResult
         const partial_status_query = dotnotation({"status": status});
 
@@ -64,6 +67,7 @@ export class Status_DB_Mongo implements Status_DB {
                 }, aggregrate_fields, {
                     upsert: true
                 });
+                this.logger.debug(`END ${this.update_status.name} in status database`, { tags: [PapieaEngineTags.Database] })
         } catch (e) {
             if (e.code === 9) {
                 throw new PapieaException(`MongoDBError: Update body might be 'undefined', if this is expected, please use 'null' for kind ${entity_ref.provider_prefix}/${entity_ref.provider_version}/${entity_ref.kind}`,  { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }})
@@ -76,6 +80,7 @@ export class Status_DB_Mongo implements Status_DB {
     }
 
     async get_status(entity_ref: Provider_Entity_Reference): Promise<[Metadata, Status]> {
+        this.logger.debug(`BEGIN ${this.get_status.name} in status database`, { tags: [PapieaEngineTags.Database] })
         const result: Entity | null = await this.collection.findOne({
             "metadata.provider_prefix": entity_ref.provider_prefix,
             "metadata.provider_version": entity_ref.provider_version,
@@ -85,16 +90,19 @@ export class Status_DB_Mongo implements Status_DB {
         if (result === null) {
             throw new EntityNotFoundError(entity_ref.kind, entity_ref.uuid, entity_ref.provider_prefix, entity_ref.provider_version);
         }
+        this.logger.debug(`END ${this.get_status.name} in status database`, { tags: [PapieaEngineTags.Database] })
         return [result.metadata, result.status]
     }
 
     async get_statuses_by_ref(entity_refs: Provider_Entity_Reference[]): Promise<[Metadata, Status][]> {
+        this.logger.debug(`BEGIN ${this.get_statuses_by_ref.name} in status database`, { tags: [PapieaEngineTags.Database] })
         const ids = entity_refs.map(ref => ref.uuid)
         const result = await this.collection.find({
             "metadata.uuid": {
                 $in: ids
             }
         }).toArray();
+        this.logger.debug(`END ${this.get_statuses_by_ref.name} in status database`, { tags: [PapieaEngineTags.Database] })
         return result.map((x: any): [Metadata, Status] => {
             if (x.spec !== null) {
                 return [x.metadata, x.status]
@@ -105,13 +113,15 @@ export class Status_DB_Mongo implements Status_DB {
     }
 
     async list_status(fields_map: any, exact_match: boolean, sortParams?: SortParams): Promise<([Metadata, Status])[]> {
-        const filter = build_filter_query(fields_map, exact_match)
+        this.logger.debug(`BEGIN ${this.list_status.name} in status database`, { tags: [PapieaEngineTags.Database] })
+        const filter = build_filter_query(this.logger, fields_map, exact_match)
         let result: any[];
         if (sortParams) {
             result = await this.collection.find(filter).sort(sortParams).toArray();
         } else {
             result = await this.collection.find(filter).toArray();
         }
+        this.logger.debug(`END ${this.list_status.name} in status database`, { tags: [PapieaEngineTags.Database] })
         return result.map((x: any): [Metadata, Status] => {
             if (x.status !== null) {
                 return [x.metadata, x.status]
@@ -122,9 +132,11 @@ export class Status_DB_Mongo implements Status_DB {
     }
 
     async list_status_in(filter_list: any[], field_name: string = "metadata.uuid"): Promise<([Metadata, Status])[]> {
+        this.logger.debug(`BEGIN ${this.list_status_in.name} in status database`, { tags: [PapieaEngineTags.Database] })
         const result = await this.collection.find({ [field_name]: { $in: filter_list } }).sort({ "metadata.uuid": 1 }).toArray();
         return result.map((x: any): [Metadata, Status] => {
             if (x.status !== null) {
+                this.logger.debug(`END ${this.list_status_in.name} in status database`, { tags: [PapieaEngineTags.Database] })
                 return [x.metadata, x.status]
             } else {
                 throw new PapieaException("MongoDBError: No valid entities found");

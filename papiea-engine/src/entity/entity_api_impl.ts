@@ -10,6 +10,7 @@ import {
     Entity,
     IntentWatcher,
     Metadata,
+    PapieaEngineTags,
     Procedural_Signature,
     Provider,
     Provider_Entity_Reference,
@@ -56,23 +57,29 @@ export class Entity_API_Impl implements Entity_API {
     }
 
     private async get_provider(prefix: string, version: Version, ctx: RequestContext): Promise<Provider> {
+        this.logger.debug(`BEGIN ${this.get_provider.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         const span = spanOperation(`get_provider_db`,
                                    ctx.tracing_ctx,
                                    {prefix, version})
         const provider = await this.providerDb.get_provider(prefix, version);
         span.finish()
+        this.logger.debug(`END ${this.get_provider.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         return provider
     }
 
     async get_intent_watcher(user: UserAuthInfo, id: string, ctx: RequestContext): Promise<Partial<IntentWatcher>> {
+        this.logger.debug(`BEGIN ${this.get_intent_watcher.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         const intent_watcher = await this.intent_watcher_db.get_watcher(id)
         await this.intentWatcherAuthorizer.checkPermission(user, intent_watcher, Action.Read);
+        this.logger.debug(`END ${this.get_intent_watcher.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         return IntentWatcherMapper.toResponse(intent_watcher)
     }
 
     async filter_intent_watcher(user: UserAuthInfo, fields: any, ctx: RequestContext, sortParams?: SortParams): Promise<Partial<IntentWatcher>[]> {
+        this.logger.debug(`BEGIN ${this.filter_intent_watcher.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         const intent_watchers = await this.intent_watcher_db.list_watchers(fields, sortParams)
         const filteredRes = await this.intentWatcherAuthorizer.filter(user, intent_watchers, Action.Read);
+        this.logger.debug(`END ${this.filter_intent_watcher.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         return IntentWatcherMapper.toResponses(filteredRes)
     }
 
@@ -82,13 +89,17 @@ export class Entity_API_Impl implements Entity_API {
         spec: Spec,
         status: Status | null
     }> {
+        this.logger.debug(`BEGIN ${this.save_entity.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         const provider = await this.get_provider(prefix, version, ctx);
         const kind = this.providerDb.find_kind(provider, kind_name);
         const strategy = this.intentfulCtx.getEntityCreationStrategy(provider, kind, user)
-        return await strategy.create(input, ctx)
+        const ret_entity = await strategy.create(input, ctx)
+        this.logger.debug(`END ${this.save_entity.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
+        return ret_entity
     }
 
     async get_entity_spec(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, entity_uuid: uuid4, ctx: RequestContext,): Promise<[Metadata, Spec]> {
+        this.logger.debug(`BEGIN ${this.get_entity_spec.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         const provider = await this.get_provider(prefix, version, ctx);
         const entity_ref: Provider_Entity_Reference = { kind: kind_name, uuid: entity_uuid, provider_prefix: prefix, provider_version: version };
         const span = spanOperation(`get_spec_db`,
@@ -97,10 +108,12 @@ export class Entity_API_Impl implements Entity_API {
         const [metadata, spec] = await this.spec_db.get_spec(entity_ref);
         span.finish()
         await this.authorizer.checkPermission(user, {"metadata": metadata}, Action.Read, provider);
+        this.logger.debug(`END ${this.get_entity_spec.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         return [metadata, spec];
     }
 
     async get_entity_status(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, entity_uuid: uuid4, ctx: RequestContext,): Promise<[Metadata, Status]> {
+        this.logger.debug(`BEGIN ${this.get_entity_status.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         const provider = await this.get_provider(prefix, version, ctx);
         const entity_ref: Provider_Entity_Reference = { provider_prefix: prefix, provider_version: version,
             kind: kind_name, uuid: entity_uuid };
@@ -110,10 +123,12 @@ export class Entity_API_Impl implements Entity_API {
         const [metadata, status] = await this.status_db.get_status(entity_ref);
         span.finish()
         await this.authorizer.checkPermission(user, {"metadata": metadata}, Action.Read, provider);
+        this.logger.debug(`END ${this.get_entity_status.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         return [metadata, status];
     }
 
     async filter_entity_spec(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, fields: any, exact_match: boolean, ctx: RequestContext, sortParams?: SortParams): Promise<[Metadata, Spec][]> {
+        this.logger.debug(`BEGIN ${this.filter_entity_spec.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         const provider = await this.get_provider(prefix, version, ctx);
         fields.metadata.kind = kind_name;
         const span = spanOperation(`filter_spec_db`,
@@ -123,10 +138,12 @@ export class Entity_API_Impl implements Entity_API {
         const filteredRes = await this.authorizer.filter(user, res, Action.Read, provider, x => {
             return {"metadata": x[0]}
         });
+        this.logger.debug(`END ${this.filter_entity_spec.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         return filteredRes;
     }
 
     async filter_entity_status(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, fields: any, exact_match: boolean, ctx: RequestContext, sortParams?: SortParams): Promise<[Metadata, Status][]> {
+        this.logger.debug(`BEGIN ${this.filter_entity_status.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         const provider = await this.get_provider(prefix, version, ctx);
         fields.metadata.kind = kind_name;
         const span = spanOperation(`filter_status_db`,
@@ -136,10 +153,12 @@ export class Entity_API_Impl implements Entity_API {
         const filteredRes = await this.authorizer.filter(user, res, Action.Read, provider, x => {
             return {"metadata": x[0]}
         });
+        this.logger.debug(`END ${this.filter_entity_status.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         return filteredRes;
     }
 
     async filter_deleted(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, fields: any, exact_match: boolean, ctx: RequestContext, sortParams?: SortParams): Promise<Entity[]> {
+        this.logger.debug(`BEGIN ${this.filter_deleted.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         const provider = await this.get_provider(prefix, version, ctx);
         fields.metadata.kind = kind_name;
         const span = spanOperation(`filter_deleted_db`,
@@ -149,10 +168,12 @@ export class Entity_API_Impl implements Entity_API {
         const filteredRes = await this.authorizer.filter(user, res, Action.Read, provider, x => {
             return {"metadata": x.metadata}
         });
+        this.logger.debug(`END ${this.filter_deleted.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         return filteredRes
     }
 
     async update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, extension: {[key: string]: any}, kind_name: string, version: Version, spec_description: Spec, ctx: RequestContext): Promise<IntentWatcher | null> {
+        this.logger.debug(`BEGIN ${this.update_entity_spec.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         const provider = await this.get_provider(prefix, version, ctx);
         const kind = this.providerDb.find_kind(provider, kind_name);
         this.validator.validate_spec(provider, spec_description, kind, provider.allowExtraProps);
@@ -164,10 +185,12 @@ export class Entity_API_Impl implements Entity_API {
         metadata.provider_version = version
         const strategy = this.intentfulCtx.getIntentfulStrategy(provider, kind, user)
         const watcher = await strategy.update(metadata, spec_description, ctx)
+        this.logger.debug(`END ${this.update_entity_spec.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         return watcher;
     }
 
     async delete_entity(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, entity_uuid: uuid4, ctx: RequestContext): Promise<void> {
+        this.logger.debug(`BEGIN ${this.delete_entity.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         const provider = await this.get_provider(prefix, version, ctx);
         const kind = this.providerDb.find_kind(provider, kind_name);
         const entity_ref: Provider_Entity_Reference = { kind: kind_name, uuid: entity_uuid, provider_prefix: prefix, provider_version: version };
@@ -176,9 +199,11 @@ export class Entity_API_Impl implements Entity_API {
         await this.authorizer.checkPermission(user, {"metadata": metadata}, Action.Delete, provider);
         const strategy = this.intentfulCtx.getIntentfulStrategy(provider, kind, user)
         await strategy.delete({ metadata, spec, status }, ctx)
+        this.logger.debug(`END ${this.delete_entity.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
     }
 
     async call_procedure(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, entity_uuid: uuid4, procedure_name: string, input: any, ctx: RequestContext): Promise<any> {
+        this.logger.debug(`BEGIN ${this.call_procedure.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         const provider = await this.get_provider(prefix, version, ctx);
         const kind = this.providerDb.find_kind(provider, kind_name);
         const entity_spec: [Metadata, Spec] = await this.get_entity_spec(user, prefix, version, kind_name, entity_uuid, ctx);
@@ -215,6 +240,7 @@ export class Entity_API_Impl implements Entity_API {
             this.validator.validate(provider.prefix, provider.version, kind.name,
                 data, Object.values(procedure.result)[0], schemas,
                 provider.allowExtraProps, Object.keys(procedure.argument)[0], procedure_name);
+            this.logger.debug(`END ${this.call_procedure.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
             return data;
         } catch (err) {
             throw ProcedureInvocationError.fromError(err, { provider_prefix: prefix, provider_version: version, kind_name: kind.name, additional_info: { "procedure_name": procedure_name }})
@@ -222,6 +248,7 @@ export class Entity_API_Impl implements Entity_API {
     }
 
     async call_provider_procedure(user: UserAuthInfo, prefix: string, version: Version, procedure_name: string, input: any, ctx: RequestContext): Promise<any> {
+        this.logger.debug(`BEGIN ${this.call_provider_procedure.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         const provider = await this.get_provider(prefix, version, ctx);
         if (provider.procedures === undefined) {
             throw new PapieaException(`No provider procedures exist for provider ${prefix}/${version}`, { provider_prefix: prefix, provider_version: version });
@@ -253,6 +280,7 @@ export class Entity_API_Impl implements Entity_API {
             this.validator.validate(provider.prefix, provider.version, 'ProviderProcedure',
                 data, Object.values(procedure.result)[0], schemas,
                 provider.allowExtraProps, Object.keys(procedure.argument)[0], procedure_name);
+            this.logger.debug(`END ${this.call_provider_procedure.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
             return data;
         } catch (err) {
             throw ProcedureInvocationError.fromError(err, { provider_prefix: prefix, provider_version: version, additional_info: { "procedure_name": procedure_name }})
@@ -260,6 +288,7 @@ export class Entity_API_Impl implements Entity_API {
     }
 
     async call_kind_procedure(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, procedure_name: string, input: any, ctx: RequestContext,): Promise<any> {
+        this.logger.debug(`BEGIN ${this.call_kind_procedure.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         const provider = await this.get_provider(prefix, version, ctx);
         const kind = this.providerDb.find_kind(provider, kind_name);
         const procedure: Procedural_Signature | undefined = kind.kind_procedures[procedure_name];
@@ -289,6 +318,7 @@ export class Entity_API_Impl implements Entity_API {
             this.validator.validate(provider.prefix, provider.version, kind.name,
                 data, Object.values(procedure.result)[0], schemas,
                 provider.allowExtraProps, Object.keys(procedure.argument)[0], procedure_name);
+            this.logger.debug(`END ${this.call_kind_procedure.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
             return data;
         } catch (err) {
             throw ProcedureInvocationError.fromError(err, { provider_prefix: prefix, provider_version: version, kind_name: kind_name, additional_info: { "procedure_name": procedure_name }})
@@ -296,19 +326,25 @@ export class Entity_API_Impl implements Entity_API {
     }
 
     async check_permission(user: UserAuthInfo, prefix: string, version: Version, entityAction: [Action, Provider_Entity_Reference][], ctx: RequestContext): Promise<OperationSuccess> {
+        this.logger.debug(`BEGIN ${this.check_permission.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         const provider = await this.get_provider(prefix, version, ctx)
+        let ret_success: OperationSuccess
         if (entityAction.length === 1) {
-            return await this.check_single_permission(user, provider, entityAction[0])
+            ret_success = await this.check_single_permission(user, provider, entityAction[0])
         } else {
-            return await this.check_multiple_permissions(user, provider, entityAction)
+            ret_success = await this.check_multiple_permissions(user, provider, entityAction)
         }
+        this.logger.debug(`END ${this.check_permission.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
+        return ret_success   
     }
 
     async check_single_permission(user: UserAuthInfo, provider: Provider, entityAction: [Action, Provider_Entity_Reference]): Promise<OperationSuccess> {
+        this.logger.debug(`BEGIN ${this.check_single_permission.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         const [action, entityRef] = entityAction;
         if (action === Action.Create) {
             const has_perm = await this.has_permission(user, provider, entityRef as Metadata, action)
             if (has_perm) {
+                this.logger.debug(`END ${this.check_single_permission.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
                 return {"success": "Ok"}
             } else {
                 throw new PermissionDeniedError(`User does not have create permission on entity of kind ${entityRef.provider_prefix}/${entityRef.provider_version}/${entityRef.kind}`, { provider_prefix: entityRef.provider_prefix, provider_version: entityRef.provider_version, kind_name: entityRef.kind, additional_info: { "entity_uuid": entityRef.uuid, "user": JSON.stringify(user) }})
@@ -317,6 +353,7 @@ export class Entity_API_Impl implements Entity_API {
             const [metadata, _] = await this.spec_db.get_spec(entityRef);
             const has_perm = await this.has_permission(user, provider, metadata, action)
             if (has_perm) {
+                this.logger.debug(`END ${this.check_single_permission.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
                 return {"success": "Ok"}
             } else {
                 throw new PermissionDeniedError(`User does not have permission on entity of kind ${entityRef.provider_prefix}/${entityRef.provider_version}/${entityRef.kind}`, { provider_prefix: entityRef.provider_prefix, provider_version: entityRef.provider_version, kind_name: entityRef.kind, additional_info: { "entity_uuid": entityRef.uuid, "user": JSON.stringify(user), "action": action }})
@@ -325,6 +362,7 @@ export class Entity_API_Impl implements Entity_API {
     }
 
     async check_multiple_permissions(user: UserAuthInfo, provider: Provider, entityAction: [Action, Provider_Entity_Reference][]): Promise<OperationSuccess> {
+        this.logger.debug(`BEGIN ${this.check_multiple_permissions.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
         const checkPromises: Promise<boolean>[] = [];
         for (let [action, entityRef] of entityAction) {
             if (action === Action.Create) {
@@ -336,6 +374,7 @@ export class Entity_API_Impl implements Entity_API {
         }
         const has_perm = (await Promise.all(checkPromises)).every((val, index, arr) => val)
         if (has_perm) {
+            this.logger.debug(`END ${this.check_multiple_permissions.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
             return { "success": "Ok" }
         } else {
             throw new PermissionDeniedError(`User does not have permission to one or all of the entities for provider ${provider.prefix}/${provider.version}`, { provider_prefix: provider.prefix, provider_version: provider.version, additional_info: { "user": JSON.stringify(user) }})
@@ -344,9 +383,12 @@ export class Entity_API_Impl implements Entity_API {
 
     async has_permission(user: UserAuthInfo, provider: Provider, metadata: Metadata, action: Action) {
         try {
+            this.logger.debug(`BEGIN ${this.has_permission.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
             await this.authorizer.checkPermission(user, {"metadata": metadata}, action, provider);
+            this.logger.debug(`END ${this.has_permission.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
             return true;
         } catch (e) {
+            this.logger.debug(`END ${this.has_permission.name} for entity API`, { tags: [PapieaEngineTags.Entity] })
             return false;
         }
     }

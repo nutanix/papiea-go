@@ -4,7 +4,7 @@ import { newEnforcer, newModel } from "casbin/lib/casbin";
 import { Adapter } from "casbin/lib/persist/adapter";
 import { Model } from "casbin/lib/model";
 import { Helper } from "casbin/lib/persist/helper";
-import { Provider, Action } from "papiea-core";
+import { Provider, Action, PapieaEngineTags } from "papiea-core";
 import { PermissionDeniedError } from "../errors/permission_error";
 import { Logger } from 'papiea-backend-utils'
 import { BadRequestError } from "../errors/bad_request_error";
@@ -32,9 +32,11 @@ export class CasbinAuthorizer extends Authorizer {
 
     async checkPermission(user: UserAuthInfo, object: any, action: Action, provider?: Provider): Promise<void> {
         try {
+            this.logger.debug(`BEGIN ${this.checkPermission.name} for casbin`, { tags: [PapieaEngineTags.Auth] })
             if (!this.enforcer.enforce(user, object, action)) {
                 throw new PermissionDeniedError(`User does not have permission for the entity on provider ${provider?.prefix}/${provider?.version}`, { provider_prefix: provider?.prefix, provider_version: provider?.version, additional_info: { "user": JSON.stringify(user), "action": action, "entity": JSON.stringify(object) }});
             }
+            this.logger.debug(`END ${this.checkPermission.name} for casbin`, { tags: [PapieaEngineTags.Auth] })
         } catch (e) {
             this.logger.error("CasbinAuthorizer checkPermission error", e);
             throw new PermissionDeniedError(`Authorizer failed to execute for user on provider ${provider?.prefix}/${provider?.version}`, { provider_prefix: provider?.prefix, provider_version: provider?.version, additional_info: { "user": JSON.stringify(user), "action": action, "entity": JSON.stringify(object) }});
@@ -92,6 +94,7 @@ export class ProviderCasbinAuthorizerFactory implements ProviderAuthorizerFactor
     }
 
     async createAuthorizer(provider: Provider): Promise<Authorizer> {
+        this.logger.debug(`BEGIN ${this.createAuthorizer.name} for provider casbin`, { tags: [PapieaEngineTags.Auth] })
         if (!provider) {
             throw new BadRequestError("No provider provided to create authorizer");
         }
@@ -100,6 +103,7 @@ export class ProviderCasbinAuthorizerFactory implements ProviderAuthorizerFactor
         }
         const authorizer = new CasbinAuthorizer(this.logger, provider.authModel, provider.policy);
         await authorizer.init();
+        this.logger.debug(`END ${this.createAuthorizer.name} for provider casbin`, { tags: [PapieaEngineTags.Auth] })
         return authorizer;
     }
 }
