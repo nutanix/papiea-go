@@ -1,3 +1,4 @@
+- Version 0.9.51+2141: Shlomi/update css (#662) PR url: git@github.com:nutanix/papiea.git/pull/662
 - Version 0.9.50+2130: Added validator check for untyped object not marked as status-only and related test. (#651) PR url: git@github.com:nutanix/papiea.git/pull/651
 - Version 0.9.49+2127: Add context to background task (#659) PR url: git@github.com:nutanix/papiea.git/pull/659
 - Version 0.9.48+2122: Squash a couple more pretty_prints
