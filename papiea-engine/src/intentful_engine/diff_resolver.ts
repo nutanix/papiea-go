@@ -60,21 +60,19 @@ export class DiffResolver {
         const inFlightKeys = new Map<string, Promise<void | null>>();
         while (true) {
             const start = Date.now()
-            this.logger.debug("[DELAY_DEBUG] diff_resolver.run - start delay")
+            // this.logger.debug("[DELAY_DEBUG] diff_resolver.run - start delay")
             await timeout(delay)
-            // this.logger.debug("[DELAY_DEBUG] diff_resolver.run - start updateWatchList")
-            // await this.updateWatchlist()
-            this.logger.debug("[DELAY_DEBUG] diff_resolver.run - start resolveDiffs")
+            // this.logger.debug("[DELAY_DEBUG] diff_resolver.run - start resolveDiffs")
             await this.startResolvingMoreDiffs(inFlightKeys);
             if (inFlightKeys.size > 0) {
-                this.logger.debug("[DELAY_DEBUG] diff_resolver.run - waiting for at least one diff to complete")
+                // this.logger.debug("[DELAY_DEBUG] diff_resolver.run - waiting for at least one diff to complete")
                 await Promise.race(inFlightKeys.values());
-                this.logger.debug("[DELAY_DEBUG] diff_resolver.run - done waiting for a diff to complete")
+                // this.logger.debug("[DELAY_DEBUG] diff_resolver.run - done waiting for a diff to complete")
             } else {
-                this.logger.debug("[DELAY_DEBUG] diff_resolver.run - looking for more to do; addRandomEntities")
+                // this.logger.debug("[DELAY_DEBUG] diff_resolver.run - looking for more to do; addRandomEntities")
                 await this.addRandomEntities()
             }
-            this.logger.debug(`[DELAY_DEBUG] diff_resolver.run - end (total loop time = ${Date.now() - start}`)
+            // this.logger.debug(`[DELAY_DEBUG] diff_resolver.run - end (total loop time = ${Date.now() - start}`)
         }
     }
 
@@ -138,12 +136,12 @@ export class DiffResolver {
                 spec: spec,
                 status: status,
                 input: diff.diff_fields})
-        this.logger.info(`[DELAY_DEBUG] Invoking diff handler for entity`, {
-            entity: {provider_prefix: metadata.provider_prefix, kind: metadata.kind, uuid: metadata.uuid},
-            callback: diff.intentful_signature.procedure_callback,
-            diffs: diff.diff_fields,
-    })
-        this.logger.info(`[DELAY_DEBUG] ${JSON.stringify(diff.diff_fields)}`)
+        // this.logger.info(`[DELAY_DEBUG] Invoking diff handler for entity`, {
+        //     entity: {provider_prefix: metadata.provider_prefix, kind: metadata.kind, uuid: metadata.uuid},
+        //     callback: diff.intentful_signature.procedure_callback,
+        //     diffs: diff.diff_fields,
+        // })
+        // this.logger.info(`[DELAY_DEBUG] ${JSON.stringify(diff.diff_fields)}`)
         // This yields delay
         const result = await axios.post(diff.intentful_signature.procedure_callback, {
             metadata: metadata,
@@ -202,7 +200,7 @@ export class DiffResolver {
             async watchlist => watchlist);
         const entries = watchlist.entries();
 
-        this.logger.debug("[DELAY_DEBUG] Entering resolveDiffs", {entries});
+        // this.logger.debug("[DELAY_DEBUG] Entering resolveDiffs", {entries});
 
         for (let key in entries) {
             if (!entries.hasOwnProperty(key)) {
@@ -214,13 +212,13 @@ export class DiffResolver {
             this.logger.debug(`Diff engine resolving diffs for entity with uuid: ${entry_reference.entity_reference.uuid} and kind: ${entry_reference.entity_reference.kind}`)
             let rediff: RediffResult | null = await this.rediff(entry_reference)
             if (!rediff) {
-                this.logger.info(`[DELAY_DEBUG] Removing entity from watchlist with uuid: ${entry_reference.entity_reference.uuid}`)
+                // this.logger.info(`[DELAY_DEBUG] Removing entity from watchlist with uuid: ${entry_reference.entity_reference.uuid}`)
                 await this.removeFromWatchlist(entry_reference)
                 continue
             }
             if (diff_results.length === 0) {
                 if (rediff.diffs.length === 0) {
-                    this.logger.info(`[DELAY_DEBUG] Removing entity from watchlist with uuid: ${entry_reference.entity_reference.uuid} (empty diffs)`)
+                    // this.logger.info(`[DELAY_DEBUG] Removing entity from watchlist with uuid: ${entry_reference.entity_reference.uuid} (empty diffs)`)
                     await this.removeFromWatchlist(entry_reference)
                     continue
                 }
@@ -246,8 +244,8 @@ export class DiffResolver {
                     }
                 }
             }
-            this.logger.info(`[DELAY_DEBUG] Starting diff resolution for entity with uuid: ${rediff.metadata.uuid}`)
-            this.logger.info(`[DELAY_DEBUG] ${JSON.stringify(rediff.diffs.map(diff => { return diff.diff_fields }))}`)
+            // this.logger.info(`[DELAY_DEBUG] Starting diff resolution for entity with uuid: ${rediff.metadata.uuid}`)
+            // this.logger.info(`[DELAY_DEBUG] ${JSON.stringify(rediff.diffs.map(diff => { return diff.diff_fields }))}`)
             // TODO we need to update the diff backoff in the watchlist, so we know how long to delay before retrying
             const promise = this.startDiffsResolution(diff_results, rediff)
                 .finally((() => { // IILE to avoid capturing mutable /key/ variable
@@ -269,8 +267,8 @@ export class DiffResolver {
         const diff_selection_strategy = this.intentfulContext.getDiffSelectionStrategy(kind!)
         try {
             [next_diff, idx] = diff_selection_strategy.selectOne(diffs)
-            this.logger.info(`[DELAY_DEBUG] Selected diff to resolve for entity with uuid: ${metadata.uuid}`)
-            this.logger.info(`[DELAY_DEBUG] ${JSON.stringify(next_diff.diff_fields)}`)
+            // this.logger.info(`[DELAY_DEBUG] Selected diff to resolve for entity with uuid: ${metadata.uuid}`)
+            // this.logger.info(`[DELAY_DEBUG] ${JSON.stringify(next_diff.diff_fields)}`)
         } catch (e) {
             this.logger.debug(`Failed to select diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
             return null
@@ -292,8 +290,8 @@ export class DiffResolver {
                     diff_results[index][1] = backoff
                 }
             }
-            this.logger.info(`[DELAY_DEBUG] Launching operation to resolve diff for entity with uuid: ${metadata.uuid}`)
-            this.logger.info(`[DELAY_DEBUG] ${JSON.stringify(next_diff.diff_fields)}`)
+            // this.logger.info(`[DELAY_DEBUG] Launching operation to resolve diff for entity with uuid: ${metadata.uuid}`)
+            // this.logger.info(`[DELAY_DEBUG] ${JSON.stringify(next_diff.diff_fields)}`)
             return this.launchOperation({diff: next_diff, ...rediff}).then(getBackoff(idx)).catch(getBackoffErrorHandler(idx))
         } else {
             // Delay for rediffing
@@ -318,8 +316,8 @@ export class DiffResolver {
                                 diff_results[index][1] = this.incrementDiffBackoff(backoff, null, rediff.kind)
                             }
                         }
-                        this.logger.info(`[DELAY_DEBUG] Retrying launch operation to resolve diff for entity with uuid: ${metadata.uuid}`)
-                        this.logger.info(`[DELAY_DEBUG] ${JSON.stringify(rediff.diffs[diff_index].diff_fields)}`)
+                        // this.logger.info(`[DELAY_DEBUG] Retrying launch operation to resolve diff for entity with uuid: ${metadata.uuid}`)
+                        // this.logger.info(`[DELAY_DEBUG] ${JSON.stringify(rediff.diffs[diff_index].diff_fields)}`)
                         return this.launchOperation({diff: rediff.diffs[diff_index], ...rediff}).then(getBackoff(idx)).catch(getBackoffErrorHandler(idx))
                     } catch (e) {
                         this.logger.debug(`Couldn't invoke retry intent handler for entity with uuid: ${rediff.metadata!.uuid} and: kind ${rediff.kind!.name} due to error: ${e}`)
