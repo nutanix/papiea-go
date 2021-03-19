@@ -57,7 +57,9 @@ export class DiffResolver {
     }
 
     private async _run(delay: number) {
-        const inFlightKeys = new Map<string, Promise<void | null>>();
+        // Map of (EntityRef -> (Diff Fields -> Promise))
+        // Assuming diff fields is unique and identifies a single diff on an entity
+        const inFlightKeys = new Map<string, Map<string, Promise<void | null>>>();
         while (true) {
             const start = Date.now()
             this.logger.debug("[DELAY_DEBUG] diff_resolver.run - start delay")
@@ -68,7 +70,13 @@ export class DiffResolver {
             await this.startResolvingMoreDiffs(inFlightKeys);
             if (inFlightKeys.size > 0) {
                 this.logger.debug("[DELAY_DEBUG] diff_resolver.run - waiting for at least one diff to complete")
-                await Promise.race(inFlightKeys.values());
+                const promises = []
+                for (let map of inFlightKeys.values()) {
+                    for (let promise of map.values()) {
+                        promises.push(promise)
+                    }
+                }
+                await Promise.race(promises);
                 this.logger.debug("[DELAY_DEBUG] diff_resolver.run - done waiting for a diff to complete")
             } else {
                 this.logger.debug("[DELAY_DEBUG] diff_resolver.run - looking for more to do; addRandomEntities")
@@ -197,7 +205,7 @@ export class DiffResolver {
         return false
     }
 
-    private async startResolvingMoreDiffs(inFlightKeys: Map<string, Promise<void | null>>) {
+    private async startResolvingMoreDiffs(inFlightKeys: Map<string, Map<string, Promise<void | null>>>) {
         const watchlist = await this.watchlistDb.edit_watchlist(
             async watchlist => watchlist);
         const entries = watchlist.entries();
@@ -208,7 +216,8 @@ export class DiffResolver {
             if (!entries.hasOwnProperty(key)) {
                 continue
             }
-            if (inFlightKeys.has(key)) continue;
+            // JSON.stringify(entries[key][1][0]) === stringified Diff fields structure
+            if (inFlightKeys.has(key) && inFlightKeys.get(key)!.has(JSON.stringify(entries[key][1][0]))) continue;
 
             let [entry_reference, diff_results] = entries[key]
             this.logger.debug(`Diff engine resolving diffs for entity with uuid: ${entry_reference.entity_reference.uuid} and kind: ${entry_reference.entity_reference.kind}`)
@@ -248,13 +257,32 @@ export class DiffResolver {
             }
             this.logger.info(`[DELAY_DEBUG] Starting diff resolution for entity with uuid: ${rediff.metadata.uuid}`)
             this.logger.info(`[DELAY_DEBUG] ${JSON.stringify(rediff.diffs.map(diff => { return diff.diff_fields }))}`)
+            const {diffs, metadata, provider, kind} = rediff
+            let next_diff: Diff
+            let idx: number
+            const diff_selection_strategy = this.intentfulContext.getDiffSelectionStrategy(kind!)
+            try {
+                [next_diff, idx] = diff_selection_strategy.selectOne(diffs)
+                this.logger.info(`[DELAY_DEBUG] Selected diff to resolve for entity with uuid: ${metadata.uuid}`)
+                this.logger.info(`[DELAY_DEBUG] ${JSON.stringify(next_diff.diff_fields)}`)
+            } catch (e) {
+                this.logger.debug(`Failed to select diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
+                return null
+            }
             // TODO we need to update the diff backoff in the watchlist, so we know how long to delay before retrying
-            const promise = this.startDiffsResolution(diff_results, rediff)
-                .finally((() => { // IILE to avoid capturing mutable /key/ variable
+            const promise = this.startDiffsResolution(diff_results, rediff, next_diff, idx, kind, metadata)
+                .finally(() => {
                     const k = (' ' + key).slice(1);
-                    return () => inFlightKeys.delete(k);
-                })())
-            inFlightKeys.set(key, promise);
+                    if (inFlightKeys.has(k)) {
+                        if (inFlightKeys.get(k)!.size === 1) inFlightKeys.delete(k);
+                        inFlightKeys.get(k)!.delete(JSON.stringify(next_diff.diff_fields))
+                    }
+                })
+            if (inFlightKeys.has(key)) {
+                inFlightKeys.get(key)!.set(JSON.stringify(next_diff.diff_fields), promise)
+            } else {
+                inFlightKeys.set(key, new Map())
+            }
         }
     }
 
@@ -262,19 +290,7 @@ export class DiffResolver {
         return this.batchSize
     }
 
-    private async startDiffsResolution(diff_results: [Diff, Backoff | null][], rediff: RediffResult) {
-        const {diffs, metadata, provider, kind} = rediff
-        let next_diff: Diff
-        let idx: number
-        const diff_selection_strategy = this.intentfulContext.getDiffSelectionStrategy(kind!)
-        try {
-            [next_diff, idx] = diff_selection_strategy.selectOne(diffs)
-            this.logger.info(`[DELAY_DEBUG] Selected diff to resolve for entity with uuid: ${metadata.uuid}`)
-            this.logger.info(`[DELAY_DEBUG] ${JSON.stringify(next_diff.diff_fields)}`)
-        } catch (e) {
-            this.logger.debug(`Failed to select diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
-            return null
-        }
+    private async startDiffsResolution(diff_results: [Diff, Backoff | null][], rediff: RediffResult, next_diff: Diff, idx: number, kind: Kind, metadata: Metadata) {
         const backoff: Backoff | null = diff_results[idx][1]
         if (!backoff) {
             diff_results[idx][0].handler_url = `${next_diff.intentful_signature.base_callback}/healthcheck`
@@ -304,7 +320,6 @@ export class DiffResolver {
                     try {
                         if (!await this.checkHealthy(diff_results[idx][0])) {
                             this.logger.debug(`Handler for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} health check has failed.`)
-                            return
                         }
                         this.logger.info(`Starting to retry resolving diff for entity with uuid: ${rediff.metadata!.uuid} and kind: ${rediff.metadata!.kind}`)
                         const getBackoff = (index: number) => {
