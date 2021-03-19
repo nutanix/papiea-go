@@ -251,7 +251,7 @@ export class DiffResolver {
             // TODO we need to update the diff backoff in the watchlist, so we know how long to delay before retrying
             const promise = this.startDiffsResolution(diff_results, rediff)
                 .finally((() => { // IILE to avoid capturing mutable /key/ variable
-                    const k = Object.assign("", key);
+                    const k = (' ' + key).slice(1);
                     return () => inFlightKeys.delete(k);
                 })())
             inFlightKeys.set(key, promise);
