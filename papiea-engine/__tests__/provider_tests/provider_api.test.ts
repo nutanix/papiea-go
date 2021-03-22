@@ -2,6 +2,7 @@ import "jest"
 import axios from "axios"
 import { DescriptionBuilder, DescriptionType, KindBuilder, ProviderBuilder } from "../test_data_factory"
 import { IntentfulBehaviour, Provider } from "papiea-core";
+import { AxiosResponseParser } from "papiea-backend-utils"
 import get = Reflect.get;
 
 declare var process: {
@@ -70,7 +71,7 @@ describe("Provider API tests", () => {
         try {
             await providerApi.post('/', provider);
         } catch (e) {
-            expect(e.response.data.error.errors[0].message).toBe("x-papiea has wrong value: status-only, the field should not be present");
+            expect(AxiosResponseParser.getAxiosErrorMessages(e)[0]).toBe("x-papiea has wrong value: status-only, the field should not be present");
         }
     });
 
@@ -82,7 +83,7 @@ describe("Provider API tests", () => {
         try {
             await providerApi.post('/', provider);
         } catch (e) {
-            expect(e.response.data.error.errors[0].message).toBe("x-papiea has wrong value: spec-only, correct values are: status-only");
+            expect(AxiosResponseParser.getAxiosErrorMessages(e)[0]).toBe("x-papiea has wrong value: spec-only, correct values are: status-only");
         }
     });
 
@@ -251,8 +252,8 @@ describe("Provider API tests", () => {
             });
         } catch (e) {
             expect(e).toBeDefined()
-            expect(e.response.data.error.message).toEqual("Validation failed.")
-            expect(e.response.data.error.errors[0].message).toContain(`Status body has undefined value for one/more fields which is not supported in papiea, use null value instead to remove the field from status`)
+            expect(AxiosResponseParser.getAxiosError(e).message).toEqual("Validation failed.")
+            expect(AxiosResponseParser.getAxiosErrorMessages(e)[0]).toContain(`Status body has undefined value for one/more fields which is not supported in papiea, use null value instead to remove the field from status`)
         }
     });
 
@@ -262,8 +263,8 @@ describe("Provider API tests", () => {
         try {
             await providerApi.post("/", provider)
         } catch (e) {
-            expect(e.response.status).toEqual(400)
-            expect(e.response.data.error.errors[0].message).toContain("Papiea doesn't support 'nullable' fields. Please make a field 'host' non-required instead.")
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(400)
+            expect(AxiosResponseParser.getAxiosErrorMessages(e)[0]).toContain("Papiea doesn't support 'nullable' fields. Please make a field 'host' non-required instead.")
         }
     });
 
@@ -275,8 +276,8 @@ describe("Provider API tests", () => {
         try {
             await providerApi.post("/", modified_provider)
         } catch (e) {
-            expect(e.response.status).toEqual(400)
-            expect(e.response.data.error.errors[0].message).toContain("Papiea doesn't support 'nullable' fields. Please make a field 'x' non-required instead.")
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(400)
+            expect(AxiosResponseParser.getAxiosErrorMessages(e)[0]).toContain("Papiea doesn't support 'nullable' fields. Please make a field 'x' non-required instead.")
         }
     });
 

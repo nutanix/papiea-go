@@ -1,7 +1,7 @@
 import * as utils from "./utils"
 import * as test_setup from "./test_setup"
+import { AxiosResponseParser } from "papiea-backend-utils";
 import { IntentfulStatus } from "papiea-core";
-
 const config = require("./config")
 
 
@@ -135,7 +135,7 @@ describe("Entity Client end-to-end tests", () => {
 
             await bucket_entity_client.invoke_procedure("create_object", bucket1_entity.metadata, { "object_name": object1_name })
         } catch (err) {
-            expect(err.response.data.error.errors[0].message).toBe("Object already exists in the bucket")
+            expect(AxiosResponseParser.getAxiosErrorMessages(err)[0]).toBe("Object already exists in the bucket")
         } finally {
             object_entity_client.close()
             bucket_entity_client.close()
@@ -324,7 +324,7 @@ describe("Entity Client end-to-end tests", () => {
 
             await bucket_entity_client.invoke_procedure("link_object", bucket1_entity.metadata, object_input)
         } catch (err) {
-            expect(err.response.data.error.errors[0].message).toBe("Object already exists in the bucket")
+            expect(AxiosResponseParser.getAxiosErrorMessages(err)[0]).toBe("Object already exists in the bucket")
         } finally {
             object_entity_client.close()
             bucket_entity_client.close()
@@ -380,7 +380,7 @@ describe("Entity Client end-to-end tests", () => {
 
             await bucket_entity_client.invoke_procedure("link_object", bucket2_entity.metadata, object_input)
         } catch (err) {
-            expect(err.response.data.error.errors[0].message).toBe("Object already exists in the bucket")
+            expect(AxiosResponseParser.getAxiosErrorMessages(err)[0]).toBe("Object already exists in the bucket")
         } finally {
             object_entity_client.close()
             bucket_entity_client.close()
@@ -408,7 +408,7 @@ describe("Entity Client end-to-end tests", () => {
 
             await bucket_entity_client.invoke_procedure("link_object", bucket1_entity.metadata, object_input)
         } catch (err) {
-            expect(err.response.data.error.errors[0].message).toBe("Entity shouldfailuuid not found")
+            expect(AxiosResponseParser.getAxiosErrorMessages(err)[0]).toBe("Entity shouldfailuuid not found")
         } finally {
             bucket_entity_client.close()
         }
@@ -514,7 +514,7 @@ describe("Entity Client end-to-end tests", () => {
             const object1_name = "test-object1"
             await bucket_entity_client.invoke_procedure("unlink_object", bucket1_entity.metadata, { "object_name": object1_name })
         } catch (err) {
-            expect(err.response.data.error.errors[0].message).toBe("Object not found in the bucket")
+            expect(AxiosResponseParser.getAxiosErrorMessages(err)[0]).toBe("Object not found in the bucket")
         } finally {
             bucket_entity_client.close()
         }
