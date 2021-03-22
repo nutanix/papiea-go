@@ -54,11 +54,11 @@ function remove_undefined_or_null_values(entity: any, logger?: Logger, kind_name
             if (ret_val !== null) {
                 newArray.push(ret_val)
             } else {
-                if (logger !== undefined) {
-                    logger.debug(`Removing undefined/null list item from field: ${field_name} from ${kind_name}/${entity_name}.`);
-                } else {
-                    console.debug(`Removing undefined/null list item from field: ${field_name} from ${kind_name}/${entity_name}.`)
-                }
+                // if (logger !== undefined) {
+                //     logger.debug(`Removing undefined/null list item from field: ${field_name} from ${kind_name}/${entity_name}.`);
+                // } else {
+                //     console.debug(`Removing undefined/null list item from field: ${field_name} from ${kind_name}/${entity_name}.`)
+                // }
             }
         });
         return newArray
@@ -69,11 +69,11 @@ function remove_undefined_or_null_values(entity: any, logger?: Logger, kind_name
             if (ret_val !== null) {
                 newObject[k] = ret_val
             } else {
-                if (logger !== undefined) {
-                    logger.debug(`Removing undefined/null field: ${field_name}/${k} from ${kind_name}/${entity_name}.`);
-                } else {
-                    console.debug(`Removing undefined/null field: ${field_name}/${k} from ${kind_name}/${entity_name}.`)
-                }
+                // if (logger !== undefined) {
+                //     logger.debug(`Removing undefined/null field: ${field_name}/${k} from ${kind_name}/${entity_name}.`);
+                // } else {
+                //     console.debug(`Removing undefined/null field: ${field_name}/${k} from ${kind_name}/${entity_name}.`)
+                // }
             }
         })
         return newObject

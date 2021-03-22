@@ -131,11 +131,11 @@ export class DiffResolver {
     }
 
     private async launchOperation({diff, metadata, spec, status}: DiffWithContext): Promise<Delay | null> {
-        this.logger.debug("launchOperation", diff.intentful_signature.procedure_callback,
-            { metadata: metadata,
-                spec: spec,
-                status: status,
-                input: diff.diff_fields})
+        // this.logger.debug("launchOperation", diff.intentful_signature.procedure_callback,
+        //     { metadata: metadata,
+        //         spec: spec,
+        //         status: status,
+        //         input: diff.diff_fields})
         // this.logger.info(`[DELAY_DEBUG] Invoking diff handler for entity`, {
         //     entity: {provider_prefix: metadata.provider_prefix, kind: metadata.kind, uuid: metadata.uuid},
         //     callback: diff.intentful_signature.procedure_callback,
@@ -209,7 +209,7 @@ export class DiffResolver {
             if (inFlightKeys.has(key)) continue;
 
             let [entry_reference, diff_results] = entries[key]
-            this.logger.debug(`Diff engine resolving diffs for entity with uuid: ${entry_reference.entity_reference.uuid} and kind: ${entry_reference.entity_reference.kind}`)
+            // this.logger.debug(`Diff engine resolving diffs for entity with uuid: ${entry_reference.entity_reference.uuid} and kind: ${entry_reference.entity_reference.kind}`)
             let rediff: RediffResult | null = await this.rediff(entry_reference)
             if (!rediff) {
                 // this.logger.info(`[DELAY_DEBUG] Removing entity from watchlist with uuid: ${entry_reference.entity_reference.uuid}`)
@@ -279,7 +279,7 @@ export class DiffResolver {
             const getBackoff = (index: number) => {
                 return (delay: Delay | null | undefined) => {
                     const backoff = this.createDiffBackoff(kind, delay)
-                    this.logger.info(`Starting to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind}`)
+                    // this.logger.info(`Starting to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind}`)
                     diff_results[index][1] = backoff
                 }
             }
