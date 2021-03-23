@@ -1,8 +1,9 @@
 import { Collection, Db } from "mongodb";
 import { Logger } from "papiea-backend-utils";
 import { Watchlist_DB } from "./watchlist_db_interface";
-import { SerializedWatchlist, Watchlist } from "../intentful_engine/watchlist";
+import {SerializedWatchlist, Watchlist, WatchlistEntry} from "../intentful_engine/watchlist"
 import { PapieaException } from "../errors/papiea_exception";
+import {Diff} from "papiea-core"
 
 type WatchlistResult = {
     id: number
@@ -19,13 +20,9 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
     }
 
     async init(): Promise<void> {
-        await this.collection.createIndex(
-            { "id": 1 },
-            { name: "watchlist_id", unique: true }
-        );
     }
 
-    async update_watchlist(watchlist: Watchlist): Promise<void> {
+    async update_watchlist_diff(entry: WatchlistEntry, diff: Diff): Promise<void> {
         const result = await this.collection.updateOne({
             "id": 1,
         }, {

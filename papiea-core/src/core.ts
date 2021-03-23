@@ -194,23 +194,42 @@ export interface Kind {
     kind_procedures: { [key: string]: Procedural_Signature; };
 }
 
+export interface Delay {
+    delay_set_time: Date
+    delay_seconds: number
+}
+
+// Backoff to wait for while retrying diff
+export interface Backoff {
+    delay: Delay
+    retries: number
+}
+
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Intentful-Execution-821][Diff-interface]]
 // The Diff structure captures a discovered diff in an entity as well
 // as the intentful action that may resolve such diff
 export interface Diff {
-    kind: string
+    entity_reference: Provider_Entity_Reference
 
     intentful_signature: Intentful_Signature,
 
     // Field diff found by the Differ
     diff_fields: DiffContent[]
 
-    // A uri for a URL which specifically identifies the currently running process.
-    // If the URL returns 404 we know that the task was dropped (say, provider crashed).
-    // It will use the specific node's IP and not a load balancer IP.
-    // This will direct us to the exact location where the task is running.
-    // provider handler url with an id to cache the watcher it is assigned to, serves as an identifier for a type of task being executed
+
+    // An id that identifies a particular diff in the database
+    // Hashed from the entity information
+    id: string
+
+    // A uri for a URL which specifically identifies the currently running handler.
+    // If the URL returns 404 we know that the handler should be retried.
+    // An SDK should have a specific endpoint to tell if a handler resolving SFS is running
+    // An SDK should tie the endpoint with diff uuid
     handler_url?: string
+
+    // A backoff should be set by SDK via special endpoint
+    // after an SDK has finished executing the handler
+    backoff?: Backoff
 }
 // Diff-interface ends here
 // /src/intentful_core/differ_interface.ts:1 ends here

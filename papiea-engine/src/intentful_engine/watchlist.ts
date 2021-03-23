@@ -16,16 +16,6 @@ const stringifyEntryRef = (r: EntryReference) => [
     r.entity_reference.uuid,
 ].join('/')
 
-export interface Delay {
-    delay_set_time: Date
-    delay_seconds: number
-}
-
-export interface Backoff {
-    delay: Delay
-    retries: number
-}
-
 export function create_entry(metadata: Metadata): EntryReference {
     return {
         provider_reference: {
@@ -39,51 +29,15 @@ export function create_entry(metadata: Metadata): EntryReference {
     }
 }
 
-export type SerializedWatchlist = {[key: string]: Watch}
-export type WatchlistEntries = Watch[]
-type Watch = [EntryReference, [Diff, Backoff | null][]]
+export type WatchlistEntry = {[entity_reference: string]: {[diff_uuid: string]: Diff}}
+export type Watchlist = WatchlistEntry[]
 
-export class Watchlist {
-    private _entries: SerializedWatchlist
+// This Data Structure is WIP
+// It should be helper for working with single entity-diff in the list
+export class WatchlistMapper {
+    private _entries: Watchlist
 
-    constructor(watchlist?: SerializedWatchlist) {
-        this._entries = watchlist ?? {}
-    }
-
-    get(ref: EntryReference): Watch | undefined {
-        return this._entries[stringifyEntryRef(ref)]
-    }
-
-    set(value: Watch): this {
-        this._entries[stringifyEntryRef(value[0])] = value
-        return this
-    }
-
-    delete(ref: EntryReference): boolean {
-        let exists: boolean
-        if (this._entries[stringifyEntryRef(ref)]) {
-            exists = true
-        } else {
-            exists = false
-        }
-        delete this._entries[stringifyEntryRef(ref)]
-        return exists
-    }
-
-    update(watchlist: Watchlist) {
-        this._entries = watchlist._entries
-    }
-
-    serialize(): SerializedWatchlist {
-        return this._entries
-    }
-
-    entries(): SerializedWatchlist {
-        return this._entries
-    }
-
-    has(ref: EntryReference): boolean {
-        const item = this._entries[stringifyEntryRef(ref)]
-        return item !== undefined;
+    constructor(watchlist: Watchlist) {
+        this._entries = watchlist
     }
 }

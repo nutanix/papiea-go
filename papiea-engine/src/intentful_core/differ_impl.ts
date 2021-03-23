@@ -1,6 +1,7 @@
-import { Spec, Status, Kind, Differ, Diff, DiffContent } from "papiea-core"
+import {Spec, Status, Kind, Differ, Diff, DiffContent, Intentful_Signature} from "papiea-core"
 import { Logger } from "papiea-backend-utils";
 import { SFSCompiler } from "./sfs_compiler"
+import * as hash from "object-hash"
 
 export class BasicDiffer implements Differ {
     // Get the diff iterator from an entity based on the
@@ -39,5 +40,9 @@ export class BasicDiffer implements Differ {
             obj = obj[item]
         }
         return obj
+    }
+
+    public static create_diff(kind: Kind, signature: Intentful_Signature, diff_fields: DiffContent[]) {
+        const hashed = hash()
     }
 }
