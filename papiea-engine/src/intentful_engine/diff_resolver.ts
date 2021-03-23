@@ -285,7 +285,7 @@ export class DiffResolver {
             }
             const getBackoffErrorHandler = (index: number) => {
                 return (e: Error) => {
-                    this.logger.debug(`Couldn't invoke intent handler to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
+                    // this.logger.debug(`Couldn't invoke intent handler to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
                     const backoff = this.createDiffBackoff(kind, null)
                     diff_results[index][1] = backoff
                 }
@@ -312,7 +312,7 @@ export class DiffResolver {
                         }
                         const getBackoffErrorHandler = (index: number) => {
                             return (e: Error) => {
-                                this.logger.debug(`Couldn't invoke retry intent handler for entity with uuid: ${rediff.metadata!.uuid} and: kind ${rediff.kind!.name} due to error: ${e}`)
+                                // this.logger.debug(`Couldn't invoke retry intent handler for entity with uuid: ${rediff.metadata!.uuid} and: kind ${rediff.kind!.name} due to error: ${e}`)
                                 diff_results[index][1] = this.incrementDiffBackoff(backoff, null, rediff.kind)
                             }
                         }
