@@ -354,12 +354,14 @@ export class ProviderSdk implements ProviderImpl {
         try {
             this.server.close();
         } catch (e) {
+            console.info("Failed to close server during cleanup")
         }
         try {
             // Assume a tracer has a close method
             (this._tracer as any).close()
             (this._intentWatcherClient.close())
         } catch (e) {
+            console.info("Failed to close tracer/intent watcher client during cleanup")
         }
     }
 }

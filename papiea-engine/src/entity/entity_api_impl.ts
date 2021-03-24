@@ -72,7 +72,7 @@ export class Entity_API_Impl implements Entity_API {
 
     async filter_intent_watcher(user: UserAuthInfo, fields: any, ctx: RequestContext, sortParams?: SortParams): Promise<Partial<IntentWatcher>[]> {
         const intent_watchers = await this.intent_watcher_db.list_watchers(fields, sortParams)
-        const filteredRes = await this.intentWatcherAuthorizer.filter(user, intent_watchers, Action.Read);
+        const filteredRes = await this.intentWatcherAuthorizer.filter(this.logger, user, intent_watchers, Action.Read);
         return IntentWatcherMapper.toResponses(filteredRes)
     }
 
@@ -120,7 +120,7 @@ export class Entity_API_Impl implements Entity_API {
                                    ctx.tracing_ctx)
         const res = await this.spec_db.list_specs(fields, exact_match, sortParams);
         span.finish()
-        const filteredRes = await this.authorizer.filter(user, res, Action.Read, provider, x => {
+        const filteredRes = await this.authorizer.filter(this.logger, user, res, Action.Read, provider, x => {
             return {"metadata": x[0]}
         });
         return filteredRes;
@@ -133,7 +133,7 @@ export class Entity_API_Impl implements Entity_API {
                                    ctx.tracing_ctx)
         const res = await this.status_db.list_status(fields, exact_match, sortParams);
         span.finish()
-        const filteredRes = await this.authorizer.filter(user, res, Action.Read, provider, x => {
+        const filteredRes = await this.authorizer.filter(this.logger, user, res, Action.Read, provider, x => {
             return {"metadata": x[0]}
         });
         return filteredRes;
@@ -146,7 +146,7 @@ export class Entity_API_Impl implements Entity_API {
                                    ctx.tracing_ctx)
         const res = await this.graveyardDb.list_entities(fields, exact_match, sortParams)
         span.finish()
-        const filteredRes = await this.authorizer.filter(user, res, Action.Read, provider, x => {
+        const filteredRes = await this.authorizer.filter(this.logger, user, res, Action.Read, provider, x => {
             return {"metadata": x.metadata}
         });
         return filteredRes
@@ -347,6 +347,7 @@ export class Entity_API_Impl implements Entity_API {
             await this.authorizer.checkPermission(user, {"metadata": metadata}, action, provider);
             return true;
         } catch (e) {
+            this.logger.debug(`Authorizer check permission failed on entity with uuid: ${metadata.uuid} of kind ${metadata.provider_prefix}/${metadata.provider_version}/${metadata.kind} due to error: ${e}`)
             return false;
         }
     }

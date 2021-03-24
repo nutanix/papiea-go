@@ -21,7 +21,7 @@ export abstract class Authorizer {
 
     abstract checkPermission(user: UserAuthInfo, object: any, action: Action, provider?: Provider): Promise<void>;
 
-    async filter(user: UserAuthInfo, objectList: any[], action: Action, provider?: Provider, transformfn?: (object: any) => any): Promise<any[]> {
+    async filter(logger: Logger, user: UserAuthInfo, objectList: any[], action: Action, provider?: Provider, transformfn?: (object: any) => any): Promise<any[]> {
         return filterAsync(objectList, async (object) => {
             try {
                 if (transformfn) {
@@ -31,6 +31,7 @@ export abstract class Authorizer {
                 }
                 return true;
             } catch (e) {
+                logger.debug(`Failed to filter in authorizer for provider ${provider?.prefix}/${provider?.version} due to error: ${e}`)
                 return false;
             }
         });

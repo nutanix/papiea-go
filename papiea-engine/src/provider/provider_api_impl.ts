@@ -57,7 +57,7 @@ export class Provider_API_Impl implements Provider_API {
                                    ctx.tracing_ctx)
         const providers = await this.providerDb.list_providers();
         span.finish()
-        return this.authorizer.filter(user, providers, Action.ReadProvider);
+        return this.authorizer.filter(this.logger, user, providers, Action.ReadProvider);
     };
 
     async unregister_provider(user: UserAuthInfo, provider_prefix: string, version: Version, ctx: RequestContext): Promise<void> {
@@ -152,7 +152,7 @@ export class Provider_API_Impl implements Provider_API {
                                    ctx.tracing_ctx)
         const res = await this.providerDb.find_providers(provider_prefix);
         span.finish()
-        return this.authorizer.filter(user, res, Action.ReadProvider);
+        return this.authorizer.filter(this.logger, user, res, Action.ReadProvider);
     }
 
     async update_auth(user: UserAuthInfo, provider_prefix: string, provider_version: Version, auth: any, ctx: RequestContext): Promise<void> {
@@ -242,6 +242,6 @@ export class Provider_API_Impl implements Provider_API {
             secret = s2s_key.key;
             s2s_key.key = secret.slice(0, 2) + "*****" + secret.slice(-2);
         }
-        return this.authorizer.filter(user, res, Action.ReadS2SKey);
+        return this.authorizer.filter(this.logger, user, res, Action.ReadS2SKey);
     }
 }

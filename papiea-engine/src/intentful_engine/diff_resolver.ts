@@ -53,7 +53,7 @@ export class DiffResolver {
         try {
             await this._run(delay)
         } catch (e) {
-            console.error(`Error in run method for diff resolver: ${e}`)
+            this.logger.error(`Error in run method for diff resolver: ${e}`)
             throw e
         }
     }
@@ -72,6 +72,7 @@ export class DiffResolver {
             const updated_watchlist = await this.watchlistDb.get_watchlist()
             this.watchlist.update(updated_watchlist)
         } catch (e) {
+            this.logger.info(`Failed to get/update the watchlist due to error: ${e}`)
             return
         }
     }
@@ -148,6 +149,7 @@ export class DiffResolver {
             await axios.get(diff.handler_url!)
             return true
         } catch (e) {
+            this.logger.debug(`GET request failed on diff handler url due to error: ${e}`)
             return false
         }
     }
