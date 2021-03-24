@@ -141,14 +141,17 @@ export interface DiffContent {
 export interface Differ {
 
     // Get the next diff from an entity based on the 
-    diffs(kind: Kind, spec: Spec, status: Status, logger?: any): Generator<Diff, any, undefined>;
+    diffs(entity_reference: Provider_Entity_Reference, kind: Kind, spec: Spec, status: Status, logger?: any): Generator<Diff, any, undefined>;
 
     // We could also get the entire list of diffs, ordered by the
     // original dependency tree
-    all_diffs(kind: Kind, spec: Spec, status: Status, logger?: any): Diff[];
+    all_diffs(entity_reference: Provider_Entity_Reference, kind: Kind, spec: Spec, status: Status, logger?: any): Diff[];
 
     // Get current value by path specified in diff fields
     get_diff_path_value(diff: DiffContent, spec: Spec): any
+
+    // Create an appropriate diff structure with hashed id
+    create_diff_structure(entity_reference: Provider_Entity_Reference, signature: Intentful_Signature, diff_fields: DiffContent[]): Diff
 }
 
 export enum DiffSelectionStrategy {

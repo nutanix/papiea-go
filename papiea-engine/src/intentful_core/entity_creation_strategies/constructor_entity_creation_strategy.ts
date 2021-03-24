@@ -11,7 +11,6 @@ import {
 } from "papiea-core"
 import {OnActionError} from "../../errors/on_action_error"
 import axios from "axios"
-import {create_entry} from "../../intentful_engine/watchlist"
 import {Spec_DB} from "../../databases/spec_db_interface"
 import {Status_DB} from "../../databases/status_db_interface"
 import {Graveyard_DB} from "../../databases/graveyard_db_interface"
@@ -81,16 +80,11 @@ export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
                 user: this.user,
                 status: IntentfulStatus.Active,
             }
-            for (let diff of this.differ.diffs(this.kind, created_spec, created_status)) {
+            for (let diff of this.differ.diffs(watcher.entity_ref, this.kind, created_spec, created_status)) {
                 watcher.diffs.push(diff)
             }
             await this.intentWatcherDb.save_watcher(watcher)
-            const watchlist = await this.watchlistDb.get_watchlist()
-            const ent = create_entry(created_metadata)
-            if (!watchlist.has(ent)) {
-                watchlist.set([ent, []])
-                await this.watchlistDb.update_watchlist(watchlist)
-            }
+            await this.watchlistDb.add_entity({metadata: created_metadata, spec: created_spec, status: created_status ?? {}}, watcher.diffs)
         }
         return {
             intent_watcher: watcher,

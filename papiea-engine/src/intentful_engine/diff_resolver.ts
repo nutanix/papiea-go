@@ -2,9 +2,17 @@
 import { timeout } from "../utils/utils"
 import { Spec_DB } from "../databases/spec_db_interface"
 import { Status_DB } from "../databases/status_db_interface"
-import { create_entry, Backoff, EntryReference, Watchlist, Delay } from "./watchlist"
 import { Watchlist_DB } from "../databases/watchlist_db_interface";
-import { Differ, Diff, Metadata, Spec, Status, Kind, Provider } from "papiea-core";
+import {
+    Differ,
+    Diff,
+    Metadata,
+    Spec,
+    Status,
+    Kind,
+    Provider,
+    Provider_Entity_Reference
+} from "papiea-core"
 import { Provider_DB } from "../databases/provider_db_interface";
 import axios from "axios"
 import { IntentfulContext } from "../intentful_core/intentful_context";
@@ -26,7 +34,6 @@ export class DiffResolver {
     protected readonly statusDb: Status_DB
     private readonly watchlistDb: Watchlist_DB
     private readonly providerDb: Provider_DB
-    protected watchlist: Watchlist
     private differ: Differ
     private intentfulContext: IntentfulContext;
     private logger: Logger;
@@ -35,12 +42,11 @@ export class DiffResolver {
     private entropyFn: (diff_delay?: number) => number
     private calculateBackoffFn: (retries?: number, maximumBackoff?: number, entropy?: number, kind_retry_exponent?: number, kind_name?: string) => number
 
-    constructor(watchlist: Watchlist, watchlistDb: Watchlist_DB, specDb: Spec_DB, statusDb: Status_DB, providerDb: Provider_DB, differ: Differ, intentfulContext: IntentfulContext, logger: Logger, batchSize: number, entropyFn: (diff_delay?: number) => number, calculateBackoffFn: (retries?: number, maximumBackoff?: number, entropy?: number) => number) {
+    constructor(watchlistDb: Watchlist_DB, specDb: Spec_DB, statusDb: Status_DB, providerDb: Provider_DB, differ: Differ, intentfulContext: IntentfulContext, logger: Logger, batchSize: number, entropyFn: (diff_delay?: number) => number, calculateBackoffFn: (retries?: number, maximumBackoff?: number, entropy?: number) => number) {
         this.specDb = specDb
         this.statusDb = statusDb
         this.watchlistDb = watchlistDb
         this.providerDb = providerDb
-        this.watchlist = watchlist
         this.differ = differ
         this.intentfulContext = intentfulContext
         this.logger = logger
@@ -62,7 +68,7 @@ export class DiffResolver {
         while (true) {
             await timeout(delay)
             await this.updateWatchlist()
-            await this.resolveDiffs()
+            await this.resolve_diffs()
             await this.addRandomEntities()
         }
     }
@@ -98,19 +104,20 @@ export class DiffResolver {
         return this.createDiffBackoff(kind, delay, retries)
     }
 
-    private async rediff(entry_reference: EntryReference): Promise<RediffResult | null> {
+    private async rediff(entity_reference: Provider_Entity_Reference): Promise<RediffResult | null> {
         try {
-            const [metadata, spec] = await this.specDb.get_spec({...entry_reference.provider_reference, ...entry_reference.entity_reference})
-            const [, status] = await this.statusDb.get_status({...entry_reference.provider_reference, ...entry_reference.entity_reference})
-            const provider = await this.providerDb.get_provider(entry_reference.provider_reference.provider_prefix, entry_reference.provider_reference.provider_version)
+            // TODO: Reminder - this might be in a wrong order and cause a bug!
+            const [metadata, spec] = await this.specDb.get_spec(entity_reference)
+            const [, status] = await this.statusDb.get_status(entity_reference)
+            const provider = await this.providerDb.get_provider(entity_reference.provider_prefix, entity_reference.provider_version)
             const kind = this.providerDb.find_kind(provider, metadata.kind)
 
             return {
-                diffs: this.differ.all_diffs(kind, spec, status, this.logger),
+                diffs: this.differ.all_diffs(entity_reference, kind, spec, status, this.logger),
                 metadata, provider, kind, spec, status,
             };
         } catch (e) {
-            this.logger.debug(`Couldn't generate diff for entity with uuid: ${entry_reference.entity_reference.uuid} and kind: ${entry_reference.entity_reference.kind} due to error: ${e}. Removing from watchlist`)
+            this.logger.debug(`Couldn't generate diff for entity with uuid: ${entity_reference.uuid} and kind: ${entity_reference.kind} due to error: ${e}. Removing from watchlist`)
             return null
         }
     }
@@ -162,33 +169,33 @@ export class DiffResolver {
         return false
     }
 
-    private async resolveDiffs() {
-        const entries = this.watchlist.entries()
+    private async resolve_diffs() {
+        const entries = await this.watchlistDb.get_watchlist()
         const promises = []
 
-        for (let key in entries) {
-            if (!entries.hasOwnProperty(key)) {
+        for (let entry in entries) {
+            if (!entries.hasOwnProperty(entry)) {
                 continue
             }
-
-            let [entry_reference, diff_results] = entries[key]
-            this.logger.debug(`Diff engine resolving diffs for entity with uuid: ${entry_reference.entity_reference.uuid} and kind: ${entry_reference.entity_reference.kind}`)
-            let rediff: RediffResult | null = await this.rediff(entry_reference)
+            const entity_reference = this.watchlistDb.get_entity_reference(entry)
+            const existing_diffs_map: {[diff_uuid: string]: Diff} = entries[entry]
+            const existing_diffs = Object.values(existing_diffs_map)
+            this.logger.debug(`Diff engine resolving diffs for entity with uuid: ${entity_reference.uuid} and kind: ${entity_reference.kind}`)
+            let rediff: RediffResult | null = await this.rediff(entity_reference)
             if (!rediff) {
-                await this.removeFromWatchlist(entry_reference)
+                await this.watchlistDb.remove_entity(entity_reference)
                 continue
             }
-            if (diff_results.length === 0) {
+            if (existing_diffs.length === 0) {
                 if (rediff.diffs.length === 0) {
-                    await this.removeFromWatchlist(entry_reference)
+                    await this.watchlistDb.remove_entity(entity_reference)
                     continue
                 }
             }
-            if (rediff.diffs.length > diff_results.length) {
+            if (rediff.diffs.length > existing_diffs.length) {
                 for (let diff of rediff.diffs) {
-                    const watched_diffs = diff_results.map(watch => watch[0])
-                    if (!DiffResolver.includesDiff(watched_diffs, diff)) {
-                        entries[key][1].push([diff, null])
+                    if (!DiffResolver.includesDiff(existing_diffs, diff)) {
+                        await this.watchlistDb.add_diff(entity_reference, diff)
                     }
                 }
             } else if (diff_results.length > rediff.diffs.length) {
@@ -280,12 +287,8 @@ export class DiffResolver {
         const intentful_kind_refs = await this.providerDb.get_intentful_kinds()
         const entities = await this.specDb.list_random_intentful_specs(batch_size, intentful_kind_refs)
 
-        for (let [metadata, _] of entities) {
-            const ent = create_entry(metadata)
-            if (!this.watchlist.has(ent)) {
-                this.watchlist.set([ent, []])
-            }
+        for (let [metadata, spec] of entities) {
+            await this.watchlistDb.add_entity({metadata, spec, status: {}}, [])
         }
-        return this.watchlistDb.update_watchlist(this.watchlist)
     }
 }
