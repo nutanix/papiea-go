@@ -258,5 +258,3 @@ class IntentfulStatus(str):
     Completed_Partially = "Completed Partially"
     Failed = "Failed"
     Outdated = "Outdated"
-
-BackgroundTaskCallback = Callable[[Optional[Any]], Any]

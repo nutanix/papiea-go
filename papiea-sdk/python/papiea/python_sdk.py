@@ -10,7 +10,6 @@ from opentracing import Tracer, Format, child_of
 from .api import ApiInstance
 from .client import IntentWatcherClient, EntityCRUD
 from .core import (
-    BackgroundTaskCallback,
     DataDescription,
     Entity,
     IntentfulExecutionStrategy,
@@ -31,6 +30,7 @@ from .python_sdk_exceptions import InvocationError, SecurityApiError
 from .utils import json_loads_attrs, validate_error_codes
 from .tracing_utils import init_default_tracer, get_special_operation_name
 
+BackgroundTaskCallback = Callable[[IntentfulCtx, Optional[Any]], Any]
 
 class ProviderServerManager(object):
     def __init__(self, public_host: str = "127.0.0.1", public_port: int = 9000):
@@ -650,7 +650,7 @@ class BackgroundTaskBuilder:
         kind = provider.new_kind({name: schema})
 
         async def callback_func(ctx, entity, input):
-            await callback(entity.status.provider_fields)
+            await callback(ctx, entity.status.provider_fields)
             return {
                 "delay_secs": delay_sec
             }
@@ -727,15 +727,16 @@ class BackgroundTaskBuilder:
         """Make all the fields apart from 'task' status-only"""
         if len(schema) > 1 and schema["type"] and schema["properties"]:
             BackgroundTaskBuilder.modify_task_schema(schema["properties"])
-        for key in schema:
-            nested_prop = schema[key]
-            if nested_prop.get("type"):
-                if nested_prop["type"] == "object" and nested_prop.get("properties") and \
-                        len(list(nested_prop["properties"].keys())) > 0:
-                    BackgroundTaskBuilder.modify_task_schema(nested_prop["properties"])
-                nested_prop["x-papiea"] = "status-only"
+        else:
+            for key in schema:
+                nested_prop = schema[key]
+                if nested_prop.get("type"):
+                    if nested_prop["type"] == "object" and nested_prop.get("properties") and \
+                            len(list(nested_prop["properties"].keys())) > 0:
+                        BackgroundTaskBuilder.modify_task_schema(nested_prop["properties"])
+                    nested_prop["x-papiea"] = "status-only"
 
-    async def update_task(self, context: dict):
+    async def update_task(self, task_context: dict):
         if self.task_entity is None:
             raise Exception(f"Attempting to update missing background task ({self.name}) on provider: "
                             f"{self.provider.get_prefix()}, {self.provider.get_version()}")
@@ -745,5 +746,5 @@ class BackgroundTaskBuilder:
             await self.provider.provider_api.patch(
                 f"{url}/update_status",
                 {"entity_ref": self.task_entity.metadata,
-                 "status": {"provider_fields": context}}
+                 "status": {"provider_fields": task_context}}
             )
