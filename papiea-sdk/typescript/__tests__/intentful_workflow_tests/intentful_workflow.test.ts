@@ -1,8 +1,9 @@
 import { DescriptionBuilder, DescriptionType, } from "../../../../papiea-engine/__tests__/test_data_factory"
 import axios from "axios"
 import { timeout } from "../../../../papiea-engine/src/utils/utils"
-import { IntentfulBehaviour, IntentfulStatus, Metadata, Version } from "papiea-core"
+import {IntentfulBehaviour, IntentfulStatus, Metadata, Version} from "papiea-core"
 import { ProviderSdk } from "../../src/provider_sdk/typescript_sdk";
+import { IntentfulCtx_Interface } from "../../src/provider_sdk/typescript_sdk_interface";
 import uuid = require("uuid");
 
 declare var process: {
@@ -359,6 +360,137 @@ describe("Intentful Workflow tests single provider", () => {
             })
             await timeout(18000)
             expect(times_requested).toBeLessThanOrEqual(5)
+        } finally {
+            sdk.cleanup()
+        }
+    })
+
+    test("Background tasks should work", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        try {
+            let times_invoked = 0
+            first_provider_prefix = "location_provider_intentful_background_task"
+            const location = sdk.new_kind(locationDataDescription);
+            sdk.version(provider_version);
+            sdk.prefix(first_provider_prefix);
+            const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface) => {
+                times_invoked++
+            })
+            try {
+                await sdk.register();
+                await task.start_task()
+                await timeout(4000)
+                expect(times_invoked).toEqual(1)
+                await task.kill_task()
+            } catch (e) {
+                console.log(`Couldn't get entity: ${e}`)
+                expect(e).toBeUndefined()
+            }
+        } finally {
+            sdk.cleanup()
+        }
+    })
+
+    test("Background task shouldn't register if metadata extension should be present but is not specified", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        try {
+            first_provider_prefix = null
+            const location = sdk.new_kind(locationDataDescription);
+            sdk.version(provider_version);
+            sdk.prefix("metadata_extension");
+            sdk.metadata_extension({
+                SampleMetaExt: {
+                    type: "object",
+                    properties: {
+                        sample: {
+                            type: "string"
+                        }
+                    }
+                }
+            })
+            try {
+                const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface) => {
+                })
+            } catch (e) {
+                console.log(e.message)
+                expect(e.message).toContain("without the required metadata extension")
+            }
+        } finally {
+            sdk.cleanup()
+        }
+    })
+
+    test("Background task with metadata extension should work", async () => {
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        try {
+            first_provider_prefix = "location_provider_intentful_background_task_meta"
+            const location = sdk.new_kind(locationDataDescription);
+            sdk.version(provider_version);
+            sdk.prefix(first_provider_prefix);
+            sdk.metadata_extension({
+                SampleMetaExt: {
+                    type: "object",
+                    properties: {
+                        sample: {
+                            type: "string"
+                        }
+                    }
+                }
+            })
+            const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface) => {
+            }, {sample: "test"})
+            try {
+                await sdk.register();
+                await task.start_task()
+                await task.kill_task()
+            } catch (e) {
+                expect(e).toBeUndefined()
+            }
+        } finally {
+            sdk.cleanup()
+        }
+    })
+
+    test("Background task with custom fields should work", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        try {
+            let times_invoked = 0
+            let count = 0
+            first_provider_prefix = "location_provider_intentful_background_task_custom"
+            const location = sdk.new_kind(locationDataDescription);
+            sdk.version(provider_version);
+            sdk.prefix(first_provider_prefix);
+            const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface, task_ctx: any | undefined) => {
+                if (task_ctx) {
+                    count = task_ctx.count
+                }
+                times_invoked++
+            }, null, {
+                type: "object",
+                properties: {
+                    count: {
+                        type: "number"
+                    }
+                }
+            })
+            try {
+                await sdk.register();
+                await task.start_task()
+                await timeout(4000)
+                expect(times_invoked).toEqual(1)
+                await task.update_task({
+                    count: 1
+                })
+                await timeout(5000)
+                expect(count).toEqual(1)
+                await task.kill_task()
+            } catch (e) {
+                console.log(`Couldn't get entity: ${e}`)
+                expect(e).toBeUndefined()
+            }
         } finally {
             sdk.cleanup()
         }

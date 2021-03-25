@@ -57,7 +57,7 @@ function toNum(val: string): number {
 }
 const toStr: (val: string) => string = (val: string) => val
 const toBool: (val: string) => boolean = (val: string) => {
-    return !["0", "null", "false", ""].includes(val);
+    return !["0", "null", "false", ""].includes(val.toString());
 }
 
 const TRANSFORM_FN_MAP: { [key in keyof PapieaConfig]: (val: any) => PapieaConfig[key] } = {
@@ -74,6 +74,7 @@ const TRANSFORM_FN_MAP: { [key in keyof PapieaConfig]: (val: any) => PapieaConfi
     mongo_db: toStr,
     admin_key: toStr,
     logging_level: toStr,
+    pretty_print: toBool,
     logging_verbosity: toComplexLoggingVerbosity,
     tracing_config: toComplexTracingConfig
 }
@@ -101,6 +102,9 @@ export interface PapieaConfig {
 
     // Default logging level for papiea
     logging_level: string,
+
+    // Pretty print logs flag for papiea (pretty or json)
+    pretty_print: boolean,
 
     // Size of batch of random entities to be added to diff resolution each N seconds
     entity_batch_size: number,
@@ -134,6 +138,7 @@ const PAPIEA_DEFAULT_CFG: PapieaConfig = {
     admin_key: "",
     debug: true,
     logging_level: "info",
+    pretty_print: false,
     entity_batch_size: 5,
     deleted_watcher_persist_time: 100,
     entity_poll_delay: 250,

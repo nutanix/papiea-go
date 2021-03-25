@@ -1,3 +1,22 @@
+- Version 0.9.51+2141: Shlomi/update css (#662) PR url: git@github.com:nutanix/papiea.git/pull/662
+- Version 0.9.50+2130: Added validator check for untyped object not marked as status-only and related test. (#651) PR url: git@github.com:nutanix/papiea.git/pull/651
+- Version 0.9.49+2127: Add context to background task (#659) PR url: git@github.com:nutanix/papiea.git/pull/659
+- Version 0.9.48+2122: Squash a couple more pretty_prints
+- Version 0.9.47+2119: Fix hard-coded pretty-printing (and some trailing whitespace) (#657) PR url: git@github.com:nutanix/papiea.git/pull/657
+- Version 0.9.46+2113: hotfix for parallel execution (don't wait in handlers) (#655) PR url: git@github.com:nutanix/papiea.git/pull/655
+- Version 0.9.45+2109: Fixed nullable schema bug in python sdk
+- Version 0.9.44+2103: fix custom field bugs & added metadata extension adjustment (#653) PR url: git@github.com:nutanix/papiea.git/pull/653
+- Version 0.9.43+2097: Fixed undefined properties in schema bug in remove status-only fields module
+- Version 0.9.42+2094: Remove nullable fields (#648) PR url: git@github.com:nutanix/papiea.git/pull/648
+- Version 0.9.41+2091: Fixed bug in remove status-only fields module to replace schema with status
+- Version 0.9.40+2085: Modified logic for the sanitizer functions in sfs compiler (#649) PR url: git@github.com:nutanix/papiea.git/pull/649
+- Version 0.9.39+2079: Update upgrade-versions.sh
+- Version 0.9.38+2074: Removed dependency on Node env production variable in printing logs. (#647) PR url: git@github.com:nutanix/papiea.git/pull/647
+- Version 0.9.36+2060: Background task implementation (#635) PR url: git@github.com:nutanix/papiea.git/pull/635
+- Version 0.9.35+2054: Remove undefined and null fields from the differ input entity. (#645) PR url: git@github.com:nutanix/papiea.git/pull/645
+- Version 0.9.34+2048: add python sdk installation instructions
+- Version 0.9.33+2032: fix directive
+- Version 0.9.32+2024: try remove build stage
 - Version 0.9.31+2020: Improved logging information for papiea (#623) PR url: git@github.com:nutanix/papiea.git/pull/623
 - Version 0.9.30+2013: End-to-end tests for papiea client in typescript sdk (#597) PR url: git@github.com:nutanix/papiea.git/pull/597
 - Version 0.9.29+2008: Remove more jaeger debug logs (#632) PR url: git@github.com:nutanix/papiea.git/pull/632

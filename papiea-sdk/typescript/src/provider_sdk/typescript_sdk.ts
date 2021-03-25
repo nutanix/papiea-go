@@ -1,32 +1,36 @@
 import {
     IntentfulCtx_Interface,
-    ProceduralCtx_Interface, ProcedureDescription,
+    ProceduralCtx_Interface,
+    ProcedureDescription,
     Provider as ProviderImpl,
     Provider_Power,
     SecurityApi
 } from "./typescript_sdk_interface"
-import axios, { AxiosInstance } from "axios"
-import { plural } from "pluralize"
+import axios, {AxiosInstance} from "axios"
+import {plural} from "pluralize"
 import * as express from "express"
-import { Express, RequestHandler } from "express"
+import {Express, RequestHandler} from "express"
 import * as asyncHandler from "express-async-handler"
-import { Server } from "http"
-import { ProceduralCtx } from "./typescript_sdk_context_impl"
-import {intent_watcher_client, IntentWatcherClient } from "papiea-client"
+import {Server} from "http"
+import {ProceduralCtx} from "./typescript_sdk_context_impl"
+import {EntityCRUD, intent_watcher_client, IntentWatcherClient, kind_client} from "papiea-client"
 import {
     Data_Description,
     Entity,
+    ErrorSchemas,
     Intentful_Execution_Strategy,
     Kind,
+    Metadata,
     Procedural_Execution_Strategy,
     Procedural_Signature,
     Provider,
     S2S_Key,
     Secret,
+    Spec,
     SpecOnlyEntityKind,
+    Status,
     UserInfo,
     Version,
-    IntentWatcher, ErrorSchemas, Status, Spec, Metadata,
 } from "papiea-core"
 import {getTracer, LoggerFactory} from "papiea-backend-utils"
 import { InvocationError, SecurityApiError } from "./typescript_sdk_exceptions"
@@ -89,7 +93,7 @@ export class ProviderSdk implements ProviderImpl {
     protected readonly providerApiAxios: AxiosInstance;
     protected _version: Version | null;
     protected _prefix: string | null;
-    protected meta_ext: { [key: string]: string };
+    protected meta_ext: { [key: string]: string } | null = null;
     protected _provider: Provider | null;
     protected readonly _papiea_url: string;
     protected readonly _s2skey: Secret;
@@ -112,7 +116,6 @@ export class ProviderSdk implements ProviderImpl {
         this._server_manager = server_manager || new Provider_Server_Manager();
         this._tracer = tracer ?? getTracer("papiea-sdk")
         this._procedures = {};
-        this.meta_ext = {};
         this.allowExtraProps = allowExtraProps || false;
         this.get_prefix = this.get_prefix.bind(this);
         this.get_version = this.get_version.bind(this);
@@ -229,9 +232,13 @@ export class ProviderSdk implements ProviderImpl {
         return this
     }
 
-    metadata_extension(ext: Data_Description): ProviderSdk {
+    public metadata_extension(ext: Data_Description) {
         this.meta_ext = ext;
         return this
+    }
+
+    public get_metadata_extension(): Data_Description | null {
+        return this.meta_ext
     }
 
     provider_procedure(name: string,
@@ -278,6 +285,10 @@ export class ProviderSdk implements ProviderImpl {
         return this
     }
 
+    background_task(name: string, delay_sec: number, callback: BackgroundTaskCallback, metadata_extension?: any, provider_fields_schema?: any): BackgroundTaskBuilder {
+        return BackgroundTaskBuilder.create_task(this, name, delay_sec, callback, this._tracer, metadata_extension, provider_fields_schema)
+    }
+
     async register(): Promise<void> {
         if (this._prefix !== null && this._version !== null && this._kind.length !== 0) {
             this._provider = {
@@ -285,7 +296,7 @@ export class ProviderSdk implements ProviderImpl {
                 version: this._version!,
                 prefix: this._prefix!,
                 procedures: this._procedures,
-                extension_structure: this.meta_ext,
+                extension_structure: this.meta_ext ?? {},
                 allowExtraProps: this.allowExtraProps,
                 ...(this._policy) && {policy: this._policy},
                 ...(this._oauth2) && {oauth2: this._oauth2},
@@ -437,6 +448,170 @@ class Provider_Server_Manager {
         }
     }
 }
+
+export type BackgroundTaskCallback = ((ctx: IntentfulCtx_Interface) => Promise<any>) | ((ctx: IntentfulCtx_Interface, task_ctx: any | undefined) => Promise<any>)
+
+export class BackgroundTaskBuilder {
+    private provider: ProviderSdk
+    private tracer: Tracer
+    private name: string
+    private kind: Kind_Builder
+    private task_entity: Entity | null = null
+    private kind_client: EntityCRUD
+    private metadata_extension?: any
+    static BackgroundTaskState = class {
+        static RunningSpecState() {
+            return "Should Run"
+        }
+        static RunningStatusState() {
+            return "Running"
+        }
+        static IdleSpecState() {
+            return "Idle"
+        }
+        static IdleStatusState() {
+            return "Idle"
+        }
+    }
+
+
+    constructor(provider: ProviderSdk, tracer: Tracer, name: string, kind_builder: Kind_Builder, metadata_extension?: any) {
+        this.provider = provider
+        this.tracer = tracer
+        this.name = name
+        this.kind = kind_builder
+        this.kind_client = kind_client(provider.papiea_url, provider.get_prefix(), name, provider.get_version(), provider.s2s_key)
+        this.metadata_extension = metadata_extension
+    }
+
+    static create_task(provider: ProviderSdk, name: string, delay_sec: number, callback: BackgroundTaskCallback, tracer: Tracer, metadata_extension?: any, custom_schema?: any): BackgroundTaskBuilder {
+        if (provider.get_metadata_extension() !== null && (metadata_extension === null || metadata_extension === undefined)) {
+            throw new Error(`Attempting to create background task (${this.name}) on provider:
+                            ${provider.get_prefix()}, ${provider.get_version()} without the required metadata extension.`)
+        }
+        const schema: any = {
+            type: "object",
+            "x-papiea-entity": "differ",
+            properties: {
+                state: {
+                    type: "string"
+                }
+            }
+        }
+        if (custom_schema) {
+            this.modify_task_schema(custom_schema)
+            schema["properties"]["provider_fields"] = custom_schema
+        }
+        const kind = provider.new_kind({[name]: schema})
+        kind.on("state", async (ctx, entity, input) => {
+            await callback(ctx, entity?.status?.provider_fields ?? undefined)
+            return {
+                delay_secs: delay_sec
+            }
+        })
+        return new BackgroundTaskBuilder(provider, tracer, name, kind, metadata_extension)
+    }
+
+    private async update_task_entity() {
+        if (this.task_entity) {
+            this.task_entity = await this.kind_client.get(this.task_entity.metadata)
+        }
+    }
+
+    async start_task() {
+        const states = BackgroundTaskBuilder.BackgroundTaskState
+        if (this.task_entity === null) {
+            if (this.metadata_extension) {
+                this.task_entity = await this.kind_client.create({
+                    spec: {state: states.RunningSpecState()},
+                    metadata: {
+                        extension: this.metadata_extension
+                    }
+                })
+            } else {
+                this.task_entity = await this.kind_client.create({spec: {state: states.RunningSpecState()}})
+            }
+            await this.provider.provider_api_axios.patch(`${this.provider.provider_url}/${this.provider.get_prefix()}/${this.provider.get_version()}/update_status`,{
+                entity_ref: this.task_entity.metadata,
+                status: {
+                    state: states.RunningStatusState()
+                }
+            });
+        } else {
+            await this.update_task_entity()
+            await this.kind_client.update(this.task_entity.metadata, {state: states.RunningSpecState()})
+            await this.provider.provider_api_axios.patch(`${this.provider.provider_url}/${this.provider.get_prefix()}/${this.provider.get_version()}/update_status`,{
+                entity_ref: this.task_entity.metadata,
+                status: {
+                    state: states.RunningStatusState()
+                }
+            });
+        }
+    }
+
+    async stop_task() {
+        const states = BackgroundTaskBuilder.BackgroundTaskState
+        if (this.task_entity === null) {
+            throw new Error(`Attempting to stop missing background task (${this.name}) on provider:
+                            ${this.provider.get_prefix()}, ${this.provider.get_version()}`)
+        } else {
+            await this.update_task_entity()
+            await this.kind_client.update(this.task_entity.metadata, {state: states.IdleSpecState()})
+            await this.provider.provider_api_axios.patch(`${this.provider.provider_url}/${this.provider.get_prefix()}/${this.provider.get_version()}/update_status`,{
+                entity_ref: this.task_entity.metadata,
+                status: {
+                    state: states.IdleStatusState()
+                }
+            });
+        }
+    }
+
+    async kill_task() {
+        if (this.task_entity === null) {
+            throw new Error(`Attempting to kill missing background task (${this.name}) on provider:
+                            ${this.provider.get_prefix()}, ${this.provider.get_version()}`)
+        } else {
+            await this.update_task_entity()
+            await this.kind_client.delete(this.task_entity.metadata)
+        }
+    }
+
+    // Make all the fields apart from 'task' status-only
+    private static modify_task_schema(schema: any) {
+        if (Object.keys(schema).length > 1 && schema["type"] && schema["properties"]) {
+            this.modify_task_schema(schema["properties"])
+        }
+        for (let prop in schema) {
+            if (schema.hasOwnProperty(prop)) {
+                let nested_prop = schema[prop]
+                if (nested_prop["type"]) {
+                    if (
+                        nested_prop["type"] === "object"
+                        && nested_prop["properties"]
+                        && Object.keys(nested_prop["properties"]).length > 0
+                    ) {
+                        this.modify_task_schema(nested_prop["properties"])
+                    }
+                    nested_prop["x-papiea"] = "status-only"
+                }
+            }
+        }
+    }
+
+    async update_task(task_ctx: any) {
+        if (this.task_entity === null) {
+            throw new Error(`Attempting to update missing background task (${this.name}) on provider:
+                            ${this.provider.get_prefix()}, ${this.provider.get_version()}`)
+        } else {
+            await this.update_task_entity()
+            await this.provider.provider_api_axios.patch(`${this.provider.provider_url}/${this.provider.get_prefix()}/${this.provider.get_version()}/update_status`,{
+                entity_ref: this.task_entity.metadata,
+                status: {provider_fields: task_ctx}
+            });
+        }
+    }
+}
+
 export class Kind_Builder {
 
     kind: Kind;
@@ -542,7 +717,6 @@ export class Kind_Builder {
             result: {
                 IntentfulOutput: {
                     type: 'object',
-                    nullable: true,
                     properties: {
                         delay_secs: {
                             type: "integer"

@@ -1286,6 +1286,58 @@ describe("Provider Sdk tests", () => {
         }
     })
 
+    const NULL_FIELD_UPDATE_SCHEMA = {
+        TestObject: {
+            type: 'object',
+            title: 'testobject',
+            'x-papiea-entity': 'differ',
+            properties: {
+                test: {
+                    type: 'string'
+                }
+            }
+        }
+    }
+
+    test("Diff resolver should not run for field set to null in spec", async () => {
+        expect.assertions(2);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        try {
+            const test_kind = sdk.new_kind(NULL_FIELD_UPDATE_SCHEMA);
+            sdk.version(provider_version);
+            sdk.prefix("null_field_spec_diff_resolver");
+            let called: boolean = false
+            test_kind.on("test", async (ctx, input) => {
+                console.log("Intent handler should not be invoked!!!")
+                called = true
+            })
+            await sdk.register();
+            const kind_name = sdk.provider.kinds[0].name;
+            const { data: { metadata, spec } } = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}`, {
+                    spec: {
+                        test: 'test-val1'
+                    }
+            }, {
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${adminKey}`,
+                }
+            });
+
+            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`);
+            await axios.put(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`, {
+                spec: {
+                    test: null
+                },
+                metadata: metadata
+            });
+            expect(updatedEntity.data.spec.test).toEqual("test-val1");
+            expect(called).toBeFalsy()
+        } finally {
+            sdk.cleanup()
+        }
+    });
+
     test("Provider with required status-only field should fail in registration", async () => {
         expect.assertions(1)
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
@@ -1301,6 +1353,24 @@ describe("Provider Sdk tests", () => {
         }
         sdk.cleanup()
     });
+
+    test("Provider with untyped object in schema should succeed with warning from papiea", async () => {
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        let untyped_object_schema = JSON.parse(JSON.stringify(STATUS_ONLY_TEST_SCHEMA))
+        untyped_object_schema.TestObject.properties.test.items.properties.c = {
+            type: "object",
+            description: "Test object with untyped schema"
+        }
+        sdk.new_kind(untyped_object_schema);
+        sdk.version(provider_version);
+        sdk.prefix("untyped_object_schema_provider");
+        try {
+            await sdk.register();
+        } catch (e) {
+            console.error(e)
+        }
+        sdk.cleanup()
+    })
 
     test("Create entity spec with status-only field set should fail", async () => {
         expect.assertions(1)
@@ -1534,7 +1604,7 @@ describe("SDK + oauth provider tests", () => {
     const kind_name = provider.kinds[0].name;
     let entity_metadata: Metadata, entity_spec: Spec;
     const oauth2Server = OAuth2Server.createServer();
-    const providerSDKTestLogger = LoggerFactory.makeLogger({level: "info"});
+    const providerSDKTestLogger = LoggerFactory.makeLogger({level: "info", pretty_print: true});
 
     beforeAll(async () => {
         await providerApiAdmin.post('/', provider);
