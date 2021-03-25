@@ -67,6 +67,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
     async get_watchlist(): Promise<Watchlist> {
         const watchlist_entries: WatchlistEntry[] = await this.collection.find({}).toArray()
         const watchlist: Watchlist = {}
+        // TODO: replace with $arrayToObject from Mongo API
         for (let entry of watchlist_entries) {
             watchlist[entry.k] = {}
             for (let diffs of entry.v) {
@@ -80,6 +81,31 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         const result = await this.collection.updateOne(
             {k: Watchlist_Db_Mongo.get_entry_reference(entity_reference)},
             {$push: {v: {k: diff.id, v: diff}}}
+        )
+        if (result.result.n !== 1) {
+            throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`)
+        }
+    }
+
+    async add_diffs(entity_reference: Provider_Entity_Reference, diffs: Diff[]) {
+        const diff_entries = Watchlist_Db_Mongo.get_diff_entries(diffs)
+        const result = await this.collection.updateOne(
+            {k: Watchlist_Db_Mongo.get_entry_reference(entity_reference)},
+            {$push: {v: {$each: diff_entries}}}
+        )
+        if (result.result.ok !== 1) {
+            throw new PapieaException(`MongoDBError: Unable to add multiple diffs`, {
+                additional_info: {
+                    entity_uuid: entity_reference.uuid
+                }
+            })
+        }
+    }
+
+    async remove_diff(entity_reference: Provider_Entity_Reference, diff: Diff) {
+        const result = await this.collection.updateOne(
+            {k: Watchlist_Db_Mongo.get_entry_reference(entity_reference)},
+            {$pull: {v: {k: diff.id}}}
         )
         if (result.result.n !== 1) {
             throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`)

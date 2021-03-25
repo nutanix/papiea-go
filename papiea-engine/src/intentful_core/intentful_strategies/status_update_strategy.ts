@@ -3,7 +3,6 @@ import { Status_DB } from "../../databases/status_db_interface";
 import { UserAuthInfo } from "../../auth/authn";
 import { Spec_DB } from "../../databases/spec_db_interface";
 import { Watchlist_DB } from "../../databases/watchlist_db_interface";
-import { create_entry } from "../../intentful_engine/watchlist";
 import {RequestContext, spanOperation} from "papiea-backend-utils"
 import { PapieaException } from "../../errors/papiea_exception"
 
@@ -71,15 +70,11 @@ export class DifferUpdateStrategy extends StatusUpdateStrategy {
                                    ctx.tracing_ctx)
         const [metadata, spec] = await this.specDb.get_spec(entity_ref)
         getSpecSpan.finish()
-        for (let diff of this.differ.diffs(this.kind!, spec, status)) {
+        for (let diff of this.differ.diffs(entity_ref, this.kind!, spec, status)) {
             diffs.push(diff)
         }
-        const watchlist = await this.watchlistDb.get_watchlist()
-        const ent = create_entry(metadata)
-        if (!watchlist.has(ent)) {
-            watchlist.set([ent, []])
-            await this.watchlistDb.update_watchlist(watchlist)
-        }
+        // TODO: this might be duplicating diffs
+        await this.watchlistDb.add_diffs(metadata, diffs)
         const span = spanOperation(`update_status_db`,
                                    ctx.tracing_ctx)
         await super.update(entity_ref, status, ctx)

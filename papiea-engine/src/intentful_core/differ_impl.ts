@@ -47,12 +47,18 @@ export class BasicDiffer implements Differ {
     }
 
     public create_diff_structure(entity_reference: Provider_Entity_Reference, signature: Intentful_Signature, diff_fields: DiffContent[]): Diff {
-        const hashed = hash({entity_reference: entity_reference, intentful_signature: signature, diff_fields: diff_fields})
+        const hashed = hash({entity_reference: {
+                uuid: entity_reference.uuid,
+                kind: entity_reference.kind,
+                provider_prefix: entity_reference.provider_prefix,
+                provider_version: entity_reference.provider_version
+            }, intentful_signature: signature, diff_fields: diff_fields})
         return {
             entity_reference: entity_reference,
             intentful_signature: signature,
             diff_fields: diff_fields,
-            id: hashed
+            id: hashed,
+            handler_url: `${signature.base_callback}/healthcheck`
         }
     }
 }

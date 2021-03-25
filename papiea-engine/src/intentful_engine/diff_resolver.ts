@@ -38,7 +38,6 @@ export class DiffResolver {
     private intentfulContext: IntentfulContext;
     private logger: Logger;
     private batchSize: number;
-    private static MAXIMUM_BACKOFF = 100
     private entropyFn: (diff_delay?: number) => number
     private calculateBackoffFn: (retries?: number, maximumBackoff?: number, entropy?: number, kind_retry_exponent?: number, kind_name?: string) => number
 
@@ -67,41 +66,9 @@ export class DiffResolver {
     private async _run(delay: number) {
         while (true) {
             await timeout(delay)
-            await this.updateWatchlist()
             await this.resolve_diffs()
             await this.addRandomEntities()
         }
-    }
-
-    private async updateWatchlist() {
-        try {
-            const updated_watchlist = await this.watchlistDb.get_watchlist()
-            this.watchlist.update(updated_watchlist)
-        } catch (e) {
-            return
-        }
-    }
-
-    private createDiffBackoff(kind: Kind, delay: Delay | null | undefined, retries: number = 0): Backoff {
-        if (delay !== undefined && delay !== null) {
-            return {
-                delay,
-                retries
-            }
-        } else {
-            return {
-                delay: {
-                    delay_seconds: this.calculateBackoffFn(retries, DiffResolver.MAXIMUM_BACKOFF, this.entropyFn(kind.diff_delay), kind.diff_retry_exponent, kind.name),
-                    delay_set_time: new Date()
-                },
-                retries
-            }
-        }
-    }
-
-    private incrementDiffBackoff(backoff: Backoff, delay: Delay | null | undefined, kind: Kind): Backoff {
-        const retries = backoff.retries + 1
-        return this.createDiffBackoff(kind, delay, retries)
     }
 
     private async rediff(entity_reference: Provider_Entity_Reference): Promise<RediffResult | null> {
@@ -122,44 +89,22 @@ export class DiffResolver {
         }
     }
 
-    private async launchOperation({diff, metadata, spec, status}: DiffWithContext): Promise<Delay | null> {
+    private async launchOperation({diff, metadata, spec, status}: DiffWithContext) {
         this.logger.debug("launchOperation", diff.intentful_signature.procedure_callback,
             { metadata: metadata,
                 spec: spec,
                 status: status,
                 input: diff.diff_fields})
         // This yields delay
-        const result = await axios.post(diff.intentful_signature.procedure_callback, {
+        axios.post(diff.intentful_signature.procedure_callback, {
             metadata: metadata,
             spec: spec,
             status: status,
             input: diff.diff_fields
         })
-        if (result.data !== null && result.data !== undefined && result.data.delay_secs !== undefined
-            && result.data.delay_secs !== null && !Number.isNaN(result.data.delay_secs)) {
-            return {
-                delay_seconds: result.data.delay_secs,
-                delay_set_time: new Date()
-            }
-        } else {
-            return null
-        }
     }
 
-    private async checkHealthy(diff: Diff): Promise<boolean> {
-        try {
-            await axios.get(diff.handler_url!)
-            return true
-        } catch (e) {
-            return false
-        }
-    }
-
-    private async removeFromWatchlist(ref: EntryReference) {
-        this.watchlist.delete(ref)
-        await this.watchlistDb.update_watchlist(this.watchlist)
-    }
-
+    // TODO: Maybe compare by hash
     private static includesDiff(diffs: Diff[], diff: Diff) {
         for (let d of diffs) {
             if (deepEqual(d, diff)) {
@@ -171,8 +116,6 @@ export class DiffResolver {
 
     private async resolve_diffs() {
         const entries = await this.watchlistDb.get_watchlist()
-        const promises = []
-
         for (let entry in entries) {
             if (!entries.hasOwnProperty(entry)) {
                 continue
@@ -198,83 +141,44 @@ export class DiffResolver {
                         await this.watchlistDb.add_diff(entity_reference, diff)
                     }
                 }
-            } else if (diff_results.length > rediff.diffs.length) {
-                const watched_diffs = diff_results.map(watch => watch[0])
-                for (let idx = 0; idx <= watched_diffs.length; idx++) {
-                    if (!DiffResolver.includesDiff(rediff.diffs, watched_diffs[idx])) {
-                        entries[key][1].splice(idx, 1)
+            } else if (existing_diffs.length > rediff.diffs.length) {
+                for (let diff of existing_diffs) {
+                    if (!DiffResolver.includesDiff(rediff.diffs, diff)) {
+                        await this.watchlistDb.remove_diff(entity_reference, diff)
                     }
                 }
             }
-            const promise = this.startDiffsResolution(diff_results, rediff)
-            promises.push(promise)
+            await this.startDiffsResolution(rediff)
         }
-        await Promise.all(promises)
-        await this.watchlistDb.update_watchlist(this.watchlist)
     }
 
     private async calculate_batch_size(): Promise<number> {
         return this.batchSize
     }
 
-    private async startDiffsResolution(diff_results: [Diff, Backoff | null][], rediff: RediffResult) {
+    private async startDiffsResolution(rediff: RediffResult) {
         const {diffs, metadata, provider, kind} = rediff
         let next_diff: Diff
-        let idx: number
         const diff_selection_strategy = this.intentfulContext.getDiffSelectionStrategy(kind!)
         try {
-            [next_diff, idx] = diff_selection_strategy.selectOne(diffs)
+            next_diff = await diff_selection_strategy.selectOne(diffs)
         } catch (e) {
             this.logger.debug(`Failed to select diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
-            return null
+            return
         }
-        const backoff: Backoff | null = diff_results[idx][1]
+        const backoff = next_diff.backoff
         if (!backoff) {
-            diff_results[idx][0].handler_url = `${next_diff.intentful_signature.base_callback}/healthcheck`
-            const getBackoff = (index: number) => {
-                return (delay: Delay | null | undefined) => {
-                    const backoff = this.createDiffBackoff(kind, delay)
-                    this.logger.info(`Starting to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind}`)
-                    diff_results[index][1] = backoff
-                }
-            }
-            const getBackoffErrorHandler = (index: number) => {
-                return (e: Error) => {
-                    this.logger.debug(`Couldn't invoke intent handler to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
-                    const backoff = this.createDiffBackoff(kind, null)
-                    diff_results[index][1] = backoff
-                }
-            }
-            return this.launchOperation({diff: next_diff, ...rediff}).then(getBackoff(idx)).catch(getBackoffErrorHandler(idx))
+            this.logger.info(`Starting to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind}`)
+            this.launchOperation({diff: next_diff, ...rediff}).catch((e) => {
+                this.logger.debug(`Couldn't invoke intent handler to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
+            })
         } else {
             // Delay for rediffing
             if ((new Date().getTime() - backoff.delay.delay_set_time.getTime()) / 1000 > backoff.delay.delay_seconds) {
-                const diff_index = rediff.diffs.findIndex(diff => deepEqual(diff.diff_fields, next_diff!.diff_fields))
-                // Diff still exists, we should check the health of the handler and retry if healthy
-                if (diff_index !== -1) {
-                    try {
-                        if (!await this.checkHealthy(diff_results[idx][0])) {
-                            this.logger.debug(`Handler for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} health check has failed.`)
-                            return
-                        }
-                        this.logger.info(`Starting to retry resolving diff for entity with uuid: ${rediff.metadata!.uuid} and kind: ${rediff.metadata!.kind}`)
-                        const getBackoff = (index: number) => {
-                            return (delay: Delay | null | undefined) => {
-                                diff_results[index][1] = this.incrementDiffBackoff(backoff, delay, rediff.kind)
-                            }
-                        }
-                        const getBackoffErrorHandler = (index: number) => {
-                            return (e: Error) => {
-                                this.logger.debug(`Couldn't invoke retry intent handler for entity with uuid: ${rediff.metadata!.uuid} and: kind ${rediff.kind!.name} due to error: ${e}`)
-                                diff_results[index][1] = this.incrementDiffBackoff(backoff, null, rediff.kind)
-                            }
-                        }
-                        return this.launchOperation({diff: rediff.diffs[diff_index], ...rediff}).then(getBackoff(idx)).catch(getBackoffErrorHandler(idx))
-                    } catch (e) {
-                        this.logger.debug(`Couldn't invoke retry intent handler for entity with uuid: ${rediff.metadata!.uuid} and: kind ${rediff.kind!.name} due to error: ${e}`)
-                        diff_results[idx][1] = this.incrementDiffBackoff(backoff, null, rediff.kind)
-                    }
-                }
+                this.logger.info(`Starting to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind}`)
+                this.launchOperation({diff: next_diff, ...rediff}).catch((e) => {
+                    this.logger.debug(`Couldn't retry intent handler to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
+                })
             }
         }
     }

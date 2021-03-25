@@ -1,6 +1,5 @@
 import { logLevelFromString, LoggerFactory } from "papiea-backend-utils"
 import { MongoConnection } from "./databases/mongo"
-import { Watchlist } from "./intentful_engine/watchlist"
 import { DiffResolver } from "./intentful_engine/diff_resolver"
 import { BasicDiffer } from "./intentful_core/differ_impl";
 import { IntentfulContext } from "./intentful_core/intentful_context";
@@ -43,16 +42,15 @@ async function setUpDiffResolver() {
 
     const differ = new BasicDiffer()
     const intentfulContext = new IntentfulContext(specDb, statusDb, graveyardDb, differ, intentWatcherDB, watchlistDb, validator, noopAuthorizer)
-    const watchlist: Watchlist = new Watchlist()
 
-    const intentfulListenerMongo = new IntentfulListenerMongo(statusDb, specDb, watchlist)
+    const intentfulListenerMongo = new IntentfulListenerMongo(statusDb, specDb, watchlistDb)
     intentfulListenerMongo.run(entityPollDelay)
     const entropyFunction = getEntropyFn(papieaDebug)
     const calculateBackoffFunction = getCalculateBackoffFn(diffRetryExponent, logger)
 
-    const diffResolver = new DiffResolver(watchlist, watchlistDb, specDb, statusDb, providerDb, differ, intentfulContext, logger, batchSize, entropyFunction, calculateBackoffFunction)
+    const diffResolver = new DiffResolver(watchlistDb, specDb, statusDb, providerDb, differ, intentfulContext, logger, batchSize, entropyFunction, calculateBackoffFunction)
 
-    const intentResolver = new IntentResolver(specDb, statusDb, intentWatcherDB, providerDb, intentfulListenerMongo, differ, watchlist, logger)
+    const intentResolver = new IntentResolver(specDb, statusDb, intentWatcherDB, providerDb, intentfulListenerMongo, differ, watchlistDb, logger)
 
     console.log("Running diff resolver")
     intentResolver.run(intentResolveDelay, deletedWatcherPersists)
