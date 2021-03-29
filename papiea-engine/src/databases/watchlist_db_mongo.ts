@@ -69,7 +69,9 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         const watchlist: Watchlist = {}
         // TODO: replace with $arrayToObject from Mongo API
         for (let entry of watchlist_entries) {
-            watchlist[entry.k] = {}
+            if (!watchlist[entry.k]) {
+                watchlist[entry.k] = {}
+            }
             for (let diffs of entry.v) {
                 watchlist[entry.k][diffs.k] = diffs.v
             }

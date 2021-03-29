@@ -91,23 +91,27 @@ export class DiffResolver {
 
     private async launchOperation({diff, metadata, spec, status}: DiffWithContext) {
         this.logger.debug("launchOperation", diff.intentful_signature.procedure_callback,
-            { metadata: metadata,
+            {
+                metadata: metadata,
                 spec: spec,
                 status: status,
-                input: diff.diff_fields})
+                input: diff.diff_fields,
+                id: diff.id,
+            })
         // This yields delay
         axios.post(diff.intentful_signature.procedure_callback, {
             metadata: metadata,
             spec: spec,
             status: status,
-            input: diff.diff_fields
+            input: diff.diff_fields,
+            id: diff.id
         })
     }
 
     // TODO: Maybe compare by hash
     private static includesDiff(diffs: Diff[], diff: Diff) {
         for (let d of diffs) {
-            if (deepEqual(d, diff)) {
+            if (d.id === diff.id) {
                 return true
             }
         }
@@ -163,21 +167,21 @@ export class DiffResolver {
         try {
             next_diff = await diff_selection_strategy.selectOne(diffs)
         } catch (e) {
-            this.logger.debug(`Failed to select diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
+            this.logger.info(`Failed to select diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
             return
         }
         const backoff = next_diff.backoff
         if (!backoff) {
             this.logger.info(`Starting to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind}`)
             this.launchOperation({diff: next_diff, ...rediff}).catch((e) => {
-                this.logger.debug(`Couldn't invoke intent handler to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
+                this.logger.info(`Couldn't invoke intent handler to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
             })
         } else {
             // Delay for rediffing
             if ((new Date().getTime() - backoff.delay.delay_set_time.getTime()) / 1000 > backoff.delay.delay_seconds) {
                 this.logger.info(`Starting to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind}`)
                 this.launchOperation({diff: next_diff, ...rediff}).catch((e) => {
-                    this.logger.debug(`Couldn't retry intent handler to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
+                    this.logger.info(`Couldn't retry intent handler to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
                 })
             }
         }

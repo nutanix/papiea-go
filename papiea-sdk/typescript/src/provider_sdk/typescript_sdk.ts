@@ -105,6 +105,7 @@ export class ProviderSdk implements ProviderImpl {
     protected allowExtraProps: boolean;
     protected readonly _sdk_version: Version;
     protected readonly _tracer: Tracer
+    public processing_diffs: string[] = []
 
     constructor(papiea_url: string, s2skey: Secret, server_manager?: Provider_Server_Manager, allowExtraProps?: boolean, tracer?: Tracer) {
         this._version = null;
@@ -320,7 +321,9 @@ export class ProviderSdk implements ProviderImpl {
 
     static create_provider(papiea_url: string, s2skey: Secret, public_host?: string, public_port?: number, allowExtraProps: boolean = false): ProviderSdk {
         const server_manager = new Provider_Server_Manager(public_host, public_port);
-        return new ProviderSdk(papiea_url, s2skey, server_manager, allowExtraProps)
+        const sdk = new ProviderSdk(papiea_url, s2skey, server_manager, allowExtraProps)
+        server_manager.provider_sdk = sdk
+        return sdk
     }
 
     public secure_with(oauth_config: any, casbin_model: string, casbin_initial_policy: string) : ProviderSdk {
@@ -374,6 +377,7 @@ class Provider_Server_Manager {
     private app: Express;
     private raw_http_server: Server | null;
     private should_run: boolean;
+    private _provider_sdk!: ProviderSdk
 
     constructor(public_host: string = "127.0.0.1", public_port: number = 9000) {
         this.public_host = public_host;
@@ -382,6 +386,10 @@ class Provider_Server_Manager {
         this.init_express();
         this.raw_http_server = null;
         this.should_run = false;
+    }
+
+    set provider_sdk(provider_sdk: ProviderSdk) {
+        this._provider_sdk = provider_sdk
     }
 
     init_express() {
@@ -407,7 +415,7 @@ class Provider_Server_Manager {
             this.should_run = true;
         }
         this.app.get("/healthcheck", asyncHandler(async (req, res) => {
-            res.status(200).json({ status: "Available" })
+            res.status(200).json({ diff_ids: this._provider_sdk.processing_diffs })
         }))
     }
 
@@ -718,11 +726,13 @@ export class Kind_Builder {
                                           `${this.kind.name}/${sfs_signature}`)
             try {
                 const span = spanSdkOperation(`${sfs_signature}_sdk_handler`, this.tracer, req, this.provider.provider)
+                this.provider.processing_diffs.push(req.body.id)
                 const result = await handler(ctx, {
                     metadata: req.body.metadata,
                     spec: req.body.spec,
                     status: req.body.status
                 }, req.body.input);
+                this.provider.processing_diffs = this.provider.processing_diffs.filter(id => id !== req.body.id)
                 ctx.cleanup()
                 res.json(result);
                 span.finish()
