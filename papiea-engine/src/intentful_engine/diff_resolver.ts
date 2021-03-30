@@ -99,7 +99,7 @@ export class DiffResolver {
                 id: diff.id,
             })
         // This yields delay
-        axios.post(diff.intentful_signature.procedure_callback, {
+        return axios.post(diff.intentful_signature.procedure_callback, {
             metadata: metadata,
             spec: spec,
             status: status,
