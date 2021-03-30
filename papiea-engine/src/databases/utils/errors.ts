@@ -1,4 +1,4 @@
-import { Spec, uuid4, Metadata, Status } from "papiea-core";
+import {Spec, uuid4, Metadata, Status, Version} from "papiea-core"
 import { PapieaException } from "../../errors/papiea_exception"
 
 export class ConflictingEntityError extends PapieaException {
@@ -39,5 +39,25 @@ export class EntityNotFoundError extends PapieaException {
 
     toErrors(): { [key: string]: any }[] {
         return [{ message: `Entity ${this.uuid} not found` }]
+    }
+}
+
+export class WatchlistEntityNotFoundError extends PapieaException {
+
+    uuid: uuid4
+    kind: string
+    prefix: string
+    version: Version
+
+    constructor(kind: string, uuid: uuid4, provider_prefix: string = '', provider_version: string = '') {
+        super('Entity Not Found', { provider_prefix: provider_prefix, provider_version: provider_version, kind_name: kind, additional_info: { "entity_uuid": uuid }});
+        this.kind = kind;
+        this.uuid = uuid;
+        this.prefix = provider_prefix
+        this.version = provider_version
+    }
+
+    toErrors(): { [key: string]: any }[] {
+        return [{ message: `Entity ${this.uuid}, prefix: ${this.prefix}, version: ${this.version} not found in the watchlist` }]
     }
 }

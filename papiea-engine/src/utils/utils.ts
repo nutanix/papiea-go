@@ -4,6 +4,7 @@ import { AxiosError } from "axios"
 import { Logger } from "papiea-backend-utils"
 import {BadRequestError} from "../errors/bad_request_error"
 import { PapieaException } from "../errors/papiea_exception"
+import {Diff} from "papiea-core"
 const semver = require('semver')
 
 function validatePaginationParams(offset: number | undefined, limit: number | undefined) {
@@ -182,4 +183,13 @@ export function getVersionVerifier(enginePapieaVersion: string) {
         }
         next();
     }
+}
+
+export function includesDiff(diffs: Diff[], diff: Diff) {
+    for (let d of diffs) {
+        if (d.id === diff.id) {
+            return true
+        }
+    }
+    return false
 }

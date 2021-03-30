@@ -8,6 +8,7 @@ import { Watchlist_DB } from "../../databases/watchlist_db_interface";
 import uuid = require("uuid")
 import { Graveyard_DB } from "../../databases/graveyard_db_interface"
 import {RequestContext, spanOperation} from "papiea-backend-utils"
+import {includesDiff} from "../../utils/utils"
 
 export class DifferIntentfulStrategy extends IntentfulStrategy {
     protected differ: Differ
@@ -59,8 +60,14 @@ export class DifferIntentfulStrategy extends IntentfulStrategy {
                                    {entity_uuid: metadata.uuid})
         await this.intentWatcherDb.save_watcher(watcher)
         watcherSpan.finish()
-        // TODO: this might be duplicating diffs
-        await this.watchlistDb.add_diffs(metadata, watcher.diffs)
+        const entity_diffs = await this.watchlistDb.get_entity_diffs(metadata)
+        const pending_diffs = []
+        for (let diff of watcher.diffs) {
+            if (!includesDiff(entity_diffs, diff)) {
+                pending_diffs.push(diff)
+            }
+        }
+        await this.watchlistDb.add_diffs(metadata, pending_diffs)
         return watcher
     }
 }

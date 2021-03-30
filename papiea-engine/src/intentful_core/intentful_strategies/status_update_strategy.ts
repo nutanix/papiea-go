@@ -5,6 +5,7 @@ import { Spec_DB } from "../../databases/spec_db_interface";
 import { Watchlist_DB } from "../../databases/watchlist_db_interface";
 import {RequestContext, spanOperation} from "papiea-backend-utils"
 import { PapieaException } from "../../errors/papiea_exception"
+import {includesDiff} from "../../utils/utils"
 
 export abstract class StatusUpdateStrategy {
     statusDb: Status_DB
@@ -65,16 +66,19 @@ export class DifferUpdateStrategy extends StatusUpdateStrategy {
     }
 
     async update(entity_ref: Provider_Entity_Reference, status: Status, ctx: RequestContext): Promise<void> {
-        let diffs: Diff[] = []
         const getSpecSpan = spanOperation(`get_spec_db`,
                                    ctx.tracing_ctx)
         const [metadata, spec] = await this.specDb.get_spec(entity_ref)
         getSpecSpan.finish()
-        for (let diff of this.differ.diffs(entity_ref, this.kind!, spec, status)) {
-            diffs.push(diff)
+        const diffs = this.differ.all_diffs(entity_ref, this.kind!, spec, status)
+        const entity_diffs = await this.watchlistDb.get_entity_diffs(metadata)
+        const pending_diffs = []
+        for (let diff of diffs) {
+            if (!includesDiff(entity_diffs, diff)) {
+                pending_diffs.push(diff)
+            }
         }
-        // TODO: this might be duplicating diffs
-        await this.watchlistDb.add_diffs(metadata, diffs)
+        await this.watchlistDb.add_diffs(metadata, pending_diffs)
         const span = spanOperation(`update_status_db`,
                                    ctx.tracing_ctx)
         await super.update(entity_ref, status, ctx)

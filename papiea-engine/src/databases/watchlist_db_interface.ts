@@ -1,4 +1,4 @@
-import {Diff, Entity, Provider_Entity_Reference} from "papiea-core"
+import {Backoff, Diff, Entity, Provider_Entity_Reference} from "papiea-core"
 
 export type Watchlist = {[entity_reference: string]: {[diff_uuid: string]: Diff}}
 
@@ -17,4 +17,8 @@ export interface Watchlist_DB {
     remove_diff(entity_reference: Provider_Entity_Reference, diff: Diff): Promise<void>
 
     add_diffs(entity_reference: Provider_Entity_Reference, diffs: Diff[]): Promise<void>
+
+    update_diff_backoff(entity_reference: Provider_Entity_Reference, diff_id: string, backoff: Backoff): Promise<void>
+
+    get_entity_diffs(entity_ref: Provider_Entity_Reference): Promise<Diff[]>
 }

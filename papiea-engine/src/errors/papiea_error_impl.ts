@@ -2,7 +2,7 @@ import { PapieaResponse } from "papiea-core";
 import {
     EntityNotFoundError,
     ConflictingEntityError,
-    GraveyardConflictingEntityError
+    GraveyardConflictingEntityError, WatchlistEntityNotFoundError
 } from "../databases/utils/errors"
 import { ValidationError } from "./validation_error";
 import { ProcedureInvocationError } from "./procedure_invocation_error";
@@ -86,6 +86,15 @@ export class PapieaErrorResponseImpl implements PapieaResponse {
                         req.url,
                         404,
                         "Entity not found.",
+                        PapieaError.EntityNotFound,
+                        (err as EntityNotFoundError).entity_info,
+                        (err as EntityNotFoundError).toErrors(),
+                    )
+                case WatchlistEntityNotFoundError:
+                    return new PapieaErrorResponseImpl(
+                        req.url,
+                        404,
+                        "Entity not found in the watchlist.",
                         PapieaError.EntityNotFound,
                         (err as EntityNotFoundError).entity_info,
                         (err as EntityNotFoundError).toErrors(),

@@ -2,7 +2,8 @@ import { Collection, Db } from "mongodb";
 import { Logger } from "papiea-backend-utils";
 import {Watchlist, Watchlist_DB} from "./watchlist_db_interface"
 import { PapieaException } from "../errors/papiea_exception";
-import {Diff, Entity, Provider_Entity_Reference} from "papiea-core"
+import {Backoff, Diff, Entity, Provider_Entity_Reference} from "papiea-core"
+import {WatchlistEntityNotFoundError} from "./utils/errors"
 
 type WatchlistEntry = {
     k: string,
@@ -81,6 +82,16 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         return watchlist
     }
 
+    async get_entity_diffs(entity_ref: Provider_Entity_Reference): Promise<Diff[]> {
+        const watchlist_entries: WatchlistEntry | null = await this.collection.findOne({
+            k: Watchlist_Db_Mongo.get_entry_reference(entity_ref)
+        })
+        if (watchlist_entries === null) {
+            throw new WatchlistEntityNotFoundError(entity_ref.kind, entity_ref.uuid, entity_ref.provider_prefix, entity_ref.provider_version)
+        }
+        return watchlist_entries.v.map(entry => entry.v)
+    }
+
     async add_diff(entity_reference: Provider_Entity_Reference, diff: Diff) {
         const result = await this.collection.updateOne(
             {k: Watchlist_Db_Mongo.get_entry_reference(entity_reference)},
@@ -103,6 +114,16 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
                     entity_uuid: entity_reference.uuid
                 }
             })
+        }
+    }
+
+    async update_diff_backoff(entity_reference: Provider_Entity_Reference, diff_id: string, backoff: Backoff) {
+        const result = await this.collection.updateOne(
+            {k: Watchlist_Db_Mongo.get_entry_reference(entity_reference), "v.k": diff_id},
+            {$set: {"v.$.v.backoff": backoff}}
+        )
+        if (result.result.n !== 1) {
+            throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`)
         }
     }
 

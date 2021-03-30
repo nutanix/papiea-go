@@ -1,5 +1,5 @@
 // [[file:~/work/papiea-js/Papiea-design.org::*/src/intentful_engine/task_manager_interface.ts][/src/intentful_engine/task_manager_interface.ts:1]]
-import { timeout } from "../utils/utils"
+import {includesDiff, timeout} from "../utils/utils"
 import { Spec_DB } from "../databases/spec_db_interface"
 import { Status_DB } from "../databases/status_db_interface"
 import { Watchlist_DB } from "../databases/watchlist_db_interface";
@@ -108,16 +108,6 @@ export class DiffResolver {
         })
     }
 
-    // TODO: Maybe compare by hash
-    private static includesDiff(diffs: Diff[], diff: Diff) {
-        for (let d of diffs) {
-            if (d.id === diff.id) {
-                return true
-            }
-        }
-        return false
-    }
-
     private async resolve_diffs() {
         const entries = await this.watchlistDb.get_watchlist()
         for (let entry in entries) {
@@ -141,13 +131,13 @@ export class DiffResolver {
             }
             if (rediff.diffs.length > existing_diffs.length) {
                 for (let diff of rediff.diffs) {
-                    if (!DiffResolver.includesDiff(existing_diffs, diff)) {
+                    if (!includesDiff(existing_diffs, diff)) {
                         await this.watchlistDb.add_diff(entity_reference, diff)
                     }
                 }
             } else if (existing_diffs.length > rediff.diffs.length) {
                 for (let diff of existing_diffs) {
-                    if (!DiffResolver.includesDiff(rediff.diffs, diff)) {
+                    if (!includesDiff(rediff.diffs, diff)) {
                         await this.watchlistDb.remove_diff(entity_reference, diff)
                     }
                 }
