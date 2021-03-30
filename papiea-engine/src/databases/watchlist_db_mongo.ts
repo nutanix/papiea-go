@@ -43,7 +43,9 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
     }
 
     private static get_diff_entries(diffs: Diff[]): DiffEntry[] {
-        const entries: DiffEntry[] = []
+        const entries: DiffEntry[] = diffs.map(diff => {
+            return {k: diff.id, v: diff}
+        })
         for (let diff of diffs) {
             entries.push({k: diff.id, v: diff})
         }

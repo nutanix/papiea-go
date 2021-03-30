@@ -105,7 +105,7 @@ export class ProviderSdk implements ProviderImpl {
     protected allowExtraProps: boolean;
     protected readonly _sdk_version: Version;
     protected readonly _tracer: Tracer
-    public processing_diffs: string[] = []
+    public processing_diffs: Set<string> = new Set()
 
     constructor(papiea_url: string, s2skey: Secret, server_manager?: Provider_Server_Manager, allowExtraProps?: boolean, tracer?: Tracer) {
         this._version = null;
@@ -415,7 +415,7 @@ class Provider_Server_Manager {
             this.should_run = true;
         }
         this.app.get("/healthcheck", asyncHandler(async (req, res) => {
-            res.status(200).json({ diff_ids: this._provider_sdk.processing_diffs })
+            res.status(200).json({ diff_ids: Array.from(this._provider_sdk.processing_diffs) })
         }))
     }
 
@@ -706,17 +706,7 @@ export class Kind_Builder {
                     }
                 }
             },
-            result: {
-                IntentfulOutput: {
-                    type: 'object',
-                    properties: {
-                        delay_secs: {
-                            type: "integer"
-                        }
-                    },
-                    description: "Amount of seconds to wait before this entity will be checked again by the intent engine"
-                }
-            },
+            result: {},
             execution_strategy: Intentful_Execution_Strategy.Basic,
             procedure_callback: procedure_callback_url,
             base_callback: callback_url
@@ -726,13 +716,13 @@ export class Kind_Builder {
                                           `${this.kind.name}/${sfs_signature}`)
             try {
                 const span = spanSdkOperation(`${sfs_signature}_sdk_handler`, this.tracer, req, this.provider.provider)
-                this.provider.processing_diffs.push(req.body.id)
+                this.provider.processing_diffs.add(req.body.id)
                 const result = await handler(ctx, {
                     metadata: req.body.metadata,
                     spec: req.body.spec,
                     status: req.body.status
                 }, req.body.input);
-                this.provider.processing_diffs = this.provider.processing_diffs.filter(id => id !== req.body.id)
+                this.provider.processing_diffs.delete(req.body.id)
                 ctx.cleanup()
                 res.json(result);
                 span.finish()
