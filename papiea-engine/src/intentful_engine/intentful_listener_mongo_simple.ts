@@ -16,10 +16,8 @@ export class IntentfulListenerMongo implements IntentfulListener {
     private watchlistDb: Watchlist_DB
 
     private async check_watchlist_changes(): Promise<void> {
-        const entries = await this.watchlistDb.get_watchlist()
-        const uuids = Object.keys(entries)
-            .map(entry => this.watchlistDb.get_entity_reference(entry))
-            .map(ref => ref.uuid)
+        const watchlist = await this.watchlistDb.get_watchlist()
+        const uuids = Array.from(watchlist.keys()).map(ref => ref.uuid)
         const metadata_specs = await this.specDb.list_specs_in(uuids)
         const metadata_statuses = await this.statusDb.list_status_in(uuids)
         for (let i in metadata_specs) {

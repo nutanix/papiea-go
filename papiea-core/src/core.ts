@@ -199,7 +199,7 @@ export interface Kind {
 
 export interface Delay {
     delay_set_time: Date
-    delay_seconds: number
+    delay_milliseconds: number
 }
 
 // Backoff to wait for while retrying diff

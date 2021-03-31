@@ -6,13 +6,8 @@ import {Backoff, Diff, Entity, Provider_Entity_Reference} from "papiea-core"
 import {WatchlistEntityNotFoundError} from "./utils/errors"
 
 type WatchlistEntry = {
-    k: string,
-    v: DiffEntry[]
-}
-
-type DiffEntry = {
-    k: string,
-    v: Diff
+    entry_reference: string,
+    diffs: Diff[]
 }
 
 export class Watchlist_Db_Mongo implements Watchlist_DB {
@@ -33,7 +28,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         ].join('/')
     }
 
-    public get_entity_reference(entry: string): Provider_Entity_Reference {
+    private static get_entity_reference(entry: string): Provider_Entity_Reference {
         const [provider_prefix, provider_version, kind, uuid] = entry.split("/")
         return {
             provider_prefix,
@@ -43,23 +38,13 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         }
     }
 
-    private static get_diff_entries(diffs: Diff[]): DiffEntry[] {
-        const entries: DiffEntry[] = diffs.map(diff => {
-            return {k: diff.id, v: diff}
-        })
-        for (let diff of diffs) {
-            entries.push({k: diff.id, v: diff})
-        }
-        return entries
-    }
-
     async init(): Promise<void> {
     }
 
     async add_entity(entity: Entity, diffs: Diff[] = []): Promise<void> {
         const entry: WatchlistEntry = {
-            k: Watchlist_Db_Mongo.get_entry_reference(entity.metadata),
-            v: Watchlist_Db_Mongo.get_diff_entries(diffs)
+            entry_reference: Watchlist_Db_Mongo.get_entry_reference(entity.metadata),
+            diffs
         }
         const result = await this.collection.insertOne(entry);
         if (result.result.n !== 1) {
@@ -69,14 +54,11 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
 
     async get_watchlist(): Promise<Watchlist> {
         const watchlist_entries: WatchlistEntry[] = await this.collection.find({}).toArray()
-        const watchlist: Watchlist = {}
-        // TODO: replace with $arrayToObject from Mongo API
+        const watchlist: Watchlist = new Map()
         for (let entry of watchlist_entries) {
-            if (!watchlist[entry.k]) {
-                watchlist[entry.k] = {}
-            }
-            for (let diffs of entry.v) {
-                watchlist[entry.k][diffs.k] = diffs.v
+            const entity_ref = Watchlist_Db_Mongo.get_entity_reference(entry.entry_reference)
+            if (!watchlist.has(entity_ref)) {
+                watchlist.set(entity_ref, entry.diffs)
             }
         }
         return watchlist
@@ -84,18 +66,18 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
 
     async get_entity_diffs(entity_ref: Provider_Entity_Reference): Promise<Diff[]> {
         const watchlist_entries: WatchlistEntry | null = await this.collection.findOne({
-            k: Watchlist_Db_Mongo.get_entry_reference(entity_ref)
+            entry_reference: Watchlist_Db_Mongo.get_entry_reference(entity_ref)
         })
         if (watchlist_entries === null) {
             throw new WatchlistEntityNotFoundError(entity_ref.kind, entity_ref.uuid, entity_ref.provider_prefix, entity_ref.provider_version)
         }
-        return watchlist_entries.v.map(entry => entry.v)
+        return watchlist_entries.diffs
     }
 
     async add_diff(entity_reference: Provider_Entity_Reference, diff: Diff) {
         const result = await this.collection.updateOne(
-            {k: Watchlist_Db_Mongo.get_entry_reference(entity_reference)},
-            {$push: {v: {k: diff.id, v: diff}}}
+            {entry_reference: Watchlist_Db_Mongo.get_entry_reference(entity_reference)},
+            {$push: {diffs: diff}}
         )
         if (result.result.n !== 1) {
             throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`)
@@ -103,10 +85,9 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
     }
 
     async add_diffs(entity_reference: Provider_Entity_Reference, diffs: Diff[]) {
-        const diff_entries = Watchlist_Db_Mongo.get_diff_entries(diffs)
         const result = await this.collection.updateOne(
-            {k: Watchlist_Db_Mongo.get_entry_reference(entity_reference)},
-            {$push: {v: {$each: diff_entries}}}
+            {entry_reference: Watchlist_Db_Mongo.get_entry_reference(entity_reference)},
+            {$push: {diffs: {$each: diffs}}}
         )
         if (result.result.ok !== 1) {
             throw new PapieaException(`MongoDBError: Unable to add multiple diffs`, {
@@ -119,8 +100,8 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
 
     async update_diff_backoff(entity_reference: Provider_Entity_Reference, diff_id: string, backoff: Backoff) {
         const result = await this.collection.updateOne(
-            {k: Watchlist_Db_Mongo.get_entry_reference(entity_reference), "v.k": diff_id},
-            {$set: {"v.$.v.backoff": backoff}}
+            {entry_reference: Watchlist_Db_Mongo.get_entry_reference(entity_reference), "diffs.id": diff_id},
+            {$set: {"diffs.$.backoff": backoff}}
         )
         if (result.result.n !== 1) {
             throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`)
@@ -129,8 +110,8 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
 
     async remove_diff(entity_reference: Provider_Entity_Reference, diff: Diff) {
         const result = await this.collection.updateOne(
-            {k: Watchlist_Db_Mongo.get_entry_reference(entity_reference)},
-            {$pull: {v: {k: diff.id}}}
+            {entry_reference: Watchlist_Db_Mongo.get_entry_reference(entity_reference)},
+            {$pull: {diffs: {id: diff.id}}}
         )
         if (result.result.n !== 1) {
             throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`)
@@ -139,7 +120,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
 
     async remove_entity(entity_reference: Provider_Entity_Reference) {
         const entry = Watchlist_Db_Mongo.get_entry_reference(entity_reference)
-        const result = await this.collection.deleteOne({k: entry});
+        const result = await this.collection.deleteOne({entry_reference: entry});
         if (result.deletedCount !== 1) {
             throw new PapieaException(`MongoDBError: Failed to remove watchlist entry`,
                 {

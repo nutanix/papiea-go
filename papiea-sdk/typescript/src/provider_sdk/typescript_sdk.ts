@@ -723,6 +723,7 @@ export class Kind_Builder {
                     status: req.body.status
                 }, req.body.input);
                 this.provider.processing_diffs.delete(req.body.id)
+                await this.assign_backoff(req.body.id, req.body.metadata, result)
                 ctx.cleanup()
                 res.json(result);
                 span.finish()
@@ -737,6 +738,19 @@ export class Kind_Builder {
         });
         this.server_manager.register_healthcheck()
         return this
+    }
+
+    private async assign_backoff(diff_id: string, metadata: Metadata, delay_milliseconds: number) {
+        await this.provider.provider_api_axios.post(`${this.provider.provider_url}/${this.provider.get_prefix()}/${this.provider.get_version()}/diff/${diff_id}`,{
+            entity_ref: metadata,
+            backoff: {
+                delay: {
+                    delay_milliseconds,
+                    delay_set_time: Date.now()
+                },
+                retries: 0
+            }
+        });
     }
 
     kind_procedure(name: string,

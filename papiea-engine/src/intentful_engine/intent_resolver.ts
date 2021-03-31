@@ -158,12 +158,8 @@ export class IntentResolver {
     }
 
     private async updateActiveWatchersStatuses() {
-        let entries = await this.watchlistDb.get_watchlist();
-        for (let entry in entries) {
-            if (!entries.hasOwnProperty(entry)) {
-                continue
-            }
-            const entity_reference = this.watchlistDb.get_entity_reference(entry)
+        const watchlist = await this.watchlistDb.get_watchlist()
+        for (const [entity_reference, diffs] of watchlist.entries()) {
             const watchers = await this.intentWatcherDb.list_watchers(
                 {
                     entity_ref: {

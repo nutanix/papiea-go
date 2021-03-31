@@ -69,9 +69,7 @@ export class IntentfulListenerMongoStream implements IntentfulListener {
             // always get a ChangeEventUpdate.
             const entity: Entity = (<ChangeEventUpdate>change_event).fullDocument
             const watchlist = await this.watchlistDb.get_watchlist()
-            const uuids = Object.keys(watchlist)
-                .map(entry => this.watchlistDb.get_entity_reference(entry))
-                .map(ref => ref.uuid)
+            const uuids = Array.from(watchlist.keys()).map(ref => ref.uuid)
             if (uuids.includes(entity.metadata.uuid)) {
                 if (this.specChanged(change_event) || this.statusChanged(change_event)) {
                     await this.onChange.call(entity)

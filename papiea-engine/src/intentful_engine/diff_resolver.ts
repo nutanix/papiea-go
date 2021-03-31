@@ -67,7 +67,7 @@ export class DiffResolver {
         while (true) {
             await timeout(delay)
             await this.resolve_diffs()
-            await this.addRandomEntities()
+            await this.add_random_entities()
         }
     }
 
@@ -89,8 +89,8 @@ export class DiffResolver {
         }
     }
 
-    private async launchOperation({diff, metadata, spec, status}: DiffWithContext) {
-        this.logger.debug("launchOperation", diff.intentful_signature.procedure_callback,
+    private async launch_handler({diff, metadata, spec, status}: DiffWithContext) {
+        this.logger.debug("launch_handler", diff.intentful_signature.procedure_callback,
             {
                 metadata: metadata,
                 spec: spec,
@@ -109,14 +109,8 @@ export class DiffResolver {
     }
 
     private async resolve_diffs() {
-        const entries = await this.watchlistDb.get_watchlist()
-        for (let entry in entries) {
-            if (!entries.hasOwnProperty(entry)) {
-                continue
-            }
-            const entity_reference = this.watchlistDb.get_entity_reference(entry)
-            const existing_diffs_map: {[diff_uuid: string]: Diff} = entries[entry]
-            const existing_diffs = Object.values(existing_diffs_map)
+        const watchlist = await this.watchlistDb.get_watchlist()
+        for (const [entity_reference, existing_diffs] of watchlist.entries()) {
             this.logger.debug(`Diff engine resolving diffs for entity with uuid: ${entity_reference.uuid} and kind: ${entity_reference.kind}`)
             let rediff: RediffResult | null = await this.rediff(entity_reference)
             if (!rediff) {
@@ -142,7 +136,7 @@ export class DiffResolver {
                     }
                 }
             }
-            await this.startDiffsResolution(rediff)
+            await this.start_diff_resolution(rediff)
         }
     }
 
@@ -150,7 +144,7 @@ export class DiffResolver {
         return this.batchSize
     }
 
-    private async startDiffsResolution(rediff: RediffResult) {
+    private async start_diff_resolution(rediff: RediffResult) {
         const {diffs, metadata, provider, kind} = rediff
         let next_diff: Diff
         const diff_selection_strategy = this.intentfulContext.getDiffSelectionStrategy(kind!)
@@ -163,14 +157,14 @@ export class DiffResolver {
         const backoff = next_diff.backoff
         if (!backoff) {
             this.logger.info(`Starting to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind}`)
-            this.launchOperation({diff: next_diff, ...rediff}).catch((e) => {
+            this.launch_handler({diff: next_diff, ...rediff}).catch((e) => {
                 this.logger.info(`Couldn't invoke intent handler to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
             })
         } else {
             // Delay for rediffing
             if ((new Date().getTime() - backoff.delay.delay_set_time.getTime()) / 1000 > backoff.delay.delay_seconds) {
                 this.logger.info(`Starting to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind}`)
-                this.launchOperation({diff: next_diff, ...rediff}).catch((e) => {
+                this.launch_handler({diff: next_diff, ...rediff}).catch((e) => {
                     this.logger.info(`Couldn't retry intent handler to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
                 })
             }
@@ -180,7 +174,7 @@ export class DiffResolver {
     // This method is needed to avoid race condition
     // when diffs may be added between the check and removing from the watchlist
     // the batch size maybe static or dynamic
-    private async addRandomEntities() {
+    private async add_random_entities() {
         const batch_size = await this.calculate_batch_size()
         const intentful_kind_refs = await this.providerDb.get_intentful_kinds()
         const entities = await this.specDb.list_random_intentful_specs(batch_size, intentful_kind_refs)
