@@ -10,6 +10,9 @@ type WatchlistEntry = {
     diffs: Diff[]
 }
 
+// TODO: this should be configurable
+const N_PER_PAGE = 100
+
 export class Watchlist_Db_Mongo implements Watchlist_DB {
     collection: Collection;
     logger: Logger
@@ -52,8 +55,12 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         }
     }
 
-    async get_watchlist(): Promise<Watchlist> {
-        const watchlist_entries: WatchlistEntry[] = await this.collection.find({}).toArray()
+    async get_watchlist(page_number?: number): Promise<Watchlist> {
+        const watchlist_entries: WatchlistEntry[] = await this.collection.find({})
+            .sort({_id: 1})
+            .skip(page_number ? ((page_number - 1) * N_PER_PAGE) : 0)
+            .limit(N_PER_PAGE)
+            .toArray()
         const watchlist: Watchlist = new Map()
         for (let entry of watchlist_entries) {
             const entity_ref = Watchlist_Db_Mongo.get_entity_reference(entry.entry_reference)

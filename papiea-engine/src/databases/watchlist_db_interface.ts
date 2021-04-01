@@ -6,7 +6,7 @@ export interface Watchlist_DB {
 
     add_entity(entity: Entity, diffs: Diff[]): Promise<void>
 
-    get_watchlist(): Promise<Watchlist>
+    get_watchlist(page_number?: number): Promise<Watchlist>
 
     remove_entity(entity_reference: Provider_Entity_Reference): Promise<void>
 
