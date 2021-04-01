@@ -715,6 +715,9 @@ export class Kind_Builder {
             const ctx = new ProceduralCtx(this.provider, req.headers,
                                           `${this.kind.name}/${sfs_signature}`)
             try {
+                if (this.provider.processing_diffs.has(req.body.id)) {
+                    ctx.get_logger().warn(`Trying to assign diff ${req.body.id} which is already in progress`)
+                }
                 const span = spanSdkOperation(`${sfs_signature}_sdk_handler`, this.tracer, req, this.provider.provider)
                 this.provider.processing_diffs.add(req.body.id)
                 const result = await handler(ctx, {
