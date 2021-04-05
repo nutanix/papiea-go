@@ -198,7 +198,7 @@ export interface Kind {
 }
 
 export interface Delay {
-    delay_set_time: Date
+    delay_set_time: number
     delay_milliseconds: number
 }
 

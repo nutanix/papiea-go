@@ -186,6 +186,8 @@ export function getVersionVerifier(enginePapieaVersion: string) {
 }
 
 export function includesDiff(diffs: Diff[], diff: Diff) {
+    console.log(`ADDING - DIFF ID: ${diff.id}`)
+    console.log(`EXISTING DIFFS: ${JSON.stringify(diffs)}`)
     for (let d of diffs) {
         if (d.id === diff.id) {
             return true

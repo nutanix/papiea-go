@@ -42,6 +42,14 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
     }
 
     async init(): Promise<void> {
+        try {
+            await this.collection.createIndex(
+                { "entry_reference": 1 },
+                { name: "ref", unique: true },
+            )
+        } catch (err) {
+            throw err
+        }
     }
 
     async add_entity(entity: Entity, diffs: Diff[] = []): Promise<void> {
