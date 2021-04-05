@@ -761,11 +761,11 @@ describe("Entity Client end-to-end tests", () => {
                 content: obj_content
             }
 
-            const watcher_ref = await object_entity_client.update(b1_object1_entity.metadata, spec)
+            let { intent_watcher } = await object_entity_client.update(b1_object1_entity.metadata, spec)
             const retries = 10
             const watcherApi = test_setup.get_intent_watcher_client()
             for(let i = 0; i < retries; i++) {
-                const intent_watcher = await watcherApi.get(watcher_ref!.uuid)
+                intent_watcher = await watcherApi.get(intent_watcher!.uuid)
                 if (intent_watcher.status === IntentfulStatus.Completed_Successfully) {
                     break
                 }

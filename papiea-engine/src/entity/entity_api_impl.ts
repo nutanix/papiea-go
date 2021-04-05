@@ -27,6 +27,7 @@ import {Provider_DB} from "../databases/provider_db_interface"
 import {IntentWatcherMapper} from "../intentful_engine/intent_interface"
 import {IntentWatcher_DB} from "../databases/intent_watcher_db_interface"
 import {Graveyard_DB} from "../databases/graveyard_db_interface"
+import { EntityUpdateResult } from "../intentful_core/intentful_strategies/intentful_strategy_interface"
 
 export type SortParams = { [key: string]: number };
 
@@ -152,7 +153,7 @@ export class Entity_API_Impl implements Entity_API {
         return filteredRes
     }
 
-    async update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, extension: {[key: string]: any}, kind_name: string, version: Version, spec_description: Spec, ctx: RequestContext): Promise<IntentWatcher | null> {
+    async update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, extension: {[key: string]: any}, kind_name: string, version: Version, spec_description: Spec, ctx: RequestContext): Promise<EntityUpdateResult> {
         const provider = await this.get_provider(prefix, version, ctx);
         const kind = this.providerDb.find_kind(provider, kind_name);
         this.validator.validate_spec(provider, spec_description, kind, provider.allowExtraProps);
@@ -163,8 +164,7 @@ export class Entity_API_Impl implements Entity_API {
         metadata.provider_prefix = prefix
         metadata.provider_version = version
         const strategy = this.intentfulCtx.getIntentfulStrategy(provider, kind, user)
-        const watcher = await strategy.update(metadata, spec_description, ctx)
-        return watcher;
+        return await strategy.update(metadata, spec_description, ctx)
     }
 
     async delete_entity(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, entity_uuid: uuid4, ctx: RequestContext): Promise<void> {

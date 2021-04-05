@@ -93,7 +93,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             first_provider_to_delete_entites.push(metadata)
-            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+            let { data: { intent_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
                 spec: {
                     x: 20,
                     y: 11
@@ -107,9 +107,9 @@ describe("Intentful Workflow tests single provider", () => {
             let watcher_status = IntentfulStatus.Completed_Successfully
             try {
                 let watcherApi = sdk.get_intent_watcher_client()
-                await watcherApi.wait_for_status_change(watcher, watcher_status, 50 /* timeout_secs */)
+                await watcherApi.wait_for_status_change(intent_watcher, watcher_status, 50 /* timeout_secs */)
                 for (let i = 1; i <= retries; i++) {
-                    const intent_watcher = await watcherApi.get(watcher.uuid)
+                    intent_watcher = await watcherApi.get(intent_watcher.uuid)
                     if (intent_watcher.status === IntentfulStatus.Completed_Successfully) {
                         expect(intent_watcher.status).toBe(IntentfulStatus.Completed_Successfully)
                         const result = await entityApi.get(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
@@ -148,7 +148,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             first_provider_to_delete_entites.push(metadata)
-            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+            let { data: { intent_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
                 spec: {
                     x: 20,
                     y: 11
@@ -162,7 +162,7 @@ describe("Intentful Workflow tests single provider", () => {
             try {
                 let watcherApi = sdk.get_intent_watcher_client()
                 for (let i = 1; i <= retries; i++) {
-                    const intent_watcher = await watcherApi.get(watcher.uuid)
+                    intent_watcher = await watcherApi.get(intent_watcher.uuid)
                     if (intent_watcher.status !== IntentfulStatus.Active) {
                         expect(intent_watcher.status).toBe(IntentfulStatus.Active)
                     }
@@ -204,7 +204,7 @@ describe("Intentful Workflow tests single provider", () => {
                     y: 11
                 }
             })
-            const {data: {watcher}} = await entityApi.put(`/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`, {
+            await entityApi.put(`/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`, {
                 spec: {
                     x: 20,
                     y: 11
@@ -261,7 +261,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             first_provider_to_delete_entites.push(metadata)
-            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+            let { data: { intent_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
                 spec: {
                     x: 30,
                     y: 11
@@ -273,13 +273,13 @@ describe("Intentful Workflow tests single provider", () => {
             try {
                 await timeout(5000)
                 let watcherApi = sdk.get_intent_watcher_client()
-                let intent_watcher = await watcherApi.get(watcher.uuid)
+                intent_watcher = await watcherApi.get(intent_watcher.uuid)
                 expect(intent_watcher.status).toBe(IntentfulStatus.Active)
                 await timeout(3000)
-                intent_watcher = await watcherApi.get(watcher.uuid)
+                intent_watcher = await watcherApi.get(intent_watcher.uuid)
                 expect(intent_watcher.status).toBe(IntentfulStatus.Active)
                 await timeout(15000)
-                intent_watcher = await watcherApi.get(watcher.uuid)
+                intent_watcher = await watcherApi.get(intent_watcher.uuid)
                 expect(intent_watcher.status).toBe(IntentfulStatus.Completed_Successfully)
             } catch (e) {
                 console.log(`Couldn't get entity: ${e}`)
@@ -524,7 +524,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             first_provider_to_delete_entites.push(metadata)
-            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+            let { data: { intent_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
                 spec: {
                     x: 30,
                     y: 11
@@ -537,7 +537,7 @@ describe("Intentful Workflow tests single provider", () => {
             try {
                 let watcherApi = sdk.get_intent_watcher_client()
                 for (let i = 1; i <= retries; i++) {
-                    const intent_watcher = await watcherApi.get(watcher.uuid)
+                    intent_watcher = await watcherApi.get(intent_watcher.uuid)
                     if (intent_watcher.status === IntentfulStatus.Completed_Successfully) {
                         expect(intent_watcher.status).toBe(IntentfulStatus.Completed_Successfully)
                         const result = await entityApi.get(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
@@ -623,8 +623,8 @@ describe("Intentful Workflow tests single provider", () => {
                     spec_version: 1
                 }
             })
-            const first_watcher = first_watcher_result.data.watcher
-            const second_watcher = second_watcher_result.data.watcher
+            const first_watcher = first_watcher_result.data.intent_watcher
+            const second_watcher = second_watcher_result.data.intent_watcher
             const watchers = [first_watcher, second_watcher]
             let retries = 10
             try {
@@ -828,7 +828,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             first_provider_to_delete_entites.push(metadata)
-            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+            let { data: { intent_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
                 spec: {
                     x: [
                         { ip: "1" },
@@ -844,7 +844,7 @@ describe("Intentful Workflow tests single provider", () => {
             try {
                 let watcherApi = sdk.get_intent_watcher_client()
                 for (let i = 1; i <= retries; i++) {
-                    const intent_watcher = await watcherApi.get(watcher.uuid)
+                    intent_watcher = await watcherApi.get(intent_watcher.uuid)
                     if (intent_watcher.status === IntentfulStatus.Completed_Successfully) {
                         expect(intent_watcher.status).toBe(IntentfulStatus.Completed_Successfully)
                         const result = await entityApi.get(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
@@ -947,7 +947,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             first_provider_to_delete_entites.push(metadata)
-            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+            let { data: { intent_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
                 spec: {
                     x: [
                         { ip: "1" },
@@ -963,7 +963,7 @@ describe("Intentful Workflow tests single provider", () => {
             try {
                 let watcherApi = sdk.get_intent_watcher_client()
                 for (let i = 1; i <= retries; i++) {
-                    const intent_watcher = await watcherApi.get(watcher.uuid)
+                    intent_watcher = await watcherApi.get(intent_watcher.uuid)
                     if (intent_watcher.status === IntentfulStatus.Completed_Successfully) {
                         expect(intent_watcher.status).toBe(IntentfulStatus.Completed_Successfully)
                         const result = await entityApi.get(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
@@ -1006,7 +1006,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             first_provider_to_delete_entites.push(metadata)
-            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+            await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
                 spec: {
                     x: 20,
                     y: 21
@@ -1073,7 +1073,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             first_provider_to_delete_entites.push(metadata)
-            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+            let { data: { intent_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
                 spec: {
                     x: 20,
                     y: 11
@@ -1086,9 +1086,9 @@ describe("Intentful Workflow tests single provider", () => {
             try {
                 await timeout(3000)
                 const watcherApi = sdk.get_intent_watcher_client()
-                const intent_watcher = await watcherApi.get(watcher.uuid)
+                intent_watcher = await watcherApi.get(intent_watcher.uuid)
                 expect(intent_watcher.status).toEqual(IntentfulStatus.Active)
-                const { data: { watcher: second_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+                const { data: { intent_watcher: second_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
                     spec: {
                         x: 20,
                         y: 21
@@ -1100,7 +1100,7 @@ describe("Intentful Workflow tests single provider", () => {
                 await timeout(4000)
                 locked = false
                 await timeout(10000)
-                const updated_intent_watcher = await watcherApi.get(watcher.uuid)
+                const updated_intent_watcher = await watcherApi.get(intent_watcher.uuid)
                 expect(updated_intent_watcher.status).toEqual(IntentfulStatus.Completed_Successfully)
                 const second_intent_watcher = await watcherApi.get(second_watcher.uuid)
                 expect(second_intent_watcher.status).toEqual(IntentfulStatus.Completed_Successfully)
@@ -1249,8 +1249,8 @@ describe("Intentful workflow multiple providers", () => {
                         spec_version: 1
                     }
                 })
-            const first_watcher = first_watcher_result.data.watcher
-            const second_watcher = second_watcher_result.data.watcher
+            const first_watcher = first_watcher_result.data.intent_watcher
+            const second_watcher = second_watcher_result.data.intent_watcher
             const watchers = [first_watcher, second_watcher]
             let retries = 10
 
@@ -1359,8 +1359,8 @@ describe("Intentful workflow multiple providers", () => {
                         spec_version: 1
                     }
                 })
-            const first_watcher = first_watcher_result.data.watcher
-            const second_watcher = second_watcher_result.data.watcher
+            const first_watcher = first_watcher_result.data.intent_watcher
+            const second_watcher = second_watcher_result.data.intent_watcher
             const watchers = [first_watcher, second_watcher]
             let retries = 10
             try {

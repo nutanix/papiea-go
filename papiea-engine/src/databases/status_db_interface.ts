@@ -8,7 +8,7 @@ export interface Status_DB {
 
     // Update the status in the status db. As long as the input is
     // correct this always succeeds.
-    replace_status(entity_ref: Provider_Entity_Reference, status: Status): Promise<void>;
+    replace_status(entity_ref: Provider_Entity_Reference, status: Status): Promise<[Metadata, Status]>;
 
     // Gets the status of a particular entity from the db. Returns
     // both current metadata and status of the entity.
@@ -30,7 +30,7 @@ export interface Status_DB {
 
     list_status_in(filter_list: any[], field_name?: string): Promise<([Metadata, Status])[]>
 
-    update_status(entity_ref: Provider_Entity_Reference, status: Status): Promise<void>
+    update_status(entity_ref: Provider_Entity_Reference, status: Status): Promise<[Metadata, Status]>
 }
 
 // status-db-interface ends here

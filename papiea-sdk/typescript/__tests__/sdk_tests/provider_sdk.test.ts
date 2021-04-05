@@ -2081,7 +2081,7 @@ describe("SDK + oauth provider tests", () => {
                 }
             },
             { headers: { 'Authorization': `Bearer ${token}` }});
-            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name_local }/${ metadata.uuid }`, {
+            let { data: { intent_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name_local }/${ metadata.uuid }`, {
                 spec: {
                     x: 11,
                     y: 11
@@ -2093,7 +2093,7 @@ describe("SDK + oauth provider tests", () => {
             { headers: { 'Authorization': `Bearer ${token}` }})
 
             const watcherApi = sdk.get_intent_watcher_client()
-            const intent_watcher = await watcherApi.get(watcher.uuid)
+            intent_watcher = await watcherApi.get(intent_watcher.uuid)
             expect(intent_watcher.status).toEqual(IntentfulStatus.Active)
         } finally {
             sdk.cleanup();

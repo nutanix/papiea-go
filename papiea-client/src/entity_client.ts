@@ -29,6 +29,12 @@ interface EntityCreationResult {
     spec: Spec,
     status: Status | null
 }
+interface EntityUpdateResult {
+    intent_watcher: IntentWatcher | null,
+    metadata: Metadata,
+    spec: Spec,
+    status: Status | null
+}
 let tracerOpen = false
 let clientTracer: Tracer | null = null
 
@@ -115,17 +121,17 @@ async function create_entity(provider: string, kind: string, version: string, pa
     return { metadata, spec, intent_watcher, status };
 }
 
-async function update_entity(provider: string, kind: string, version: string, request_spec: Spec, request_metadata: Metadata, papiea_url: string, s2skey: string, tracer: Tracer): Promise<IntentWatcher | undefined> {
+async function update_entity(provider: string, kind: string, version: string, request_spec: Spec, request_metadata: Metadata, papiea_url: string, s2skey: string, tracer: Tracer): Promise<EntityUpdateResult> {
     const headers = getHeaders(s2skey)
     const span = spanOperation("update_entity_client", {headers, tracer}, {entity_uuid: request_metadata.uuid})
-    const { data: { watcher } } = await make_request(axios.put, `${ papiea_url }/services/${ provider }/${ version }/${ kind }/${ request_metadata.uuid }`, {
+    const { data: { metadata, spec, intent_watcher, status } } = await make_request(axios.put, `${ papiea_url }/services/${ provider }/${ version }/${ kind }/${ request_metadata.uuid }`, {
         spec: request_spec,
         metadata: {
             spec_version: request_metadata.spec_version
         }
     }, {headers});
     span.finish()
-    return watcher
+    return { metadata, spec, intent_watcher, status }
 }
 
 async function get_entity(provider: string, kind: string, version: string, entity_reference: Entity_Reference, papiea_url: string, s2skey: string, tracer: Tracer): Promise<Entity> {
@@ -261,7 +267,7 @@ export interface EntityCRUD {
 
     create(spec: Spec): Promise<EntityCreationResult>
 
-    update(metadata: Metadata, spec: Spec): Promise<IntentWatcher | undefined>
+    update(metadata: Metadata, spec: Spec): Promise<EntityUpdateResult>
 
     delete(entity_reference: Entity_Reference): Promise<void>
 

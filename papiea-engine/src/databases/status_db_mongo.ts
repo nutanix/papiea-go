@@ -20,7 +20,7 @@ export class Status_DB_Mongo implements Status_DB {
 
     }
 
-    async replace_status(entity_ref: Provider_Entity_Reference, status: Status): Promise<void> {
+    async replace_status(entity_ref: Provider_Entity_Reference, status: Status): Promise<[Metadata, Status]> {
         const result = await this.collection.updateOne({
             "metadata.provider_prefix": entity_ref.provider_prefix,
             "metadata.provider_version": entity_ref.provider_version,
@@ -39,9 +39,10 @@ export class Status_DB_Mongo implements Status_DB {
         if (result.result.n !== 1) {
             throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for kind ${entity_ref.provider_prefix}/${entity_ref.provider_version}/${entity_ref.kind}`, { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }})
         }
+        return await this.get_status(entity_ref)
     }
 
-    async update_status(entity_ref: Provider_Entity_Reference, status: Status): Promise<void> {
+    async update_status(entity_ref: Provider_Entity_Reference, status: Status): Promise<[Metadata, Status]> {
         let result: UpdateWriteOpResult
         const partial_status_query = dotnotation({"status": status});
 
@@ -73,6 +74,7 @@ export class Status_DB_Mongo implements Status_DB {
         if (result.result.n !== 1) {
             throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for kind ${entity_ref.provider_prefix}/${entity_ref.provider_version}/${entity_ref.kind}`,  { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }})
         }
+        return await this.get_status(entity_ref)
     }
 
     async get_status(entity_ref: Provider_Entity_Reference): Promise<[Metadata, Status]> {

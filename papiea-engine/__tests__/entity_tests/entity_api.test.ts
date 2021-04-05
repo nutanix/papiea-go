@@ -344,7 +344,7 @@ describe("Entity API tests", () => {
                 spec_version: 1
             }
         });
-        expect(res.data.watcher).toBeNull()
+        expect(res.data.intent_watcher).toBeNull()
         res = await entityApi.get(`/${ providerPrefix }/${ providerVersion }/${ kind_name }/${ entity_metadata.uuid }`);
         expect(res.data.spec.x).toEqual(20);
         expect(res.data.status.x).toEqual(20);

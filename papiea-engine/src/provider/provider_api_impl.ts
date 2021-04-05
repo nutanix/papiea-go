@@ -6,7 +6,7 @@ import { Validator } from "../validator";
 import { Authorizer } from "../auth/authz";
 import { UserAuthInfo } from "../auth/authn";
 import { createHash } from "../auth/crypto";
-import { Action, Entity_Reference, Provider, S2S_Key, Secret, Status, Version } from "papiea-core";
+import { Action, Entity_Reference, Provider, S2S_Key, Secret, Status, Version, Metadata, Spec, IntentWatcher } from "papiea-core";
 import {Logger, RequestContext, spanOperation} from "papiea-backend-utils"
 import { Watchlist_DB } from "../databases/watchlist_db_interface";
 import { SpecOnlyUpdateStrategy } from "../intentful_core/intentful_strategies/status_update_strategy";
@@ -68,7 +68,12 @@ export class Provider_API_Impl implements Provider_API {
         span.finish()
     }
 
-    async replace_status(user: UserAuthInfo, provider_prefix: string, version: Version, entity_ref: Entity_Reference, status: Status, ctx: RequestContext): Promise<void> {
+    async replace_status(user: UserAuthInfo, provider_prefix: string, version: Version, entity_ref: Entity_Reference, status: Status, ctx: RequestContext): Promise<{
+        intent_watcher: IntentWatcher | null,
+        metadata: Metadata,
+        spec: Spec,
+        status: Status | null
+    }> {
         const span = spanOperation(`get_provider_db`,
                                    ctx.tracing_ctx)
         const provider: Provider = await this.providerDb.get_provider(provider_prefix, version);
@@ -82,10 +87,15 @@ export class Provider_API_Impl implements Provider_API {
         }
         await this.authorizer.checkPermission(user, provider, Action.UpdateStatus, provider);
         await this.validator.validate_status(provider, entity_ref, status);
-        return strategy.replace({provider_prefix: provider_prefix, provider_version: version, ...entity_ref}, status, ctx)
+        return await strategy.replace({provider_prefix: provider_prefix, provider_version: version, ...entity_ref}, status, ctx)
     }
 
-    async update_status(user: UserAuthInfo, provider_prefix: string, version: Version, entity_ref: Entity_Reference, partialStatus: Status, ctx: RequestContext): Promise<void> {
+    async update_status(user: UserAuthInfo, provider_prefix: string, version: Version, entity_ref: Entity_Reference, partialStatus: Status, ctx: RequestContext): Promise<{
+        intent_watcher: IntentWatcher | null,
+        metadata: Metadata,
+        spec: Spec,
+        status: Status | null
+    }> {
         const getProviderSpan = spanOperation(`get_provider_db`,
                                    ctx.tracing_ctx)
         const provider: Provider = await this.providerDb.get_provider(provider_prefix, version);

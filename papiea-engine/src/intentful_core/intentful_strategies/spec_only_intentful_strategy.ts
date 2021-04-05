@@ -1,7 +1,7 @@
 import { Spec_DB } from "../../databases/spec_db_interface"
 import { Status_DB } from "../../databases/status_db_interface"
-import { IntentfulStrategy } from "./intentful_strategy_interface"
-import { Metadata, Spec, Entity, IntentWatcher } from "papiea-core"
+import { IntentfulStrategy, EntityUpdateResult } from "./intentful_strategy_interface"
+import { Metadata, Spec, Status } from "papiea-core"
 import { Graveyard_DB } from "../../databases/graveyard_db_interface"
 import {RequestContext, spanOperation} from "papiea-backend-utils"
 
@@ -11,19 +11,24 @@ export class SpecOnlyIntentfulStrategy extends IntentfulStrategy {
     }
 
     // Replace spec and status with spec changes received
-    async update_entity(metadata: Metadata, spec: Spec): Promise<Spec> {
+    async update_entity(metadata: Metadata, spec: Spec): Promise<[Metadata, Spec, Status]> {
         const [updatedMetadata, updatedSpec] = await this.specDb.update_spec(metadata, spec);
         await this.statusDb.replace_status(metadata, spec)
-        return [updatedMetadata, updatedSpec]
+        return [updatedMetadata, updatedSpec, updatedSpec]
     }
 
     // Update spec and status with spec changes received
-    async update(metadata: Metadata, spec: Spec, ctx: RequestContext): Promise<IntentWatcher | null> {
+    async update(metadata: Metadata, spec: Spec, ctx: RequestContext): Promise<EntityUpdateResult> {
         const span = spanOperation(`update_entity_db`,
                                    ctx.tracing_ctx,
                                    {entity_uuid: metadata.uuid})
-        await this.update_entity(metadata, spec)
+        const [updatedMetadata, updatedSpec, updatedStatus] = await this.update_entity(metadata, spec)
         span.finish()
-        return null
+        return {
+            intent_watcher: null,
+            metadata: updatedMetadata,
+            spec: updatedSpec,
+            status: updatedStatus
+        }
     }
 }

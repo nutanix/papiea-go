@@ -167,8 +167,8 @@ export function createEntityAPIRouter(entity_api: Entity_API, trace: Function): 
         allowed_body_params: ['metadata', 'spec']
     }), trace("update_entity"), asyncHandler(async (req, res) => {
         const request_metadata = req.body.metadata;
-        const watcher = await entity_api.update_entity_spec(req.user, req.params.uuid, req.params.prefix, request_metadata.spec_version, request_metadata.extension, req.params.kind, req.params.version, req.body.spec, res.locals.ctx);
-        res.json({ "watcher": watcher });
+        const result = await entity_api.update_entity_spec(req.user, req.params.uuid, req.params.prefix, request_metadata.spec_version, request_metadata.extension, req.params.kind, req.params.version, req.body.spec, res.locals.ctx);
+        res.json(result);
     }));
 
     router.post("/:prefix/:version/:kind", check_request({
