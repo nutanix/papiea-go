@@ -144,7 +144,6 @@ export class Provider_API_Impl implements Provider_API {
         await this.authorizer.checkPermission(user, provider, Action.UpdateStatus, provider);
         const updateDiffBackoffSpan = spanOperation(`update_diff_backoff_db`,
             ctx.tracing_ctx)
-        console.log(`PROV BACKOFF: ${JSON.stringify(backoff)}`)
         await this.watchlistDb.update_diff_backoff(providerEntityRef, diff_id, backoff)
         updateDiffBackoffSpan.finish()
     }

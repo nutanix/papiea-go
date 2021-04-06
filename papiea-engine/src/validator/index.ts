@@ -377,10 +377,6 @@ export class ValidatorImpl {
                     }
                     if (field_schema["type"] === "array") {
                         if (field_schema.hasOwnProperty("items") && field_schema["items"].hasOwnProperty("type") && field_schema["items"]["type"].includes("object")) {
-                            if ((!field_schema.hasOwnProperty("properties") || field_schema["properties"].length === 0) && (!field_schema.hasOwnProperty("x-papiea") || field_schema["x-papiea"] !== "status-only")) {
-                                logger.warn(`Field ${field_name + "/" + field} is an untyped object with no properties for kind: ${provider_prefix}/${provider_version}/${kind_name}. Please check if this is expected.`)
-                                return
-                            }
                             this.validate_untyped_object(field_schema["items"]["properties"], provider_prefix, provider_version, kind_name, logger, field_name + "/" + field)
                         }
                     }

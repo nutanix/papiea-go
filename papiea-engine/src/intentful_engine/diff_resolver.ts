@@ -112,8 +112,6 @@ export class DiffResolver {
     private async update_diffs() {
         let watchlist = await this.watchlistDb.get_watchlist()
         for (const [entity_reference, existing_diffs] of watchlist.entries()) {
-            console.log(`UPDATE - Entity ref: ${JSON.stringify(entity_reference)}`)
-            console.log(`UPDATE - Existing Diffs: ${JSON.stringify(existing_diffs)}`)
             this.logger.debug(`Diff engine resolving diffs for entity with uuid: ${entity_reference.uuid} and kind: ${entity_reference.kind}`)
             let rediff: RediffResult | null = await this.rediff(entity_reference)
             if (!rediff || rediff.diffs.length === 0) {
@@ -123,7 +121,6 @@ export class DiffResolver {
             if (rediff.diffs.length > existing_diffs.length) {
                 for (let diff of rediff.diffs) {
                     if (!includesDiff(existing_diffs, diff)) {
-                        console.log("ADDED DIff")
                         await this.watchlistDb.add_diff(entity_reference, diff)
                     }
                 }
@@ -140,8 +137,6 @@ export class DiffResolver {
     private async resolve_diffs() {
         let watchlist = await this.watchlistDb.get_watchlist()
         for (const [entity_reference, existing_diffs] of watchlist.entries()) {
-            console.log(`Length: ${existing_diffs.length}`)
-            console.log(JSON.stringify(existing_diffs))
             await this.start_diff_resolution(entity_reference, existing_diffs)
         }
     }
@@ -151,8 +146,13 @@ export class DiffResolver {
     }
 
     private async check_handler_active(diffs: Diff[]): Promise<boolean> {
-        const {data: {diff_ids}} = await axios.get(diffs[0].handler_url!)
-        return diff_ids.length !== 0
+        try {
+            const {data: {diff_ids}} = await axios.get(diffs[0].handler_url!)
+            return diff_ids.length !== 0
+        } catch (e) {
+            this.logger.info(`Handler with url: ${diffs[0].handler_url!} is not responding`)
+            return false
+        }
     }
 
     private async start_diff_resolution(entity_reference: Provider_Entity_Reference, diffs: Diff[]) {
@@ -174,19 +174,16 @@ export class DiffResolver {
             this.logger.info(`Failed to select diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
             return
         }
-        console.log(`DIFF ID: ${next_diff.id}`)
         const backoff = next_diff.backoff
-        console.log(`Backoff: ${backoff}`)
         if (!backoff) {
-            this.logger.info(`Starting to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind}`)
+            this.logger.info(`Resolving diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind}`)
             this.launch_handler({diff: next_diff, ...rediff}).catch((e) => {
                 this.logger.info(`Couldn't invoke intent handler to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
             })
         } else {
             // Delay for rediffing
-            console.log(`Delay: ${backoff.delay.delay_milliseconds}`)
             if ((new Date().getTime() - backoff.delay.delay_set_time) > backoff.delay.delay_milliseconds) {
-                this.logger.info(`Starting to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind}`)
+                this.logger.info(`Resolving diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} after delay of ${backoff.delay.delay_milliseconds} milliseconds`)
                 this.launch_handler({diff: next_diff, ...rediff}).catch((e) => {
                     this.logger.info(`Couldn't retry intent handler to resolve diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
                 })

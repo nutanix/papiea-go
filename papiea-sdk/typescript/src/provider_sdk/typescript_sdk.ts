@@ -279,8 +279,8 @@ export class ProviderSdk implements ProviderImpl {
         return this
     }
 
-    background_task(name: string, delay_sec: number, callback: BackgroundTaskCallback, metadata_extension?: any, provider_fields_schema?: any): BackgroundTaskBuilder {
-        return BackgroundTaskBuilder.create_task(this, name, delay_sec, callback, this._tracer, metadata_extension, provider_fields_schema)
+    background_task(name: string, delay_milliseconds: number, callback: BackgroundTaskCallback, metadata_extension?: any, provider_fields_schema?: any): BackgroundTaskBuilder {
+        return BackgroundTaskBuilder.create_task(this, name, delay_milliseconds, callback, this._tracer, metadata_extension, provider_fields_schema)
     }
 
     async register(): Promise<void> {
@@ -483,7 +483,7 @@ export class BackgroundTaskBuilder {
         this.metadata_extension = metadata_extension
     }
 
-    static create_task(provider: ProviderSdk, name: string, delay_sec: number, callback: BackgroundTaskCallback, tracer: Tracer, metadata_extension?: any, custom_schema?: any): BackgroundTaskBuilder {
+    static create_task(provider: ProviderSdk, name: string, delay_milliseconds: number, callback: BackgroundTaskCallback, tracer: Tracer, metadata_extension?: any, custom_schema?: any): BackgroundTaskBuilder {
         if (provider.get_metadata_extension() !== null && (metadata_extension === null || metadata_extension === undefined)) {
             throw new Error(`Attempting to create background task (${this.name}) on provider:
                             ${provider.get_prefix()}, ${provider.get_version()} without the required metadata extension.`)
@@ -504,9 +504,7 @@ export class BackgroundTaskBuilder {
         const kind = provider.new_kind({[name]: schema})
         kind.on("state", async (ctx, entity, input) => {
             await callback(ctx, entity?.status?.provider_fields ?? undefined)
-            return {
-                delay_secs: delay_sec
-            }
+            return delay_milliseconds
         })
         return new BackgroundTaskBuilder(provider, tracer, name, kind, metadata_extension)
     }
@@ -726,7 +724,9 @@ export class Kind_Builder {
                     status: req.body.status
                 }, req.body.input);
                 this.provider.processing_diffs.delete(req.body.id)
-                await this.assign_backoff(req.body.id, req.body.metadata, result)
+                if (result) {
+                    await this.assign_backoff(req.body.id, req.body.metadata, result)
+                }
                 ctx.cleanup()
                 res.json(result);
                 span.finish()
@@ -736,6 +736,7 @@ export class Kind_Builder {
                     return res.status(e.status_code).json(e.toResponse())
                 }
                 const error = InvocationError.fromError(500, e);
+                this.provider.processing_diffs.delete(req.body.id)
                 res.status(500).json(error.toResponse())
             }
         });

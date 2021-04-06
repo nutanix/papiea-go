@@ -226,7 +226,7 @@ describe("Intentful Workflow tests single provider", () => {
         }
     })
 
-    test.only("Delay to intentful operations should be awaited", async () => {
+    test("Delay to intentful operations should be awaited", async () => {
         expect.assertions(3);
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
@@ -237,7 +237,6 @@ describe("Intentful Workflow tests single provider", () => {
             sdk.prefix(first_provider_prefix);
             location.on("x", async (ctx, entity, input) => {
                 times_requested++
-                console.log(times_requested)
                 if (times_requested === 2) {
                     await providerApiAdmin.patch(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                         context: "some context",
@@ -247,10 +246,10 @@ describe("Intentful Workflow tests single provider", () => {
                         },
                         status: { x: entity.spec.x }
                     })
-                    return {"delay_secs": 2000}
+                    return 2000
                 } else {
                     // 12 seconds delay
-                    return {"delay_secs": 20000}
+                    return 12000
                 }
             })
             await sdk.register();
@@ -377,7 +376,7 @@ describe("Intentful Workflow tests single provider", () => {
             const location = sdk.new_kind(locationDataDescription);
             sdk.version(provider_version);
             sdk.prefix(first_provider_prefix);
-            const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface) => {
+            const task = sdk.background_task("sample-task", 5000, async (ctx: IntentfulCtx_Interface) => {
                 times_invoked++
             })
             try {
@@ -414,7 +413,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             try {
-                const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface) => {
+                const task = sdk.background_task("sample-task", 5000, async (ctx: IntentfulCtx_Interface) => {
                 })
             } catch (e) {
                 console.log(e.message)
@@ -442,7 +441,7 @@ describe("Intentful Workflow tests single provider", () => {
                     }
                 }
             })
-            const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface) => {
+            const task = sdk.background_task("sample-task", 5000, async (ctx: IntentfulCtx_Interface) => {
             }, {sample: "test"})
             try {
                 await sdk.register();
@@ -466,7 +465,7 @@ describe("Intentful Workflow tests single provider", () => {
             const location = sdk.new_kind(locationDataDescription);
             sdk.version(provider_version);
             sdk.prefix(first_provider_prefix);
-            const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface, task_ctx: any | undefined) => {
+            const task = sdk.background_task("sample-task", 5000, async (ctx: IntentfulCtx_Interface, task_ctx: any | undefined) => {
                 if (task_ctx) {
                     count = task_ctx.count
                 }
@@ -807,6 +806,7 @@ describe("Intentful Workflow tests single provider", () => {
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
             first_provider_prefix = "location_provider_intentful_4"
+            console.log(JSON.stringify(locationDataDescriptionArraySfs))
             const location = sdk.new_kind(locationDataDescriptionArraySfs);
             sdk.version(provider_version);
             sdk.prefix(first_provider_prefix);
@@ -872,7 +872,7 @@ describe("Intentful Workflow tests single provider", () => {
     4. Add second array member to the status while inside the retrying handler
     5. Check that intent resolved successfully, record amount of diffs observed in the handler (should be 2 -> 1 diff)
      */
-    test("Change array fields with 2 members, making one member initially fail", async () => {
+    test.only("Change array fields with 2 members, making one member initially fail", async () => {
         expect.assertions(3);
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
