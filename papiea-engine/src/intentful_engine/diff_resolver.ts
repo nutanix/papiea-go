@@ -118,19 +118,30 @@ export class DiffResolver {
                 await this.watchlistDb.remove_entity(entity_reference)
                 continue
             }
-            if (rediff.diffs.length > existing_diffs.length) {
-                for (let diff of rediff.diffs) {
-                    if (!includesDiff(existing_diffs, diff)) {
-                        await this.watchlistDb.add_diff(entity_reference, diff)
+            // console.log(`REDIFF: ${JSON.stringify(rediff.diffs)}`)
+            // console.log(`-----------------------------------------`)
+            // console.log(`DIFF: ${JSON.stringify(existing_diffs)}`)
+            const promises = []
+            const relevant_diffs = new Set()
+            for (let diff of rediff.diffs) {
+                for (let existing_diff of existing_diffs) {
+                    if (diff.intentful_signature.signature === existing_diff.intentful_signature.signature) {
+                        if (!deepEqual(diff.diff_fields, existing_diff.diff_fields)) {
+                            promises.push(this.watchlistDb.update_diff_fields(entity_reference, existing_diff.id, diff.diff_fields))
+                        }
+                        relevant_diffs.add(existing_diff.id)
+                        break
                     }
                 }
-            } else if (existing_diffs.length > rediff.diffs.length) {
-                for (let diff of existing_diffs) {
-                    if (!includesDiff(rediff.diffs, diff)) {
-                        await this.watchlistDb.remove_diff(entity_reference, diff)
-                    }
+                if (!relevant_diffs.has(diff.id)) {
+                    promises.push(this.watchlistDb.add_diff(entity_reference, diff))
                 }
             }
+            const irrelevant_diffs = existing_diffs.filter(diff => !relevant_diffs.has(diff.id))
+            if (irrelevant_diffs.length > 0) {
+                promises.push(this.watchlistDb.remove_diffs(entity_reference, irrelevant_diffs))
+            }
+            await Promise.all(promises)
         }
     }
 
@@ -147,8 +158,11 @@ export class DiffResolver {
 
     private async check_handler_active(diffs: Diff[]): Promise<boolean> {
         try {
-            const {data: {diff_ids}} = await axios.get(diffs[0].handler_url!)
-            return diff_ids.length !== 0
+            if (diffs[0]) {
+                const {data: {diff_ids}} = await axios.get(diffs[0].handler_url!)
+                return diff_ids.length !== 0
+            }
+            return false
         } catch (e) {
             this.logger.info(`Handler with url: ${diffs[0].handler_url!} is not responding`)
             return false

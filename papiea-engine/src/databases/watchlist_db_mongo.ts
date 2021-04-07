@@ -2,7 +2,7 @@ import { Collection, Db } from "mongodb";
 import { Logger } from "papiea-backend-utils";
 import {Watchlist, Watchlist_DB} from "./watchlist_db_interface"
 import { PapieaException } from "../errors/papiea_exception";
-import {Backoff, Diff, Entity, Provider_Entity_Reference} from "papiea-core"
+import {Backoff, Diff, DiffContent, Differ, Entity, Provider_Entity_Reference} from "papiea-core"
 import {WatchlistEntityNotFoundError} from "./utils/errors"
 
 type WatchlistEntry = {
@@ -16,8 +16,10 @@ const N_PER_PAGE = 100
 export class Watchlist_Db_Mongo implements Watchlist_DB {
     collection: Collection;
     logger: Logger
+    differ: Differ
 
-    constructor(logger: Logger, db: Db) {
+    constructor(logger: Logger, db: Db, differ: Differ) {
+        this.differ = differ
         this.collection = db.collection("watchlist");
         this.logger = logger;
     }
@@ -99,6 +101,29 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         }
     }
 
+    /** Updating diff fields requires rehashing. */
+    async update_diff_fields(entity_reference: Provider_Entity_Reference, diff_id: string, diff_fields: DiffContent[]) {
+        let diff: Diff
+        const entry_ref = Watchlist_Db_Mongo.get_entry_reference(entity_reference)
+        const entry = await this.collection.findOne({entry_reference: entry_ref})
+        const found_diffs: Diff[] = entry.diffs.filter((diff: Diff) => diff.id === diff_id)
+        if (found_diffs.length !== 0) {
+            diff = found_diffs[0]
+        } else {
+            throw new PapieaException(`Unexpected error, while updating diff fields, wrong diff id: ${diff_id} was provided`)
+        }
+        const {id} = this.differ.create_diff_structure(entity_reference, diff.intentful_signature, diff.diff_fields)
+        diff.diff_fields = diff_fields
+        diff.id = id
+        const result = await this.collection.updateOne(
+            {entry_reference: Watchlist_Db_Mongo.get_entry_reference(entity_reference), "diffs.id": diff_id},
+            {$set: {"diffs.$": diff}}
+        )
+        if (result.result.n !== 1) {
+            throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`)
+        }
+    }
+
     async add_diffs(entity_reference: Provider_Entity_Reference, diffs: Diff[]) {
         const result = await this.collection.updateOne(
             {entry_reference: Watchlist_Db_Mongo.get_entry_reference(entity_reference)},
@@ -127,6 +152,16 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         const result = await this.collection.updateOne(
             {entry_reference: Watchlist_Db_Mongo.get_entry_reference(entity_reference)},
             {$pull: {diffs: {id: diff.id}}}
+        )
+        if (result.result.n !== 1) {
+            throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`)
+        }
+    }
+
+    async remove_diffs(entity_reference: Provider_Entity_Reference, diffs: Diff[]) {
+        const result = await this.collection.updateOne(
+            {entry_reference: Watchlist_Db_Mongo.get_entry_reference(entity_reference)},
+            {$pull: {diffs: {id: {$in: diffs.map(diff => diff.id)}}}}
         )
         if (result.result.n !== 1) {
             throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`)

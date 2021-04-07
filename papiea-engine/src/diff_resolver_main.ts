@@ -30,17 +30,18 @@ async function setUpDiffResolver() {
     const mongoConnection: MongoConnection = new MongoConnection(mongoUrl, mongoDb);
     await mongoConnection.connect();
 
+    const differ = new BasicDiffer()
+
     const specDb = await mongoConnection.get_spec_db(logger);
     const statusDb = await mongoConnection.get_status_db(logger);
     const providerDb = await mongoConnection.get_provider_db(logger);
     const intentWatcherDB = await mongoConnection.get_intent_watcher_db(logger)
-    const watchlistDb = await mongoConnection.get_watchlist_db(logger)
+    const watchlistDb = await mongoConnection.get_watchlist_db(logger, differ)
     const graveyardDb = await mongoConnection.get_graveyard_db(logger)
 
     const validator = ValidatorImpl.create()
     const noopAuthorizer: Authorizer = new NoAuthAuthorizer();
 
-    const differ = new BasicDiffer()
     const intentfulContext = new IntentfulContext(specDb, statusDb, graveyardDb, differ, intentWatcherDB, watchlistDb, validator, noopAuthorizer)
 
     const intentfulListenerMongo = new IntentfulListenerMongo(statusDb, specDb, watchlistDb)

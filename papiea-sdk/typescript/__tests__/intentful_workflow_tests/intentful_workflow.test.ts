@@ -872,7 +872,7 @@ describe("Intentful Workflow tests single provider", () => {
     4. Add second array member to the status while inside the retrying handler
     5. Check that intent resolved successfully, record amount of diffs observed in the handler (should be 2 -> 1 diff)
      */
-    test.only("Change array fields with 2 members, making one member initially fail", async () => {
+    test("Change array fields with 2 members, making one member initially fail", async () => {
         expect.assertions(3);
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
