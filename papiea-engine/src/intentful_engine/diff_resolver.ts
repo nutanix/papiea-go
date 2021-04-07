@@ -118,9 +118,6 @@ export class DiffResolver {
                 await this.watchlistDb.remove_entity(entity_reference)
                 continue
             }
-            // console.log(`REDIFF: ${JSON.stringify(rediff.diffs)}`)
-            // console.log(`-----------------------------------------`)
-            // console.log(`DIFF: ${JSON.stringify(existing_diffs)}`)
             const promises = []
             const relevant_diffs = new Set()
             for (let diff of rediff.diffs) {
