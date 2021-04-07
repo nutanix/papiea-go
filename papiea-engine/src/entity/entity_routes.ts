@@ -125,8 +125,8 @@ export function createEntityAPIRouter(entity_api: Entity_API, trace: Function): 
     }));
 
     router.get("/:prefix/:version/:kind/:uuid", CheckNoQueryParams, trace("get_entity"), asyncHandler(async (req, res) => {
-        const [metadata, spec] = await entity_api.get_entity_spec(req.user, req.params.prefix, req.params.version, req.params.kind, req.params.uuid, res.locals.ctx);
-        const [_, status] = await entity_api.get_entity_status(req.user, req.params.prefix,
+        const [, spec] = await entity_api.get_entity_spec(req.user, req.params.prefix, req.params.version, req.params.kind, req.params.uuid, res.locals.ctx);
+        const [metadata, status] = await entity_api.get_entity_status(req.user, req.params.prefix,
                                                                req.params.version, req.params.kind, req.params.uuid, res.locals.ctx);
         res.json({ "metadata": metadata, "spec": spec, "status": status });
     }));

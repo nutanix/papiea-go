@@ -4,7 +4,7 @@ import {Graveyard_DB} from "../../databases/graveyard_db_interface"
 import {
     Action,
     Entity,
-    IntentWatcher,
+    EntityCreateOrUpdateResult,
     Kind,
     Metadata,
     Provider,
@@ -19,13 +19,7 @@ import uuid = require("uuid")
 import {Authorizer} from "../../auth/authz"
 import {RequestContext} from "papiea-backend-utils"
 import { PapieaException } from "../../errors/papiea_exception"
-
-export interface EntityCreationResult {
-    intent_watcher: IntentWatcher | null,
-    metadata: Metadata,
-    spec: Spec,
-    status: Status | null
-}
+import { getObjectHash } from "../../utils/utils"
 
 export abstract class EntityCreationStrategy {
     protected readonly specDb: Spec_DB
@@ -100,6 +94,14 @@ export abstract class EntityCreationStrategy {
                 })
             request_metadata.spec_version = spec_version
         }
+        if (request_metadata.status_hash === undefined || request_metadata.status_hash === null) {
+            request_metadata.status_hash = getObjectHash({
+                provider_prefix: request_metadata.provider_prefix,
+                provider_version: request_metadata.provider_version,
+                kind: request_metadata.kind,
+                uuid: request_metadata.uuid
+            })
+        }
         return request_metadata
     }
 
@@ -117,12 +119,12 @@ export abstract class EntityCreationStrategy {
     protected async create_entity(metadata: Metadata, spec: Spec): Promise<[Metadata, Spec]> {
         // Create increments spec version so we should check already incremented one
         await this.check_spec_version(metadata, metadata.spec_version + 1, spec)
-        const [updatedMetadata, updatedSpec] = await this.specDb.update_spec(metadata, spec);
-        await this.statusDb.replace_status(metadata, spec)
+        const [, updatedSpec] = await this.specDb.update_spec(metadata, spec);
+        const [updatedMetadata, ] = await this.statusDb.replace_status(metadata, spec)
         return [updatedMetadata, updatedSpec]
     }
 
-    abstract create(input: unknown, ctx: RequestContext): Promise<EntityCreationResult>
+    abstract create(input: unknown, ctx: RequestContext): Promise<EntityCreateOrUpdateResult>
 
     setKind(kind: Kind): void {
         this.kind = kind

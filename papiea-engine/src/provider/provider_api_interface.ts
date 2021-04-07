@@ -1,5 +1,5 @@
 import { UserAuthInfo } from "../auth/authn";
-import { Provider, Version, Entity_Reference, Status, S2S_Key, IntentWatcher, Metadata, Spec } from "papiea-core";
+import { Provider, Version, EntityStatusUpdateInput, Status, S2S_Key, EntityCreateOrUpdateResult } from "papiea-core";
 import {RequestContext} from "papiea-backend-utils"
 
 
@@ -19,12 +19,7 @@ export interface Provider_API {
     unregister_provider(user: UserAuthInfo, provider_prefix: string, version: Version, context: RequestContext): Promise<void>;
 
     // Replace status with a specified one
-    replace_status(user: UserAuthInfo, provider_prefix: string, version: Version, entity_ref: Entity_Reference, status: Status, context: RequestContext): Promise<{
-        intent_watcher: IntentWatcher | null,
-        metadata: Metadata,
-        spec: Spec,
-        status: Status | null
-    }>;
+    replace_status(user: UserAuthInfo, provider_prefix: string, version: Version, metadata: EntityStatusUpdateInput, status: Status, context: RequestContext): Promise<EntityCreateOrUpdateResult>;
 
     // POST "/provider/update_progress"
     update_progress(user: UserAuthInfo, provider_prefix: string, version: Version, message: string, done_percent: number, context: RequestContext): Promise<void>;
@@ -37,12 +32,7 @@ export interface Provider_API {
 
     update_auth(user: UserAuthInfo, provider_prefix: string, provider_version: Version, auth: any, context: RequestContext): Promise<void>;
 
-    update_status(user: UserAuthInfo, provider_prefix: string, version: Version, entity_ref: Entity_Reference, status: Status, context: RequestContext): Promise<{
-        intent_watcher: IntentWatcher | null,
-        metadata: Metadata,
-        spec: Spec,
-        status: Status | null
-    }>;
+    update_status(user: UserAuthInfo, provider_prefix: string, version: Version, metadata: EntityStatusUpdateInput, status: Status, context: RequestContext): Promise<EntityCreateOrUpdateResult>;
 
     create_key(user: UserAuthInfo, name: string, owner: string, provider_prefix: string, context: RequestContext, extension?: any, key?: string): Promise<S2S_Key>;
 

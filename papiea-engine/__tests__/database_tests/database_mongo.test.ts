@@ -62,6 +62,7 @@ describe("MongoDb tests", () => {
             uuid: entityA_uuid,
             kind: "test",
             spec_version: 0,
+            status_hash: 'test-hash',
             created_at: new Date(),
             deleted_at: undefined,
             provider_version: "1",
@@ -78,6 +79,7 @@ describe("MongoDb tests", () => {
             uuid: entityA_uuid,
             kind: "test",
             spec_version: 1,
+            status_hash: 'test-hash',
             created_at: new Date(),
             deleted_at: undefined,
             provider_version: "1",
@@ -95,6 +97,7 @@ describe("MongoDb tests", () => {
             uuid: entityA_uuid,
             kind: "test",
             spec_version: 1,
+            status_hash: 'test-hash',
             created_at: new Date(),
             deleted_at: undefined,
             provider_version: "1",
@@ -156,19 +159,38 @@ describe("MongoDb tests", () => {
     });
 
     test("Insert Status", async () => {
+        expect.assertions(2)
         const statusDb: Status_DB = await connection.get_status_db(logger);
-        const entity_ref: Provider_Entity_Reference = { uuid: entityA_uuid, kind: "test",
-            provider_prefix: "test_prefix", provider_version: "test_version" };
+        const entity_metadata: Metadata = {
+            uuid: entityA_uuid,
+            kind: "test",
+            spec_version: 1,
+            status_hash: 'test-hash',
+            created_at: new Date(),
+            deleted_at: undefined,
+            provider_version: "test_version",
+            provider_prefix: "test_prefix",
+            extension: {}
+        };
         const status: Status = { a: "A" };
-        await statusDb.replace_status(entity_ref, status);
+        const [metadata, ret_status] = await statusDb.replace_status(entity_metadata, status);
+        expect(metadata.uuid).toEqual(entityA_uuid);
+        expect(ret_status.a).toEqual("A");
     });
 
     test("Update Status", async () => {
+        expect.assertions(2)
         const statusDb: Status_DB = await connection.get_status_db(logger);
-        const entity_ref: Provider_Entity_Reference = { uuid: entityA_uuid, kind: "test",
-            provider_prefix: "test_prefix", provider_version: "test_version" };
+        const [entity_metadata, _] = await statusDb.get_status({
+            uuid: entityA_uuid,
+            kind: "test",
+            provider_version: "test_version",
+            provider_prefix: "test_prefix"
+        });
         const status: Status = { a: "A1" };
-        await statusDb.replace_status(entity_ref, status);
+        const[metadata, ret_status] = await statusDb.replace_status(entity_metadata, status);
+        expect(metadata.uuid).toEqual(entityA_uuid);
+        expect(ret_status.a).toEqual("A1");
     });
 
     test("Get Status", async () => {
@@ -189,20 +211,46 @@ describe("MongoDb tests", () => {
     test("Partially update Status", async () => {
         expect.assertions(4);
         const statusDb: Status_DB = await connection.get_status_db(logger);
-        const entity_ref: Provider_Entity_Reference = { uuid: entityA_uuid, kind: "test",
-            provider_prefix: "test_prefix", provider_version: "test_version" };
+        const [entity_metadata, _] = await statusDb.get_status({
+            uuid: entityA_uuid,
+            kind: "test",
+            provider_version: "test_version",
+            provider_prefix: "test_prefix"
+        });
         const initial_status: Status = { b: "A3" };
-        await statusDb.update_status(entity_ref, initial_status);
-        const res = await statusDb.get_status(entity_ref);
+        await statusDb.update_status(entity_metadata, initial_status);
+        const res = await statusDb.get_status(entity_metadata);
         expect(res).not.toBeNull();
         if (res === null) {
             throw new Error("Entity without status");
         }
         const [metadata, status] = res;
-        expect(metadata.uuid).toEqual(entity_ref.uuid);
+        expect(metadata.uuid).toEqual(entity_metadata.uuid);
         expect(status.a).toEqual("A1");
         expect(status.b).toEqual("A3");
     });
+
+    test("Update Status with incorrect stale hash should fail", async () => {
+        expect.assertions(5)
+        const statusDb: Status_DB = await connection.get_status_db(logger);
+        const [entity_metadata, _] = await statusDb.get_status({
+            uuid: entityA_uuid,
+            kind: "test",
+            provider_version: "test_version",
+            provider_prefix: "test_prefix"
+        });
+        const initial_status: Status = { b: "A4" };
+        await statusDb.update_status(entity_metadata, initial_status);
+        const [metadata, status] = await statusDb.get_status(entity_metadata);
+        expect(metadata.uuid).toEqual(entity_metadata.uuid);
+        expect(metadata.status_hash).not.toBeNull();
+        expect(status.a).toEqual("A1");
+        expect(status.b).toEqual("A4");
+        const new_status: Status = { b: "A5" };
+        await expect(statusDb.update_status(entity_metadata, new_status))
+            .rejects
+            .toThrow('Entity status with the uuid and status hash exists')
+    })
 
     test("Get Status for non existing entity should fail", async () => {
         expect.assertions(1);
@@ -585,6 +633,7 @@ describe("MongoDb tests", () => {
             provider_prefix: "test_pref",
             kind: "test_kind",
             spec_version: 1,
+            status_hash: "test-hash",
             created_at: new Date(),
             extension: {}
         },

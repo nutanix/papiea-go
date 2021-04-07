@@ -68,7 +68,8 @@ export default class ApiDocsGenerator {
                 "required": [
                     "uuid",
                     "kind",
-                    "spec_version"
+                    "spec_version",
+                    "status_hash"
                 ],
                 "properties": {
                     "uuid": {
@@ -80,6 +81,9 @@ export default class ApiDocsGenerator {
                     "spec_version": {
                         "type": "integer",
                         "format": "int32"
+                    },
+                    "status_hash": {
+                        "type": "string"
                     },
                     "created_at": {
                         "type": "string",
@@ -875,7 +879,8 @@ export default class ApiDocsGenerator {
                         "required": [
                             "uuid",
                             "kind",
-                            "spec_version"
+                            "spec_version",
+                            "status_hash"
                         ],
                         "properties": {
                             "uuid": {
@@ -888,6 +893,9 @@ export default class ApiDocsGenerator {
                             "spec_version": {
                                 "type": "integer",
                                 "format": "int32"
+                            },
+                            "status_hash": {
+                                "type": "string"
                             },
                             "created_at": {
                                 "type": "string",

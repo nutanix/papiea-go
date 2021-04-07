@@ -71,6 +71,7 @@ export interface Provider_Entity_Reference extends Entity_Reference {
 export interface Metadata extends Provider_Entity_Reference {
     // Identity fields
     spec_version: number;
+    status_hash: string;
 
     // Additional fields
     created_at: Date;
@@ -318,6 +319,7 @@ export enum PapieaError {
     Unauthorized = "unauthorized_error",
     PermissionDenied = "permission_denied_error",
     ConflictingEntity = "conflicting_entity_error",
+    StatusConflictingEntity = "status_conflicting_entity_error",
     ServerError = "server_error",
     OnActionError = "on_action_error",
     PapieaException = "papiea_exception"
@@ -377,4 +379,17 @@ export enum SwaggerModelValidatorErrorMessage {
     not_array_type_str = ' is not an array. An array is expected.',
     required_field_no_value_str = ' is a required field',
     required_field_missing_schema_str = 'object does not have property ',
+}
+
+// Result structure returned to the user in case of entity create and update
+export interface EntityCreateOrUpdateResult {
+    intent_watcher: IntentWatcher | null,
+    metadata: Metadata,
+    spec: Spec,
+    status: Status | null
+}
+
+// Metadata input from user for status update
+export interface EntityStatusUpdateInput extends Provider_Entity_Reference {
+    status_hash: string
 }

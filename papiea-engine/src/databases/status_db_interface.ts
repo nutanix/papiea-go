@@ -1,14 +1,32 @@
 // [[file:~/work/papiea-js/Papiea-design.org::*/src/databases/status_db_interface.ts][/src/databases/status_db_interface.ts:1]]
-import { Entity_Reference, Provider_Entity_Reference, Status, Metadata } from "papiea-core";
+import { EntityStatusUpdateInput, Provider_Entity_Reference, Status, Metadata } from "papiea-core";
 import { SortParams } from "../entity/entity_api_impl";
 
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Interface-548][status-db-interface]]
 
 export interface Status_DB {
 
-    // Update the status in the status db. As long as the input is
-    // correct this always succeeds.
-    replace_status(entity_ref: Provider_Entity_Reference, status: Status): Promise<[Metadata, Status]>;
+    /**
+     * Replaces status for the entity
+     * @async
+     * @method
+     * @param  {EntityStatusUpdateInput} metadata
+     * @param  {Status} status
+     * @returns Promise
+     * @throws {StatusConflictingEntityError} when the status hash is stale/incorrect
+     */
+    replace_status(metadata: EntityStatusUpdateInput, status: Status): Promise<[Metadata, Status]>;
+
+    /**
+     * Updates status for the entity
+     * @async
+     * @method
+     * @param  {EntityStatusUpdateInput} metadata
+     * @param  {Status} status
+     * @returns Promise
+     * @throws {StatusConflictingEntityError} when the status hash is stale/incorrect
+     */
+    update_status(metadata: EntityStatusUpdateInput, status: Status): Promise<[Metadata, Status]>
 
     // Gets the status of a particular entity from the db. Returns
     // both current metadata and status of the entity.
@@ -29,8 +47,6 @@ export interface Status_DB {
     list_status(fields_map: any, exact_match: boolean, sortParams?: SortParams): Promise<([Metadata, Status])[]>;
 
     list_status_in(filter_list: any[], field_name?: string): Promise<([Metadata, Status])[]>
-
-    update_status(entity_ref: Provider_Entity_Reference, status: Status): Promise<[Metadata, Status]>
 }
 
 // status-db-interface ends here

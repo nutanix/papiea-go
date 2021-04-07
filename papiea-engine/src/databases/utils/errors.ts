@@ -26,6 +26,14 @@ export class GraveyardConflictingEntityError extends ConflictingEntityError {
     }
 }
 
+export class StatusConflictingEntityError extends ConflictingEntityError {
+    private static MESSAGE = "Entity status with the uuid and status hash exists"
+
+    constructor(metadata: Metadata, status: Status) {
+        super(StatusConflictingEntityError.MESSAGE, metadata, null, status)
+    }
+}
+
 export class EntityNotFoundError extends PapieaException {
 
     uuid: uuid4;

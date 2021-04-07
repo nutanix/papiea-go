@@ -4,6 +4,7 @@ import { AxiosError } from "axios"
 import { Logger } from "papiea-backend-utils"
 import {BadRequestError} from "../errors/bad_request_error"
 import { PapieaException } from "../errors/papiea_exception"
+import * as hash from "object-hash"
 const semver = require('semver')
 
 function validatePaginationParams(offset: number | undefined, limit: number | undefined) {
@@ -182,4 +183,8 @@ export function getVersionVerifier(enginePapieaVersion: string) {
         }
         next();
     }
+}
+
+export function getObjectHash(obj: any) {
+    return hash(obj);
 }

@@ -1,11 +1,12 @@
 import { Status_DB } from "./status_db_interface";
 import { Db, Collection, UpdateWriteOpResult } from "mongodb"
-import { Entity_Reference, Status, Metadata, Entity, Provider_Entity_Reference } from "papiea-core";
+import { EntityStatusUpdateInput, Status, Metadata, Entity, Provider_Entity_Reference } from "papiea-core";
 import { SortParams } from "../entity/entity_api_impl";
 import { Logger, dotnotation } from "papiea-backend-utils";
 import { build_filter_query } from "./utils/filtering"
-import { EntityNotFoundError } from "./utils/errors";
+import { EntityNotFoundError, StatusConflictingEntityError } from "./utils/errors";
 import { PapieaException } from "../errors/papiea_exception"
+import { getObjectHash } from "../utils/utils"
 
 export class Status_DB_Mongo implements Status_DB {
     collection: Collection;
@@ -20,36 +21,59 @@ export class Status_DB_Mongo implements Status_DB {
 
     }
 
-    async replace_status(entity_ref: Provider_Entity_Reference, status: Status): Promise<[Metadata, Status]> {
-        const result = await this.collection.updateOne({
-            "metadata.provider_prefix": entity_ref.provider_prefix,
-            "metadata.provider_version": entity_ref.provider_version,
-            "metadata.uuid": entity_ref.uuid,
-            "metadata.kind": entity_ref.kind
-        }, {
-                $set: {
-                    "status": status
-                },
-                $setOnInsert: {
-                    "metadata.created_at": new Date()
-                }
+    async replace_status(metadata: EntityStatusUpdateInput, status: Status): Promise<[Metadata, Status]> {
+        try {
+            const current_status_hash = getObjectHash({
+                "status": status
+            })
+            const result = await this.collection.updateOne({
+                "metadata.provider_prefix": metadata.provider_prefix,
+                "metadata.provider_version": metadata.provider_version,
+                "metadata.status_hash": metadata.status_hash,
+                "metadata.uuid": metadata.uuid,
+                "metadata.kind": metadata.kind
             }, {
-                upsert: true
-            });
-        if (result.result.n !== 1) {
-            throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for kind ${entity_ref.provider_prefix}/${entity_ref.provider_version}/${entity_ref.kind}`, { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }})
+                    $set: {
+                        "status": status,
+                        "metadata.status_hash": current_status_hash
+                    },
+                    $setOnInsert: {
+                        "metadata.created_at": new Date()
+                    }
+                }, {
+                    upsert: true
+                });
+            if (result.result.n !== 1) {
+                throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for kind ${metadata.provider_prefix}/${metadata.provider_version}/${metadata.kind}`, { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }})
+            }
+            return await this.get_status(metadata)
+        } catch (err) {
+            /* duplicate key index error */
+            if (err.code === 11000) {
+                let res:any
+                try {
+                  res = await this.get_status(metadata);
+                } catch (e) {
+                    throw new PapieaException(`MongoDBError: Cannot create entity for kind ${metadata.provider_prefix}/${metadata.provider_version}/${metadata.kind}`, { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }})
+                }
+                const [updated_metadata, status] = res
+                throw new StatusConflictingEntityError(updated_metadata, status);
+            }
+            throw err
         }
-        return await this.get_status(entity_ref)
     }
 
-    async update_status(entity_ref: Provider_Entity_Reference, status: Status): Promise<[Metadata, Status]> {
+    async update_status(metadata: EntityStatusUpdateInput, status: Status): Promise<[Metadata, Status]> {
         let result: UpdateWriteOpResult
         const partial_status_query = dotnotation({"status": status});
 
         let aggregrate_fields = []
         const {set_status_fields, unset_status_fields} = separate_null_fields(partial_status_query)
+        const current_status_hash = getObjectHash({
+            "status": status
+        })
         if (Object.keys(set_status_fields).length !== 0) {
-            aggregrate_fields.push({ $set: set_status_fields })
+            aggregrate_fields.push({ $set: {"metadata.status_hash": current_status_hash, ...set_status_fields} })
         }
         if (Object.keys(unset_status_fields).length !== 0) {
             aggregrate_fields.push({ $unset: unset_status_fields })
@@ -58,23 +82,36 @@ export class Status_DB_Mongo implements Status_DB {
         try {
             result = await this.collection.updateOne(
                 {
-                    "metadata.provider_prefix": entity_ref.provider_prefix,
-                    "metadata.provider_version": entity_ref.provider_version,
-                    "metadata.uuid": entity_ref.uuid,
-                    "metadata.kind": entity_ref.kind
+                    "metadata.provider_prefix": metadata.provider_prefix,
+                    "metadata.provider_version": metadata.provider_version,
+                    "metadata.status_hash": metadata.status_hash,
+                    "metadata.uuid": metadata.uuid,
+                    "metadata.kind": metadata.kind
                 }, aggregrate_fields, {
                     upsert: true
                 });
-        } catch (e) {
-            if (e.code === 9) {
-                throw new PapieaException(`MongoDBError: Update body might be 'undefined', if this is expected, please use 'null' for kind ${entity_ref.provider_prefix}/${entity_ref.provider_version}/${entity_ref.kind}`,  { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }})
+        } catch (err) {
+            /* failed to parse input error */
+            if (err.code === 9) {
+                throw new PapieaException(`MongoDBError: Update body might be 'undefined', if this is expected, please use 'null' for kind ${metadata.provider_prefix}/${metadata.provider_version}/${metadata.kind}`,  { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }})
             }
-            throw e
+            /* duplicate key index error */
+            if (err.code === 11000) {
+                let res:any
+                try {
+                  res = await this.get_status(metadata);
+                } catch (e) {
+                    throw new PapieaException(`MongoDBError: Cannot create entity for kind ${metadata.provider_prefix}/${metadata.provider_version}/${metadata.kind}`, { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }})
+                }
+                const [updated_metadata, status] = res
+                throw new StatusConflictingEntityError(updated_metadata, status);
+            }
+            throw err
         }
         if (result.result.n !== 1) {
-            throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for kind ${entity_ref.provider_prefix}/${entity_ref.provider_version}/${entity_ref.kind}`,  { provider_prefix: entity_ref.provider_prefix, provider_version: entity_ref.provider_version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }})
+            throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for kind ${metadata.provider_prefix}/${metadata.provider_version}/${metadata.kind}`,  { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }})
         }
-        return await this.get_status(entity_ref)
+        return await this.get_status(metadata)
     }
 
     async get_status(entity_ref: Provider_Entity_Reference): Promise<[Metadata, Status]> {

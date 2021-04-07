@@ -8,6 +8,7 @@ import {UserAuthInfo} from "../auth/authn"
 import {
     Action,
     Entity,
+    EntityCreateOrUpdateResult,
     IntentWatcher,
     Metadata,
     Procedural_Signature,
@@ -27,7 +28,6 @@ import {Provider_DB} from "../databases/provider_db_interface"
 import {IntentWatcherMapper} from "../intentful_engine/intent_interface"
 import {IntentWatcher_DB} from "../databases/intent_watcher_db_interface"
 import {Graveyard_DB} from "../databases/graveyard_db_interface"
-import { EntityUpdateResult } from "../intentful_core/intentful_strategies/intentful_strategy_interface"
 
 export type SortParams = { [key: string]: number };
 
@@ -77,12 +77,7 @@ export class Entity_API_Impl implements Entity_API {
         return IntentWatcherMapper.toResponses(filteredRes)
     }
 
-    async save_entity(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, input: unknown, ctx: RequestContext): Promise<{
-        intent_watcher: IntentWatcher | null,
-        metadata: Metadata,
-        spec: Spec,
-        status: Status | null
-    }> {
+    async save_entity(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, input: unknown, ctx: RequestContext): Promise<EntityCreateOrUpdateResult> {
         const provider = await this.get_provider(prefix, version, ctx);
         const kind = this.providerDb.find_kind(provider, kind_name);
         const strategy = this.intentfulCtx.getEntityCreationStrategy(provider, kind, user)
@@ -153,7 +148,7 @@ export class Entity_API_Impl implements Entity_API {
         return filteredRes
     }
 
-    async update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, extension: {[key: string]: any}, kind_name: string, version: Version, spec_description: Spec, ctx: RequestContext): Promise<EntityUpdateResult> {
+    async update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, extension: {[key: string]: any}, kind_name: string, version: Version, spec_description: Spec, ctx: RequestContext): Promise<EntityCreateOrUpdateResult> {
         const provider = await this.get_provider(prefix, version, ctx);
         const kind = this.providerDb.find_kind(provider, kind_name);
         this.validator.validate_spec(provider, spec_description, kind, provider.allowExtraProps);

@@ -7,6 +7,7 @@ import {
     Status,
     Entity_Reference,
     Action,
+    Metadata,
     Version,
     Secret,
     Provider_Entity_Reference
@@ -66,13 +67,13 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
     }
 
 
-    async update_status(entity_reference: Entity_Reference, status: Status, provider_prefix: string = this.provider.get_prefix(), provider_version: Version = this.provider.get_version()): Promise<boolean> {
+    async update_status(entity_metadata: Metadata, status: Status, provider_prefix: string = this.provider.get_prefix(), provider_version: Version = this.provider.get_version()): Promise<boolean> {
         const res = await this.providerApiAxios.patch(`${this.provider_url}/${provider_prefix}/${provider_version}/update_status`,{
-            entity_ref: entity_reference,
+            metadata: entity_metadata,
             status: status
         });
         if (res.status != 200) {
-            this.get_logger().error(`Could not update status: ${JSON.stringify(status)} for entity with uuid: ${entity_reference.uuid} kind: ${entity_reference.kind} in provider with prefix: ${provider_prefix} and version: ${provider_version}`);
+            this.get_logger().error(`Could not update status: ${JSON.stringify(status)} for entity with uuid: ${entity_metadata.uuid} kind: ${entity_metadata.kind} in provider with prefix: ${provider_prefix} and version: ${provider_version}`);
             return false
         }
         return true
@@ -88,14 +89,14 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
      *
      * @deprecated Will be deleted in version 0.11.0. Use update_status instead.
     */
-    async replace_status(entity_reference: Entity_Reference, status: Status, provider_prefix: string = this.provider.get_prefix(), provider_version: Version = this.provider.get_version()): Promise<boolean> {
+    async replace_status(entity_metadata: Metadata, status: Status, provider_prefix: string = this.provider.get_prefix(), provider_version: Version = this.provider.get_version()): Promise<boolean> {
         this.get_logger().warn("Calling a deprecated method [replace_status]!!!")
         const res = await this.providerApiAxios.post(`${this.provider_url}/${provider_prefix}/${provider_version}/update_status`,{
-            entity_ref: entity_reference,
+            metadata: entity_metadata,
             status: status
         });
         if (res.status != 200) {
-            this.get_logger().error(`Could not update status: ${JSON.stringify(status)} for entity with uuid: ${entity_reference.uuid} kind: ${entity_reference.kind} in provider with prefix: ${provider_prefix} and version: ${provider_version}`);
+            this.get_logger().error(`Could not update status: ${JSON.stringify(status)} for entity with uuid: ${entity_metadata.uuid} kind: ${entity_metadata.kind} in provider with prefix: ${provider_prefix} and version: ${provider_version}`);
             return false
         }
         return true

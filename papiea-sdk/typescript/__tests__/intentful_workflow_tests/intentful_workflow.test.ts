@@ -77,10 +77,7 @@ describe("Intentful Workflow tests single provider", () => {
             location.on("x", async (ctx, entity, input) => {
                 await providerApiAdmin.patch(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                     context: "some context",
-                    entity_ref: {
-                        uuid: entity.metadata.uuid,
-                        kind: entity.metadata.kind
-                    },
+                    metadata: entity.metadata,
                     status: { x: entity.spec.x }
                 })
             })
@@ -240,10 +237,7 @@ describe("Intentful Workflow tests single provider", () => {
                 if (times_requested === 2) {
                     await providerApiAdmin.patch(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                         context: "some context",
-                        entity_ref: {
-                            uuid: metadata.uuid,
-                            kind: kind_name
-                        },
+                        metadata: entity.metadata,
                         status: { x: entity.spec.x }
                     })
                     return {"delay_secs": 2}
@@ -507,10 +501,7 @@ describe("Intentful Workflow tests single provider", () => {
             location.on("x", async (ctx, entity, input) => {
                 await providerApiAdmin.patch(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                     context: "some context",
-                    entity_ref: {
-                        uuid: metadata.uuid,
-                        kind: kind_name
-                    },
+                    metadata: entity.metadata,
                     status: { x: entity.spec.x }
                 })
                 return null
@@ -569,10 +560,7 @@ describe("Intentful Workflow tests single provider", () => {
                 return async (ctx: any, entity: any, input: any) => {
                     await providerApiAdmin.patch(`/${ sdk.provider.prefix }/${ sdk.provider.version }/update_status`, {
                         context: "some context",
-                        entity_ref: {
-                            uuid: entity.metadata.uuid,
-                            kind: entity.metadata.kind
-                        },
+                        metadata: entity.metadata,
                         status: { x: entity.spec.x }
                     })
                 }
@@ -662,10 +650,7 @@ describe("Intentful Workflow tests single provider", () => {
             location.on("x", async (ctx, entity, input) => {
                 await providerApiAdmin.patch(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                     context: "some context",
-                    entity_ref: {
-                        uuid: metadata.uuid,
-                        kind: kind_name
-                    },
+                    metadata: entity.metadata,
                     status: { x: entity.spec.x }
                 })
             })
@@ -707,10 +692,7 @@ describe("Intentful Workflow tests single provider", () => {
             location.on("x", async (ctx, entity, input) => {
                 await providerApiAdmin.patch(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                     context: "some context",
-                    entity_ref: {
-                        uuid: metadata.uuid,
-                        kind: kind_name
-                    },
+                    metadata: entity.metadata,
                     status: { x: entity.spec.x }
                 })
             })
@@ -756,10 +738,7 @@ describe("Intentful Workflow tests single provider", () => {
             location.on("x", async (ctx, entity, input) => {
                 await providerApiAdmin.patch(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                     context: "some context",
-                    entity_ref: {
-                        uuid: metadata.uuid,
-                        kind: kind_name
-                    },
+                    metadata: entity.metadata,
                     status: { x: entity.spec.x }
                 })
             })
@@ -810,10 +789,7 @@ describe("Intentful Workflow tests single provider", () => {
             location.on("x.+{ip}", async (ctx, entity, input) => {
                 await providerApiAdmin.post(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                     context: "some context",
-                    entity_ref: {
-                        uuid: entity.metadata.uuid,
-                        kind: entity.metadata.kind
-                    },
+                    metadata: entity.metadata,
                     status: entity.spec
                 })
             })
@@ -918,10 +894,7 @@ describe("Intentful Workflow tests single provider", () => {
                     }
                     await providerApiAdmin.post(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                         context: "some context",
-                        entity_ref: {
-                            uuid: entity.metadata.uuid,
-                            kind: entity.metadata.kind
-                        },
+                        metadata: entity.metadata,
                         status: {
                             x: status,
                             y: 11
@@ -1040,10 +1013,7 @@ describe("Intentful Workflow tests single provider", () => {
                 if (!locked) {
                     await providerApiAdmin.post(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                         context: "some context",
-                        entity_ref: {
-                            uuid: entity.metadata.uuid,
-                            kind: entity.metadata.kind
-                        },
+                        metadata: entity.metadata,
                         status: {
                             x: 20,
                             y: 21
@@ -1054,10 +1024,7 @@ describe("Intentful Workflow tests single provider", () => {
             location.on("y", async (ctx, entity, input) => {
                 await providerApiAdmin.post(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                     context: "some context",
-                    entity_ref: {
-                        uuid: entity.metadata.uuid,
-                        kind: entity.metadata.kind
-                    },
+                    metadata: entity.metadata,
                     status: {
                         x: 10,
                         y: 21
@@ -1132,10 +1099,7 @@ describe("Intentful Workflow test sfs validation", () => {
             location.on("wrong, wrong2", async (ctx, entity, input) => {
                 await providerApiAdmin.patch(`/${ sdk.provider.prefix }/${ sdk.provider.version }/update_status`, {
                     context: "some context",
-                    entity_ref: {
-                        uuid: entity.metadata.uuid,
-                        kind: entity.metadata.kind
-                    },
+                    metadata: entity.metadata,
                     status: { x: entity.spec.x }
                 })
             })
@@ -1191,10 +1155,7 @@ describe("Intentful workflow multiple providers", () => {
                 return async (ctx: any, entity: any, input: any) => {
                     await providerApiAdmin.patch(`/${ sdk.provider.prefix }/${ sdk.provider.version }/update_status`, {
                         context: "some context",
-                        entity_ref: {
-                            uuid: entity.metadata.uuid,
-                            kind: entity.metadata.kind
-                        },
+                        metadata: entity.metadata,
                         status: { x: entity.spec.x }
                     })
                 }
@@ -1301,10 +1262,7 @@ describe("Intentful workflow multiple providers", () => {
                 return async (ctx: any, entity: any, input: any) => {
                     await providerApiAdmin.patch(`/${ sdk.provider.prefix }/${ sdk.provider.version }/update_status`, {
                         context: "some context",
-                        entity_ref: {
-                            uuid: entity.metadata.uuid,
-                            kind: entity.metadata.kind
-                        },
+                        metadata: entity.metadata,
                         status: { x: entity.spec.x }
                     })
                 }

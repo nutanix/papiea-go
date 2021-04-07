@@ -324,7 +324,7 @@ describe("Entity API auth tests", () => {
         await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
             policy: `p, alice, owner, ${ kind_name }, *, allow`
         });
-        await entityApi.put(`/${ provider.prefix }/${ provider.version }/${ kind_name }/${ entity_metadata.uuid }`, {
+        const { data : { metadata: updated_metadata } } = await entityApi.put(`/${ provider.prefix }/${ provider.version }/${ kind_name }/${ entity_metadata.uuid }`, {
             spec: {
                 x: 101,
                 y: 11
@@ -335,12 +335,12 @@ describe("Entity API auth tests", () => {
         }, {
                                 headers: { 'Authorization': 'Bearer ' + token }
                             });
-        const { data: {metadata, spec } } = await entityApi.get(`/${ provider.prefix }/${ provider.version }/${ kind_name }/${ entity_metadata.uuid }`, {
+        const { data: {metadata, spec } } = await entityApi.get(`/${ provider.prefix }/${ provider.version }/${ kind_name }/${ updated_metadata.uuid }`, {
             headers: { 'Authorization': 'Bearer ' + token }
         })
         entity_spec.x = 101;
-        entity_metadata.spec_version = 2;
-        expect(metadata).toEqual(entity_metadata);
+        metadata.spec_version = 2;
+        expect(metadata).toEqual(updated_metadata);
         expect(spec).toEqual(entity_spec);
     });
 

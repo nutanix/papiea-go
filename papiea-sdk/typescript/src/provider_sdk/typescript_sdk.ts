@@ -523,7 +523,7 @@ export class BackgroundTaskBuilder {
                 this.task_entity = await this.kind_client.create({spec: {state: states.RunningSpecState()}})
             }
             await this.provider.provider_api_axios.patch(`${this.provider.provider_url}/${this.provider.get_prefix()}/${this.provider.get_version()}/update_status`,{
-                entity_ref: this.task_entity.metadata,
+                metadata: this.task_entity.metadata,
                 status: {
                     state: states.RunningStatusState()
                 }
@@ -532,7 +532,7 @@ export class BackgroundTaskBuilder {
             await this.update_task_entity()
             await this.kind_client.update(this.task_entity.metadata, {state: states.RunningSpecState()})
             await this.provider.provider_api_axios.patch(`${this.provider.provider_url}/${this.provider.get_prefix()}/${this.provider.get_version()}/update_status`,{
-                entity_ref: this.task_entity.metadata,
+                metadata: this.task_entity.metadata,
                 status: {
                     state: states.RunningStatusState()
                 }
@@ -549,7 +549,7 @@ export class BackgroundTaskBuilder {
             await this.update_task_entity()
             await this.kind_client.update(this.task_entity.metadata, {state: states.IdleSpecState()})
             await this.provider.provider_api_axios.patch(`${this.provider.provider_url}/${this.provider.get_prefix()}/${this.provider.get_version()}/update_status`,{
-                entity_ref: this.task_entity.metadata,
+                metadata: this.task_entity.metadata,
                 status: {
                     state: states.IdleStatusState()
                 }
@@ -596,7 +596,7 @@ export class BackgroundTaskBuilder {
         } else {
             await this.update_task_entity()
             await this.provider.provider_api_axios.patch(`${this.provider.provider_url}/${this.provider.get_prefix()}/${this.provider.get_version()}/update_status`,{
-                entity_ref: this.task_entity.metadata,
+                metadata: this.task_entity.metadata,
                 status: {provider_fields: task_ctx}
             });
         }

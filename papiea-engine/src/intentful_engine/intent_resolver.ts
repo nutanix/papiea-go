@@ -177,8 +177,8 @@ export class IntentResolver {
             )
             if (watchers.length !== 0) {
                 try {
-                    const [metadata, spec] = await this.specDb.get_spec({...entry_ref.provider_reference, ...entry_ref.entity_reference})
-                    const [, status] = await this.statusDb.get_status({...entry_ref.provider_reference, ...entry_ref.entity_reference})
+                    const [, spec] = await this.specDb.get_spec({...entry_ref.provider_reference, ...entry_ref.entity_reference})
+                    const [metadata, status] = await this.statusDb.get_status({...entry_ref.provider_reference, ...entry_ref.entity_reference})
                     this.onChange({ metadata, spec, status })
                 } catch (e) {
 

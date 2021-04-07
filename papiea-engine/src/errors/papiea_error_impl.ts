@@ -2,7 +2,8 @@ import { PapieaResponse } from "papiea-core";
 import {
     EntityNotFoundError,
     ConflictingEntityError,
-    GraveyardConflictingEntityError
+    GraveyardConflictingEntityError,
+    StatusConflictingEntityError
 } from "../databases/utils/errors"
 import { ValidationError } from "./validation_error";
 import { ProcedureInvocationError } from "./procedure_invocation_error";
@@ -96,14 +97,19 @@ export class PapieaErrorResponseImpl implements PapieaResponse {
                     return new PapieaErrorResponseImpl(req.url, 403, "Permission denied.", PapieaError.PermissionDenied, (err as PermissionDeniedError).entity_info, (err as PermissionDeniedError).toErrors())
                 case GraveyardConflictingEntityError:
                     let graveyardErr = err as GraveyardConflictingEntityError
-                    let meta = graveyardErr.existing_metadata
+                    const graveyardErrMetadata = graveyardErr.existing_metadata
 
-                    return new PapieaErrorResponseImpl(req.url, 409, `${graveyardErr.message}: uuid - ${meta.uuid}, maximum current spec version - ${graveyardErr.highest_spec_version}`, PapieaError.ConflictingEntity, (err as GraveyardConflictingEntityError).entity_info)
+                    return new PapieaErrorResponseImpl(req.url, 409, `${graveyardErr.message}: uuid - ${graveyardErrMetadata.uuid}, maximum current spec version - ${graveyardErr.highest_spec_version}`, PapieaError.ConflictingEntity, (err as GraveyardConflictingEntityError).entity_info)
                 case ConflictingEntityError:
                     let conflictingError = err as ConflictingEntityError
-                    let metadata = conflictingError.existing_metadata
+                    const conflictingErrorMetadata = conflictingError.existing_metadata
 
-                    return new PapieaErrorResponseImpl(req.url, 409, `Conflicting Entity: ${metadata.uuid}. Existing entity has version ${metadata.spec_version}`, PapieaError.ConflictingEntity, (err as ConflictingEntityError).entity_info)
+                    return new PapieaErrorResponseImpl(req.url, 409, `Conflicting Entity: ${conflictingErrorMetadata.uuid}. Existing entity has version ${conflictingErrorMetadata.spec_version}`, PapieaError.ConflictingEntity, (err as ConflictingEntityError).entity_info)
+                case StatusConflictingEntityError:
+                    let statusConflictingError = err as StatusConflictingEntityError
+                    const statusConflictingErrorMetadata = statusConflictingError.existing_metadata
+
+                    return new PapieaErrorResponseImpl(req.url, 409, `${statusConflictingError.message}: uuid - ${statusConflictingErrorMetadata.uuid}, current status hash - ${statusConflictingErrorMetadata.status_hash}`, PapieaError.StatusConflictingEntity, (err as StatusConflictingEntityError).entity_info)
                 case OnActionError:
                     return new PapieaErrorResponseImpl(req.url, 500, "On Action Error", PapieaError.OnActionError, (err as OnActionError).entity_info, (err as OnActionError).toErrors())
                 case PapieaException:

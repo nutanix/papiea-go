@@ -29,6 +29,7 @@ async function cleanup_entities() {
 describe("Entity Client end-to-end tests", () => {
     beforeAll(async () => {
         await test_setup.setup_and_register_sdk();
+        await cleanup_entities();
     });
 
     afterEach(async () => {
@@ -36,6 +37,7 @@ describe("Entity Client end-to-end tests", () => {
     });
 
     afterAll(async () => {
+        await cleanup_entities();
         await test_setup.cleanup_sdk();
     });
 

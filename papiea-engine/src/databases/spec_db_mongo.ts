@@ -35,6 +35,7 @@ export class Spec_DB_Mongo implements Spec_DB {
             additional_fields = dotnotation({"metadata.extension": entity_metadata.extension});
         }
         additional_fields["metadata.created_at"] = new Date();
+        additional_fields["metadata.status_hash"] = entity_metadata.status_hash
         const filter = {
             "metadata.uuid": entity_metadata.uuid,
             "metadata.kind": entity_metadata.kind,

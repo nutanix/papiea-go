@@ -1,4 +1,4 @@
-import { Metadata, Spec, Kind, Entity, IntentWatcher, Status } from "papiea-core"
+import { Metadata, Spec, Kind, Entity, EntityCreateOrUpdateResult, Status } from "papiea-core"
 import { Spec_DB } from "../../databases/spec_db_interface"
 import { Status_DB } from "../../databases/status_db_interface"
 import { UserAuthInfo } from "../../auth/authn"
@@ -10,13 +10,6 @@ import {
 } from "../../databases/utils/errors"
 import {RequestContext, spanOperation} from "papiea-backend-utils"
 import {UnauthorizedError} from "../../errors/permission_error"
-
-export interface EntityUpdateResult {
-    intent_watcher: IntentWatcher | null,
-    metadata: Metadata,
-    spec: Spec,
-    status: Status | null
-}
 
 export abstract class IntentfulStrategy {
     protected readonly specDb: Spec_DB
@@ -42,8 +35,8 @@ export abstract class IntentfulStrategy {
 
     async update_entity(metadata: Metadata, spec: Spec): Promise<[Metadata, Spec, Status]> {
         await this.check_spec_version(metadata, metadata.spec_version, spec)
-        const [updatedMetadata, updatedSpec] = await this.specDb.update_spec(metadata, spec);
-        const [_, updatedStatus] = await this.statusDb.update_status(metadata, spec)
+        const [, updatedSpec] = await this.specDb.update_spec(metadata, spec);
+        const [updatedMetadata, updatedStatus] = await this.statusDb.update_status(metadata, spec)
         return [updatedMetadata, updatedSpec, updatedStatus]
     }
 
@@ -51,7 +44,7 @@ export abstract class IntentfulStrategy {
         await this.graveyardDb.dispose(entity)
     }
 
-    async update(metadata: Metadata, spec: Spec, ctx: RequestContext): Promise<EntityUpdateResult> {
+    async update(metadata: Metadata, spec: Spec, ctx: RequestContext): Promise<EntityCreateOrUpdateResult> {
         const [updatedMetadata, updatedSpec, updatedStatus] = await this.update_entity(metadata, spec)
         return {
             intent_watcher: null,
