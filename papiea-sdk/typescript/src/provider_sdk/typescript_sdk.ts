@@ -792,7 +792,7 @@ export class Kind_Builder {
         return this
     }
 
-    on_delete(handler: (ctx: ProceduralCtx_Interface, entity: Partial<Entity>) => Promise<void>): Kind_Builder {
+    on_delete(handler: (ctx: ProceduralCtx_Interface, entity: Entity) => Promise<void>): Kind_Builder {
         const name = `__${this.kind.name}_delete`
         const loggerFactory = new LoggerFactory({logPath: name})
         const [logger, handle] = loggerFactory.createLogger()

@@ -49,7 +49,7 @@ export abstract class IntentfulStrategy {
         return null
     }
 
-    protected async invoke_destructor(procedure_name: string, entity: Partial<Entity>, ctx: RequestContext): Promise<void> {
+    protected async invoke_destructor(procedure_name: string, entity: Entity, ctx: RequestContext): Promise<void> {
         if (this.kind) {
             if (this.kind.kind_procedures[procedure_name]) {
                 if (this.user === undefined) {
@@ -82,7 +82,7 @@ export abstract class IntentfulStrategy {
     }
 
     async delete(entity: Entity, ctx: RequestContext): Promise<void> {
-        await this.invoke_destructor(`__${entity.metadata.kind}_delete`, { metadata: entity.metadata }, ctx)
+        await this.invoke_destructor(`__${entity.metadata.kind}_delete`, entity, ctx)
         const span = spanOperation(`delete_entity_db`,
                                    ctx.tracing_ctx,
                                    {entity_uuid: entity.metadata.uuid})
