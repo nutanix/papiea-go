@@ -71,7 +71,7 @@ describe("Provider API tests", () => {
         try {
             await providerApi.post('/', provider);
         } catch (e) {
-            expect(AxiosResponseParser.getAxiosErrorMessages(e)[0]).toBe("x-papiea has wrong value: status-only, the field should not be present");
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toBe("x-papiea has wrong value: status-only, the field should not be present.");
         }
     });
 
@@ -83,7 +83,7 @@ describe("Provider API tests", () => {
         try {
             await providerApi.post('/', provider);
         } catch (e) {
-            expect(AxiosResponseParser.getAxiosErrorMessages(e)[0]).toBe("x-papiea has wrong value: spec-only, correct values are: status-only");
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toBe("x-papiea has wrong value: spec-only, correct values are: status-only.");
         }
     });
 
@@ -252,8 +252,8 @@ describe("Provider API tests", () => {
             });
         } catch (e) {
             expect(e).toBeDefined()
-            expect(AxiosResponseParser.getAxiosError(e).message).toEqual("Validation failed.")
-            expect(AxiosResponseParser.getAxiosErrorMessages(e)[0]).toContain(`Status body has undefined value for one/more fields which is not supported in papiea, use null value instead to remove the field from status`)
+            expect(AxiosResponseParser.getAxiosError(e).message).toEqual("Validation Failed")
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toContain(`Failed to validate status for kind: ${ provider.prefix }/${ provider.version }/${ kind_name }. Use null values instead of undefined to remove the status field.`)
         }
     });
 
@@ -264,7 +264,7 @@ describe("Provider API tests", () => {
             await providerApi.post("/", provider)
         } catch (e) {
             expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(400)
-            expect(AxiosResponseParser.getAxiosErrorMessages(e)[0]).toContain("Papiea doesn't support 'nullable' fields. Please make a field 'host' non-required instead.")
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toContain("Papiea doesn't support 'nullable' fields. Please make a field 'host' non-required instead.")
         }
     });
 
@@ -277,7 +277,7 @@ describe("Provider API tests", () => {
             await providerApi.post("/", modified_provider)
         } catch (e) {
             expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(400)
-            expect(AxiosResponseParser.getAxiosErrorMessages(e)[0]).toContain("Papiea doesn't support 'nullable' fields. Please make a field 'x' non-required instead.")
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toContain("Papiea doesn't support 'nullable' fields. Please make a field 'x' non-required instead.")
         }
     });
 

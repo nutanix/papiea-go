@@ -102,7 +102,7 @@ describe("Procedures tests", () => {
             await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, { x: "5" });
         } catch (err) {
             expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
-            expect(AxiosResponseParser.getAxiosErrors(err).length).toEqual(1);
+            expect(AxiosResponseParser.getAxiosErrorDetails(err)).toBeDefined();
             return;
         }
     });
@@ -118,10 +118,11 @@ describe("Procedures tests", () => {
             await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, {});
         } catch (err) {
             expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
-            expect(AxiosResponseParser.getAxiosErrors(err).length).toEqual(1);
-            expect(AxiosResponseParser.getAxiosErrorMessages(err)[0]).toContain(`Procedure was expecting non-empty object, received null/empty object`);
+            expect(AxiosResponseParser.getAxiosErrorDetails(err)).toBeDefined();
+            expect(AxiosResponseParser.getAxiosErrorMessage(err)).toContain(`Procedure was expecting non-empty object, received null/empty object`);
         }
     });
+
     test("Procedure result validation", async () => {
         expect.hasAssertions();
         const server = http.createServer((req, res) => {
@@ -149,13 +150,13 @@ describe("Procedures tests", () => {
             await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, { x: 5 });
         } catch (err) {
             const error = AxiosResponseParser.getAxiosError(err);
-            const messages = AxiosResponseParser.getAxiosErrorMessages(err)
             expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(500);
-            expect(AxiosResponseParser.getAxiosErrors(err).length).toEqual(2);
-            expect(error.message).toEqual("Procedure invocation failed.")
+            expect(error.message).toEqual("Procedure Invocation Failed")
             expect(error.code).toEqual(500)
-            expect(messages[0]).toContain(`Received procedure input is missing required field: x`);
-            expect(messages[1]).toContain(`Received procedure input is missing required field: y`);
+            const errors = AxiosResponseParser.getAxiosErrorDetails(err).cause.cause.errors
+            expect(errors.length).toEqual(2);
+            expect(errors[0].message).toContain(`Received procedure input is missing required field: x for kind: ${provider.prefix}/${provider.version}/${kind_name}.`);
+            expect(errors[1].message).toContain(`Received procedure input is missing required field: y for kind: ${provider.prefix}/${provider.version}/${kind_name}.`);
         }
     });
 

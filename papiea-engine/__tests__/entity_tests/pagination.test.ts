@@ -128,7 +128,7 @@ describe("Pagination tests", () => {
                 }
             });
         } catch (e) {
-            expect(AxiosResponseParser.getAxiosErrorMessages(e)[0]).toBe("Limit should be greater than zero, received: -1");
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toBe("Failed to validate limit value. Limit should be greater than zero, received -1.");
         }
     });
 
@@ -142,7 +142,7 @@ describe("Pagination tests", () => {
                 }
             });
         } catch (e) {
-            expect(AxiosResponseParser.getAxiosErrorMessages(e)[0]).toBe("Offset should be greater than or equal to zero, received: -1");
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toBe("Failed to validate offset value. Offset should be greater than or equal to zero, received -1.");
         }
     });
 
@@ -168,7 +168,7 @@ describe("Pagination tests", () => {
                 }
             });
         } catch (e) {
-            expect(AxiosResponseParser.getAxiosErrorMessages(e)[0]).toBe("Limit should be greater than zero, received: 0");
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toBe("Failed to validate limit value. Limit should be greater than zero, received 0.");
         }
     });
 
