@@ -202,7 +202,7 @@ export interface Delay {
     delay_milliseconds: number
 }
 
-// Backoff to wait for while retrying diff
+// Backoff used to determine time in milliseconds to wait before retrying diff
 export interface Backoff {
     delay: Delay
     retries: number
@@ -221,16 +221,16 @@ export interface Diff {
 
 
     // An id that identifies a particular diff in the database
-    // Hashed from the entity information
+    // Hashed from:
+    // {entity_reference, intentful_signature, diff_fields}
     id: string
 
-    // A uri for a URL which specifically identifies the currently running handler.
-    // If the URL returns 404 we know that the handler should be retried.
-    // An SDK should have a specific endpoint to tell if a handler resolving SFS is running
-    // An SDK should tie the endpoint with diff uuid
+    // A url for the SDK instance that answers with a list of running diffs
+    // If the URL returns 404 we know that the handler is offline and should be retried.
+    // Is formed as handler_url: `${signature.base_callback}/healthcheck`
     handler_url?: string
 
-    // A backoff should be set by SDK via special endpoint
+    // A backoff is set by SDK via special endpoint
     // after an SDK has finished executing the handler
     backoff?: Backoff
 }

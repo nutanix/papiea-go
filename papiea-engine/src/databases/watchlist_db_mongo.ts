@@ -24,6 +24,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         this.logger = logger;
     }
 
+    /** Transform from entity reference to stringified watchlist entry reference */
     private static get_entry_reference(r: Provider_Entity_Reference): string {
         return [
             r.provider_prefix,
@@ -33,6 +34,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         ].join('/')
     }
 
+    /** Transform from stringified entry reference to an object entity reference */
     private static get_entity_reference(entry: string): Provider_Entity_Reference {
         const [provider_prefix, provider_version, kind, uuid] = entry.split("/")
         return {
@@ -54,6 +56,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         }
     }
 
+    /** Adds a new entry to the watchlist */
     async add_entity(entity: Entity, diffs: Diff[] = []): Promise<void> {
         const entry: WatchlistEntry = {
             entry_reference: Watchlist_Db_Mongo.get_entry_reference(entity.metadata),
@@ -91,6 +94,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         return watchlist_entries.diffs
     }
 
+    /** Adds diff to an already existing entry */
     async add_diff(entity_reference: Provider_Entity_Reference, diff: Diff) {
         const result = await this.collection.updateOne(
             {entry_reference: Watchlist_Db_Mongo.get_entry_reference(entity_reference)},
@@ -124,6 +128,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         }
     }
 
+    /** Adds multiple diff to an already existing entry */
     async add_diffs(entity_reference: Provider_Entity_Reference, diffs: Diff[]) {
         const result = await this.collection.updateOne(
             {entry_reference: Watchlist_Db_Mongo.get_entry_reference(entity_reference)},
@@ -138,6 +143,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         }
     }
 
+    /** Updates backoff for an existing diff inside the entry */
     async update_diff_backoff(entity_reference: Provider_Entity_Reference, diff_id: string, backoff: Backoff) {
         const result = await this.collection.updateOne(
             {entry_reference: Watchlist_Db_Mongo.get_entry_reference(entity_reference), "diffs.id": diff_id},
@@ -148,6 +154,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         }
     }
 
+    /** Removes a diff from the entry (not the entry itself) */
     async remove_diff(entity_reference: Provider_Entity_Reference, diff: Diff) {
         const result = await this.collection.updateOne(
             {entry_reference: Watchlist_Db_Mongo.get_entry_reference(entity_reference)},
@@ -158,6 +165,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         }
     }
 
+    /** Removes multiple diffs from the entry (not the entry itself) */
     async remove_diffs(entity_reference: Provider_Entity_Reference, diffs: Diff[]) {
         const result = await this.collection.updateOne(
             {entry_reference: Watchlist_Db_Mongo.get_entry_reference(entity_reference)},
@@ -168,6 +176,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         }
     }
 
+    /** Removes an entry from the watchlist */
     async remove_entity(entity_reference: Provider_Entity_Reference) {
         const entry = Watchlist_Db_Mongo.get_entry_reference(entity_reference)
         const result = await this.collection.deleteOne({entry_reference: entry});
