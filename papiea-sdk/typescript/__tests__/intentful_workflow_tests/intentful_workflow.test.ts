@@ -1,6 +1,7 @@
 import { DescriptionBuilder, DescriptionType, } from "../../../../papiea-engine/__tests__/test_data_factory"
 import axios from "axios"
 import { timeout } from "../../../../papiea-engine/src/utils/utils"
+import { AxiosResponseParser } from "papiea-backend-utils";
 import {IntentfulBehaviour, IntentfulStatus, Metadata, Version} from "papiea-core"
 import { ProviderSdk } from "../../src/provider_sdk/typescript_sdk";
 import { IntentfulCtx_Interface } from "../../src/provider_sdk/typescript_sdk_interface";
@@ -689,7 +690,7 @@ describe("Intentful Workflow tests single provider", () => {
                     }
                 })
             } catch (e) {
-                expect(e.response.status).toEqual(409)
+                expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(409)
             }
         } finally {
             sdk.cleanup()
@@ -738,7 +739,7 @@ describe("Intentful Workflow tests single provider", () => {
             try {
                 await Promise.all(promises)
             } catch (e) {
-                expect(e.response.status).toEqual(409)
+                expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(409)
             }
         } finally {
             sdk.cleanup()
@@ -792,7 +793,7 @@ describe("Intentful Workflow tests single provider", () => {
                     }
                 })
             } catch (e) {
-                expect(e.response.status).toEqual(409)
+                expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(409)
             }
         } finally {
             sdk.cleanup()
@@ -1141,8 +1142,8 @@ describe("Intentful Workflow test sfs validation", () => {
             kind_name = location.kind.name
             await sdk.register();
         } catch (e) {
-            expect(e.response.status).toEqual(400)
-            expect(e.response.data.error.error_details.message).toContain(`Failed to validate the sfs on kind: ${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}.`)
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(400)
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toContain(`Failed to validate the sfs on kind: ${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }.`)
         } finally {
             sdk.cleanup()
         }

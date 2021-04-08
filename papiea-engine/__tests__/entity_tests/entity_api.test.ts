@@ -2,6 +2,7 @@ import axios from "axios";
 import { Metadata, Spec } from "papiea-core";
 import { ProviderBuilder } from "../test_data_factory";
 import { stringify } from "querystring"
+import { AxiosResponseParser } from "papiea-backend-utils"
 import uuid = require("uuid");
 
 declare var process: {
@@ -60,7 +61,7 @@ describe("Entity API tests", () => {
     });
 
     test("Create entity with malformed spec should fail", async () => {
-        expect.assertions(1);
+        expect.assertions(2);
         try {
             await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
                 spec: {
@@ -69,8 +70,8 @@ describe("Entity API tests", () => {
                 }
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrorDetails(err)).toBeDefined();
         }
     });
 
@@ -86,8 +87,8 @@ describe("Entity API tests", () => {
         try {
             await entityApi.get(`/${ providerPrefix }/${providerVersion}/${ kind_name }/${ uuid() }`);
         } catch (e) {
-            expect(e.response.status).toBe(404);
-            expect(e.response.data).not.toBeUndefined();
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toBe(404);
+            expect(AxiosResponseParser.getAxiosResponseData(e)).not.toBeUndefined();
 
         }
     });
@@ -299,7 +300,7 @@ describe("Entity API tests", () => {
             });
             throw new Error("Filter entity by wrong field should return bad request");
         } catch (e) {
-            expect(e.response.status).toEqual(400);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(400);
         }
         try {
             await entityApi.post(`${ providerPrefix }/${ providerVersion }/${ kind_name }/filter?a=b`, {
@@ -309,13 +310,13 @@ describe("Entity API tests", () => {
             });
             throw new Error("Filter entity by wrong field should return bad request");
         } catch (e) {
-            expect(e.response.status).toEqual(400);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(400);
         }
         try {
             await entityApi.get(`${ providerPrefix }/${ providerVersion }/${ kind_name }?a=b`);
             throw new Error("Filter entity by wrong field should return bad request");
         } catch (e) {
-            expect(e.response.status).toEqual(400);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(400);
         }
     });
 
@@ -350,7 +351,7 @@ describe("Entity API tests", () => {
     });
 
     test("Update entity with malformed spec should fail", async () => {
-        expect.assertions(2);
+        expect.assertions(3);
         try {
             const { data: { metadata, spec } } = await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
                 spec: {
@@ -369,8 +370,8 @@ describe("Entity API tests", () => {
                 }
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrorDetails(err)).toBeDefined();
         }
     });
 
@@ -434,8 +435,8 @@ describe("Entity API tests", () => {
                 }
             });
         } catch (e) {
-            expect(e.response.status).toEqual(409)
-            expect(e.response.data.error.error_details.message).toEqual(`Entity with UUID ${entity_uuid} of kind: ${providerPrefix}/${providerVersion}/${kind_name} already exists.`)
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(409)
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toEqual(`Entity with UUID ${entity_uuid} of kind: ${ providerPrefix }/${ providerVersion }/${ kind_name } already exists.`)
         }
     });
 
@@ -516,8 +517,8 @@ describe("Entity API tests", () => {
                 }
             });
         } catch (e) {
-            expect(e.response.status).toEqual(409)
-            expect(e.response.data.error.error_details.message).toEqual(`Deleted entity with UUID ${id} of kind: ${providerPrefix}/${providerVersion}/${kind_name} already exists with this spec version.`)
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(409)
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toEqual(`Deleted entity with UUID ${id} of kind: ${ providerPrefix }/${ providerVersion }/${ kind_name } already exists with this spec version.`)
         }
     });
 

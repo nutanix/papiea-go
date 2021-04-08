@@ -1,5 +1,6 @@
 import { ProviderBuilder } from "../test_data_factory";
 import axios from "axios";
+import { AxiosResponseParser } from "papiea-backend-utils";
 
 declare var process: {
     env: {
@@ -127,7 +128,7 @@ describe("Pagination tests", () => {
                 }
             });
         } catch (e) {
-            expect(e.response.data.error.error_details.message).toBe("Failed to validate limit value. Limit should be greater than zero, received -1.");
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toBe("Failed to validate limit value. Limit should be greater than zero, received -1.");
         }
     });
 
@@ -141,7 +142,7 @@ describe("Pagination tests", () => {
                 }
             });
         } catch (e) {
-            expect(e.response.data.error.error_details.message).toBe("Failed to validate offset value. Offset should be greater than or equal to zero, received -1.");
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toBe("Failed to validate offset value. Offset should be greater than or equal to zero, received -1.");
         }
     });
 
@@ -167,7 +168,7 @@ describe("Pagination tests", () => {
                 }
             });
         } catch (e) {
-            expect(e.response.data.error.error_details.message).toBe("Failed to validate limit value. Limit should be greater than zero, received 0.");
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toBe("Failed to validate limit value. Limit should be greater than zero, received 0.");
         }
     });
 

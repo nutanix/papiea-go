@@ -2,6 +2,7 @@ import { ProviderBuilder } from "../test_data_factory";
 import axios from "axios";
 import { Metadata, Spec } from "papiea-core"
 import uuid = require("uuid")
+import { AxiosResponseParser } from "papiea-backend-utils";
 
 declare var process: {
     env: {
@@ -57,9 +58,9 @@ describe("Entity API with metadata extension tests", () => {
                 }
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.error_details.message).toContain(`Failed to validate metadata extension for kind: ${providerPrefix}/${providerVersion}/${kind_name}. Make sure the metadata extension is defined.`)
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrorDetails(err)).toBeDefined();
+            expect(AxiosResponseParser.getAxiosErrorMessage(err)).toContain(`Failed to validate metadata extension for kind: ${providerPrefix}/${providerVersion}/${kind_name}. Make sure the metadata extension is defined.`)
 
         }
     });
@@ -77,9 +78,9 @@ describe("Entity API with metadata extension tests", () => {
                 }
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.error_details.message).toContain(`Failed to validate metadata extension for kind: ${providerPrefix}/${providerVersion}/${kind_name}. Make sure the metadata extension is defined.`)
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrorDetails(err)).toBeDefined();
+            expect(AxiosResponseParser.getAxiosErrorMessage(err)).toContain(`Failed to validate metadata extension for kind: ${providerPrefix}/${providerVersion}/${kind_name}. Make sure the metadata extension is defined.`)
 
         }
     });
@@ -97,9 +98,9 @@ describe("Entity API with metadata extension tests", () => {
                 }
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.error_details.message).toContain(`Failed to validate metadata extension for kind: ${providerPrefix}/${providerVersion}/${kind_name}. Make sure the metadata extension is defined.`)
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrorDetails(err)).toBeDefined();
+            expect(AxiosResponseParser.getAxiosErrorMessage(err)).toContain(`Failed to validate metadata extension for kind: ${providerPrefix}/${providerVersion}/${kind_name}. Make sure the metadata extension is defined.`)
 
         }
     });
@@ -117,9 +118,9 @@ describe("Entity API with metadata extension tests", () => {
                 }
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.error_details.message).toContain(`Failed to validate metadata extension for kind: ${providerPrefix}/${providerVersion}/${kind_name}. Metadata extension should be an object.`)
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrorDetails(err)).toBeDefined();
+            expect(AxiosResponseParser.getAxiosErrorMessage(err)).toContain(`Failed to validate metadata extension for kind: ${providerPrefix}/${providerVersion}/${kind_name}. Metadata extension should be an object.`)
 
         }
     });
@@ -137,9 +138,9 @@ describe("Entity API with metadata extension tests", () => {
                 }
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.error_details.message).toContain(`Failed to validate metadata extension for kind: ${providerPrefix}/${providerVersion}/${kind_name}. Metadata extension should be an object.`)
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrorDetails(err)).toBeDefined();
+            expect(AxiosResponseParser.getAxiosErrorMessage(err)).toContain(`Failed to validate metadata extension for kind: ${providerPrefix}/${providerVersion}/${kind_name}. Metadata extension should be an object.`)
 
         }
     });
@@ -159,9 +160,9 @@ describe("Entity API with metadata extension tests", () => {
                 }
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.error_details.message).toContain(`Failed to validate metadata extension for kind: ${providerPrefix}/${providerVersion}/${kind_name}. Make sure the metadata extension is defined.`)
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrorDetails(err)).toBeDefined();
+            expect(AxiosResponseParser.getAxiosErrorMessage(err)).toContain(`Failed to validate metadata extension for kind: ${providerPrefix}/${providerVersion}/${kind_name}. Make sure the metadata extension is defined.`)
 
         }
     });
@@ -194,7 +195,7 @@ describe("Entity API with metadata extension tests", () => {
     });
 
     test("Create entity with non-valid metadata extension", async () => {
-        expect.assertions(1);
+        expect.assertions(2);
         try {
             await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
                 spec: {
@@ -209,8 +210,8 @@ describe("Entity API with metadata extension tests", () => {
                 }
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrorDetails(err)).toBeDefined();
         }
     });
 
@@ -226,7 +227,7 @@ describe("Entity API with metadata extension tests", () => {
     });
 
     test("Create entity with no metadata extension should display a friendly error", async () => {
-        expect.assertions(2);
+        expect.assertions(3);
         try {
             await entityApi.post(`/${providerPrefix}/${providerVersion}/${kind_name}`, {
                 spec: {
@@ -235,9 +236,9 @@ describe("Entity API with metadata extension tests", () => {
                 },
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.error_details.message).toContain(`Failed to validate metadata extension for kind: ${providerPrefix}/${providerVersion}/${kind_name}. Make sure the metadata extension is defined.`);
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrorDetails(err)).toBeDefined();
+            expect(AxiosResponseParser.getAxiosErrorMessage(err)).toContain(`Failed to validate metadata extension for kind: ${providerPrefix}/${providerVersion}/${kind_name}. Make sure the metadata extension is defined.`);
         }
     });
 });

@@ -20,7 +20,7 @@ export class InvocationError extends Error {
             return new InvocationError(status_code, custom_message, e)
         }
         if (e instanceof SecurityApiError) {
-            return new InvocationError(e.status || 500, `Security API Error: ${e.message}`, e)
+            return new InvocationError(e.status || 500, `Security API Error: ${e.message}`, e.cause)
         }
         if (isAxiosError(e)) {
             return new InvocationError(e.response!.status, "Procedure Handler Error", e.response!.data?.error)

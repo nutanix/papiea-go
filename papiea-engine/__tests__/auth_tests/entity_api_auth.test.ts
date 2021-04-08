@@ -6,7 +6,7 @@ const queryString = require("query-string");
 import { OAuth2Server, ProviderBuilder } from "../test_data_factory"
 import uuid = require("uuid");
 import { Metadata, Spec, Provider } from "papiea-core";
-import { Logger, LoggerFactory } from 'papiea-backend-utils';
+import { AxiosResponseParser, LoggerFactory } from 'papiea-backend-utils';
 
 declare var process: {
     env: {
@@ -280,7 +280,7 @@ describe("Entity API auth tests", () => {
                 { headers: { 'Authorization': 'Bearer ' + token } }
             );
         } catch (e) {
-            expect(e.response.status).toEqual(403);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(403);
         }
     });
 
@@ -315,7 +315,7 @@ describe("Entity API auth tests", () => {
                                     headers: { 'Authorization': 'Bearer ' + token }
                                 });
         } catch (e) {
-            expect(e.response.status).toEqual(403);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(403);
         }
     });
 
@@ -378,7 +378,7 @@ describe("Entity API auth tests", () => {
                                     headers: { 'Authorization': 'Bearer ' + token }
                                 });
         } catch (e) {
-            expect(e.response.status).toEqual(403);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(403);
         }
     });
 
@@ -455,7 +455,7 @@ describe("Entity API auth tests", () => {
             );
             throw new Error("Key hasn't been inactivated");
         } catch (e) {
-            expect(e.response.status).toEqual(401);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(401);
         }
     });
 
@@ -536,7 +536,7 @@ describe("Entity API auth tests", () => {
                 { headers: { 'Authorization': 'Bearer ' + token } }
             );
         } catch (e) {
-            expect(e.response.status).toEqual(403);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(403);
         }
     });
 
@@ -568,7 +568,7 @@ describe("Entity API auth tests", () => {
             );
             throw new Error("Call procedure without permission should fail");
         } catch (e) {
-            expect(e.response.status).toEqual(403);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(403);
         }
     });
 
@@ -763,7 +763,7 @@ describe("Entity API auth tests", () => {
             throw new Error("Call procedure without permission should fail");
         } catch (e) {
             // Unauthorized bacause provider-admin is authorized against different provider
-            expect(e.response.status).toEqual(401);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(401);
         }
     });
 });

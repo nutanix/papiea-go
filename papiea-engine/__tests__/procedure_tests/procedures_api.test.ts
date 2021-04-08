@@ -3,7 +3,7 @@ import * as http from "http"
 import axios from "axios"
 import { ProviderBuilder } from "../test_data_factory"
 import { Provider } from "papiea-core"
-import { Logger, LoggerFactory } from 'papiea-backend-utils';
+import { AxiosResponseParser, LoggerFactory } from 'papiea-backend-utils';
 
 declare var process: {
     env: {
@@ -101,8 +101,8 @@ describe("Procedures tests", () => {
         try {
             await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, { x: "5" });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrorDetails(err)).toBeDefined();
             return;
         }
     });
@@ -117,9 +117,9 @@ describe("Procedures tests", () => {
         try {
             await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, {});
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.error_details.message).toContain(`Procedure was expecting non-empty object, received null/empty object`);
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrorDetails(err)).toBeDefined();
+            expect(AxiosResponseParser.getAxiosErrorMessage(err)).toContain(`Procedure was expecting non-empty object, received null/empty object`);
         }
     });
 
@@ -149,13 +149,14 @@ describe("Procedures tests", () => {
         try {
             await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, { x: 5 });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(500);
-            expect(res.data.error.message).toEqual("Procedure Invocation Failed")
-            expect(res.data.error.code).toEqual(500)
-            const errors = res.data.error.error_details.cause.cause.errors
-            expect(errors[0].message).toContain(`Received procedure input is missing required field: x`);
-            expect(errors[1].message).toContain(`Received procedure input is missing required field: y`);
+            const error = AxiosResponseParser.getAxiosError(err);
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(500);
+            expect(error.message).toEqual("Procedure Invocation Failed")
+            expect(error.code).toEqual(500)
+            const errors = AxiosResponseParser.getAxiosErrorDetails(err).cause.cause.errors
+            expect(errors.length).toEqual(2);
+            expect(errors[0].message).toContain(`Received procedure input is missing required field: x for kind: ${provider.prefix}/${provider.version}/${kind_name}.`);
+            expect(errors[1].message).toContain(`Received procedure input is missing required field: y for kind: ${provider.prefix}/${provider.version}/${kind_name}.`);
         }
     });
 
@@ -212,7 +213,7 @@ describe("Procedures tests", () => {
         try {
             const res: any = await entityApi.post(`/${provider.prefix}/${provider.version}/procedure/computeSum`, { "a": 10, "b": "Totally not a number" });
         } catch (e) {
-            expect(e.response.status).toBe(400);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toBe(400);
             server.close();
         }
     });
@@ -268,7 +269,7 @@ describe("Procedures tests", () => {
         try {
             const res: any = await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/computeGeolocation`, { region_id: ["String expected got array"] });
         } catch (e) {
-            expect(e.response.status).toBe(400);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toBe(400);
             server.close();
         }
     });

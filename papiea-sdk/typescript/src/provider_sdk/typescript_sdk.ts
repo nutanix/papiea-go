@@ -51,7 +51,7 @@ class SecurityApiImpl implements SecurityApi {
             const {data: user_info } = await this.provider.provider_api_axios.get(`${url}/auth/user_info`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return user_info
         } catch (e) {
-            throw SecurityApiError.fromError(e, `Cannot get user info for provider: ${this.provider.prefix}/${this.provider.version}.`)
+            throw SecurityApiError.fromError(e, `Cannot get user info for provider: ${this.provider.get_prefix()}/${this.provider.get_version()}.`)
         }
     }
 
@@ -61,7 +61,7 @@ class SecurityApiImpl implements SecurityApi {
             const {data: keys } = await this.provider.provider_api_axios.get(`${url}/s2skey`, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return keys
         } catch (e) {
-            throw SecurityApiError.fromError(e, `Cannot list s2s keys for provider: ${this.provider.prefix}/${this.provider.version}.`)
+            throw SecurityApiError.fromError(e, `Cannot list s2s keys for provider: ${this.provider.get_prefix()}/${this.provider.get_version()}.`)
         }
     }
 
@@ -71,7 +71,7 @@ class SecurityApiImpl implements SecurityApi {
             const {data: s2skey } = await this.provider.provider_api_axios.post(`${url}/s2skey`, new_key, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return s2skey
         } catch (e) {
-            throw SecurityApiError.fromError(e, `Cannot create s2s key for provider: ${this.provider.prefix}/${this.provider.version}.`)
+            throw SecurityApiError.fromError(e, `Cannot create s2s key for provider: ${this.provider.get_prefix()}/${this.provider.get_version()}.`)
         }
     }
 
@@ -81,7 +81,7 @@ class SecurityApiImpl implements SecurityApi {
             const {data: r } = await this.provider.provider_api_axios.put(`${url}/s2skey`, {key: key_to_deactivate, active:false}, {headers: {'Authorization': `Bearer ${this.s2s_key}`}});
             return r
         } catch (e) {
-            throw SecurityApiError.fromError(e, `Cannot deactivate s2s key for provider: ${this.provider.prefix}/${this.provider.version}.`)
+            throw SecurityApiError.fromError(e, `Cannot deactivate s2s key for provider: ${this.provider.get_prefix()}/${this.provider.get_version()}.`)
         }
     }
 }

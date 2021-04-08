@@ -2,6 +2,7 @@ import { KindBuilder, ProviderBuilder } from "../test_data_factory"
 import axios from "axios"
 import uuid = require("uuid");
 import { IntentfulBehaviour } from "papiea-core";
+import { AxiosResponseParser } from "papiea-backend-utils";
 
 declare var process: {
     env: {
@@ -70,7 +71,7 @@ describe("Uuid validation tests", () => {
                 }
             })
         } catch (e) {
-            expect(e.response.data.error.error_details.message).toBe(`Entity UUID for kind: ${ providerPrefix }/${ providerVersion }/${ kind_name } does not match the pattern. Make sure the entity UUID matches the validation pattern.`)
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toBe(`Entity UUID for kind: ${ providerPrefix }/${ providerVersion }/${ kind_name } does not match the pattern. Make sure the entity UUID matches the validation pattern.`)
         }
     })
 
@@ -95,7 +96,7 @@ describe("Uuid validation tests", () => {
                 }
             })
         } catch (e) {
-            expect(e.response.data.error.message).toContain("Conflicting Entity")
+            expect(AxiosResponseParser.getAxiosError(e).message).toContain("Conflicting Entity")
         }
         await entityApi.delete(`${providerPrefix}/${providerVersion}/${kind_name}/${metadata.uuid}`)
     })
@@ -109,7 +110,8 @@ describe("Uuid validation tests", () => {
                 }
             })
         } catch (e) {
-            expect(e.response.data.error.error_details.message).toBe(`Metadata uuid is undefined but kind: ${ providerPrefix }/${ providerVersion }/${ kind_name } has validation pattern set. Provide a valid metadata uuid.`)
+            console.log(JSON.stringify(e.response.data.error, null, 4))
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toBe(`Metadata uuid is undefined but kind: ${providerPrefix}/${providerVersion}/${kind_name} has validation pattern set. Provide a valid metadata uuid.`)
         }
     })
 });
