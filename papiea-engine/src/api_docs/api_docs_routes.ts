@@ -6,12 +6,12 @@ import { Provider } from "papiea-core";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import { asyncHandler } from "../auth/authn"
+import { Logger } from "papiea-backend-utils";
 
 const admin_swagger = readFileSync(resolve(__dirname, 'admin_swagger.json'), 'utf8');
 
-export default function createAPIDocsRouter(urlPrefix: string, apiDocsGenerator: ApiDocsGenerator, providerDb: Provider_DB) {
+export default function createAPIDocsRouter(logger: Logger, urlPrefix: string, apiDocsGenerator: ApiDocsGenerator, providerDb: Provider_DB) {
     const apiDocsRouter = Router();
-
     apiDocsRouter.use('/', serve);
 
     apiDocsRouter.get('*/swagger-ui-init.js', asyncHandler(async (req: Request, res: Response, next: NextFunction) => {

@@ -1,7 +1,7 @@
 import { Spec_DB } from "./spec_db_interface";
 import { Collection, Db } from "mongodb";
 import { ConflictingEntityError, EntityNotFoundError } from "./utils/errors";
-import {Entity_Reference, Metadata, Spec, Entity, Provider_Entity_Reference} from "papiea-core"
+import {Entity_Reference, Metadata, PapieaEngineTags, Spec, Entity, Provider_Entity_Reference} from "papiea-core"
 import { SortParams } from "../entity/entity_api_impl";
 import { Logger, dotnotation } from "papiea-backend-utils";
 import { IntentfulKindReference } from "./provider_db_mongo";
@@ -30,6 +30,7 @@ export class Spec_DB_Mongo implements Spec_DB {
     }
 
     async update_spec(entity_metadata: Metadata, spec: Spec): Promise<[Metadata, Spec]> {
+        this.logger.debug(`BEGIN ${this.update_spec.name} in spec database`, { tags: [PapieaEngineTags.Database] })
         let additional_fields: any = {};
         if (entity_metadata.extension !== undefined) {
             additional_fields = dotnotation({"metadata.extension": entity_metadata.extension});
@@ -57,7 +58,9 @@ export class Spec_DB_Mongo implements Spec_DB {
             if (result.result.n !== 1) {
                 throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for kind ${entity_metadata.provider_prefix}/${entity_metadata.provider_version}/${entity_metadata.kind}`, { provider_prefix: entity_metadata.provider_prefix, provider_version: entity_metadata.provider_version, kind_name: entity_metadata.kind, additional_info: { "entity_uuid": entity_metadata.uuid }})
             }
-            return this.get_spec(entity_metadata);
+            const ret_entity = this.get_spec(entity_metadata);
+            this.logger.debug(`END ${this.update_spec.name} in spec database`, { tags: [PapieaEngineTags.Database] })
+            return ret_entity
         } catch (err) {
             if (err.code === 11000) {
                 let res:any
@@ -75,6 +78,7 @@ export class Spec_DB_Mongo implements Spec_DB {
     }
 
     async get_spec(entity_ref: Provider_Entity_Reference): Promise<[Metadata, Spec]> {
+        this.logger.debug(`BEGIN ${this.get_spec.name} in spec database`, { tags: [PapieaEngineTags.Database] })
         const result: Entity | null = await this.collection.findOne(
             {
                 "metadata.uuid": entity_ref.uuid,
@@ -86,16 +90,19 @@ export class Spec_DB_Mongo implements Spec_DB {
         if (result === null) {
             throw new EntityNotFoundError(entity_ref.kind, entity_ref.uuid, entity_ref.provider_prefix, entity_ref.provider_version)
         }
+        this.logger.debug(`END ${this.get_spec.name} in spec database`, { tags: [PapieaEngineTags.Database] })
         return [result.metadata, result.spec];
     }
 
     async get_specs_by_ref(entity_refs: Entity_Reference[]): Promise<[Metadata, Spec][]> {
+        this.logger.debug(`BEGIN ${this.get_specs_by_ref.name} in spec database`, { tags: [PapieaEngineTags.Database] })
         const ids = entity_refs.map(ref => ref.uuid)
         const result = await this.collection.find({
             "metadata.uuid": {
                 $in: ids
             }
         }).toArray();
+        this.logger.debug(`END ${this.get_specs_by_ref.name} in spec database`, { tags: [PapieaEngineTags.Database] })
         return result.map((x: any): [Metadata, Spec] => {
             if (x.spec !== null) {
                 return [x.metadata, x.spec]
@@ -106,13 +113,15 @@ export class Spec_DB_Mongo implements Spec_DB {
     }
 
     async list_specs(fields_map: any, exact_match: boolean, sortParams?: SortParams): Promise<([Metadata, Spec])[]> {
-        const filter = build_filter_query(fields_map, exact_match)
+        this.logger.debug(`BEGIN ${this.list_specs.name} in spec database`, { tags: [PapieaEngineTags.Database] })
+        const filter = build_filter_query(this.logger, fields_map, exact_match)
         let result: any[];
         if (sortParams) {
             result = await this.collection.find(filter).sort(sortParams).toArray();
         } else {
             result = await this.collection.find(filter).toArray();
         }
+        this.logger.debug(`END ${this.list_specs.name} in spec database`, { tags: [PapieaEngineTags.Database] })
         return result.map((x: any): [Metadata, Spec] => {
             if (x.spec !== null) {
                 return [x.metadata, x.spec]
@@ -123,9 +132,11 @@ export class Spec_DB_Mongo implements Spec_DB {
     }
 
     async list_specs_in(filter_list: any[], field_name: string = "metadata.uuid"): Promise<([Metadata, Spec])[]> {
+        this.logger.debug(`BEGIN ${this.list_specs_in.name} in spec database`, { tags: [PapieaEngineTags.Database] })
         const result = await this.collection.find({ [field_name]: { $in: filter_list } }).sort({ "metadata.uuid": 1 }).toArray();
         return result.map((x: any): [Metadata, Spec] => {
             if (x.spec !== null) {
+                this.logger.debug(`END ${this.list_specs_in.name} in spec database`, { tags: [PapieaEngineTags.Database] })
                 return [x.metadata, x.spec]
             } else {
                 throw new PapieaException("MongoDBError: No valid entities found");
@@ -134,8 +145,10 @@ export class Spec_DB_Mongo implements Spec_DB {
     }
 
     async list_random_intentful_specs(size: number, kind_refs: IntentfulKindReference[], sortParams?: SortParams): Promise<([Metadata, Spec])[]> {
+        this.logger.debug(`BEGIN ${this.list_random_intentful_specs.name} in spec database`, { tags: [PapieaEngineTags.Database] })
         const intentful_kind_names = kind_refs.map(kind => kind.kind_name)
         if (intentful_kind_names.length === 0) {
+            this.logger.debug(`END ${this.list_random_intentful_specs.name} in spec database`, { tags: [PapieaEngineTags.Database] })
             return []
         }
         let result: any[];
@@ -150,6 +163,7 @@ export class Spec_DB_Mongo implements Spec_DB {
                 { $sample: { size } }
             ]).toArray();
         }
+        this.logger.debug(`END ${this.list_random_intentful_specs.name} in spec database`, { tags: [PapieaEngineTags.Database] })
         return result.map((x: any): [Metadata, Spec] => {
             if (x.spec !== null) {
                 return [x.metadata, x.spec]

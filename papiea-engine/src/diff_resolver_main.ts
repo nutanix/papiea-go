@@ -28,7 +28,7 @@ const prettyPrint = config.pretty_print
 
 async function setUpDiffResolver() {
     const logger = LoggerFactory.makeLogger({level: loggingLevel, verbosity_options: verbosityOptions, pretty_print: prettyPrint});
-    const mongoConnection: MongoConnection = new MongoConnection(mongoUrl, mongoDb);
+    const mongoConnection: MongoConnection = new MongoConnection(mongoUrl, mongoDb, logger);
     await mongoConnection.connect();
 
     const specDb = await mongoConnection.get_spec_db(logger);
@@ -38,14 +38,14 @@ async function setUpDiffResolver() {
     const watchlistDb = await mongoConnection.get_watchlist_db(logger)
     const graveyardDb = await mongoConnection.get_graveyard_db(logger)
 
-    const validator = ValidatorImpl.create()
+    const validator = ValidatorImpl.create(logger)
     const noopAuthorizer: Authorizer = new NoAuthAuthorizer();
 
     const differ = new BasicDiffer()
-    const intentfulContext = new IntentfulContext(specDb, statusDb, graveyardDb, differ, intentWatcherDB, watchlistDb, validator, noopAuthorizer)
+    const intentfulContext = new IntentfulContext(logger, specDb, statusDb, graveyardDb, differ, intentWatcherDB, watchlistDb, validator, noopAuthorizer)
     const watchlist: Watchlist = new Watchlist()
 
-    const intentfulListenerMongo = new IntentfulListenerMongo(statusDb, specDb, watchlist)
+    const intentfulListenerMongo = new IntentfulListenerMongo(logger, statusDb, specDb, watchlist)
     intentfulListenerMongo.run(entityPollDelay)
     const entropyFunction = getEntropyFn(papieaDebug)
     const calculateBackoffFunction = getCalculateBackoffFn(diffRetryExponent, logger)

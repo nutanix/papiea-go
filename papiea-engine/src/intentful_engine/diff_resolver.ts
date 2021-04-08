@@ -4,7 +4,7 @@ import { Spec_DB } from "../databases/spec_db_interface"
 import { Status_DB } from "../databases/status_db_interface"
 import { create_entry, Backoff, EntryReference, Watchlist, Delay } from "./watchlist"
 import { Watchlist_DB } from "../databases/watchlist_db_interface";
-import { Differ, Diff, Metadata, Spec, Status, Kind, Provider } from "papiea-core";
+import { Differ, Diff, Metadata, Spec, Status, Kind, Provider, PapieaEngineTags } from "papiea-core";
 import { Provider_DB } from "../databases/provider_db_interface";
 import axios from "axios"
 import { IntentfulContext } from "../intentful_core/intentful_context";
@@ -53,25 +53,30 @@ export class DiffResolver {
         try {
             await this._run(delay)
         } catch (e) {
-            console.error(`Error in run method for diff resolver: ${e}`)
+            this.logger.error(`Error in run method for diff resolver: ${e}`)
             throw e
         }
     }
 
     private async _run(delay: number) {
         while (true) {
+            this.logger.debug(`BEGIN ${this._run.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
             await timeout(delay)
             await this.updateWatchlist()
             await this.resolveDiffs()
             await this.addRandomEntities()
+            this.logger.debug(`END ${this._run.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
         }
     }
 
     private async updateWatchlist() {
         try {
+            this.logger.debug(`BEGIN ${this.updateWatchlist.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
             const updated_watchlist = await this.watchlistDb.get_watchlist()
             this.watchlist.update(updated_watchlist)
+            this.logger.debug(`END ${this.updateWatchlist.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
         } catch (e) {
+            this.logger.debug(`END ${this.updateWatchlist.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
             return
         }
     }
@@ -100,22 +105,25 @@ export class DiffResolver {
 
     private async rediff(entry_reference: EntryReference): Promise<RediffResult | null> {
         try {
+            this.logger.debug(`BEGIN ${this.rediff.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
             const [metadata, spec] = await this.specDb.get_spec({...entry_reference.provider_reference, ...entry_reference.entity_reference})
             const [, status] = await this.statusDb.get_status({...entry_reference.provider_reference, ...entry_reference.entity_reference})
             const provider = await this.providerDb.get_provider(entry_reference.provider_reference.provider_prefix, entry_reference.provider_reference.provider_version)
             const kind = this.providerDb.find_kind(provider, metadata.kind)
-
+            this.logger.debug(`END ${this.rediff.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
             return {
                 diffs: this.differ.all_diffs(kind, spec, status, this.logger),
                 metadata, provider, kind, spec, status,
             };
         } catch (e) {
             this.logger.debug(`Couldn't generate diff for entity with uuid: ${entry_reference.entity_reference.uuid} and kind: ${entry_reference.entity_reference.kind} due to error: ${e}. Removing from watchlist`)
+            this.logger.debug(`END ${this.rediff.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
             return null
         }
     }
 
     private async launchOperation({diff, metadata, spec, status}: DiffWithContext): Promise<Delay | null> {
+        this.logger.debug(`BEGIN ${this.launchOperation.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
         this.logger.debug("launchOperation", diff.intentful_signature.procedure_callback,
             { metadata: metadata,
                 spec: spec,
@@ -130,11 +138,13 @@ export class DiffResolver {
         })
         if (result.data !== null && result.data !== undefined && result.data.delay_secs !== undefined
             && result.data.delay_secs !== null && !Number.isNaN(result.data.delay_secs)) {
+            this.logger.debug(`END ${this.launchOperation.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
             return {
                 delay_seconds: result.data.delay_secs,
                 delay_set_time: new Date()
             }
         } else {
+            this.logger.debug(`END ${this.launchOperation.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
             return null
         }
     }
@@ -163,6 +173,7 @@ export class DiffResolver {
     }
 
     private async resolveDiffs() {
+        this.logger.debug(`BEGIN ${this.resolveDiffs.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
         const entries = this.watchlist.entries()
         const promises = []
 
@@ -204,6 +215,7 @@ export class DiffResolver {
         }
         await Promise.all(promises)
         await this.watchlistDb.update_watchlist(this.watchlist)
+        this.logger.debug(`END ${this.resolveDiffs.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
     }
 
     private async calculate_batch_size(): Promise<number> {
@@ -211,6 +223,7 @@ export class DiffResolver {
     }
 
     private async startDiffsResolution(diff_results: [Diff, Backoff | null][], rediff: RediffResult) {
+        this.logger.debug(`BEGIN ${this.startDiffsResolution.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
         const {diffs, metadata, provider, kind} = rediff
         let next_diff: Diff
         let idx: number
@@ -219,6 +232,7 @@ export class DiffResolver {
             [next_diff, idx] = diff_selection_strategy.selectOne(diffs)
         } catch (e) {
             this.logger.debug(`Failed to select diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
+            this.logger.debug(`END ${this.startDiffsResolution.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
             return null
         }
         const backoff: Backoff | null = diff_results[idx][1]
@@ -238,7 +252,9 @@ export class DiffResolver {
                     diff_results[index][1] = backoff
                 }
             }
-            return this.launchOperation({diff: next_diff, ...rediff}).then(getBackoff(idx)).catch(getBackoffErrorHandler(idx))
+            const delay = await this.launchOperation({diff: next_diff, ...rediff}).then(getBackoff(idx)).catch(getBackoffErrorHandler(idx))
+            this.logger.debug(`END ${this.startDiffsResolution.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
+            return delay
         } else {
             // Delay for rediffing
             if ((new Date().getTime() - backoff.delay.delay_set_time.getTime()) / 1000 > backoff.delay.delay_seconds) {
@@ -248,6 +264,7 @@ export class DiffResolver {
                     try {
                         if (!await this.checkHealthy(diff_results[idx][0])) {
                             this.logger.debug(`Handler for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} health check has failed.`)
+                            this.logger.debug(`END ${this.startDiffsResolution.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
                             return
                         }
                         this.logger.info(`Starting to retry resolving diff for entity with uuid: ${rediff.metadata!.uuid} and kind: ${rediff.metadata!.kind}`)
@@ -262,10 +279,13 @@ export class DiffResolver {
                                 diff_results[index][1] = this.incrementDiffBackoff(backoff, null, rediff.kind)
                             }
                         }
-                        return this.launchOperation({diff: rediff.diffs[diff_index], ...rediff}).then(getBackoff(idx)).catch(getBackoffErrorHandler(idx))
+                        const delay = await this.launchOperation({diff: rediff.diffs[diff_index], ...rediff}).then(getBackoff(idx)).catch(getBackoffErrorHandler(idx))
+                        this.logger.debug(`END ${this.startDiffsResolution.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
+                        return delay
                     } catch (e) {
                         this.logger.debug(`Couldn't invoke retry intent handler for entity with uuid: ${rediff.metadata!.uuid} and: kind ${rediff.kind!.name} due to error: ${e}`)
                         diff_results[idx][1] = this.incrementDiffBackoff(backoff, null, rediff.kind)
+                        this.logger.debug(`END ${this.startDiffsResolution.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
                     }
                 }
             }
@@ -276,6 +296,7 @@ export class DiffResolver {
     // when diffs may be added between the check and removing from the watchlist
     // the batch size maybe static or dynamic
     private async addRandomEntities() {
+        this.logger.debug(`BEGIN ${this.addRandomEntities.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
         const batch_size = await this.calculate_batch_size()
         const intentful_kind_refs = await this.providerDb.get_intentful_kinds()
         const entities = await this.specDb.list_random_intentful_specs(batch_size, intentful_kind_refs)
@@ -286,6 +307,7 @@ export class DiffResolver {
                 this.watchlist.set([ent, []])
             }
         }
-        return this.watchlistDb.update_watchlist(this.watchlist)
+        await this.watchlistDb.update_watchlist(this.watchlist)
+        this.logger.debug(`END ${this.addRandomEntities.name} in diff resolver`, { tags: [PapieaEngineTags.IntentfulEngine] })
     }
 }

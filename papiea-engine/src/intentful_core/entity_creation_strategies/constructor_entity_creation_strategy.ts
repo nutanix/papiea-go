@@ -6,6 +6,7 @@ import {
     IntentfulStatus,
     IntentWatcher,
     Metadata,
+    PapieaEngineTags,
     Spec,
     Status
 } from "papiea-core"
@@ -22,7 +23,7 @@ import {Authorizer} from "../../auth/authz"
 import {ValidationError} from "../../errors/validation_error"
 import deepEqual = require("deep-equal")
 import uuid = require("uuid")
-import {RequestContext, spanOperation} from "papiea-backend-utils"
+import {RequestContext, spanOperation, Logger} from "papiea-backend-utils"
 import {UnauthorizedError} from "../../errors/permission_error"
 import {PapieaException} from "../../errors/papiea_exception"
 
@@ -31,8 +32,8 @@ export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
     protected intentWatcherDb: IntentWatcher_DB
     protected watchlistDb: Watchlist_DB
 
-    constructor(specDb: Spec_DB, statusDb: Status_DB, graveyardDb: Graveyard_DB, watchlistDb: Watchlist_DB, validator: Validator, authorizer: Authorizer, differ: Differ, intentWatcherDb: IntentWatcher_DB) {
-        super(specDb, statusDb, graveyardDb, watchlistDb, validator, authorizer)
+    constructor(logger: Logger, specDb: Spec_DB, statusDb: Status_DB, graveyardDb: Graveyard_DB, watchlistDb: Watchlist_DB, validator: Validator, authorizer: Authorizer, differ: Differ, intentWatcherDb: IntentWatcher_DB) {
+        super(logger, specDb, statusDb, graveyardDb, watchlistDb, validator, authorizer)
         this.differ = differ
         this.intentWatcherDb = intentWatcherDb
         this.watchlistDb = watchlistDb
@@ -40,13 +41,16 @@ export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
 
     protected async save_entity(entity: Entity): Promise<[Metadata, Spec, Status]> {
         // Create increments spec version so we should check already incremented one
+        this.logger.debug(`BEGIN ${this.save_entity.name} in constructor entity creation`, { tags: [PapieaEngineTags.IntentfulCore] })
         await this.check_spec_version(entity.metadata, entity.metadata.spec_version + 1, entity.spec)
         const [updatedMetadata, updatedSpec] = await this.specDb.update_spec(entity.metadata, entity.spec)
         await this.statusDb.replace_status(entity.metadata, entity.status)
+        this.logger.debug(`END ${this.save_entity.name} in constructor entity creation`, { tags: [PapieaEngineTags.IntentfulCore] })
         return [updatedMetadata, updatedSpec, entity.status]
     }
 
     public async create(input: any, ctx: RequestContext): Promise<EntityCreationResult> {
+        this.logger.debug(`BEGIN ${this.create.name} in constructor entity creation`, { tags: [PapieaEngineTags.IntentfulCore] })
         const entity = await this.invoke_constructor(`__${this.kind.name}_create`, input, ctx)
         entity.metadata = await this.create_metadata(entity.metadata ?? {})
         try {
@@ -81,7 +85,7 @@ export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
                 user: this.user,
                 status: IntentfulStatus.Active,
             }
-            for (let diff of this.differ.diffs(this.kind, created_spec, created_status)) {
+            for (let diff of this.differ.diffs(this.kind, created_spec, created_status, this.logger)) {
                 watcher.diffs.push(diff)
             }
             await this.intentWatcherDb.save_watcher(watcher)
@@ -92,6 +96,7 @@ export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
                 await this.watchlistDb.update_watchlist(watchlist)
             }
         }
+        this.logger.debug(`END ${this.create.name} in constructor entity creation`, { tags: [PapieaEngineTags.IntentfulCore] })
         return {
             intent_watcher: watcher,
             metadata: created_metadata,
@@ -101,6 +106,7 @@ export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
     }
 
     protected async invoke_constructor(procedure_name: string, input: any, ctx: RequestContext): Promise<Entity> {
+        this.logger.debug(`BEGIN ${this.invoke_constructor.name} in constructor entity creation`, { tags: [PapieaEngineTags.IntentfulCore] })
         let entity: Entity
         if (this.kind) {
             const constructor = this.kind.kind_procedures[procedure_name]
@@ -135,6 +141,7 @@ export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
                 ) {
                     throw OnActionError.create(`Constructor return value is missing the spec or status field for entity of kind ${this.provider.prefix}/${this.provider.version}/${this.kind.name}`, procedure_name, { provider_prefix: this.provider.prefix, provider_version: this.provider.version, kind_name: this.kind.name, additional_info: { "procedure_name": procedure_name }})
                 }
+                this.logger.debug(`END ${this.invoke_constructor.name} in constructor entity creation`, { tags: [PapieaEngineTags.IntentfulCore] })
                 return entity
             } else {
                 // We should not reach this exception under normal condition because of pre checks while choosing strategy

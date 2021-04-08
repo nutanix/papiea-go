@@ -54,7 +54,7 @@ async function setUpApplication(): Promise<express.Express> {
     app.use(cookieParser());
     app.use(express.json());
     app.use(auditLogger.middleware());
-    const mongoConnection: MongoConnection = new MongoConnection(mongoUrl, mongoDb);
+    const mongoConnection: MongoConnection = new MongoConnection(mongoUrl, mongoDb, logger);
     await mongoConnection.connect();
     const differ = new BasicDiffer()
     const providerDb = await mongoConnection.get_provider_db(logger);
@@ -65,17 +65,18 @@ async function setUpApplication(): Promise<express.Express> {
     const sessionKeyDb = await mongoConnection.get_session_key_db(logger)
     const watchlistDb = await mongoConnection.get_watchlist_db(logger)
     const graveyardDb = await mongoConnection.get_graveyard_db(logger)
-    const validator = ValidatorImpl.create()
+    const validator = ValidatorImpl.create(logger)
     const entityApiAuthorizer: PerProviderAuthorizer = new PerProviderAuthorizer(logger, new ProviderCasbinAuthorizerFactory(logger));
-    const adminAuthorizer: Authorizer = new AdminAuthorizer()
+    const adminAuthorizer: Authorizer = new AdminAuthorizer(logger)
     const intentWatcherAuthorizer: IntentWatcherAuthorizer = new IntentWatcherAuthorizer(logger, entityApiAuthorizer, specDb, providerDb);
-    const intentfulContext = new IntentfulContext(specDb, statusDb, graveyardDb, differ, intentWatcherDB, watchlistDb, validator, entityApiAuthorizer)
+    const intentfulContext = new IntentfulContext(logger, specDb, statusDb, graveyardDb, differ, intentWatcherDB, watchlistDb, validator, entityApiAuthorizer)
     const providerApi = new Provider_API_Impl(logger, providerDb, statusDb, s2skeyDb, watchlistDb, intentfulContext, adminAuthorizer, [adminAuthorizer, entityApiAuthorizer], validator)
-    const sessionKeyApi = new SessionKeyAPI(sessionKeyDb)
+    const entityApi = new Entity_API_Impl(logger, statusDb, specDb, graveyardDb, providerDb, intentWatcherDB, entityApiAuthorizer, intentWatcherAuthorizer, validator, intentfulContext)
+    const sessionKeyApi = new SessionKeyAPI(logger, sessionKeyDb)
     const userAuthInfoExtractor = new CompositeUserAuthInfoExtractor([
-        new AdminUserAuthInfoExtractor(adminKey),
-        new S2SKeyUserAuthInfoExtractor(s2skeyDb),
-        new SessionKeyUserAuthInfoExtractor(sessionKeyApi, providerDb)
+        new AdminUserAuthInfoExtractor(logger, adminKey),
+        new S2SKeyUserAuthInfoExtractor(logger, s2skeyDb),
+        new SessionKeyUserAuthInfoExtractor(logger, sessionKeyApi, providerDb)
     ]);
     const enginePapieaVersion = getPapieaVersion()
     const papieaErrorFactory = PapieaErrorResponseImpl.create(logger)
@@ -83,9 +84,9 @@ async function setUpApplication(): Promise<express.Express> {
     app.use(checkVersionMiddleware)
     app.use(createAuthnRouter(logger, userAuthInfoExtractor));
     app.use(createOAuth2Router(logger, oauth2RedirectUri, providerDb, sessionKeyApi));
-    app.use('/provider', createProviderAPIRouter(providerApi, trace));
-    app.use('/services', createEntityAPIRouter(new Entity_API_Impl(logger, statusDb, specDb, graveyardDb, providerDb, intentWatcherDB, entityApiAuthorizer, intentWatcherAuthorizer, validator, intentfulContext), trace));
-    app.use('/api-docs', createAPIDocsRouter('/api-docs', new ApiDocsGenerator(providerDb), providerDb));
+    app.use('/provider', createProviderAPIRouter(logger, providerApi, trace));
+    app.use('/services', createEntityAPIRouter(logger, entityApi, trace));
+    app.use('/api-docs', createAPIDocsRouter(logger, '/api-docs', new ApiDocsGenerator(providerDb), providerDb));
     app.use(function (err: any, req: any, res: any, next: any) {
         if (res.headersSent) {
             return next(err);

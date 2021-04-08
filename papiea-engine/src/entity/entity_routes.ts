@@ -6,8 +6,8 @@ import { BadRequestError } from '../errors/bad_request_error';
 import { processPaginationParams, processSortQuery } from "../utils/utils";
 import { SortParams } from "./entity_api_impl";
 import { CheckNoQueryParams, check_request } from "../validator/express_validator";
-import {Version} from "papiea-core"
-import {RequestContext} from "papiea-backend-utils"
+import {PapieaEngineTags, Version} from "papiea-core"
+import {RequestContext, Logger} from "papiea-backend-utils"
 
 const CheckProcedureCallParams = check_request({
     allowed_query_params: []
@@ -18,7 +18,7 @@ interface PaginatedResult {
     entity_count: number
 }
 
-export function createEntityAPIRouter(entity_api: Entity_API, trace: Function): Router {
+export function createEntityAPIRouter(logger: Logger, entity_api: Entity_API, trace: Function): Router {
     const router = Router();
 
     const paginateEntities = async function(entities: any, skip: number, size: number): Promise<PaginatedResult> {
@@ -29,8 +29,10 @@ export function createEntityAPIRouter(entity_api: Entity_API, trace: Function): 
     }
 
     const filterEntities = async (user: UserAuthInfo, prefix: string, version: Version, kind_name: string, filter: any, skip: number, size: number, searchDeleted: boolean, exactMatch: boolean, ctx: RequestContext, sortParams?: SortParams): Promise<any> => {
+        logger.debug(`BEGIN ${filterEntities.name} in entity API router`, { tags: [PapieaEngineTags.Entity] })
         if (searchDeleted) {
             const entities = await entity_api.filter_deleted(user, prefix, version, kind_name, filter, exactMatch, ctx, sortParams)
+            logger.debug(`END ${filterEntities.name} in entity API router`, { tags: [PapieaEngineTags.Entity] })
             return paginateEntities(Object.values(entities), skip, size)
         }
         const resultSpecs: any[] = await entity_api.filter_entity_spec(user, prefix, version, kind_name, filter, exactMatch, ctx, sortParams);
@@ -49,20 +51,27 @@ export function createEntityAPIRouter(entity_api: Entity_API, trace: Function): 
         });
 
         const entities = Object.values(uuidToEntity);
-        return paginateEntities(entities, skip, size)
+        const ret_entities = paginateEntities(entities, skip, size)
+        logger.debug(`END ${filterEntities.name} in entity API router`, { tags: [PapieaEngineTags.Entity] })
+        return ret_entities
     };
 
     router.post("/:prefix/:version/check_permission", CheckNoQueryParams, trace("check_permission"), asyncHandler(async (req, res) => {
+        logger.debug(`BEGIN processing for POST endpoint /:prefix/:version/check_permission`, { tags: [PapieaEngineTags.Entity] })
         res.json(await entity_api.check_permission(req.user, req.params.prefix, req.params.version, req.body, res.locals.ctx))
+        logger.debug(`END processing for POST endpoint /:prefix/:version/check_permission`, { tags: [PapieaEngineTags.Entity] })
     }));
 
     router.get("/intent_watcher/:id", CheckNoQueryParams, trace("get_intent_watcher"), asyncHandler(async (req, res) => {
+        logger.debug(`BEGIN processing for GET endpoint /intent_watcher/:id`, { tags: [PapieaEngineTags.Entity] })
         res.json(await entity_api.get_intent_watcher(req.user, req.params.id, res.locals.ctx))
+        logger.debug(`END processing for GET endpoint /intent_watcher/:id`, { tags: [PapieaEngineTags.Entity] })
     }))
 
     router.get("/intent_watcher", check_request({
         allowed_query_params: ['offset', 'limit', 'sort', 'entity_ref', 'created_at', 'status']
     }), trace("filter_intent_watcher"), asyncHandler(async (req, res) => {
+        logger.debug(`BEGIN processing for GET endpoint /intent_watcher`, { tags: [PapieaEngineTags.Entity] })
         const filter: any = {};
         const offset = queryToNum(req.query.offset, 'offset');
         const limit = queryToNum(req.query.limit, 'limit');
@@ -80,12 +89,14 @@ export function createEntityAPIRouter(entity_api: Entity_API, trace: Function): 
         }
         const intent_watchers = await entity_api.filter_intent_watcher(req.user, filter, res.locals.ctx, sortParams)
         res.json(await paginateEntities(intent_watchers, skip, size))
+        logger.debug(`END processing for GET endpoint /intent_watcher`, { tags: [PapieaEngineTags.Entity] })
     }))
 
     router.post("/intent_watcher/filter", check_request({
         allowed_query_params: ['offset', 'limit', 'sort'],
         allowed_body_params: ['entity_ref', 'created_at', 'status']
     }), trace("filter_intent_watcher"), asyncHandler(async (req, res) => {
+        logger.debug(`BEGIN processing for POST endpoint /intent_watcher/filter`, { tags: [PapieaEngineTags.Entity] })
         const filter: any = {};
         const offset = queryToNum(req.query.offset, 'offset');
         const limit = queryToNum(req.query.limit, 'limit');
@@ -103,11 +114,13 @@ export function createEntityAPIRouter(entity_api: Entity_API, trace: Function): 
         }
         const intent_watchers = await entity_api.filter_intent_watcher(req.user, filter, res.locals.ctx, sortParams)
         res.json(await paginateEntities(intent_watchers, skip, size))
+        logger.debug(`END processing for POST endpoint /intent_watcher/filter`, { tags: [PapieaEngineTags.Entity] })
     }))
 
     router.get("/:prefix/:version/:kind", check_request({
         allowed_query_params: ['offset', 'limit', 'sort', 'spec', 'status', 'metadata', 'exact', 'deleted']
     }), trace("filter_entity"), asyncHandler(async (req, res) => {
+        logger.debug(`BEGIN processing for GET endpoint /:prefix/:version/:kind`, { tags: [PapieaEngineTags.Entity] })
         const filter: any = {};
         const offset = queryToNum(req.query.offset, 'offset');
         const limit = queryToNum(req.query.limit, 'limit');
@@ -122,19 +135,23 @@ export function createEntityAPIRouter(entity_api: Entity_API, trace: Function): 
         filter.metadata = JSON.parse(queryToString(req.query.metadata, 'metadata') ?? '{}');
 
         res.json(await filterEntities(req.user, req.params.prefix, req.params.version, req.params.kind, filter, skip, size, searchDeleted, exactMatch, res.locals.ctx, sortParams));
+        logger.debug(`END processing for GET endpoint /:prefix/:version/:kind`, { tags: [PapieaEngineTags.Entity] })
     }));
 
     router.get("/:prefix/:version/:kind/:uuid", CheckNoQueryParams, trace("get_entity"), asyncHandler(async (req, res) => {
+        logger.debug(`BEGIN processing for GET endpoint /:prefix/:version/:kind/:uuid`, { tags: [PapieaEngineTags.Entity] })
         const [metadata, spec] = await entity_api.get_entity_spec(req.user, req.params.prefix, req.params.version, req.params.kind, req.params.uuid, res.locals.ctx);
         const [_, status] = await entity_api.get_entity_status(req.user, req.params.prefix,
                                                                req.params.version, req.params.kind, req.params.uuid, res.locals.ctx);
         res.json({ "metadata": metadata, "spec": spec, "status": status });
+        logger.debug(`END processing for GET endpoint /:prefix/:version/:kind/:uuid`, { tags: [PapieaEngineTags.Entity] })
     }));
 
     router.post("/:prefix/:version/:kind/filter", check_request({
         allowed_query_params: ['offset', 'limit', 'sort', 'exact', 'deleted'],
         allowed_body_params: ['spec', 'status', 'metadata', 'offset', 'limit', 'sort']
     }), trace("filter_entity"), asyncHandler(async (req, res) => {
+        logger.debug(`BEGIN processing for POST endpoint /:prefix/:version/:kind/filter`, { tags: [PapieaEngineTags.Entity] })
         const offset = queryToNum(req.query.offset, 'offset') ?? req.body.offset;
         const limit = queryToNum(req.query.limit, 'limit') ?? req.body.limit;
         const rawSortQuery = queryToString(req.query.sort, 'sort') ?? req.body.sort;
@@ -160,42 +177,55 @@ export function createEntityAPIRouter(entity_api: Entity_API, trace: Function): 
         }
 
         res.json(await filterEntities(req.user, req.params.prefix, req.params.version, req.params.kind, filter, skip, size, searchDeleted, exactMatch, res.locals.ctx, sortParams));
+        logger.debug(`END processing for POST endpoint /:prefix/:version/:kind/filter`, { tags: [PapieaEngineTags.Entity] })
     }));
 
     router.put("/:prefix/:version/:kind/:uuid", check_request({
         allowed_query_params: [],
         allowed_body_params: ['metadata', 'spec']
     }), trace("update_entity"), asyncHandler(async (req, res) => {
+        logger.debug(`BEGIN processing for PUT endpoint /:prefix/:version/:kind/:uuid`, { tags: [PapieaEngineTags.Entity] })
         const request_metadata = req.body.metadata;
         const watcher = await entity_api.update_entity_spec(req.user, req.params.uuid, req.params.prefix, request_metadata.spec_version, request_metadata.extension, req.params.kind, req.params.version, req.body.spec, res.locals.ctx);
         res.json({ "watcher": watcher });
+        logger.debug(`END processing for PUT endpoint /:prefix/:version/:kind/:uuid`, { tags: [PapieaEngineTags.Entity] })
     }));
 
     router.post("/:prefix/:version/:kind", check_request({
         allowed_query_params: [],
     }), trace("create_entity"), asyncHandler(async (req, res) => {
+        logger.debug(`BEGIN processing for POST endpoint /:prefix/:version/:kind`, { tags: [PapieaEngineTags.Entity] })
         const result = await entity_api.save_entity(req.user, req.params.prefix, req.params.kind, req.params.version, req.body, res.locals.ctx);
         res.json(result);
+        logger.debug(`END processing for POST endpoint /:prefix/:version/:kind`, { tags: [PapieaEngineTags.Entity] })
     }));
 
     router.delete("/:prefix/:version/:kind/:uuid", CheckNoQueryParams, trace("delete_entity"), asyncHandler(async (req, res) => {
+        logger.debug(`BEGIN processing for DELETE endpoint /:prefix/:version/:kind/:uuid`, { tags: [PapieaEngineTags.Entity] })
         await entity_api.delete_entity(req.user, req.params.prefix, req.params.version, req.params.kind, req.params.uuid, res.locals.ctx);
         res.json("OK")
+        logger.debug(`END processing for DELETE endpoint /:prefix/:version/:kind/:uuid`, { tags: [PapieaEngineTags.Entity] })
     }));
 
     router.post("/:prefix/:version/:kind/:uuid/procedure/:procedure_name", CheckProcedureCallParams, trace("entity_procedure"), asyncHandler(async (req, res) => {
+        logger.debug(`BEGIN processing for POST endpoint /:prefix/:version/:kind/:uuid/procedure/:procedure_name`, { tags: [PapieaEngineTags.Entity] })
         const result: any = await entity_api.call_procedure(req.user, req.params.prefix, req.params.kind, req.params.version, req.params.uuid, req.params.procedure_name, req.body, res.locals.ctx);
         res.json(result);
+        logger.debug(`END processing for POST endpoint /:prefix/:version/:kind/:uuid/procedure/:procedure_name`, { tags: [PapieaEngineTags.Entity] })
     }));
 
     router.post("/:prefix/:version/:kind/procedure/:procedure_name", CheckProcedureCallParams, trace("kind_procedure"), asyncHandler(async (req, res) => {
+        logger.debug(`BEGIN processing for POST endpoint /:prefix/:version/:kind/procedure/:procedure_name`, { tags: [PapieaEngineTags.Entity] })
         const result: any = await entity_api.call_kind_procedure(req.user, req.params.prefix, req.params.kind, req.params.version, req.params.procedure_name, req.body, res.locals.ctx);
         res.json(result);
+        logger.debug(`END processing for POST endpoint /:prefix/:version/:kind/procedure/:procedure_name`, { tags: [PapieaEngineTags.Entity] })
     }));
 
     router.post("/:prefix/:version/procedure/:procedure_name", CheckProcedureCallParams, trace("provider_procedure"), asyncHandler(async (req, res) => {
+        logger.debug(`BEGIN processing for POST endpoint /:prefix/:version/procedure/:procedure_name`, { tags: [PapieaEngineTags.Entity] })
         const result: any = await entity_api.call_provider_procedure(req.user, req.params.prefix, req.params.version, req.params.procedure_name, req.body, res.locals.ctx);
         res.json(result);
+        logger.debug(`END processing for POST endpoint /:prefix/:version/procedure/:procedure_name`, { tags: [PapieaEngineTags.Entity] })
     }));
 
     return router;

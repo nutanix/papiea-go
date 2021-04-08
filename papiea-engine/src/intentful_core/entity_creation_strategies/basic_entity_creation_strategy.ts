@@ -1,5 +1,5 @@
 import {EntityCreationResult, EntityCreationStrategy} from "./entity_creation_strategy_interface"
-import {IntentfulBehaviour, IntentWatcher, Metadata, Spec, Status} from "papiea-core"
+import {IntentfulBehaviour, IntentWatcher, Metadata, PapieaEngineTags, Spec, Status} from "papiea-core"
 import {create_entry} from "../../intentful_engine/watchlist"
 import {Spec_DB} from "../../databases/spec_db_interface"
 import {Status_DB} from "../../databases/status_db_interface"
@@ -7,12 +7,13 @@ import {Graveyard_DB} from "../../databases/graveyard_db_interface"
 import {Watchlist_DB} from "../../databases/watchlist_db_interface"
 import {Validator} from "../../validator"
 import {Authorizer} from "../../auth/authz"
-import {RequestContext, spanOperation} from "papiea-backend-utils"
+import {RequestContext, spanOperation, Logger} from "papiea-backend-utils"
 import {ValidationError} from "../../errors/validation_error"
 import { PapieaException } from "../../errors/papiea_exception"
 
 export class BasicEntityCreationStrategy extends EntityCreationStrategy {
     public async create(input: {metadata: Metadata, spec: Spec}, ctx: RequestContext): Promise<EntityCreationResult> {
+        this.logger.debug(`BEGIN ${this.create.name} in basic entity creation`, { tags: [PapieaEngineTags.IntentfulCore] })
         const metadata = await this.create_metadata(input.metadata ?? {})
         if (input.spec === undefined || input.spec === null) {
             throw new ValidationError([new PapieaException(`Spec is missing for entity of kind ${metadata.provider_prefix}/${metadata.provider_version}/${metadata.kind}`, { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }})])
@@ -30,6 +31,7 @@ export class BasicEntityCreationStrategy extends EntityCreationStrategy {
                 await this.watchlistDb.update_watchlist(watchlist)
             }
         }
+        this.logger.debug(`END ${this.create.name} in basic entity creation`, { tags: [PapieaEngineTags.IntentfulCore] })
         return {
             intent_watcher: null,
             metadata: created_metadata,
@@ -38,7 +40,7 @@ export class BasicEntityCreationStrategy extends EntityCreationStrategy {
         }
     }
 
-    public constructor(specDb: Spec_DB, statusDb: Status_DB, graveyardDb: Graveyard_DB, watchlistDb: Watchlist_DB, validator: Validator, authorizer: Authorizer) {
-        super(specDb, statusDb, graveyardDb, watchlistDb, validator, authorizer)
+    public constructor(logger: Logger, specDb: Spec_DB, statusDb: Status_DB, graveyardDb: Graveyard_DB, watchlistDb: Watchlist_DB, validator: Validator, authorizer: Authorizer) {
+        super(logger, specDb, statusDb, graveyardDb, watchlistDb, validator, authorizer)
     }
 }

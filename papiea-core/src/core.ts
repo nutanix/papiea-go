@@ -378,3 +378,13 @@ export enum SwaggerModelValidatorErrorMessage {
     required_field_no_value_str = ' is a required field',
     required_field_missing_schema_str = 'object does not have property ',
 }
+
+export enum PapieaEngineTags {
+    Auth = 'Auth',
+    Database = 'Database',
+    Entity = 'Entity',
+    IntentfulCore = 'IntentfulCore',
+    IntentfulEngine = 'IntentfulEngine',
+    Provider = 'Provider',
+    Validator = 'Validator'
+}

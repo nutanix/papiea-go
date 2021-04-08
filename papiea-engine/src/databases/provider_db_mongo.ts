@@ -1,6 +1,6 @@
 import { Provider_DB } from "./provider_db_interface";
 import { Collection, Db } from "mongodb"
-import { IntentfulBehaviour, Kind, Provider, Version } from "papiea-core";
+import { IntentfulBehaviour, Kind, Provider, PapieaEngineTags, Version } from "papiea-core";
 import { Logger } from "papiea-backend-utils"
 import { EntityNotFoundError } from "./utils/errors";
 import { PapieaException, PapieaExceptionContextImpl } from "../errors/papiea_exception"
@@ -39,6 +39,7 @@ export class Provider_DB_Mongo implements Provider_DB {
     }
 
     async save_provider(provider: Provider): Promise<void> {
+        this.logger.debug(`BEGIN ${this.save_provider.name} in provider database`, { tags: [PapieaEngineTags.Database] })
         delete provider["created_at"];
         const result = await this.collection.updateOne({
                 "prefix": provider.prefix,
@@ -65,15 +66,18 @@ export class Provider_DB_Mongo implements Provider_DB {
                 }
             })
         if (intentful_kinds.length === 0) {
+            this.logger.debug(`END ${this.save_provider.name} in provider database`, { tags: [PapieaEngineTags.Database] })
             return
         }
         try {
             await this.subCollection.insertMany(intentful_kinds)
+            this.logger.debug(`END ${this.save_provider.name} in provider database`, { tags: [PapieaEngineTags.Database] })
         } catch (err) {
             // Check a DuplicateMongo Error
             // If the error is a DuplicateMongo Error
             // then we are reregestering provider and its fine
             if (err.code === 11000) {
+                this.logger.debug(`END ${this.save_provider.name} in provider database`, { tags: [PapieaEngineTags.Database] })
                 return
             } else {
                 throw err
@@ -82,11 +86,13 @@ export class Provider_DB_Mongo implements Provider_DB {
     }
 
     async get_provider(provider_prefix: string, version: Version): Promise<Provider> {
+        this.logger.debug(`BEGIN ${this.get_provider.name} in provider database`, { tags: [PapieaEngineTags.Database] })
         const filter: any = { prefix: provider_prefix, version };
         const provider: Provider | null = await this.collection.findOne(filter);
         if (provider === null) {
             throw new EntityNotFoundError('Provider', '', provider_prefix, version)
         } else {
+            this.logger.debug(`END ${this.get_provider.name} in provider database`, { tags: [PapieaEngineTags.Database] })
             return provider;
         }
     }
@@ -96,6 +102,7 @@ export class Provider_DB_Mongo implements Provider_DB {
     }
 
     async delete_provider(provider_prefix: string, version: Version): Promise<void> {
+        this.logger.debug(`BEGIN ${this.delete_provider.name} in provider database`, { tags: [PapieaEngineTags.Database] })
         const result = await this.collection.findOneAndDelete({ "prefix": provider_prefix, version });
         const provider: Provider = result.value
         if (result.ok !== 1) {
@@ -106,22 +113,27 @@ export class Provider_DB_Mongo implements Provider_DB {
         }
         if (!provider) {
             this.logger.debug(`MongoDBError: Didn't return provider after delete\nEntity Info:${ new PapieaExceptionContextImpl(provider_prefix, version, '').toString() }`)
+            this.logger.debug(`END ${this.delete_provider.name} in provider database`, { tags: [PapieaEngineTags.Database] })
             return
         }
         const intentful_kinds = provider.kinds
             .filter(kind => kind.intentful_behaviour === IntentfulBehaviour.Differ)
             .map(kind => kind.name)
         if (intentful_kinds.length === 0) {
+            this.logger.debug(`END ${this.delete_provider.name} in provider database`, { tags: [PapieaEngineTags.Database] })
             return
         }
         await this.subCollection.deleteMany({ "provider_prefix": provider_prefix, "provider_version": version, "kind_name": { $in: intentful_kinds }})
+        this.logger.debug(`END ${this.delete_provider.name} in provider database`, { tags: [PapieaEngineTags.Database] })
     }
 
     async get_latest_provider_by_kind(kind_name: string): Promise<Provider> {
+        this.logger.debug(`BEGIN ${this.get_latest_provider_by_kind.name} in provider database`, { tags: [PapieaEngineTags.Database] })
         const providers = await this.collection.find({ "kinds.name": kind_name }).sort({ _id : -1 }).toArray()
         if (providers.length === 0) {
             throw new PapieaException(`MongoDBError: Provider with kind: ${ kind_name } not found`);
         } else {
+            this.logger.debug(`END ${this.get_latest_provider_by_kind.name} in provider database`, { tags: [PapieaEngineTags.Database] })
             return providers[0];
         }
     }
@@ -135,19 +147,23 @@ export class Provider_DB_Mongo implements Provider_DB {
     }
 
     async get_latest_provider(provider_prefix: string): Promise<Provider> {
+        this.logger.debug(`BEGIN ${this.get_latest_provider.name} in provider database`, { tags: [PapieaEngineTags.Database] })
         const providers = await this.collection.find({ "prefix": provider_prefix }).sort({ _id : -1 }).toArray();
         if (providers.length === 0) {
             throw new PapieaException(`MongoDBError: Provider with prefix: ${ provider_prefix } not found`);
         } else {
+            this.logger.debug(`END ${this.get_latest_provider.name} in provider database`, { tags: [PapieaEngineTags.Database] })
             return providers[0];
         }
     }
 
     find_kind(provider: Provider, kind_name: string): Kind {
+        this.logger.debug(`BEGIN ${this.find_kind.name} in provider database`, { tags: [PapieaEngineTags.Database] })
         const found_kind: Kind | undefined = provider.kinds.find(elem => elem.name === kind_name);
         if (found_kind === undefined) {
             throw new PapieaException(`MongoDBError: Kind not found for provider ${provider.prefix}/${provider.version}/${kind_name}`, { provider_prefix: provider.prefix, provider_version: provider.version, kind_name: kind_name });
         }
+        this.logger.debug(`END ${this.find_kind.name} in provider database`, { tags: [PapieaEngineTags.Database] })
         return found_kind;
     }
 }

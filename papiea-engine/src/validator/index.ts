@@ -6,7 +6,9 @@ import {
     FieldBehavior,
     IntentfulBehaviour,
     Kind,
-    Metadata, Procedural_Signature,
+    Metadata,
+    PapieaEngineTags,
+    Procedural_Signature,
     Provider,
     Spec,
     Status,
@@ -42,8 +44,9 @@ function modelIsNullable(model: any) {
 }
 
 function convertValidatorMessagesToPapieaMessages(
-    provider_prefix: string, provider_version: string, kind_name: string,
+    logger: Logger, provider_prefix: string, provider_version: string, kind_name: string,
     errors: Error[], data: any, model: any) {
+    logger.debug(`BEGIN ${convertValidatorMessagesToPapieaMessages.name} in validator`, { tags: [PapieaEngineTags.Validator] })
     let fieldName: string
     let message: string
     for (let i = 0;i < errors.length;i++) {
@@ -93,6 +96,7 @@ function convertValidatorMessagesToPapieaMessages(
         }
         errors[i].message = message
     }
+    logger.debug(`END ${convertValidatorMessagesToPapieaMessages.name} in validator`, { tags: [PapieaEngineTags.Validator] })
 }
 
 const SwaggerModelValidator = require('swagger-model-validator');
@@ -109,17 +113,20 @@ export interface Validator {
 
 export class ValidatorImpl {
     private validator = new SwaggerModelValidator();
+    private logger: Logger
 
-    protected constructor(private procedural_signature_schema: Data_Description, private provider_schema: Data_Description) {
+    protected constructor(logger: Logger, private procedural_signature_schema: Data_Description, private provider_schema: Data_Description) {
+        this.logger = logger
     }
 
-    public static create() {
+    public static create(logger: Logger = LoggerFactory.makeLogger({})) {
         const procedural_signature_schema = loadSchema("./schemas/procedural_signature.yaml")
         const provider_schema = loadSchema("./schemas/provider_schema.yaml")
-        return new ValidatorImpl(procedural_signature_schema, provider_schema)
+        return new ValidatorImpl(logger, procedural_signature_schema, provider_schema)
     }
 
     public validate_uuid(kind: Kind, uuid: string) {
+        this.logger.debug(`BEGIN ${this.validate_uuid.name} in validator`, { tags: [PapieaEngineTags.Validator] })
         const validation_pattern = kind.uuid_validation_pattern
         if (validation_pattern === undefined) {
             if (!uuid_validate(uuid)) {
@@ -131,9 +138,11 @@ export class ValidatorImpl {
                 throw new PapieaException(`Entity UUID does not match the pattern`, { kind_name: kind.name, additional_info: { "entity_uuid": uuid, "uuid_validation_pattern": validation_pattern }})
             }
         }
+        this.logger.debug(`END ${this.validate_uuid.name} in validator`, { tags: [PapieaEngineTags.Validator] })
     }
 
     public validate_metadata_extension(extension_structure: Data_Description, metadata: Metadata | undefined, allowExtraProps: boolean) {
+        this.logger.debug(`BEGIN ${this.validate_metadata_extension.name} in validator`, { tags: [PapieaEngineTags.Validator] })
         if (metadata === undefined) {
             return
         }
@@ -149,14 +158,17 @@ export class ValidatorImpl {
         const schemas: any = Object.assign({}, extension_structure);
         this.validate(metadata.provider_prefix, metadata.provider_version, metadata.kind, metadata.extension, Object.values(extension_structure)[0], schemas,
             allowExtraProps, Object.keys(extension_structure)[0], this.validate_metadata_extension.name);
+        this.logger.debug(`END ${this.validate_metadata_extension.name} in validator`, { tags: [PapieaEngineTags.Validator] })
     }
 
     public validate_spec(provider: Provider, spec: Spec, kind: Kind, allowExtraProps: boolean) {
+        this.logger.debug(`BEGIN ${this.validate_spec.name} in validator`, { tags: [PapieaEngineTags.Validator] })
         const schemas: any = cloneDeep(kind.kind_structure)
         // remove any status-only field from the schema to pass to validator
         this.remove_schema_fields(schemas, "status-only")
         this.validate(provider.prefix, provider.version, kind.name, spec, Object.values(schemas)[0], schemas,
             allowExtraProps, Object.keys(schemas)[0], this.validate_spec.name);
+        this.logger.debug(`END ${this.validate_spec.name} in validator`, { tags: [PapieaEngineTags.Validator] })
     }
 
    /**
@@ -175,6 +187,7 @@ export class ValidatorImpl {
    }
 
     public async validate_status(provider: Provider, entity_ref: Entity_Reference, status: Status) {
+        this.logger.debug(`BEGIN ${this.validate_status.name} in validator`, { tags: [PapieaEngineTags.Validator] })
         if (status === undefined || isEmpty(status)) {
             throw new ValidationError([new Error(`Status body has undefined value for one/more fields which is not supported in papiea, use null value instead to remove the field from status for kind ${provider.prefix}/${provider.version}/${entity_ref.kind}`)], { provider_prefix: provider.prefix, provider_version: provider.version, kind_name: entity_ref.kind, additional_info: { "entity_uuid": entity_ref.uuid }})
         }
@@ -186,18 +199,22 @@ export class ValidatorImpl {
         const schemas: any = Object.assign({}, kind.kind_structure);
         this.validate(provider.prefix, provider.version, kind.name, status, Object.values(kind.kind_structure)[0], schemas,
             allowExtraProps, Object.keys(kind.kind_structure)[0], this.validate_status.name);
+        this.logger.debug(`END ${this.validate_status.name} in validator`, { tags: [PapieaEngineTags.Validator] })
     }
 
     public validate_sfs(provider: Provider) {
+        this.logger.debug(`BEGIN ${this.validate_sfs.name} in validator`, { tags: [PapieaEngineTags.Validator] })
         for (let kind of provider.kinds) {
             if (kind.intentful_behaviour === IntentfulBehaviour.Differ) {
                 // Throws an exception if it fails
                 kind.intentful_signatures.forEach(sig => SFSCompiler.try_parse_sfs(sig.signature, provider.prefix, provider.version, kind.name))
             }
         }
+        this.logger.debug(`END ${this.validate_sfs.name} in validator`, { tags: [PapieaEngineTags.Validator] })
     }
 
     public validate_provider(provider: Provider) {
+        this.logger.debug(`BEGIN ${this.validate_provider.name} in validator`, { tags: [PapieaEngineTags.Validator] })
         const schemas = {}
         Object.assign(schemas, this.provider_schema)
         Object.assign(schemas, this.procedural_signature_schema)
@@ -242,9 +259,11 @@ export class ValidatorImpl {
             const kind_name = Object.keys(kind.kind_structure)[0]
             this.validate_kind_structure(kind.kind_structure, provider.prefix, provider.version, kind_name)
         })
+        this.logger.debug(`END ${this.validate_provider.name} in validator`, { tags: [PapieaEngineTags.Validator] })
     }
 
     validate_kind_structure(schema: Data_Description, provider_prefix: string, provider_version: string, kind_name: string) {
+        this.logger.debug(`BEGIN ${this.validate_kind_structure.name} in validator`, { tags: [PapieaEngineTags.Validator] })
         const x_papiea_field = "x-papiea"
         const status_only_value = FieldBehavior.StatusOnly
         this.check_nullable_modifier(schema, provider_prefix, provider_version, kind_name)
@@ -256,6 +275,7 @@ export class ValidatorImpl {
         // warn for untyped object which are not marked as status-only in schema
         const logger = LoggerFactory.makeLogger({});
         this.validate_untyped_object(schema, provider_prefix, provider_version, kind_name, logger)
+        this.logger.debug(`END ${this.validate_kind_structure.name} in validator`, { tags: [PapieaEngineTags.Validator] })
     }
 
     validate_field_value(schema: Data_Description, field_name: string, possible_values: string[], provider_prefix: string, provider_version: string, kind_name: string) {
@@ -284,6 +304,7 @@ export class ValidatorImpl {
     }
 
     validate_spec_only_structure(entity: Data_Description, provider_prefix: string, provider_version: string, kind_name: string) {
+        this.logger.debug(`BEGIN ${this.validate_spec_only_structure.name} in validator`, { tags: [PapieaEngineTags.Validator] })
         const spec_only_value = "spec-only"
         const x_papiea_entity_field = "x-papiea-entity"
         const x_papiea_field = "x-papiea"
@@ -291,6 +312,7 @@ export class ValidatorImpl {
             // spec-only entity can't have x_papiea_field values
             this.validate_field_value(entity.properties, x_papiea_field, [], provider_prefix, provider_version, kind_name)
         }
+        this.logger.debug(`END ${this.validate_spec_only_structure.name} in validator`, { tags: [PapieaEngineTags.Validator] })
     }
 
     check_nullable_modifier(schema: Data_Description, provider_prefix: string, provider_version: string, kind_name?: string) {
@@ -396,9 +418,11 @@ export class ValidatorImpl {
         data: any, model: any | undefined, models: any,
         allowExtraProps: boolean, schemaName: string,
         procedureName?: string, allowBlankTarget: boolean = false) {
+        this.logger.debug(`BEGIN ${this.validate.name} in validator`, { tags: [PapieaEngineTags.Validator] })
         const validatorDenyExtraProps = !allowExtraProps
         if (modelIsEmpty(model)) {
             if (isEmpty(data)) {
+                this.logger.debug(`END validate in validator`, { tags: [PapieaEngineTags.Validator] })
                 return {valid: true}
             } else {
                 throw new ValidationError([{
@@ -412,6 +436,7 @@ export class ValidatorImpl {
         if (model !== undefined && model !== null) {
             if (data === null || isEmpty(data)) {
                 if (modelIsNullable(model)) {
+                    this.logger.debug(`END ${this.validate.name} in validator`, { tags: [PapieaEngineTags.Validator] })
                     // Model has fields but none of those are required
                     return {valid: true}
                 } else {
@@ -427,9 +452,10 @@ export class ValidatorImpl {
 
             const res = this.validator.validate(data, model, models, allowBlankTarget, validatorDenyExtraProps);
             if (!res.valid) {
-                convertValidatorMessagesToPapieaMessages(provider_prefix, provider_version, kind_name, res.errors, data, model)
+                convertValidatorMessagesToPapieaMessages(this.logger, provider_prefix, provider_version, kind_name, res.errors, data, model)
                 throw new ValidationError(res.errors, { provider_prefix: provider_prefix, provider_version: provider_version, kind_name: kind_name, additional_info: { "procedure_name": procedureName ?? '' }});
             }
+            this.logger.debug(`END ${this.validate.name} in validator`, { tags: [PapieaEngineTags.Validator] })
             return res
         } else {
             if (data !== undefined && data !== null && data !== "" && !(Object.entries(data).length === 0 && data.constructor === Object)) {
@@ -441,6 +467,7 @@ export class ValidatorImpl {
                 }], { provider_prefix: provider_prefix, provider_version: provider_version, kind_name: kind_name, additional_info: { "procedure_name": procedureName ?? '', "schema_name": schemaName, "received_input": JSON.stringify(data) }})
             }
         }
+        this.logger.debug(`END ${this.validate.name} in validator`, { tags: [PapieaEngineTags.Validator] })
     }
 }
 
