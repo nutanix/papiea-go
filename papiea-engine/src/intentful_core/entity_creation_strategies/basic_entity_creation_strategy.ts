@@ -21,7 +21,7 @@ export class BasicEntityCreationStrategy extends EntityCreationStrategy {
                                    ctx.tracing_ctx)
         const [created_metadata, spec] = await this.create_entity(metadata, input.spec)
         span.finish()
-        if (this.kind?.intentful_behaviour === IntentfulBehaviour.Differ) {
+        if (this.kind?.intentful_behaviour === IntentfulBehaviour.Differ || this.kind?.intentful_behaviour === IntentfulBehaviour.Basic) {
             await this.watchlistDb.add_entity({metadata: created_metadata, spec: spec, status: {}}, [])
         }
         return {
