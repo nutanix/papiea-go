@@ -3,7 +3,7 @@ import * as http from "http"
 import axios from "axios"
 import { ProviderBuilder } from "../test_data_factory"
 import { Provider } from "papiea-core"
-import { Logger, LoggerFactory } from 'papiea-backend-utils';
+import { AxiosResponseParser, LoggerFactory } from 'papiea-backend-utils';
 
 declare var process: {
     env: {
@@ -101,9 +101,8 @@ describe("Procedures tests", () => {
         try {
             await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, { x: "5" });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.errors.length).toEqual(1);
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrors(err).length).toEqual(1);
             return;
         }
     });
@@ -118,10 +117,9 @@ describe("Procedures tests", () => {
         try {
             await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, {});
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.errors.length).toEqual(1);
-            expect(res.data.error.errors[0].message).toContain(`Procedure was expecting non-empty object, received null/empty object`);
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrors(err).length).toEqual(1);
+            expect(AxiosResponseParser.getAxiosErrorMessages(err)[0]).toContain(`Procedure was expecting non-empty object, received null/empty object`);
         }
     });
     test("Procedure result validation", async () => {
@@ -150,13 +148,14 @@ describe("Procedures tests", () => {
         try {
             await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, { x: 5 });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(500);
-            expect(res.data.error.errors.length).toEqual(2);
-            expect(res.data.error.message).toEqual("Procedure invocation failed.")
-            expect(res.data.error.code).toEqual(500)
-            expect(res.data.error.errors[0].message).toContain(`Received procedure input is missing required field: x`);
-            expect(res.data.error.errors[1].message).toContain(`Received procedure input is missing required field: y`);
+            const error = AxiosResponseParser.getAxiosError(err);
+            const messages = AxiosResponseParser.getAxiosErrorMessages(err)
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(500);
+            expect(AxiosResponseParser.getAxiosErrors(err).length).toEqual(2);
+            expect(error.message).toEqual("Procedure invocation failed.")
+            expect(error.code).toEqual(500)
+            expect(messages[0]).toContain(`Received procedure input is missing required field: x`);
+            expect(messages[1]).toContain(`Received procedure input is missing required field: y`);
         }
     });
 
@@ -213,7 +212,7 @@ describe("Procedures tests", () => {
         try {
             const res: any = await entityApi.post(`/${provider.prefix}/${provider.version}/procedure/computeSum`, { "a": 10, "b": "Totally not a number" });
         } catch (e) {
-            expect(e.response.status).toBe(400);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toBe(400);
             server.close();
         }
     });
@@ -269,7 +268,7 @@ describe("Procedures tests", () => {
         try {
             const res: any = await entityApi.post(`/${provider.prefix}/${provider.version}/${kind_name}/procedure/computeGeolocation`, { region_id: ["String expected got array"] });
         } catch (e) {
-            expect(e.response.status).toBe(400);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toBe(400);
             server.close();
         }
     });

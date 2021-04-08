@@ -2,6 +2,7 @@ import axios from "axios";
 import { Metadata, Spec } from "papiea-core";
 import { ProviderBuilder } from "../test_data_factory";
 import { stringify } from "querystring"
+import { AxiosResponseParser } from "papiea-backend-utils"
 import uuid = require("uuid");
 
 declare var process: {
@@ -69,9 +70,8 @@ describe("Entity API tests", () => {
                 }
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.errors.length).toEqual(1);
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrors(err).length).toEqual(1);
         }
     });
 
@@ -87,8 +87,8 @@ describe("Entity API tests", () => {
         try {
             await entityApi.get(`/${ providerPrefix }/${providerVersion}/${ kind_name }/${ uuid() }`);
         } catch (e) {
-            expect(e.response.status).toBe(404);
-            expect(e.response.data).not.toBeUndefined();
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toBe(404);
+            expect(AxiosResponseParser.getAxiosResponseData(e)).not.toBeUndefined();
 
         }
     });
@@ -300,7 +300,7 @@ describe("Entity API tests", () => {
             });
             throw new Error("Filter entity by wrong field should return bad request");
         } catch (e) {
-            expect(e.response.status).toEqual(400);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(400);
         }
         try {
             await entityApi.post(`${ providerPrefix }/${ providerVersion }/${ kind_name }/filter?a=b`, {
@@ -310,13 +310,13 @@ describe("Entity API tests", () => {
             });
             throw new Error("Filter entity by wrong field should return bad request");
         } catch (e) {
-            expect(e.response.status).toEqual(400);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(400);
         }
         try {
             await entityApi.get(`${ providerPrefix }/${ providerVersion }/${ kind_name }?a=b`);
             throw new Error("Filter entity by wrong field should return bad request");
         } catch (e) {
-            expect(e.response.status).toEqual(400);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(400);
         }
     });
 
@@ -370,9 +370,8 @@ describe("Entity API tests", () => {
                 }
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.errors.length).toEqual(1);
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrors(err).length).toEqual(1);
         }
     });
 
@@ -436,8 +435,8 @@ describe("Entity API tests", () => {
                 }
             });
         } catch (e) {
-            expect(e.response.status).toEqual(409)
-            expect(e.response.data.error.message).toEqual(`Conflicting Entity: ${entity_uuid}. Existing entity has version ${1}`)
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(409)
+            expect(AxiosResponseParser.getAxiosError(e).message).toEqual(`Conflicting Entity: ${entity_uuid}. Existing entity has version ${1}`)
         }
     });
 
@@ -518,8 +517,8 @@ describe("Entity API tests", () => {
                 }
             });
         } catch (e) {
-            expect(e.response.status).toEqual(409)
-            expect(e.response.data.error.message).toEqual(`Deleted entity with this uuid and spec version exists: uuid - ${id}, maximum current spec version - 2`)
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(409)
+            expect(AxiosResponseParser.getAxiosError(e).message).toEqual(`Deleted entity with this uuid and spec version exists: uuid - ${id}, maximum current spec version - 2`)
         }
     });
 

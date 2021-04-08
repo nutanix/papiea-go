@@ -2,6 +2,7 @@ import { ProviderBuilder } from "../test_data_factory";
 import axios from "axios";
 import { Metadata, Spec } from "papiea-core"
 import uuid = require("uuid")
+import { AxiosResponseParser } from "papiea-backend-utils";
 
 declare var process: {
     env: {
@@ -57,10 +58,9 @@ describe("Entity API with metadata extension tests", () => {
                 }
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.errors.length).toEqual(1);
-            expect(res.data.error.errors[0].message).toContain('Metadata extension is not specified for entity')
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrors(err).length).toEqual(1);
+            expect(AxiosResponseParser.getAxiosErrorMessages(err)[0]).toContain('Metadata extension is not specified for entity')
 
         }
     });
@@ -78,10 +78,9 @@ describe("Entity API with metadata extension tests", () => {
                 }
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.errors.length).toEqual(1);
-            expect(res.data.error.errors[0].message).toContain('Metadata extension is not specified for entity')
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrors(err).length).toEqual(1);
+            expect(AxiosResponseParser.getAxiosErrorMessages(err)[0]).toContain('Metadata extension is not specified for entity')
 
         }
     });
@@ -99,10 +98,9 @@ describe("Entity API with metadata extension tests", () => {
                 }
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.errors.length).toEqual(1);
-            expect(res.data.error.errors[0].message).toContain('Metadata extension is not specified for entity')
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrors(err).length).toEqual(1);
+            expect(AxiosResponseParser.getAxiosErrorMessages(err)[0]).toContain('Metadata extension is not specified for entity')
 
         }
     });
@@ -120,10 +118,9 @@ describe("Entity API with metadata extension tests", () => {
                 }
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.errors.length).toEqual(1);
-            expect(res.data.error.errors[0].message).toContain(`Metadata extension should be an object for entity`)
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrors(err).length).toEqual(1);
+            expect(AxiosResponseParser.getAxiosErrorMessages(err)[0]).toContain(`Metadata extension should be an object for entity`)
 
         }
     });
@@ -141,10 +138,9 @@ describe("Entity API with metadata extension tests", () => {
                 }
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.errors.length).toEqual(1);
-            expect(res.data.error.errors[0].message).toContain('Metadata extension should be an object for entity')
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrors(err).length).toEqual(1);
+            expect(AxiosResponseParser.getAxiosErrorMessages(err)[0]).toContain('Metadata extension should be an object for entity')
 
         }
     });
@@ -164,10 +160,9 @@ describe("Entity API with metadata extension tests", () => {
                 }
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.errors.length).toEqual(1);
-            expect(res.data.error.errors[0].message).toContain('Metadata extension is not specified for entity')
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrors(err).length).toEqual(1);
+            expect(AxiosResponseParser.getAxiosErrorMessages(err)[0]).toContain('Metadata extension is not specified for entity')
 
         }
     });
@@ -215,9 +210,8 @@ describe("Entity API with metadata extension tests", () => {
                 }
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.errors.length).toEqual(1);
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrors(err).length).toEqual(1);
         }
     });
 
@@ -242,10 +236,9 @@ describe("Entity API with metadata extension tests", () => {
                 },
             });
         } catch (err) {
-            const res = err.response;
-            expect(res.status).toEqual(400);
-            expect(res.data.error.errors.length).toEqual(1);
-            expect(res.data.error.errors[0].message).toContain('Metadata extension is not specified for entity');
+            expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
+            expect(AxiosResponseParser.getAxiosErrors(err).length).toEqual(1);
+            expect(AxiosResponseParser.getAxiosErrorMessages(err)[0]).toContain('Metadata extension is not specified for entity');
         }
     });
 });
