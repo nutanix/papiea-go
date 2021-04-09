@@ -1,3 +1,4 @@
+import datetime
 import logging
 from enum import Enum
 from types import TracebackType
@@ -22,7 +23,7 @@ from .core import (
     UserInfo,
     Version, ProcedureDescription,
     ConstructorProcedureDescription,
-    ConstructorResult, CreateS2SKeyRequest, AttributeDict
+    ConstructorResult, CreateS2SKeyRequest, AttributeDict, Metadata
 )
 from .python_sdk_context import IntentfulCtx, ProceduralCtx
 from .python_sdk_exceptions import InvocationError, SecurityApiError
@@ -31,6 +32,8 @@ from .tracing_utils import init_default_tracer, get_special_operation_name
 
 
 class ProviderServerManager(object):
+    _provider_sdk: 'ProviderSdk'
+
     def __init__(self, public_host: str = "127.0.0.1", public_port: int = 9000):
         self.public_host = public_host
         self.public_port = public_port
@@ -45,12 +48,20 @@ class ProviderServerManager(object):
             self.should_run = True
         self.app.add_routes([web.post(route, handler)])
 
+    @property
+    def provider_sdk(self):
+        return self._provider_sdk
+
+    @provider_sdk.setter
+    def provider_sdk(self, provider_sdk: 'ProviderSdk'):
+        self._provider_sdk = provider_sdk
+
     def register_healthcheck(self) -> None:
         if not self.should_run:
             self.should_run = True
 
         async def healthcheck_callback_fn(request):
-            return web.json_response({"status": "Available"}, status=200)
+            return web.json_response({"diff_ids": self.provider_sdk.processing_diffs}, status=200)
 
         self.app.add_routes([web.get("/healthcheck", healthcheck_callback_fn)])
 
@@ -168,6 +179,7 @@ class ProviderSdk(object):
         self._oauth2 = None
         self._authModel = None
         self._policy = None
+        self.processing_diffs = set()
 
     async def __aenter__(self) -> "ProviderSdk":
         return self
@@ -341,9 +353,9 @@ class ProviderSdk(object):
     def power(self, state: ProviderPower) -> ProviderPower:
         raise Exception("Unimplemented")
 
-    def background_task(self, name: str, delay_sec: float, callback: Callable[[Optional[Entity]], Any],
+    def background_task(self, name: str, delay_milliseconds: float, callback: Callable[[Optional[Entity]], Any],
                         provider_fields_schema: Optional[dict]) -> "BackgroundTaskBuilder":
-        return BackgroundTaskBuilder.create_task(self, name, delay_sec, callback, self.tracer, provider_fields_schema)
+        return BackgroundTaskBuilder.create_task(self, name, delay_milliseconds, callback, self.tracer, provider_fields_schema)
 
     @staticmethod
     def _provider_description_error(missing_field: str) -> NoReturn:
@@ -360,7 +372,9 @@ class ProviderSdk(object):
             tracer: Tracer = init_default_tracer()
     ) -> "ProviderSdk":
         server_manager = ProviderServerManager(public_host, public_port)
-        return ProviderSdk(papiea_url, s2skey, server_manager, allow_extra_props, logger, tracer)
+        sdk = ProviderSdk(papiea_url, s2skey, server_manager, allow_extra_props, logger, tracer)
+        server_manager.provider_sdk = sdk
+        return sdk
 
     def secure_with(
             self, oauth_config: Any, casbin_model: str, casbin_initial_policy: str
@@ -536,15 +550,7 @@ class KindBuilder:
                         },
                     }
                 },
-                result={
-                    "IntentfulOutput": {
-                        "type": "object",
-                        "properties": {
-                            "delay_secs": {"type": "integer"}
-                        },
-                        "description": "Amount of seconds to wait before this entity will be checked again by the intent engine"
-                    }
-                },
+                result={},
                 execution_strategy=IntentfulExecutionStrategy.Basic,
                 procedure_callback=procedure_callback_url,
                 base_callback=callback_url,
@@ -561,6 +567,10 @@ class KindBuilder:
                 )
                 with self.tracer.start_span(operation_name=f"{sfs_signature}_handler_procedure", references=child_of(span_context)):
                     body_obj = json_loads_attrs(await req.text())
+                    diff_id = body_obj.get("id")
+                    if diff_id in self.provider.processing_diffs:
+                        self.provider.logger.warning(f"Trying to assign diff {diff_id} which is already in progress")
+                    self.provider.processing_diffs.add(diff_id)
                     result = await handler(
                         IntentfulCtx(self.provider, prefix, version, req.headers),
                         Entity(
@@ -570,10 +580,15 @@ class KindBuilder:
                         ),
                         body_obj.input,
                     )
+                    self.provider.processing_diffs.remove(diff_id)
+                    if result:
+                        await self.__assign_backoff(diff_id, body_obj.metadata, result)
                 return web.json_response(result)
             except InvocationError as e:
+                self.provider.processing_diffs.remove(diff_id)
                 return web.json_response(e.to_response(), status=e.status_code)
             except Exception as e:
+                self.provider.processing_diffs.remove(diff_id)
                 e = InvocationError.from_error(e)
                 return web.json_response(e.to_response(), status=e.status_code)
 
@@ -582,6 +597,19 @@ class KindBuilder:
         )
         self.server_manager.register_healthcheck()
         return self
+
+    async def __assign_backoff(self, diff_id: str, metadata: Metadata, delay_milliseconds: float):
+        await self.provider.provider_api.post(f"{self.provider.get_prefix()}/{self.provider.get_version()}/diff/{diff_id}", {
+            "entity_ref": metadata,
+            "backoff": {
+                "delay": {
+                    "delay_milliseconds": delay_milliseconds,
+                    "delay_set_time": datetime.datetime.now().timestamp()
+                },
+                "retries": 0
+            }
+        })
+
 
     def on_create(self, description: ConstructorProcedureDescription, handler: Callable[[ProceduralCtx, Any], ConstructorResult]) -> "KindBuilder":
         name = f"__{self.kind['name']}_create"
@@ -623,7 +651,7 @@ class BackgroundTaskBuilder:
         self.name = name
 
     @staticmethod
-    def create_task(provider: ProviderSdk, name: str, delay_sec: float, callback: Callable[[Optional[Entity]], Any],
+    def create_task(provider: ProviderSdk, name: str, delay_milliseconds: float, callback: Callable[[Optional[Entity]], Any],
                     tracer: Tracer, custom_schema: Optional[dict]):
         schema = {
             "type": "object",
@@ -641,9 +669,7 @@ class BackgroundTaskBuilder:
 
         async def callback_func(ctx, entity, input):
             await callback(entity)
-            return {
-                "delay_secs": delay_sec
-            }
+            return delay_milliseconds
         kind.on("state", callback_func)
         return BackgroundTaskBuilder(provider, tracer, name, kind)
 
