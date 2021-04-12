@@ -2,6 +2,7 @@ import { ValidationError } from "../errors/validation_error"
 import {DiffContent, Spec, Status} from "papiea-core"
 import { PapieaException } from "../errors/papiea_exception";
 import { Logger } from "papiea-backend-utils";
+import { cloneDeep } from "lodash"
 
 // TODO: add d.ts for type annotations
 const papi_clj = require("../../papiea-lib-clj/papiea-lib-clj.js").papiea_lib_clj;
@@ -88,7 +89,8 @@ function cleanup_spec_for_sfs_run(spec: Spec, kind_name: string, logger?: Logger
     } else {
         console.debug(`Running sanitizer function for ${kind_name}/spec.`)
     }
-    const diff_spec = remove_undefined_or_null_values(spec, logger, kind_name, "spec")
+    let diff_spec = JSON.parse(JSON.stringify(spec))
+    diff_spec = remove_undefined_or_null_values(diff_spec, logger, kind_name, "spec")
     return diff_spec
 }
 
@@ -98,7 +100,8 @@ function cleanup_status_for_sfs_run(status: Status, schema: any, kind_name: stri
     } else {
         console.debug(`Running sanitizer function for ${kind_name}/status.`)
     }
-    let diff_status = remove_undefined_or_null_values(status, logger, kind_name, "status")
+    let diff_status = JSON.parse(JSON.stringify(status))
+    diff_status = remove_undefined_or_null_values(diff_status, logger, kind_name, "status")
     diff_status = remove_status_only_fields(schema, diff_status)
     return diff_status
 }

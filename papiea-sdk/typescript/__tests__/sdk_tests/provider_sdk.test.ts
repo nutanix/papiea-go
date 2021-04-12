@@ -2197,6 +2197,9 @@ describe("SDK callback tests", () => {
         );
         location.on_delete(async (ctx, input) => {
             expect(input).toBeDefined()
+            expect(input.metadata).toBeDefined()
+            expect(input.spec).toBeDefined()
+            expect(input.status).toBeDefined()
         })
         try {
             await sdk.register()
