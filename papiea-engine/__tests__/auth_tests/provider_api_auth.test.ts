@@ -8,6 +8,7 @@ import {
 } from "../test_data_factory"
 import uuid = require("uuid");
 import { IntentfulBehaviour, Provider, Version } from "papiea-core";
+import { AxiosResponseParser } from "papiea-backend-utils"
 
 declare var process: {
     env: {
@@ -118,7 +119,7 @@ describe("Provider API auth tests", () => {
             });
             throw new Error("Provider-admin should not register provider with another prefix");
         } catch (e) {
-            expect(e.response.status).toEqual(400);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(400);
         }
     });
 
@@ -205,7 +206,7 @@ describe("Provider API auth tests", () => {
                 });
             throw new Error("Provider-admin should not update status for provider with another prefix");
         } catch (e) {
-            expect(e.response.status).toEqual(403);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(403);
         }
     });
 
@@ -233,7 +234,7 @@ describe("Provider API auth tests", () => {
             );
             throw new Error("Provider-admin should not create s2s key for admin");
         } catch (e) {
-            expect(e.response.status).toEqual(403);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(403);
         }
     });
 
@@ -261,7 +262,7 @@ describe("Provider API auth tests", () => {
             );
             throw new Error("Provider-admin should not create s2s key for provider-admin");
         } catch (e) {
-            expect(e.response.status).toEqual(400);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(400);
         }
     });
 
@@ -331,7 +332,7 @@ describe("Provider API auth tests", () => {
             );
             throw new Error("Provider-admin should not create s2s key for provider-user with provider-user owner");
         } catch (e) {
-            expect(e.response.status).toEqual(403);
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(403);
         }
     });
 
@@ -423,7 +424,7 @@ describe('Read provider security check', function () {
         try {
             await providerApi.get(`${ provider.prefix }/${ provider.version }`)
         } catch (e) {
-            expect(e.response.status).toBe(401)
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toBe(401)
         }
     });
 
@@ -470,7 +471,7 @@ describe('Read provider security check', function () {
                 { headers: { 'Authorization': 'Bearer ' + token } }
             );
         } catch (e) {
-            expect(e.response.status).toBe(403)
+            expect(AxiosResponseParser.getAxiosResponseStatus(e)).toBe(403)
         }
     });
 })
