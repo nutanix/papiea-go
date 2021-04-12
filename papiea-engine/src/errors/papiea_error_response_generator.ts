@@ -2,7 +2,7 @@ import { PapieaResponse } from "papiea-core";
 import {
     EntityNotFoundError,
     ConflictingEntityError,
-    GraveyardConflictingEntityError
+    GraveyardConflictingEntityError, WatchlistEntityNotFoundError
 } from "../databases/utils/errors"
 import { ValidationError } from "./validation_error";
 import { ProcedureInvocationError } from "./procedure_invocation_error";
@@ -114,6 +114,10 @@ export class PapieaErrorResponseGenerator implements PapieaResponse {
                 case EntityNotFoundError:
                     status_code = 404
                     message = "Entity Not Found"
+                    break
+                case WatchlistEntityNotFoundError:
+                    status_code = 404
+                    message = "Entity Not Found in the Watchlist"
                     break
                 case UnauthorizedError:
                     status_code = 401

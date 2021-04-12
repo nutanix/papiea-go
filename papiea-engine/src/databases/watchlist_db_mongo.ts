@@ -64,7 +64,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         }
         const result = await this.collection.insertOne(entry);
         if (result.result.n !== 1) {
-            throw new PapieaException(`MongoDBError: Amount of created entries doesn't equal to 1: ${result.result.n}`)
+            throw new PapieaException({message: `MongoDBError: Amount of created entries doesn't equal to 1: ${result.result.n}`})
         }
     }
 
@@ -101,7 +101,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
             {$push: {diffs: diff}}
         )
         if (result.result.n !== 1) {
-            throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`)
+            throw new PapieaException({message: `MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`})
         }
     }
 
@@ -114,7 +114,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         if (found_diffs.length !== 0) {
             diff = found_diffs[0]
         } else {
-            throw new PapieaException(`Unexpected error, while updating diff fields, wrong diff id: ${diff_id} was provided`)
+            throw new PapieaException({message: `Unexpected error, while updating diff fields, wrong diff id: ${diff_id} was provided`})
         }
         const {id} = this.differ.create_diff_structure(entity_reference, diff.intentful_signature, diff.diff_fields)
         diff.diff_fields = diff_fields
@@ -124,7 +124,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
             {$set: {"diffs.$": diff}}
         )
         if (result.result.n !== 1) {
-            throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`)
+            throw new PapieaException({message: `MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`})
         }
     }
 
@@ -135,11 +135,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
             {$push: {diffs: {$each: diffs}}}
         )
         if (result.result.ok !== 1) {
-            throw new PapieaException(`MongoDBError: Unable to add multiple diffs`, {
-                additional_info: {
-                    entity_uuid: entity_reference.uuid
-                }
-            })
+            throw new PapieaException({message: `MongoDBError: Unable to add multiple diffs`, entity_info: entity_reference})
         }
     }
 
@@ -150,7 +146,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
             {$set: {"diffs.$.backoff": backoff}}
         )
         if (result.result.n !== 1) {
-            throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`)
+            throw new PapieaException({message: `MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`})
         }
     }
 
@@ -161,7 +157,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
             {$pull: {diffs: {id: diff.id}}}
         )
         if (result.result.n !== 1) {
-            throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`)
+            throw new PapieaException({message: `MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`})
         }
     }
 
@@ -172,7 +168,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
             {$pull: {diffs: {id: {$in: diffs.map(diff => diff.id)}}}}
         )
         if (result.result.n !== 1) {
-            throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`)
+            throw new PapieaException({message: `MongoDBError: Amount of updated entries doesn't equal to 1, got: ${result.result.n}`})
         }
     }
 
@@ -181,12 +177,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         const entry = Watchlist_Db_Mongo.get_entry_reference(entity_reference)
         const result = await this.collection.deleteOne({entry_reference: entry});
         if (result.deletedCount !== 1) {
-            throw new PapieaException(`MongoDBError: Failed to remove watchlist entry`,
-                {
-                    additional_info: {
-                        entity_uuid: entity_reference.uuid
-                    }
-                });
+            throw new PapieaException({message: `MongoDBError: Failed to remove watchlist entry`, entity_info: entity_reference});
         }
     }
 }
