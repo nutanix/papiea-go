@@ -101,7 +101,7 @@ describe("Pagination tests", () => {
     test("Authorizer doesn't affect the order of sorting", async () => {
         const authorizer = new MockedAuthorizer();
         const specs = [{spec: {x: 10, y: 11}}, {spec: {x: 18, y:27}}, {spec: {x: 22, y: 8}}, {spec: {x: 41, y: 50}}];
-        const res = await authorizer.filter({} as UserAuthInfo, specs, {} as Action);
+        const res = await authorizer.filter(LoggerFactory.makeLogger({}), {} as UserAuthInfo, specs, {} as Action);
         for (let i = 0; i < res.length - 1; i++) {
             expect(res[i+1].spec.x).toBeGreaterThan(res[i].spec.x)
         }

@@ -4,7 +4,7 @@ import { Secret } from "papiea-core"
 import { Logger } from 'papiea-backend-utils'
 
 export interface UserAuthInfoExtractor {
-    getUserAuthInfo(token: Secret, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null>
+    getUserAuthInfo(logger: Logger, token: Secret, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null>
 }
 
 export class CompositeUserAuthInfoExtractor implements UserAuthInfoExtractor {
@@ -14,11 +14,11 @@ export class CompositeUserAuthInfoExtractor implements UserAuthInfoExtractor {
         this.extractors = extractors;
     }
 
-    async getUserAuthInfo(token: Secret, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null> {
+    async getUserAuthInfo(logger: Logger, token: Secret, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null> {
         let userAuthInfo: UserAuthInfo | null = null;
         let i = 0;
         while (userAuthInfo === null && i < this.extractors.length) {
-            userAuthInfo = await this.extractors[i].getUserAuthInfo(token, provider_prefix, provider_version);
+            userAuthInfo = await this.extractors[i].getUserAuthInfo(logger, token, provider_prefix, provider_version);
             i++;
         }
         return userAuthInfo;
@@ -33,7 +33,7 @@ export class AdminUserAuthInfoExtractor implements UserAuthInfoExtractor {
         this.adminKey = adminKey;
     }
 
-    async getUserAuthInfo(token: Secret, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null> {
+    async getUserAuthInfo(logger: Logger, token: Secret, provider_prefix?: string, provider_version?: string): Promise<UserAuthInfo | null> {
         if (token === this.adminKey) {
             return { is_admin: true }
         } else {
@@ -87,16 +87,16 @@ export function createAuthnRouter(logger: Logger, userAuthInfoExtractor: UserAut
         const provider_version: string | undefined = urlParts[3];
         const endpoint_path: string | undefined = urlParts[4];
 
-        const user_info = await userAuthInfoExtractor.getUserAuthInfo(token, provider_prefix, provider_version);
+        const user_info = await userAuthInfoExtractor.getUserAuthInfo(logger, token, provider_prefix, provider_version);
         if (user_info === null) {
-            throw new UnauthorizedError(`Failed to get user info token on provider ${provider_prefix}/${provider_version}`, { provider_prefix: provider_prefix, provider_version: provider_version, additional_info: { "user_token": token }})
+            throw new UnauthorizedError({ message: `Failed to get user info token on provider: ${provider_prefix}/${provider_version}. Verify the provider details and user values.`, entity_info: { provider_prefix: provider_prefix, provider_version: provider_version, additional_info: { "user_token": token }}})
         }
         if (urlParts.length > 1) {
             if (provider_prefix
                 && endpoint_path !== "update_status"
                 && (user_info.provider_prefix !== undefined && user_info.provider_prefix !== provider_prefix)
                 && !user_info.is_admin) {
-                throw new UnauthorizedError(`Invalid user info found for the token on provider ${provider_prefix}/${provider_version}`, { provider_prefix: provider_prefix, provider_version: provider_version, additional_info: { "user_token": token }});
+                throw new UnauthorizedError({ message: `Invalid user info found for the token on provider: ${provider_prefix}/${provider_version}. Make sure you have a valid user.`, entity_info: { provider_prefix: provider_prefix, provider_version: provider_version, additional_info: { "user_token": token }}});
             }
         }
         req.user = user_info;

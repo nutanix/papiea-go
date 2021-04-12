@@ -22,7 +22,7 @@ import { S2SKeyUserAuthInfoExtractor } from "./auth/s2s";
 import { Authorizer, AdminAuthorizer, PerProviderAuthorizer, IntentWatcherAuthorizer } from "./auth/authz";
 import { ValidatorImpl } from "./validator";
 import { ProviderCasbinAuthorizerFactory } from "./auth/casbin";
-import { PapieaErrorResponseImpl } from "./errors/papiea_error_impl";
+import { PapieaErrorResponseGenerator } from "./errors/papiea_error_response_generator";
 import { SessionKeyAPI, SessionKeyUserAuthInfoExtractor } from "./auth/session_key"
 import { IntentfulContext } from "./intentful_core/intentful_context"
 import { AuditLogger } from "./audit_logging"
@@ -78,7 +78,7 @@ async function setUpApplication(): Promise<express.Express> {
         new SessionKeyUserAuthInfoExtractor(sessionKeyApi, providerDb)
     ]);
     const enginePapieaVersion = getPapieaVersion()
-    const papieaErrorFactory = PapieaErrorResponseImpl.create(logger)
+    const papieaErrorFactory = PapieaErrorResponseGenerator.create(logger)
     const checkVersionMiddleware = getVersionVerifier(enginePapieaVersion)
     app.use(checkVersionMiddleware)
     app.use(createAuthnRouter(logger, userAuthInfoExtractor));
@@ -90,10 +90,10 @@ async function setUpApplication(): Promise<express.Express> {
         if (res.headersSent) {
             return next(err);
         }
-        const papieaError = papieaErrorFactory(err, req);
+        const papieaError = papieaErrorFactory(err, req, enginePapieaVersion);
         res.status(papieaError.status)
         res.json(papieaError.toResponse())
-        logger.error(papieaError.toString(), err.stack)
+        logger.error(papieaError.toString())
     });
     return app;
 }

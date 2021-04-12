@@ -5,6 +5,7 @@ import {
 
 import {dotnotation} from './dotnotation'
 import {getTracer, getTracingMiddleware, TracingCtx, spanOperation, spanEntityOperation, getTraceHeaders} from "./tracing"
+import { AxiosResponseParser } from "./axios_response_parser"
 
 interface RequestContext {
     tracing_ctx: TracingCtx
@@ -14,5 +15,5 @@ export {
     LOG_LEVELS, LogLevel, logLevelFromString, LoggerOptions, Logger,
     LoggerFactory, dotnotation, LoggerHandle, LoggingVerbosityOptions,
     getTracer, getTracingMiddleware, spanOperation, spanEntityOperation,
-    RequestContext, getTraceHeaders
+    RequestContext, getTraceHeaders, AxiosResponseParser
 };

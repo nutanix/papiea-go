@@ -4,6 +4,7 @@ import { SessionKey, Secret } from "papiea-core"
 import { Provider_DB } from "../databases/provider_db_interface"
 import { getOAuth2 } from "./oauth2"
 import { PapieaException } from "../errors/papiea_exception"
+import { Logger } from "papiea-backend-utils"
 
 export class SessionKeyAPI {
     private static EXPIRATION_WINDOW_IN_SECONDS = 300
@@ -65,7 +66,7 @@ export class SessionKeyAPI {
             sessionKey.idpToken = accessToken
             return sessionKey
         } catch (e) {
-            throw new PapieaException(`Couldn't refresh the session token for user on provider ${provider_prefix}/${provider_version} due to error: ${e.message}`, {provider_prefix: provider_prefix, provider_version: provider_version, additional_info: { "user": JSON.stringify(sessionKey.user_info) }})
+            throw new PapieaException({ message: `Couldn't refresh the session token for user on provider: ${provider_prefix}/${provider_version}.`, entity_info: {provider_prefix: provider_prefix, provider_version: provider_version, additional_info: { "user": JSON.stringify(sessionKey.user_info) }}, cause: e })
         }
     }
 }
@@ -79,7 +80,7 @@ export class SessionKeyUserAuthInfoExtractor implements UserAuthInfoExtractor {
         this.providerDb = providerDb
     }
 
-    async getUserAuthInfo(token: Secret, provider_prefix: string, provider_version: string): Promise<UserAuthInfo | null> {
+    async getUserAuthInfo(logger: Logger, token: Secret, provider_prefix: string, provider_version: string): Promise<UserAuthInfo | null> {
         try {
             const provider = await this.providerDb.get_provider(provider_prefix, provider_version)
             const oauth2 = getOAuth2(provider);
@@ -88,7 +89,7 @@ export class SessionKeyUserAuthInfoExtractor implements UserAuthInfoExtractor {
             delete user_info.is_admin
             return user_info
         } catch (e) {
-            console.error(`While trying to authenticate with IDP error occurred for provider with prefix: ${provider_prefix} and version: ${provider_version} due to error: ${e}`)
+            logger.error(`While trying to authenticate with IDP error occurred for provider: ${provider_prefix}/${provider_version} due to error: ${e.message}`)
             return null
         }
     }
