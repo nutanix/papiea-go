@@ -61,7 +61,7 @@ class ProviderServerManager(object):
             self.should_run = True
 
         async def healthcheck_callback_fn(request):
-            return web.json_response({"diff_ids": self.provider_sdk.processing_diffs}, status=200)
+            return web.json_response({"diff_ids": list(self.provider_sdk.processing_diffs)}, status=200)
 
         self.app.add_routes([web.get("/healthcheck", healthcheck_callback_fn)])
 
