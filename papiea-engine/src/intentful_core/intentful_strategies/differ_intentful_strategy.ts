@@ -9,6 +9,7 @@ import uuid = require("uuid")
 import { Graveyard_DB } from "../../databases/graveyard_db_interface"
 import {RequestContext, spanOperation} from "papiea-backend-utils"
 import {includesDiff} from "../../utils/utils"
+import {WatchlistEntityNotFoundError} from "../../databases/utils/errors"
 
 export class DifferIntentfulStrategy extends IntentfulStrategy {
     protected differ: Differ
@@ -60,14 +61,21 @@ export class DifferIntentfulStrategy extends IntentfulStrategy {
                                    {entity_uuid: metadata.uuid})
         await this.intentWatcherDb.save_watcher(watcher)
         watcherSpan.finish()
-        const entity_diffs = await this.watchlistDb.get_entity_diffs(metadata)
-        const pending_diffs = []
-        for (let diff of watcher.diffs) {
-            if (!includesDiff(entity_diffs, diff)) {
-                pending_diffs.push(diff)
+        try {
+            const entity_diffs = await this.watchlistDb.get_entity_diffs(metadata)
+            const pending_diffs = []
+            for (let diff of watcher.diffs) {
+                if (!includesDiff(entity_diffs, diff)) {
+                    pending_diffs.push(diff)
+                }
             }
+            await this.watchlistDb.add_diffs(metadata, pending_diffs)
+            return watcher
+        } catch (e) {
+            if (e instanceof WatchlistEntityNotFoundError) {
+                await this.watchlistDb.add_entity({metadata, spec, status}, watcher.diffs)
+            }
+            return watcher
         }
-        await this.watchlistDb.add_diffs(metadata, pending_diffs)
-        return watcher
     }
 }

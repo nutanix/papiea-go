@@ -6,6 +6,7 @@ import { Watchlist_DB } from "../../databases/watchlist_db_interface";
 import {RequestContext, spanOperation} from "papiea-backend-utils"
 import { PapieaException } from "../../errors/papiea_exception"
 import {includesDiff} from "../../utils/utils"
+import {WatchlistEntityNotFoundError} from "../../databases/utils/errors"
 
 export abstract class StatusUpdateStrategy {
     statusDb: Status_DB
@@ -71,18 +72,24 @@ export class DifferUpdateStrategy extends StatusUpdateStrategy {
         const [metadata, spec] = await this.specDb.get_spec(entity_ref)
         getSpecSpan.finish()
         const diffs = this.differ.all_diffs(entity_ref, this.kind!, spec, status)
-        const entity_diffs = await this.watchlistDb.get_entity_diffs(metadata)
-        const pending_diffs = []
-        for (let diff of diffs) {
-            if (!includesDiff(entity_diffs, diff)) {
-                pending_diffs.push(diff)
-            }
-        }
-        await this.watchlistDb.add_diffs(metadata, pending_diffs)
         const span = spanOperation(`update_status_db`,
-                                   ctx.tracing_ctx)
+            ctx.tracing_ctx)
         await super.update(entity_ref, status, ctx)
         span.finish()
+        try {
+            const entity_diffs = await this.watchlistDb.get_entity_diffs(metadata)
+            const pending_diffs = []
+            for (let diff of diffs) {
+                if (!includesDiff(entity_diffs, diff)) {
+                    pending_diffs.push(diff)
+                }
+            }
+            await this.watchlistDb.add_diffs(metadata, pending_diffs)
+        } catch (e) {
+            if (e instanceof WatchlistEntityNotFoundError) {
+                await this.watchlistDb.add_entity({metadata, spec, status}, diffs)
+            }
+        }
     }
 
     async replace(entity_ref: Provider_Entity_Reference, status: Status, ctx: RequestContext) {
