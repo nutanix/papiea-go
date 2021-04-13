@@ -94,14 +94,12 @@ export abstract class EntityCreationStrategy {
                 })
             request_metadata.spec_version = spec_version
         }
-        if (request_metadata.status_hash === undefined || request_metadata.status_hash === null) {
-            request_metadata.status_hash = getObjectHash({
-                provider_prefix: request_metadata.provider_prefix,
-                provider_version: request_metadata.provider_version,
-                kind: request_metadata.kind,
-                uuid: request_metadata.uuid
-            })
-        }
+        request_metadata.status_hash = getObjectHash({
+            provider_prefix: request_metadata.provider_prefix,
+            provider_version: request_metadata.provider_version,
+            kind: request_metadata.kind,
+            uuid: request_metadata.uuid
+        })
         return request_metadata
     }
 

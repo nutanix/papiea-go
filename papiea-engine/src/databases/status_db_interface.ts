@@ -12,20 +12,19 @@ export interface Status_DB {
      * @method
      * @param  {EntityStatusUpdateInput} metadata
      * @param  {Status} status
-     * @returns Promise
+     * @returns Promise<[Metadata, Status]>
      * @throws {StatusConflictingEntityError} when the status hash is stale/incorrect
      */
     replace_status(metadata: EntityStatusUpdateInput, status: Status): Promise<[Metadata, Status]>;
 
     /**
      * Updates status for the entity
-     * @async
-     * @method
      * @param  {EntityStatusUpdateInput} metadata
      * @param  {Status} status
-     * @returns Promise
+     * @returns Promise<[Metadata, Status]>
      * @throws {StatusConflictingEntityError} when the status hash is stale/incorrect
      */
+    
     update_status(metadata: EntityStatusUpdateInput, status: Status): Promise<[Metadata, Status]>
 
     // Gets the status of a particular entity from the db. Returns

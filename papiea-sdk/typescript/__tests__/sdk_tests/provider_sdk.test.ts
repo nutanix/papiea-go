@@ -3,7 +3,7 @@ import { load } from "js-yaml";
 import { resolve } from "path";
 import { plural } from "pluralize"
 import { loadYamlFromTestFactoryDir, OAuth2Server, ProviderBuilder } from "../../../../papiea-engine/__tests__/test_data_factory";
-import { timeout } from "../../../../papiea-engine/src/utils/utils"
+import { timeout, getObjectHash } from "../../../../papiea-engine/src/utils/utils"
 import axios from "axios"
 import { readFileSync } from "fs";
 import { Metadata, IntentfulBehaviour, Provider, Spec, Action, Entity_Reference, Entity, IntentfulStatus } from "papiea-core";
@@ -607,14 +607,15 @@ describe("Provider Sdk tests", () => {
             entity.spec.v = {
                 e: 15
             };
-            await ctx.update_status(entity.metadata, {
+            const old_metadata = entity.metadata
+            await ctx.update_status(old_metadata, {
                 x: 10,
                 y: 10,
                 v: {
                     e: 15
                 }
             })
-            await ctx.update_status(entity.metadata, {
+            await ctx.update_status(old_metadata, {
                 x: 10,
                 y: 15,
                 v: {
@@ -635,6 +636,67 @@ describe("Provider Sdk tests", () => {
             await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { x: 5 });
         } catch (e) {
             expect(e.response.data.error.code).toBe(409)
+        } finally {
+            sdk.cleanup()
+        }
+    });
+
+    test("Provider with kind level procedures update status with non-stale status hash should succeed", async () => {
+        expect.assertions(1)
+        const kind_copy = JSON.parse(JSON.stringify(location_yaml))
+        kind_copy["Location"]["x-papiea-entity"] = "basic"
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(kind_copy);
+        sdk.version(provider_version);
+        sdk.prefix("location_provider");
+        location.entity_procedure(
+            "moveX",
+            {input_schema: loadYamlFromTestFactoryDir("./test_data/procedure_move_input.yml"),
+             output_schema:loadYamlFromTestFactoryDir("./test_data/location_kind_test_data.yml")},
+            async (ctx, entity, input) => {
+            entity.spec.v = {
+                e: 15
+            };
+            const old_metadata = entity.metadata
+            await ctx.update_status(old_metadata, {
+                x: 10,
+                y: 10,
+                v: {
+                    e: 15
+                }
+            })
+            const status_hash = getObjectHash({
+                "status": {
+                    x: 10,
+                    y: 10,
+                    v: {
+                        e: 15
+                    }
+                }
+            })
+            let new_metadata = old_metadata
+            new_metadata.status_hash = status_hash
+            await ctx.update_status(new_metadata, {
+                x: 10,
+                y: 15,
+                v: {
+                    e: 15
+                }
+            })
+            return entity.spec;
+        });
+        try {
+            await sdk.register();
+            const kind_name = sdk.provider.kinds[ 0 ].name;
+            const { data: { metadata, spec } } = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { x: 5 });
+            const result = await entityApi.get(`${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
+            expect(result.data.status["v"]).toEqual({e: 15})
         } finally {
             sdk.cleanup()
         }

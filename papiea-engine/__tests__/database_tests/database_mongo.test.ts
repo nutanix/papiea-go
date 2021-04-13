@@ -16,7 +16,8 @@ import {
     Provider,
     S2S_Key,
     IntentfulBehaviour,
-    Diff
+    Diff,
+    EntityStatusUpdateInput
 } from "papiea-core"
 import { SessionKeyDb } from "../../src/databases/session_key_db_interface"
 import { Entity, Intentful_Signature, SessionKey, IntentfulStatus, IntentWatcher } from "papiea-core"
@@ -161,16 +162,12 @@ describe("MongoDb tests", () => {
     test("Insert Status", async () => {
         expect.assertions(2)
         const statusDb: Status_DB = await connection.get_status_db(logger);
-        const entity_metadata: Metadata = {
+        const entity_metadata: EntityStatusUpdateInput = {
             uuid: entityA_uuid,
             kind: "test",
-            spec_version: 1,
             status_hash: 'test-hash',
-            created_at: new Date(),
-            deleted_at: undefined,
             provider_version: "test_version",
-            provider_prefix: "test_prefix",
-            extension: {}
+            provider_prefix: "test_prefix"
         };
         const status: Status = { a: "A" };
         const [metadata, ret_status] = await statusDb.replace_status(entity_metadata, status);

@@ -10,6 +10,7 @@ import { ProcedureInvocationError } from "../errors/procedure_invocation_error";
 import { PermissionDeniedError, UnauthorizedError } from "../errors/permission_error";
 import { SpecConflictingEntityError, StatusConflictingEntityError, EntityNotFoundError } from "../databases/utils/errors"
 import { OnActionError } from "../errors/on_action_error"
+export { hash as getObjectHash }
 
 const semver = require('semver')
 
@@ -189,10 +190,6 @@ export function getVersionVerifier(enginePapieaVersion: string) {
         }
         next();
     }
-}
-
-export function getObjectHash(obj: any) {
-    return hash(obj);
 }
 
 export function convertEntityInfoToExceptionContext(entity_info: any): PapieaExceptionContext {
