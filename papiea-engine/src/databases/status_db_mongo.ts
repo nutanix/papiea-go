@@ -44,7 +44,7 @@ export class Status_DB_Mongo implements Status_DB {
                     upsert: true
                 });
             if (result.result.n !== 1) {
-                throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for kind ${metadata.provider_prefix}/${metadata.provider_version}/${metadata.kind}`, { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }})
+                throw new PapieaException({ message: `MongoDBError: Amount of updated status entries should equal to 1, found ${result.result.n} entries for kind: ${metadata.provider_prefix}/${metadata.provider_version}/${metadata.kind},`, entity_info: { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }}})
             }
             return await this.get_status(metadata)
         } catch (err) {
@@ -54,10 +54,10 @@ export class Status_DB_Mongo implements Status_DB {
                 try {
                   res = await this.get_status(metadata);
                 } catch (e) {
-                    throw new PapieaException(`MongoDBError: Cannot create entity for kind ${metadata.provider_prefix}/${metadata.provider_version}/${metadata.kind}`, { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }})
+                    throw new PapieaException({ message: `MongoDBError: Cannot create entity for kind ${metadata.provider_prefix}/${metadata.provider_version}/${metadata.kind}`, entity_info: { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }}})
                 }
                 const [updated_metadata, status] = res
-                throw new StatusConflictingEntityError(updated_metadata, status);
+                throw new StatusConflictingEntityError(updated_metadata);
             }
             throw err
         }
@@ -93,7 +93,7 @@ export class Status_DB_Mongo implements Status_DB {
         } catch (err) {
             /* failed to parse input error */
             if (err.code === 9) {
-                throw new PapieaException(`MongoDBError: Update body might be 'undefined', if this is expected, please use 'null' for kind ${metadata.provider_prefix}/${metadata.provider_version}/${metadata.kind}`,  { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }})
+                throw new PapieaException({ message: `MongoDBError: Update body might be 'undefined', if this is expected, please use 'null' for kind: ${metadata.provider_prefix}/${metadata.provider_version}/${metadata.kind}.`, entity_info: { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }}})
             }
             /* duplicate key index error */
             if (err.code === 11000) {
@@ -101,15 +101,15 @@ export class Status_DB_Mongo implements Status_DB {
                 try {
                   res = await this.get_status(metadata);
                 } catch (e) {
-                    throw new PapieaException(`MongoDBError: Cannot create entity for kind ${metadata.provider_prefix}/${metadata.provider_version}/${metadata.kind}`, { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }})
+                    throw new PapieaException({ message: `MongoDBError: Something went wrong in update status for entity of kind: ${metadata.provider_prefix}/${metadata.provider_version}/${metadata.kind}.`, entity_info: { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }}, cause: e})
                 }
                 const [updated_metadata, status] = res
-                throw new StatusConflictingEntityError(updated_metadata, status);
+                throw new StatusConflictingEntityError(updated_metadata);
             }
             throw err
         }
         if (result.result.n !== 1) {
-            throw new PapieaException(`MongoDBError: Amount of updated entries doesn't equal to 1: ${result.result.n} for kind ${metadata.provider_prefix}/${metadata.provider_version}/${metadata.kind}`,  { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }})
+            throw new PapieaException({ message: `MongoDBError: Amount of updated status entries should equal to 1, found ${result.result.n} entries for kind ${metadata.provider_prefix}/${metadata.provider_version}/${metadata.kind}.`, entity_info: { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }}})
         }
         return await this.get_status(metadata)
     }
@@ -138,7 +138,7 @@ export class Status_DB_Mongo implements Status_DB {
             if (x.spec !== null) {
                 return [x.metadata, x.status]
             } else {
-                throw new PapieaException("MongoDBError: No valid entities found");
+                throw new PapieaException({ message: "MongoDBError: No valid entities found for get status by entity reference." });
             }
         });
     }
@@ -155,7 +155,7 @@ export class Status_DB_Mongo implements Status_DB {
             if (x.status !== null) {
                 return [x.metadata, x.status]
             } else {
-                throw new PapieaException("MongoDBError: No entities found while listing status")
+                throw new PapieaException({ message: "MongoDBError: No entities found while listing status." })
             }
         });
     }
@@ -166,7 +166,7 @@ export class Status_DB_Mongo implements Status_DB {
             if (x.status !== null) {
                 return [x.metadata, x.status]
             } else {
-                throw new PapieaException("MongoDBError: No valid entities found");
+                throw new PapieaException({ message: "MongoDBError: No valid entities found in list status." });
             }
         });
     }

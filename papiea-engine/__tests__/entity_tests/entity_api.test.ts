@@ -71,7 +71,7 @@ describe("Entity API tests", () => {
             });
         } catch (err) {
             expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
-            expect(AxiosResponseParser.getAxiosErrors(err).length).toEqual(1);
+            expect(AxiosResponseParser.getAxiosErrorDetails(err)).toBeDefined();
         }
     });
 
@@ -371,7 +371,7 @@ describe("Entity API tests", () => {
             });
         } catch (err) {
             expect(AxiosResponseParser.getAxiosResponseStatus(err)).toEqual(400);
-            expect(AxiosResponseParser.getAxiosErrors(err).length).toEqual(1);
+            expect(AxiosResponseParser.getAxiosErrorDetails(err)).toBeDefined();
         }
     });
 
@@ -436,7 +436,7 @@ describe("Entity API tests", () => {
             });
         } catch (e) {
             expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(409)
-            expect(AxiosResponseParser.getAxiosError(e).message).toEqual(`Conflicting Entity: ${entity_uuid}. Existing entity has version ${1}`)
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toEqual(`Entity with UUID ${entity_uuid} of kind: ${ providerPrefix }/${ providerVersion }/${ kind_name } already exists.`)
         }
     });
 
@@ -518,7 +518,7 @@ describe("Entity API tests", () => {
             });
         } catch (e) {
             expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(409)
-            expect(AxiosResponseParser.getAxiosError(e).message).toEqual(`Deleted entity with this uuid and spec version exists: uuid - ${id}, maximum current spec version - 2`)
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toEqual(`Deleted entity with UUID ${id} of kind: ${ providerPrefix }/${ providerVersion }/${ kind_name } already exists with this spec version.`)
         }
     });
 

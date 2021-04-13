@@ -1087,7 +1087,6 @@ describe("Intentful Workflow test sfs validation", () => {
     let provider_prefix: string
     let provider_version: Version = "0.1.0"
 
-
     test("Registering provider with wrong sfs shouldn't pass", async () => {
         expect.assertions(2);
         let kind_name: string = ''
@@ -1108,7 +1107,7 @@ describe("Intentful Workflow test sfs validation", () => {
             await sdk.register();
         } catch (e) {
             expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(400)
-            expect(AxiosResponseParser.getAxiosErrorMessages(e)[0]).toContain(`SFS parsing on kind ${provider_prefix}/${provider_version}/${kind_name} failed with error: Parse error at line 1,`)
+            expect(AxiosResponseParser.getAxiosErrorMessage(e)).toContain(`Failed to validate the sfs on kind: ${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }.`)
         } finally {
             sdk.cleanup()
         }

@@ -153,7 +153,7 @@ export class IntentResolver {
                 await this.processActiveWatcher(watcher, entity)
             }
         } catch (e) {
-            this.logger.debug(`Couldn't process onChange for entity with uuid: ${entity.metadata.uuid} and kind: ${entity.metadata.kind} for provider with prefix: ${entity.metadata.provider_prefix} and version: ${entity.metadata.provider_version}`)
+            this.logger.debug(`Couldn't process onChange for entity with uuid: ${entity.metadata.uuid} and kind: ${entity.metadata.kind} for provider with prefix: ${entity.metadata.provider_prefix} and version: ${entity.metadata.provider_version} due to error: ${e}`)
         }
     }
 
@@ -181,7 +181,7 @@ export class IntentResolver {
                     const [metadata, status] = await this.statusDb.get_status({...entry_ref.provider_reference, ...entry_ref.entity_reference})
                     this.onChange({ metadata, spec, status })
                 } catch (e) {
-
+                    this.logger.debug(`Failed to process onChange in update active watcher status for entity with uuid: ${entry_ref.entity_reference.uuid} and kind: ${entry_ref.entity_reference.kind} for provider with prefix: ${entry_ref.provider_reference.provider_prefix} and version: ${entry_ref.provider_reference.provider_version} due to error: ${e}`)
                 }
             }
         }
@@ -191,7 +191,7 @@ export class IntentResolver {
         try {
             await this._run(delay, watcherExpirySeconds)
         } catch (e) {
-            console.error(`Error in run method for intent resolver: ${e}`)
+            this.logger.error(`Error in run method for intent resolver: ${e}`)
             throw e
         }
     }

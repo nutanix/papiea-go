@@ -54,12 +54,12 @@ export class SpecOnlyUpdateStrategy extends StatusUpdateStrategy {
         super(statusDb, specDb)
     }
 
-    async update(metadata: EntityStatusUpdateInput, status: Status): Promise<EntityCreateOrUpdateResult> {
-        throw new PapieaException(`Cannot update status for spec-only entity`, { kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }})
+    async update(metadata: EntityStatusUpdateInput, status: Status): Promise<any> {
+        throw new PapieaException({ message: `Cannot update status for spec-only entity. Verify the entity and entity type.`, entity_info: { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }}})
     }
 
-    async replace(metadata: EntityStatusUpdateInput, status: Status): Promise<EntityCreateOrUpdateResult> {
-        throw new PapieaException(`Cannot replace status for spec-only entity`, { kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }})
+    async replace(metadata: EntityStatusUpdateInput, status: Status): Promise<any> {
+        throw new PapieaException({ message: `Cannot replace status for spec-only entity. Verify the entity and entity type.`, entity_info: { provider_prefix: metadata.provider_prefix, provider_version: metadata.provider_version, kind_name: metadata.kind, additional_info: { "entity_uuid": metadata.uuid }}})
     }
 }
 

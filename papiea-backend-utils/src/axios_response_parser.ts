@@ -55,57 +55,37 @@ export class AxiosResponseParser {
         return 500
     }
     
-    public static getAxiosErrorEntityInfo(err: any): any | null {
+    public static getAxiosErrorContext(err: any): any | null {
         const axios_error = AxiosResponseParser.getAxiosError(err)
         if (axios_error) {
-            if (axios_error.entity_info) {
-                return axios_error.entity_info
+            if (axios_error.papiea_context) {
+                return axios_error.papiea_context
             }
-            console.info("Received null/undefined value for entity info")
+            console.info("Received null/undefined value for papiea context")
         }
         return null
     }
     
-    public static getAxiosErrors(err: any): any | null {
+    public static getAxiosErrorDetails(err: any): any | null {
         const axios_error = AxiosResponseParser.getAxiosError(err)
         if (axios_error) {
-            if (axios_error.errors) {
-                return axios_error.errors
+            if (axios_error.error_details) {
+                return axios_error.error_details
             }
-            console.info("Received null/undefined value for errors")
+            console.info("Received null/undefined value for error details")
         }
         return null
     }
     
-    public static getAxiosErrorMessages(err: any): string[] {
-        const errors = AxiosResponseParser.getAxiosErrors(err)
-        const message_list: string[] = []
-        if (errors) {
-            errors.forEach((error: any) => {
-                if (error.message) {
-                    message_list.push(error.message)
-                } else {
-                    console.info("Received null/undefined value for error message")
-                }
-            });
+    public static getAxiosErrorMessage(err: any): string {
+        const axios_error_details = AxiosResponseParser.getAxiosErrorDetails(err)
+        if (axios_error_details) {
+            if (axios_error_details.message) {
+                return axios_error_details.message
+            }
+            console.info("Received null/undefined value for error message")
         }
-        return message_list
+        return ''
     }
-    
-    public static getAxiosErrorTraces(err: any): string[] {
-        const errors = AxiosResponseParser.getAxiosErrors(err)
-        const trace_list: string[] = []
-        if (errors) {
-            errors.forEach((error: any) => {
-                if (error.stacktrace) {
-                    trace_list.push(error.stacktrace)
-                } else {
-                    console.info("Received null/undefined value for error trace")
-                }
-            });
-        }
-        return trace_list
-    }
-    
 }
 

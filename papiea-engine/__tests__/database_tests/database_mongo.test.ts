@@ -5,7 +5,7 @@ import { Status_DB } from "../../src/databases/status_db_interface";
 import { Provider_DB } from "../../src/databases/provider_db_interface";
 import { S2S_Key_DB } from "../../src/databases/s2skey_db_interface";
 import { v4 as uuid4 } from 'uuid';
-import { ConflictingEntityError } from "../../src/databases/utils/errors";
+import { SpecConflictingEntityError } from "../../src/databases/utils/errors";
 import {
     Metadata,
     Spec,
@@ -108,8 +108,8 @@ describe("MongoDb tests", () => {
         try {
             await specDb.update_spec(entity_metadata, spec);
         } catch (err) {
-            expect(err).toBeInstanceOf(ConflictingEntityError);
-            expect(err.existing_metadata.spec_version).toEqual(2);
+            expect(err).toBeInstanceOf(SpecConflictingEntityError);
+            expect(err.entity_info.additional_info.existing_spec_version).toEqual("2");
         }
     });
 
@@ -249,7 +249,7 @@ describe("MongoDb tests", () => {
         const new_status: Status = { b: "A5" };
         await expect(statusDb.update_status(entity_metadata, new_status))
             .rejects
-            .toThrow('Entity status with the uuid and status hash exists')
+            .toThrow(`Entity status with UUID ${entity_metadata.uuid} of kind: ${entity_metadata.provider_prefix}/${entity_metadata.provider_version}/${entity_metadata.kind} exists with a different hash. Please verify the status hash.`)
     })
 
     test("Get Status for non existing entity should fail", async () => {

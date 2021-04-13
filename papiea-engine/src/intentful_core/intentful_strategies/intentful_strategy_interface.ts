@@ -29,7 +29,7 @@ export abstract class IntentfulStrategy {
         if (exists) {
             const highest_spec_version = await this.graveyardDb.get_highest_spec_version(metadata)
             metadata.spec_version = spec_version
-            throw new GraveyardConflictingEntityError(metadata, spec, highest_spec_version)
+            throw new GraveyardConflictingEntityError(metadata, highest_spec_version)
         }
     }
 
@@ -54,11 +54,11 @@ export abstract class IntentfulStrategy {
         }
     }
 
-    protected async invoke_destructor(procedure_name: string, entity: Partial<Entity>, ctx: RequestContext): Promise<void> {
+    protected async invoke_destructor(procedure_name: string, entity: Entity, ctx: RequestContext): Promise<void> {
         if (this.kind) {
             if (this.kind.kind_procedures[procedure_name]) {
                 if (this.user === undefined) {
-                    throw new UnauthorizedError(`No user provided in the delete entity request for kind ${entity.metadata?.provider_prefix}/${entity.metadata?.provider_version}/${entity.metadata?.kind}`, { provider_prefix: entity.metadata?.provider_prefix, provider_version: entity.metadata?.provider_version, kind_name: entity.metadata?.kind, additional_info: { "entity_uuid": entity.metadata?.uuid ?? '', "procedure_name": procedure_name }})
+                    throw new UnauthorizedError({ message: `No user provided in the delete entity request for kind: ${entity.metadata?.provider_prefix}/${entity.metadata?.provider_version}/${entity.metadata?.kind}. Make sure you have a correct user.`, entity_info: { provider_prefix: entity.metadata?.provider_prefix, provider_version: entity.metadata?.provider_version, kind_name: entity.metadata?.kind, additional_info: { "entity_uuid": entity.metadata?.uuid ?? '', "procedure_name": procedure_name }}})
                 }
                 try {
                     const span = spanOperation(`destructor`,
@@ -70,11 +70,11 @@ export abstract class IntentfulStrategy {
                     span.finish()
                     return data
                 } catch (e) {
-                    throw OnActionError.create(e.response.data.message, procedure_name, { provider_prefix: entity.metadata?.provider_prefix, provider_version: entity.metadata?.provider_version, kind_name: entity.metadata?.kind, additional_info: { "entity_uuid": entity.metadata?.uuid ?? '', "procedure_name": procedure_name }})
+                    throw new OnActionError({ message: `Failed to execute destructor for entity of kind: ${entity.metadata?.provider_prefix}/${entity.metadata?.provider_version}/${entity.metadata?.kind}.`, entity_info: { provider_prefix: entity.metadata?.provider_prefix, provider_version: entity.metadata?.provider_version, kind_name: entity.metadata?.kind, additional_info: { "entity_uuid": entity.metadata?.uuid ?? '', "procedure_name": procedure_name }}, cause: e })
                 }
             }
         } else {
-            throw OnActionError.create(`Could not delete the entity since kind ${entity.metadata?.provider_prefix}/${entity.metadata?.provider_version}/${entity.metadata?.kind} is not registered`, procedure_name, { provider_prefix: entity.metadata?.provider_prefix, provider_version: entity.metadata?.provider_version, kind_name: entity.metadata?.kind, additional_info: { "entity_uuid": entity.metadata?.uuid ?? '', "procedure_name": procedure_name }})
+            throw new OnActionError({ message: `Could not delete the entity since kind: ${entity.metadata?.provider_prefix}/${entity.metadata?.provider_version}/${entity.metadata?.kind} is not defined for the strategy.`, entity_info: { provider_prefix: entity.metadata?.provider_prefix, provider_version: entity.metadata?.provider_version, kind_name: entity.metadata?.kind, additional_info: { "entity_uuid": entity.metadata?.uuid ?? '', "procedure_name": procedure_name }}})
         }
     }
 
@@ -87,7 +87,7 @@ export abstract class IntentfulStrategy {
     }
 
     async delete(entity: Entity, ctx: RequestContext): Promise<void> {
-        await this.invoke_destructor(`__${entity.metadata.kind}_delete`, { metadata: entity.metadata }, ctx)
+        await this.invoke_destructor(`__${entity.metadata.kind}_delete`, entity, ctx)
         const span = spanOperation(`delete_entity_db`,
                                    ctx.tracing_ctx,
                                    {entity_uuid: entity.metadata.uuid})

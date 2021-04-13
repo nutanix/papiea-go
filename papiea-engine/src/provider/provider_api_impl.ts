@@ -57,7 +57,7 @@ export class Provider_API_Impl implements Provider_API {
                                    ctx.tracing_ctx)
         const providers = await this.providerDb.list_providers();
         span.finish()
-        return this.authorizer.filter(user, providers, Action.ReadProvider);
+        return this.authorizer.filter(this.logger, user, providers, Action.ReadProvider);
     };
 
     async unregister_provider(user: UserAuthInfo, provider_prefix: string, version: Version, ctx: RequestContext): Promise<void> {
@@ -78,7 +78,7 @@ export class Provider_API_Impl implements Provider_API {
         // if this is not critical, we can swap the order of checkPermission() and update()
         // to remove the verbose check
         if (strategy instanceof SpecOnlyUpdateStrategy) {
-            throw new PapieaException(`Cannot replace status for spec-only entity of kind ${provider.prefix}/${provider.version}/${kind.name}`, { provider_prefix: provider.prefix, provider_version: provider.version, kind_name: kind.name, additional_info: { "entity_uuid": metadata.uuid }})
+            throw new PapieaException({ message: `Cannot replace status for spec-only entity of kind: ${provider.prefix}/${provider.version}/${kind.name}. Make sure the entity and entity type is correct.`, entity_info: { provider_prefix: provider.prefix, provider_version: provider.version, kind_name: kind.name, additional_info: { "entity_uuid": metadata.uuid }}})
         }
         await this.authorizer.checkPermission(user, provider, Action.UpdateStatus, provider);
         metadata.provider_prefix = provider_prefix
@@ -98,7 +98,7 @@ export class Provider_API_Impl implements Provider_API {
         // if this is not critical, we can swap the order of checkPermission() and update()
         // to remove the verbose check
         if (strategy instanceof SpecOnlyUpdateStrategy) {
-            throw new PapieaException(`Cannot update status for spec-only entity of kind ${provider.prefix}/${provider.version}/${kind.name}`, { provider_prefix: provider.prefix, provider_version: provider.version, kind_name: kind.name, additional_info: { "entity_uuid": metadata.uuid }})
+            throw new PapieaException({ message: `Cannot update status for spec-only entity of kind: ${provider.prefix}/${provider.version}/${kind.name}. Make sure the entity and entity type is correct.`, entity_info: { provider_prefix: provider.prefix, provider_version: provider.version, kind_name: kind.name, additional_info: { "entity_uuid": metadata.uuid }}})
         }
         await this.authorizer.checkPermission(user, provider, Action.UpdateStatus, provider);
         metadata.provider_prefix = provider_prefix
@@ -128,12 +128,12 @@ export class Provider_API_Impl implements Provider_API {
 
     async update_progress(user: UserAuthInfo, provider_prefix: string, version: Version, message: string, done_percent: number, ctx: RequestContext): Promise<void> {
         // TODO(adolgarev)
-        throw new PapieaException("Not implemented");
+        throw new PapieaException({ message: "Not implemented" });
     }
 
     async power(user: UserAuthInfo, provider_prefix: string, version: Version, power_state: Provider_Power, ctx: RequestContext): Promise<void> {
         // TODO(adolgarev)
-        throw new PapieaException("Not implemented");
+        throw new PapieaException({ message: "Not implemented" });
     }
 
     private async get_provider_unchecked(provider_prefix: string, provider_version: Version, ctx: RequestContext): Promise<Provider> {
@@ -158,7 +158,7 @@ export class Provider_API_Impl implements Provider_API {
                                    ctx.tracing_ctx)
         const res = await this.providerDb.find_providers(provider_prefix);
         span.finish()
-        return this.authorizer.filter(user, res, Action.ReadProvider);
+        return this.authorizer.filter(this.logger, user, res, Action.ReadProvider);
     }
 
     async update_auth(user: UserAuthInfo, provider_prefix: string, provider_version: Version, auth: any, ctx: RequestContext): Promise<void> {
@@ -248,6 +248,6 @@ export class Provider_API_Impl implements Provider_API {
             secret = s2s_key.key;
             s2s_key.key = secret.slice(0, 2) + "*****" + secret.slice(-2);
         }
-        return this.authorizer.filter(user, res, Action.ReadS2SKey);
+        return this.authorizer.filter(this.logger, user, res, Action.ReadS2SKey);
     }
 }

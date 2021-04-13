@@ -62,6 +62,7 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
                 entityAction, { headers: headers });
             return success === "Ok";
         } catch (e) {
+            this.get_logger().info(`Try check permission failed due to error: ${e.response?.data?.error.toString()}`)
             return false;
         }
     }
