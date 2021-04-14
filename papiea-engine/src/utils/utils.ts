@@ -241,10 +241,5 @@ export function convertAxiosErrorToEngineError(error: any): Error {
     }
 }
 export function includesDiff(diffs: Diff[], diff: Diff) {
-    for (let d of diffs) {
-        if (d.id === diff.id) {
-            return true
-        }
-    }
-    return false
+    return diffs.find(d => d.id === diff.id)
 }

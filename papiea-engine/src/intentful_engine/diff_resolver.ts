@@ -14,10 +14,11 @@ import {
     Provider_Entity_Reference
 } from "papiea-core"
 import { Provider_DB } from "../databases/provider_db_interface";
-import axios from "axios"
+import axios, {AxiosPromise, AxiosResponse} from "axios"
 import { IntentfulContext } from "../intentful_core/intentful_context";
 import { Logger } from "papiea-backend-utils";
 import deepEqual = require("deep-equal");
+import {PapieaException} from "../errors/papiea_exception"
 
 type DiffContext = {
     metadata: Metadata,
@@ -74,7 +75,6 @@ export class DiffResolver {
 
     private async rediff(entity_reference: Provider_Entity_Reference): Promise<RediffResult | null> {
         try {
-            // TODO: Reminder - this might be in a wrong order and cause a bug!
             const [metadata, spec] = await this.specDb.get_spec(entity_reference)
             const [, status] = await this.statusDb.get_status(entity_reference)
             const provider = await this.providerDb.get_provider(entity_reference.provider_prefix, entity_reference.provider_version)
@@ -90,7 +90,7 @@ export class DiffResolver {
         }
     }
 
-    private async launch_handler({diff, metadata, spec, status}: DiffWithContext) {
+    private async launch_handler({diff, metadata, spec, status}: DiffWithContext): Promise<AxiosResponse<void>> {
         this.logger.debug("launch_handler", diff.intentful_signature.procedure_callback,
             {
                 metadata: metadata,
@@ -99,7 +99,6 @@ export class DiffResolver {
                 input: diff.diff_fields,
                 id: diff.id,
             })
-        // This yields delay
         return axios.post(diff.intentful_signature.procedure_callback, {
             metadata: metadata,
             spec: spec,
@@ -161,8 +160,12 @@ export class DiffResolver {
             }
             return false
         } catch (e) {
-            this.logger.info(`Handler with url: ${diffs[0].handler_url!} is not responding`)
-            return false
+            if (e.request) {
+                this.logger.info(`Handler with url: ${diffs[0].handler_url!} is not responding`)
+                return false
+            } else {
+                throw e
+            }
         }
     }
 
@@ -180,7 +183,7 @@ export class DiffResolver {
         let next_diff: Diff
         const diff_selection_strategy = this.intentfulContext.getDiffSelectionStrategy(kind!)
         try {
-            next_diff = await diff_selection_strategy.selectOne(diffs)
+            next_diff = diff_selection_strategy.selectOne(diffs)
         } catch (e) {
             this.logger.info(`Failed to select diff for entity with uuid: ${metadata!.uuid} and kind: ${metadata!.kind} due to error: ${e}`)
             return
@@ -214,7 +217,11 @@ export class DiffResolver {
             try {
                 await this.watchlistDb.add_entity({metadata, spec, status: {}}, [])
             } catch (e) {
-                this.logger.debug(`Trying to add entity ${metadata.uuid}, which is already in the watchlist`)
+                if (e instanceof PapieaException) {
+                    this.logger.debug(`Trying to add entity ${metadata.uuid}, which is already in the watchlist`)
+                } else {
+                    throw e
+                }
             }
         }
     }

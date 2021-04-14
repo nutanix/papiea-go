@@ -62,14 +62,7 @@ export class DifferIntentfulStrategy extends IntentfulStrategy {
         await this.intentWatcherDb.save_watcher(watcher)
         watcherSpan.finish()
         try {
-            const entity_diffs = await this.watchlistDb.get_entity_diffs(metadata)
-            const pending_diffs = []
-            for (let diff of watcher.diffs) {
-                if (!includesDiff(entity_diffs, diff)) {
-                    pending_diffs.push(diff)
-                }
-            }
-            await this.watchlistDb.add_diffs(metadata, pending_diffs)
+            await this.watchlistDb.get_entity_diffs(metadata)
             return watcher
         } catch (e) {
             if (e instanceof WatchlistEntityNotFoundError) {

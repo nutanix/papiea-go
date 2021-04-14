@@ -80,7 +80,7 @@ export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
                 user: this.user,
                 status: IntentfulStatus.Active,
             }
-            for (let diff of this.differ.diffs(watcher.entity_ref, this.kind, created_spec, created_status)) {
+            for (const diff of this.differ.diffs(watcher.entity_ref, this.kind, created_spec, created_status)) {
                 watcher.diffs.push(diff)
             }
             await this.intentWatcherDb.save_watcher(watcher)

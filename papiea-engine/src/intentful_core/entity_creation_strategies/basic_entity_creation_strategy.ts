@@ -8,7 +8,6 @@ import {Validator} from "../../validator"
 import {Authorizer} from "../../auth/authz"
 import {RequestContext, spanOperation} from "papiea-backend-utils"
 import {ValidationError} from "../../errors/validation_error"
-import { PapieaException } from "../../errors/papiea_exception"
 
 export class BasicEntityCreationStrategy extends EntityCreationStrategy {
     public async create(input: {metadata: Metadata, spec: Spec}, ctx: RequestContext): Promise<EntityCreationResult> {

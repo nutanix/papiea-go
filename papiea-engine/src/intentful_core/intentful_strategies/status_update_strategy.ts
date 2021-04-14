@@ -77,14 +77,7 @@ export class DifferUpdateStrategy extends StatusUpdateStrategy {
         await super.update(entity_ref, status, ctx)
         span.finish()
         try {
-            const entity_diffs = await this.watchlistDb.get_entity_diffs(metadata)
-            const pending_diffs = []
-            for (let diff of diffs) {
-                if (!includesDiff(entity_diffs, diff)) {
-                    pending_diffs.push(diff)
-                }
-            }
-            await this.watchlistDb.add_diffs(metadata, pending_diffs)
+            await this.watchlistDb.get_entity_diffs(metadata)
         } catch (e) {
             if (e instanceof WatchlistEntityNotFoundError) {
                 await this.watchlistDb.add_entity({metadata, spec, status}, diffs)

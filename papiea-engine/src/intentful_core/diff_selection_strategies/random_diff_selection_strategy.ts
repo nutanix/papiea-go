@@ -4,7 +4,7 @@ import * as assert from "assert";
 
 export class RandomDiffSelectionStrategy implements DiffSelectionStrategyInterface {
 
-    async selectOne(diffs: Diff[]): Promise<Diff> {
+    selectOne(diffs: Diff[]): Diff {
         assert(diffs.filter(diff => diff?.intentful_signature?.procedure_callback).length > 0, "No valid diffs to choose from")
         const chosen_diff = diffs[Math.floor(Math.random() * diffs.length)]
         return chosen_diff
