@@ -66,7 +66,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
             diffs
         }
         const result = await this.collection.insertOne(entry);
-        if (result.result.n) {
+        if (result.result.n !== 1) {
             throw new PapieaException({message: `MongoDBError: Couldn't create a watchlist entry. Amount of created entries doesn't equal to 1: ${result.result.n}`})
         }
     }

@@ -3,6 +3,7 @@ import { ChangeStream, Collection, ChangeEventUpdate } from "mongodb";
 import { Entity } from "papiea-core";
 import { MongoConnection } from "../databases/mongo";
 import {Watchlist_DB} from "../databases/watchlist_db_interface"
+import {WatchlistEntityNotFoundError} from "../databases/utils/errors"
 
 // This is an alternative implementation which works with mongo replica set capabilities
 export class IntentfulListenerMongoStream implements IntentfulListener {
@@ -68,11 +69,14 @@ export class IntentfulListenerMongoStream implements IntentfulListener {
             // present, but we're only listening for updates, and we should
             // always get a ChangeEventUpdate.
             const entity: Entity = (<ChangeEventUpdate>change_event).fullDocument
-            const watchlist = await this.watchlistDb.get_watchlist()
-            const uuids = Array.from(watchlist.keys()).map(ref => ref.uuid)
-            if (uuids.includes(entity.metadata.uuid)) {
+            try {
+                await this.watchlistDb.get_entity_diffs(entity.metadata)
                 if (this.specChanged(change_event) || this.statusChanged(change_event)) {
                     await this.onChange.call(entity)
+                }
+            } catch (e) {
+                if (e instanceof WatchlistEntityNotFoundError) {
+                    return
                 }
             }
         }).on("error", async (err) => {

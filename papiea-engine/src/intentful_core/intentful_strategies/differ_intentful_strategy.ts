@@ -8,7 +8,6 @@ import { Watchlist_DB } from "../../databases/watchlist_db_interface";
 import uuid = require("uuid")
 import { Graveyard_DB } from "../../databases/graveyard_db_interface"
 import {RequestContext, spanOperation} from "papiea-backend-utils"
-import {includesDiff} from "../../utils/utils"
 import {WatchlistEntityNotFoundError} from "../../databases/utils/errors"
 
 export class DifferIntentfulStrategy extends IntentfulStrategy {

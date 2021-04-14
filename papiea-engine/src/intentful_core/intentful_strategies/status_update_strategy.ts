@@ -1,11 +1,10 @@
-import { Status, Kind, Differ, Diff, Provider_Entity_Reference } from "papiea-core";
+import { Status, Kind, Differ, Provider_Entity_Reference } from "papiea-core";
 import { Status_DB } from "../../databases/status_db_interface";
 import { UserAuthInfo } from "../../auth/authn";
 import { Spec_DB } from "../../databases/spec_db_interface";
 import { Watchlist_DB } from "../../databases/watchlist_db_interface";
 import {RequestContext, spanOperation} from "papiea-backend-utils"
 import { PapieaException } from "../../errors/papiea_exception"
-import {includesDiff} from "../../utils/utils"
 import {WatchlistEntityNotFoundError} from "../../databases/utils/errors"
 
 export abstract class StatusUpdateStrategy {

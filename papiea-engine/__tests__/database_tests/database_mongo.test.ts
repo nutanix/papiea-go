@@ -599,7 +599,7 @@ describe("MongoDb tests", () => {
         const differ = new BasicDiffer()
         const watcherDb = await connection.get_watchlist_db(logger, differ);
 
-        await watcherDb.add_entity(entity, [{id: "1"} as Diff])
+        await watcherDb.add_entity(entity.metadata, [{id: "1"} as Diff])
         const diffs = await watcherDb.get_entity_diffs(watchlist_ref)
         expect(diffs[0].id).toEqual("1");
         await watcherDb.remove_entity(watchlist_ref)
@@ -610,7 +610,7 @@ describe("MongoDb tests", () => {
         const differ = new BasicDiffer()
         const watcherDb = await connection.get_watchlist_db(logger, differ);
 
-        await watcherDb.add_entity(entity, [{
+        await watcherDb.add_entity(entity.metadata, [{
             id: "abcdefg"
         } as Diff]);
         const watchlist = await watcherDb.get_watchlist()
@@ -628,7 +628,7 @@ describe("MongoDb tests", () => {
         const differ = new BasicDiffer()
         const watcherDb = await connection.get_watchlist_db(logger, differ);
 
-        await watcherDb.add_entity(entity, [{id: "1"} as Diff])
+        await watcherDb.add_entity(entity.metadata, [{id: "1"} as Diff])
         await watcherDb.add_diff(watchlist_ref, {id: "2"} as Diff)
         let diffs = await watcherDb.get_entity_diffs(watchlist_ref)
         expect(diffs.length).toEqual(2);
@@ -643,7 +643,7 @@ describe("MongoDb tests", () => {
         const differ = new BasicDiffer()
         const watcherDb = await connection.get_watchlist_db(logger, differ);
 
-        await watcherDb.add_entity(entity, [{id: "1"} as Diff])
+        await watcherDb.add_entity(entity.metadata, [{id: "1"} as Diff])
         await watcherDb.add_diffs(watchlist_ref, [{id: "2"} as Diff])
         let diffs = await watcherDb.get_entity_diffs(watchlist_ref)
         expect(diffs.length).toEqual(2);
@@ -658,7 +658,7 @@ describe("MongoDb tests", () => {
         const differ = new BasicDiffer()
         const watcherDb = await connection.get_watchlist_db(logger, differ);
 
-        await watcherDb.add_entity(entity, [{
+        await watcherDb.add_entity(entity.metadata, [{
             id: "abcdefg",
             diff_fields: [],
             entity_reference: watchlist_ref,
@@ -678,7 +678,7 @@ describe("MongoDb tests", () => {
         const differ = new BasicDiffer()
         const watcherDb = await connection.get_watchlist_db(logger, differ);
 
-        await watcherDb.add_entity(entity, [{
+        await watcherDb.add_entity(entity.metadata, [{
             id: "abcdefg",
             diff_fields: [],
             entity_reference: watchlist_ref,
