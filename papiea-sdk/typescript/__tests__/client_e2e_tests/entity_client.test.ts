@@ -29,6 +29,7 @@ async function cleanup_entities() {
 describe("Entity Client end-to-end tests", () => {
     beforeAll(async () => {
         await test_setup.setup_and_register_sdk();
+        await cleanup_entities();
     });
 
     afterEach(async () => {
@@ -36,6 +37,7 @@ describe("Entity Client end-to-end tests", () => {
     });
 
     afterAll(async () => {
+        await cleanup_entities();
         await test_setup.cleanup_sdk();
     });
 
@@ -761,11 +763,11 @@ describe("Entity Client end-to-end tests", () => {
                 content: obj_content
             }
 
-            const watcher_ref = await object_entity_client.update(b1_object1_entity.metadata, spec)
+            let { intent_watcher } = await object_entity_client.update(b1_object1_entity.metadata, spec)
             const retries = 10
             const watcherApi = test_setup.get_intent_watcher_client()
             for(let i = 0; i < retries; i++) {
-                const intent_watcher = await watcherApi.get(watcher_ref!.uuid)
+                intent_watcher = await watcherApi.get(intent_watcher!.uuid)
                 if (intent_watcher.status === IntentfulStatus.Completed_Successfully) {
                     break
                 }

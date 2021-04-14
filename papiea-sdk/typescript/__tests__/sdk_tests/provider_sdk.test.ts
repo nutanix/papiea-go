@@ -3,7 +3,7 @@ import { load } from "js-yaml";
 import { resolve } from "path";
 import { plural } from "pluralize"
 import { loadYamlFromTestFactoryDir, OAuth2Server, ProviderBuilder } from "../../../../papiea-engine/__tests__/test_data_factory";
-import { timeout } from "../../../../papiea-engine/src/utils/utils"
+import { timeout, getObjectHash } from "../../../../papiea-engine/src/utils/utils"
 import axios from "axios"
 import { readFileSync } from "fs";
 import { Metadata, IntentfulBehaviour, Provider, Spec, Action, Entity_Reference, Entity, IntentfulStatus } from "papiea-core";
@@ -566,6 +566,117 @@ describe("Provider Sdk tests", () => {
                 e: 15
             };
             await ctx.replace_status(entity.metadata, {
+                x: 10,
+                y: 15,
+                v: {
+                    e: 15
+                }
+            })
+            return entity.spec;
+        });
+        try {
+            await sdk.register();
+            const kind_name = sdk.provider.kinds[ 0 ].name;
+            const { data: { metadata, spec } } = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { x: 5 });
+            const result = await entityApi.get(`${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
+            expect(result.data.status["v"]).toEqual({e: 15})
+        } finally {
+            sdk.cleanup()
+        }
+    });
+
+    test("Provider with kind level procedures update status with stale status hash should fail", async () => {
+        expect.assertions(1)
+        const kind_copy = JSON.parse(JSON.stringify(location_yaml))
+        kind_copy["Location"]["x-papiea-entity"] = "basic"
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(kind_copy);
+        sdk.version(provider_version);
+        sdk.prefix("location_provider");
+        location.entity_procedure(
+            "moveX",
+            {input_schema: loadYamlFromTestFactoryDir("./test_data/procedure_move_input.yml"),
+             output_schema:loadYamlFromTestFactoryDir("./test_data/location_kind_test_data.yml")},
+            async (ctx, entity, input) => {
+            entity.spec.v = {
+                e: 15
+            };
+            const old_metadata = entity.metadata
+            await ctx.update_status(old_metadata, {
+                x: 10,
+                y: 10,
+                v: {
+                    e: 15
+                }
+            })
+            await ctx.update_status(old_metadata, {
+                x: 10,
+                y: 15,
+                v: {
+                    e: 15
+                }
+            })
+            return entity.spec;
+        });
+        try {
+            await sdk.register();
+            const kind_name = sdk.provider.kinds[ 0 ].name;
+            const { data: { metadata, spec } } = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }`, {
+                spec: {
+                    x: 10,
+                    y: 11
+                }
+            });
+            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { x: 5 });
+        } catch (e) {
+            expect(e.response.data.error.code).toBe(409)
+        } finally {
+            sdk.cleanup()
+        }
+    });
+
+    test("Provider with kind level procedures update status with non-stale status hash should succeed", async () => {
+        expect.assertions(1)
+        const kind_copy = JSON.parse(JSON.stringify(location_yaml))
+        kind_copy["Location"]["x-papiea-entity"] = "basic"
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const location = sdk.new_kind(kind_copy);
+        sdk.version(provider_version);
+        sdk.prefix("location_provider");
+        location.entity_procedure(
+            "moveX",
+            {input_schema: loadYamlFromTestFactoryDir("./test_data/procedure_move_input.yml"),
+             output_schema:loadYamlFromTestFactoryDir("./test_data/location_kind_test_data.yml")},
+            async (ctx, entity, input) => {
+            entity.spec.v = {
+                e: 15
+            };
+            const old_metadata = entity.metadata
+            await ctx.update_status(old_metadata, {
+                x: 10,
+                y: 10,
+                v: {
+                    e: 15
+                }
+            })
+            const status_hash = getObjectHash({
+                "status": {
+                    x: 10,
+                    y: 10,
+                    v: {
+                        e: 15
+                    }
+                }
+            })
+            let new_metadata = old_metadata
+            new_metadata.status_hash = status_hash
+            await ctx.update_status(new_metadata, {
                 x: 10,
                 y: 15,
                 v: {
@@ -1771,7 +1882,7 @@ describe("SDK + oauth provider tests", () => {
             "computeWithPermissionCheck",
             {input_schema: loadYamlFromTestFactoryDir("./test_data/procedure_sum_input.yml")},
             async (ctx, input) => {
-                const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date, provider_prefix: provider.prefix, provider_version: provider.version } as Metadata]], undefined, provider.prefix, provider.version);
+                const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, status_hash: entity_metadata.status_hash, extension: { owner: "alice" }, created_at: {} as Date, provider_prefix: provider.prefix, provider_version: provider.version } as Metadata]], undefined, provider.prefix, provider.version);
                 expect(allowed).toBeTruthy();
             }
         );
@@ -1802,7 +1913,7 @@ describe("SDK + oauth provider tests", () => {
             "computeWithPermissionCheck",
             {input_schema: loadYamlFromTestFactoryDir("./test_data/procedure_sum_input.yml")},
             async (ctx, input) => {
-                const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date, provider_prefix: provider.prefix, provider_version: provider.version } as Metadata]], undefined, provider.prefix, provider.version);
+                const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, status_hash: entity_metadata.status_hash, extension: { owner: "alice" }, created_at: {} as Date, provider_prefix: provider.prefix, provider_version: provider.version } as Metadata]], undefined, provider.prefix, provider.version);
                 expect(allowed).toBeFalsy();
             }
         );
@@ -1833,7 +1944,7 @@ describe("SDK + oauth provider tests", () => {
             "computeWithPermissionCheck",
             {input_schema: loadYamlFromTestFactoryDir("./test_data/procedure_sum_input.yml")},
             async (ctx, input) => {
-                const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date, provider_prefix: provider.prefix, provider_version: provider.version } as Metadata]], undefined, provider.prefix, provider.version);
+                const allowed = await ctx.check_permission([[Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, status_hash: entity_metadata.status_hash, extension: { owner: "alice" }, created_at: {} as Date, provider_prefix: provider.prefix, provider_version: provider.version } as Metadata]], undefined, provider.prefix, provider.version);
                 expect(allowed).toBeFalsy();
             }
         );
@@ -1865,8 +1976,8 @@ describe("SDK + oauth provider tests", () => {
             {input_schema: loadYamlFromTestFactoryDir("./test_data/procedure_sum_input.yml")},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([
-                    [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date, provider_prefix: provider.prefix, provider_version: provider.version } as Metadata],
-                    [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "jane" }, created_at: {} as Date, provider_prefix: provider.prefix, provider_version: provider.version } as Metadata]
+                    [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, status_hash: entity_metadata.status_hash, extension: { owner: "alice" }, created_at: {} as Date, provider_prefix: provider.prefix, provider_version: provider.version } as Metadata],
+                    [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, status_hash: entity_metadata.status_hash, extension: { owner: "jane" }, created_at: {} as Date, provider_prefix: provider.prefix, provider_version: provider.version } as Metadata]
                 ], undefined, provider.prefix, provider.version);
                 expect(allowed).toBeFalsy();
             }
@@ -1899,8 +2010,8 @@ describe("SDK + oauth provider tests", () => {
             {input_schema: loadYamlFromTestFactoryDir("./test_data/procedure_sum_input.yml")},
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([
-                    [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date, provider_prefix: provider.prefix, provider_version: provider.version } as Metadata],
-                    [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date, provider_prefix: provider.prefix, provider_version: provider.version } as Metadata]
+                    [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, status_hash: entity_metadata.status_hash, extension: { owner: "alice" }, created_at: {} as Date, provider_prefix: provider.prefix, provider_version: provider.version } as Metadata],
+                    [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, status_hash: entity_metadata.status_hash, extension: { owner: "alice" }, created_at: {} as Date, provider_prefix: provider.prefix, provider_version: provider.version } as Metadata]
                 ], undefined, provider.prefix, provider.version);
                 expect(allowed).toBeTruthy();
             }
@@ -1934,7 +2045,7 @@ describe("SDK + oauth provider tests", () => {
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([
                     [Action.Read, { uuid: entity_metadata.uuid, kind: kind_name, provider_prefix: entity_metadata.provider_prefix, provider_version: entity_metadata.provider_version }],
-                    [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date, provider_prefix: provider.prefix, provider_version: provider.version } as Metadata]
+                    [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, status_hash: entity_metadata.status_hash, extension: { owner: "alice" }, created_at: {} as Date, provider_prefix: provider.prefix, provider_version: provider.version } as Metadata]
                 ], undefined, provider.prefix, provider.version);
                 expect(allowed).toBeTruthy();
             }
@@ -1968,7 +2079,7 @@ describe("SDK + oauth provider tests", () => {
             async (ctx, input) => {
                 const allowed = await ctx.check_permission([
                     [Action.Read, { uuid: entity_metadata.uuid, kind: kind_name, provider_prefix: entity_metadata.provider_prefix, provider_version: entity_metadata.provider_version }],
-                    [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, extension: { owner: "alice" }, created_at: {} as Date, provider_prefix: provider.prefix, provider_version: provider.version } as Metadata]
+                    [Action.Create, { uuid: entity_metadata.uuid, kind: kind_name, spec_version: 1, status_hash: entity_metadata.status_hash, extension: { owner: "alice" }, created_at: {} as Date, provider_prefix: provider.prefix, provider_version: provider.version } as Metadata]
                 ], undefined, provider.prefix, provider.version);
                 expect(allowed).toBeFalsy();
             }
@@ -2050,10 +2161,7 @@ describe("SDK + oauth provider tests", () => {
         location.on("x", async (ctx, entity, input) => {
             await providerApiAdmin.post(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                 context: "some context",
-                entity_ref: {
-                    uuid: entity.metadata.uuid,
-                    kind: entity.metadata.kind
-                },
+                metadata: entity.metadata,
                 status: {
                     x: 11,
                     y: 11
@@ -2081,7 +2189,7 @@ describe("SDK + oauth provider tests", () => {
                 }
             },
             { headers: { 'Authorization': `Bearer ${token}` }});
-            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name_local }/${ metadata.uuid }`, {
+            let { data: { intent_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name_local }/${ metadata.uuid }`, {
                 spec: {
                     x: 11,
                     y: 11
@@ -2093,7 +2201,7 @@ describe("SDK + oauth provider tests", () => {
             { headers: { 'Authorization': `Bearer ${token}` }})
 
             const watcherApi = sdk.get_intent_watcher_client()
-            const intent_watcher = await watcherApi.get(watcher.uuid)
+            intent_watcher = await watcherApi.get(intent_watcher.uuid)
             expect(intent_watcher.status).toEqual(IntentfulStatus.Active)
         } finally {
             sdk.cleanup();
@@ -2112,10 +2220,7 @@ describe("SDK + oauth provider tests", () => {
         location.on("x", async (ctx, entity, input) => {
             await providerApiAdmin.post(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                 context: "some context",
-                entity_ref: {
-                    uuid: entity.metadata.uuid,
-                    kind: entity.metadata.kind
-                },
+                metadata: entity.metadata,
                 status: {
                     x: 11,
                     y: 11

@@ -4,6 +4,7 @@ import {
     Spec,
     Entity_Reference,
     Entity,
+    EntityCreateOrUpdateResult,
     PapieaError,
     IntentWatcher,
     IntentfulStatus,
@@ -12,12 +13,6 @@ import {
 import {Tracer} from "opentracing"
 import {getTracer, spanOperation} from "papiea-backend-utils"
 
-interface EntityCreationResult {
-    intent_watcher: IntentWatcher | null,
-    metadata: Metadata,
-    spec: Spec,
-    status: Status | null
-}
 let tracerOpen = false
 let clientTracer: Tracer | null = null
 
@@ -71,25 +66,23 @@ function make_request<T = any, Y = AxiosPromise<T>>(f: (url: string, data?: any,
     return f(url, data, config)
 }
 
-async function create_entity(provider: string, kind: string, version: string, payload: any, papiea_url: string, s2skey: string, tracer: Tracer): Promise<EntityCreationResult> {
+async function create_entity(provider: string, kind: string, version: string, payload: any, papiea_url: string, s2skey: string, tracer: Tracer): Promise<EntityCreateOrUpdateResult> {
     const headers = getHeaders(s2skey)
     const span = spanOperation("create_entity_client", {headers, tracer})
-    const { data: { metadata, spec, intent_watcher, status } } = await make_request<EntityCreationResult>(axios.post, `${ papiea_url }/services/${ provider }/${ version }/${ kind }`, payload, {headers});
+    const { data: { metadata, spec, intent_watcher, status } } = await make_request<EntityCreateOrUpdateResult>(axios.post, `${ papiea_url }/services/${ provider }/${ version }/${ kind }`, payload, {headers});
     span.finish()
     return { metadata, spec, intent_watcher, status };
 }
 
-async function update_entity(provider: string, kind: string, version: string, request_spec: Spec, request_metadata: Metadata, papiea_url: string, s2skey: string, tracer: Tracer): Promise<IntentWatcher | undefined> {
+async function update_entity(provider: string, kind: string, version: string, request_spec: Spec, request_metadata: Metadata, papiea_url: string, s2skey: string, tracer: Tracer): Promise<EntityCreateOrUpdateResult> {
     const headers = getHeaders(s2skey)
     const span = spanOperation("update_entity_client", {headers, tracer}, {entity_uuid: request_metadata.uuid})
-    const { data: { watcher } } = await make_request(axios.put, `${ papiea_url }/services/${ provider }/${ version }/${ kind }/${ request_metadata.uuid }`, {
+    const { data: { metadata, spec, intent_watcher, status } } = await make_request(axios.put, `${ papiea_url }/services/${ provider }/${ version }/${ kind }/${ request_metadata.uuid }`, {
         spec: request_spec,
-        metadata: {
-            spec_version: request_metadata.spec_version
-        }
+        metadata: request_metadata
     }, {headers});
     span.finish()
-    return watcher
+    return { metadata, spec, intent_watcher, status }
 }
 
 async function get_entity(provider: string, kind: string, version: string, entity_reference: Entity_Reference, papiea_url: string, s2skey: string, tracer: Tracer): Promise<Entity> {
@@ -223,9 +216,9 @@ export function provider_client(papiea_url: string, provider: string, version: s
 export interface EntityCRUD {
     get(entity_reference: Entity_Reference): Promise<Entity>
 
-    create(spec: Spec): Promise<EntityCreationResult>
+    create(spec: Spec): Promise<EntityCreateOrUpdateResult>
 
-    update(metadata: Metadata, spec: Spec): Promise<IntentWatcher | undefined>
+    update(metadata: Metadata, spec: Spec): Promise<EntityCreateOrUpdateResult>
 
     delete(entity_reference: Entity_Reference): Promise<void>
 

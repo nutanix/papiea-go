@@ -1,15 +1,10 @@
 import { UserAuthInfo } from "../auth/authn";
-import { Version, Spec, Metadata, uuid4, Status, Entity_Reference, Action, Entity, IntentWatcher } from "papiea-core";
+import { Version, Spec, Metadata, uuid4, Status, Entity_Reference, Action, Entity, EntityCreateOrUpdateResult, IntentWatcher } from "papiea-core";
 import { SortParams } from "./entity_api_impl";
 import {RequestContext} from "papiea-backend-utils"
 
 export interface Entity_API {
-    save_entity(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, input: unknown, context: RequestContext): Promise<{
-        intent_watcher: IntentWatcher | null,
-        metadata: Metadata,
-        spec: Spec,
-        status: Status | null
-    }>
+    save_entity(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, input: unknown, context: RequestContext): Promise<EntityCreateOrUpdateResult>
 
     get_entity_spec(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, entity_uuid: uuid4, context: RequestContext): Promise<[Metadata, Spec]>
 
@@ -25,7 +20,7 @@ export interface Entity_API {
 
     filter_deleted(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, fields: any, exact_match: boolean, context: RequestContext, sortParams?: SortParams): Promise<Entity[]>
 
-    update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, extension: {[key: string]: any}, kind_name: string, version: Version, spec_description: Spec, context: RequestContext): Promise<IntentWatcher | null>
+    update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, extension: {[key: string]: any}, kind_name: string, version: Version, spec_description: Spec, context: RequestContext): Promise<EntityCreateOrUpdateResult>
 
     delete_entity(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, entity_uuid: uuid4, context: RequestContext): Promise<void>
 

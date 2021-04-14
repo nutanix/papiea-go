@@ -8,6 +8,7 @@ import {UserAuthInfo} from "../auth/authn"
 import {
     Action,
     Entity,
+    EntityCreateOrUpdateResult,
     IntentWatcher,
     Metadata,
     Procedural_Signature,
@@ -76,12 +77,7 @@ export class Entity_API_Impl implements Entity_API {
         return IntentWatcherMapper.toResponses(filteredRes)
     }
 
-    async save_entity(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, input: unknown, ctx: RequestContext): Promise<{
-        intent_watcher: IntentWatcher | null,
-        metadata: Metadata,
-        spec: Spec,
-        status: Status | null
-    }> {
+    async save_entity(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, input: unknown, ctx: RequestContext): Promise<EntityCreateOrUpdateResult> {
         const provider = await this.get_provider(prefix, version, ctx);
         const kind = this.providerDb.find_kind(provider, kind_name);
         const strategy = this.intentfulCtx.getEntityCreationStrategy(provider, kind, user)
@@ -152,7 +148,7 @@ export class Entity_API_Impl implements Entity_API {
         return filteredRes
     }
 
-    async update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, extension: {[key: string]: any}, kind_name: string, version: Version, spec_description: Spec, ctx: RequestContext): Promise<IntentWatcher | null> {
+    async update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, extension: {[key: string]: any}, kind_name: string, version: Version, spec_description: Spec, ctx: RequestContext): Promise<EntityCreateOrUpdateResult> {
         const provider = await this.get_provider(prefix, version, ctx);
         const kind = this.providerDb.find_kind(provider, kind_name);
         this.validator.validate_spec(provider, spec_description, kind, provider.allowExtraProps);
@@ -163,8 +159,7 @@ export class Entity_API_Impl implements Entity_API {
         metadata.provider_prefix = prefix
         metadata.provider_version = version
         const strategy = this.intentfulCtx.getIntentfulStrategy(provider, kind, user)
-        const watcher = await strategy.update(metadata, spec_description, ctx)
-        return watcher;
+        return await strategy.update(metadata, spec_description, ctx)
     }
 
     async delete_entity(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, entity_uuid: uuid4, ctx: RequestContext): Promise<void> {

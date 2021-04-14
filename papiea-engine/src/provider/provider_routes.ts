@@ -34,18 +34,18 @@ export default function createProviderAPIRouter(providerApi: Provider_API, trace
 
     providerApiRouter.post('/:prefix/:version/update_status', check_request({
         allowed_query_params: [],
-        allowed_body_params: ['context', 'entity_ref', 'status']
+        allowed_body_params: ['context', 'metadata', 'status']
     }), trace("replace_status"), asyncHandler(async (req, res) => {
-        await providerApi.replace_status(req.user, req.params.prefix, req.params.version, req.body.entity_ref, req.body.status, res.locals.ctx);
-        res.json("OK")
+        const result = await providerApi.replace_status(req.user, req.params.prefix, req.params.version, req.body.metadata, req.body.status, res.locals.ctx);
+        res.json(result)
     }));
 
     providerApiRouter.patch('/:prefix/:version/update_status', check_request({
         allowed_query_params: [],
-        allowed_body_params: ['context', 'entity_ref', 'status']
+        allowed_body_params: ['context', 'metadata', 'status']
     }), trace("update_status"), asyncHandler(async (req, res) => {
-        await providerApi.update_status(req.user, req.params.prefix, req.params.version, req.body.entity_ref, req.body.status, res.locals.ctx);
-        res.json("OK")
+        const result = await providerApi.update_status(req.user, req.params.prefix, req.params.version, req.body.metadata, req.body.status, res.locals.ctx);
+        res.json(result)
     }));
 
     providerApiRouter.post('/:prefix/:version/update_progress', check_request({

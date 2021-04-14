@@ -1,5 +1,5 @@
-import {EntityCreationResult, EntityCreationStrategy} from "./entity_creation_strategy_interface"
-import {IntentfulBehaviour, IntentWatcher, Metadata, Spec, Status} from "papiea-core"
+import {EntityCreationStrategy} from "./entity_creation_strategy_interface"
+import {IntentfulBehaviour, EntityCreateOrUpdateResult, Metadata, Spec, Status} from "papiea-core"
 import {create_entry} from "../../intentful_engine/watchlist"
 import {Spec_DB} from "../../databases/spec_db_interface"
 import {Status_DB} from "../../databases/status_db_interface"
@@ -12,7 +12,7 @@ import {ValidationError} from "../../errors/validation_error"
 import { PapieaException } from "../../errors/papiea_exception"
 
 export class BasicEntityCreationStrategy extends EntityCreationStrategy {
-    public async create(input: {metadata: Metadata, spec: Spec}, ctx: RequestContext): Promise<EntityCreationResult> {
+    public async create(input: {metadata: Metadata, spec: Spec}, ctx: RequestContext): Promise<EntityCreateOrUpdateResult> {
         const metadata = await this.create_metadata(input.metadata ?? {})
         if (input.spec === undefined || input.spec === null) {
             throw new ValidationError({

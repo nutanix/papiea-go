@@ -4,11 +4,13 @@ import { AxiosError } from "axios"
 import { Logger } from "papiea-backend-utils"
 import { BadRequestError } from "../errors/bad_request_error"
 import { PapieaException } from "../errors/papiea_exception"
+import * as hash from "object-hash"
 import { PapieaError, PapieaExceptionContext } from "papiea-core"
 import { ProcedureInvocationError } from "../errors/procedure_invocation_error";
 import { PermissionDeniedError, UnauthorizedError } from "../errors/permission_error";
-import { ConflictingEntityError, EntityNotFoundError } from "../databases/utils/errors"
+import { SpecConflictingEntityError, StatusConflictingEntityError, EntityNotFoundError } from "../databases/utils/errors"
 import { OnActionError } from "../errors/on_action_error"
+export { hash as getObjectHash }
 
 const semver = require('semver')
 
@@ -229,9 +231,12 @@ export function convertAxiosErrorToEngineError(error: any): Error {
             return new UnauthorizedError({ message, entity_info: context })
         case PapieaError.PermissionDenied:
             return new PermissionDeniedError({ message, entity_info: context })
-        case PapieaError.ConflictingEntity:
+        case PapieaError.SpecConflictingEntity:
             const metadata = { provider_prefix: entity_info.provider_prefix, provider_version: entity_info.provider_version, kind: entity_info.kind_name, uuid: entity_info.entity_uuid, spec_version: parseInt(entity_info.existing_spec_version) }
-            return new ConflictingEntityError(message, metadata)
+            return new SpecConflictingEntityError(message, metadata)
+        case PapieaError.StatusConflictingEntity:
+            const status_conflict_metadata = { provider_prefix: entity_info.provider_prefix, provider_version: entity_info.provider_version, kind: entity_info.kind_name, uuid: entity_info.entity_uuid, status_hash:entity_info.existing_status_hash }
+            return new StatusConflictingEntityError(status_conflict_metadata)
         case PapieaError.OnActionError:
             return new OnActionError({ message, entity_info: context })
         case PapieaError.PapieaException:

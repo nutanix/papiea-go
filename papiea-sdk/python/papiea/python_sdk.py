@@ -679,7 +679,7 @@ class BackgroundTaskBuilder:
             url = f"{self.provider.get_prefix()}/{self.provider.get_version()}"
             await self.provider.provider_api.patch(
                 f"{url}/update_status",
-                {"entity_ref": self.task_entity.metadata,
+                {"metadata": self.task_entity.metadata,
                  "status": {"state": json.dumps(self.BackgroundTaskState.RunningStatusState)}},
             )
         else:
@@ -691,7 +691,7 @@ class BackgroundTaskBuilder:
             url = f"{self.provider.get_prefix()}/{self.provider.get_version()}"
             await self.provider.provider_api.patch(
                 f"{url}/update_status",
-                {"entity_ref": self.task_entity.metadata,
+                {"metadata": self.task_entity.metadata,
                  "status": {"state": json.dumps(self.BackgroundTaskState.RunningStatusState)}},
             )
 
@@ -708,7 +708,7 @@ class BackgroundTaskBuilder:
             url = f"{self.provider.get_prefix()}/{self.provider.get_version()}"
             await self.provider.provider_api.patch(
                 f"{url}/update_status",
-                {"entity_ref": self.task_entity.metadata,
+                {"metadata": self.task_entity.metadata,
                  "status": {"state": json.dumps(self.BackgroundTaskState.IdleStatusState)}},
             )
 
@@ -745,6 +745,6 @@ class BackgroundTaskBuilder:
             url = f"{self.provider.get_prefix()}/{self.provider.get_version()}"
             await self.provider.provider_api.patch(
                 f"{url}/update_status",
-                {"entity_ref": self.task_entity.metadata,
+                {"metadata": self.task_entity.metadata,
                  "status": {"provider_fields": task_context}}
             )
