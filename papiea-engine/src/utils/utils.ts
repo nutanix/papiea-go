@@ -4,7 +4,7 @@ import { AxiosError } from "axios"
 import { Logger } from "papiea-backend-utils"
 import { BadRequestError } from "../errors/bad_request_error"
 import { PapieaException } from "../errors/papiea_exception"
-import { PapieaError, PapieaExceptionContext } from "papiea-core"
+import { PapieaError, PapieaExceptionContext, Diff } from "papiea-core"
 import { ProcedureInvocationError } from "../errors/procedure_invocation_error";
 import { PermissionDeniedError, UnauthorizedError } from "../errors/permission_error";
 import { ConflictingEntityError, EntityNotFoundError } from "../databases/utils/errors"
@@ -239,4 +239,7 @@ export function convertAxiosErrorToEngineError(error: any): Error {
         default:
             return new Error(message)
     }
+}
+export function includesDiff(diffs: Diff[], diff: Diff) {
+    return diffs.find(d => d.id === diff.id)
 }

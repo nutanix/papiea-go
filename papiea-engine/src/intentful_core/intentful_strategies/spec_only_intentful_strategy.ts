@@ -1,7 +1,7 @@
 import { Spec_DB } from "../../databases/spec_db_interface"
 import { Status_DB } from "../../databases/status_db_interface"
 import { IntentfulStrategy } from "./intentful_strategy_interface"
-import { Metadata, Spec, Entity, IntentWatcher } from "papiea-core"
+import { Metadata, Spec, IntentWatcher } from "papiea-core"
 import { Graveyard_DB } from "../../databases/graveyard_db_interface"
 import {RequestContext, spanOperation} from "papiea-backend-utils"
 

@@ -1,25 +1,26 @@
 import { Handler, IntentfulListener } from "./intentful_listener_interface";
 import { ChangeStream, Collection, ChangeEventUpdate } from "mongodb";
-import { Watchlist, create_entry } from "./watchlist";
 import { Entity } from "papiea-core";
 import { MongoConnection } from "../databases/mongo";
+import {Watchlist_DB} from "../databases/watchlist_db_interface"
+import {WatchlistEntityNotFoundError} from "../databases/utils/errors"
 
 // This is an alternative implementation which works with mongo replica set capabilities
 export class IntentfulListenerMongoStream implements IntentfulListener {
     private entityDbCollection: Collection;
     onChange: Handler<(entity: Entity) => Promise<void>>;
     private changeStreamIterator: ChangeStream;
-    private watchlist: Watchlist;
+    private watchlistDb: Watchlist_DB;
     // Maybe we should store it persistently on disk?
     private resumeToken: any | undefined
 
-    constructor(mongoConnection: MongoConnection, watchlist: Watchlist) {
+    constructor(mongoConnection: MongoConnection, watchlistDb: Watchlist_DB) {
         this.entityDbCollection = mongoConnection.db!.collection("entity")
         this.changeStreamIterator = this.entityDbCollection.watch([
             { $match: { operationType: "update" } }
         ], { fullDocument: 'updateLookup', resumeAfter: this.resumeToken })
         this.onChange = new Handler()
-        this.watchlist = watchlist
+        this.watchlistDb = watchlistDb
     }
 
     public async run() {
@@ -68,9 +69,14 @@ export class IntentfulListenerMongoStream implements IntentfulListener {
             // present, but we're only listening for updates, and we should
             // always get a ChangeEventUpdate.
             const entity: Entity = (<ChangeEventUpdate>change_event).fullDocument
-            if (this.watchlist.has(create_entry(entity.metadata))) {
+            try {
+                await this.watchlistDb.get_entity_diffs(entity.metadata)
                 if (this.specChanged(change_event) || this.statusChanged(change_event)) {
                     await this.onChange.call(entity)
+                }
+            } catch (e) {
+                if (e instanceof WatchlistEntityNotFoundError) {
+                    return
                 }
             }
         }).on("error", async (err) => {

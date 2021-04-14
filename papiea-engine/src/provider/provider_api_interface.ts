@@ -1,5 +1,5 @@
 import { UserAuthInfo } from "../auth/authn";
-import { Provider, Version, Entity_Reference, Status, S2S_Key } from "papiea-core";
+import {Provider, Version, Entity_Reference, Status, S2S_Key, Backoff} from "papiea-core"
 import {RequestContext} from "papiea-backend-utils"
 
 
@@ -41,4 +41,6 @@ export interface Provider_API {
     inactivate_key(user: UserAuthInfo, uuid: string, context: RequestContext): Promise<void>;
 
     filter_keys(user: UserAuthInfo, fields: any, context: RequestContext): Promise<S2S_Key[]>;
+
+    update_diff_backoff(user: UserAuthInfo, provider_prefix: string, version: Version, entity_ref: Entity_Reference, diff_id: string, backoff: Backoff, ctx: RequestContext): Promise<void>
 }

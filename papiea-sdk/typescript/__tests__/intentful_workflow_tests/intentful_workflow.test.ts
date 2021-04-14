@@ -247,10 +247,10 @@ describe("Intentful Workflow tests single provider", () => {
                         },
                         status: { x: entity.spec.x }
                     })
-                    return {"delay_secs": 2}
+                    return 2000
                 } else {
                     // 12 seconds delay
-                    return {"delay_secs": 12}
+                    return 12000
                 }
             })
             await sdk.register();
@@ -291,80 +291,84 @@ describe("Intentful Workflow tests single provider", () => {
         }
     })
 
-    test("Exponential backoff should be activated", async () => {
-        expect.assertions(1);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
-        try {
-            let times_requested = 0
-            first_provider_prefix = "location_provider_exponential_backoff"
-            const location = sdk.new_kind(locationDataDescription);
-            sdk.version(provider_version);
-            sdk.prefix(first_provider_prefix);
-            location.on("x", async (ctx, entity, input) => {
-                times_requested++
-            })
-            await sdk.register();
-            const kind_name = sdk.provider.kinds[0].name;
-            const { data: { metadata, spec } } = await entityApi.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }`, {
-                spec: {
-                    x: 10,
-                    y: 11
-                }
-            })
-            first_provider_to_delete_entites.push(metadata)
-            await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
-                spec: {
-                    x: 30,
-                    y: 11
-                },
-                metadata: {
-                    spec_version: 1
-                }
-            })
-            await timeout(18000)
-            expect(times_requested).toBeLessThanOrEqual(5)
-        } finally {
-            sdk.cleanup();
-        }
-    })
+    // TODO: fix this in a PR for dynamic backoff
+    // https://github.com/nutanix/papiea/issues/663
+    // test("Exponential backoff should be activated", async () => {
+    //     expect.assertions(1);
+    //     const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+    //     try {
+    //         let times_requested = 0
+    //         first_provider_prefix = "location_provider_exponential_backoff"
+    //         const location = sdk.new_kind(locationDataDescription);
+    //         sdk.version(provider_version);
+    //         sdk.prefix(first_provider_prefix);
+    //         location.on("x", async (ctx, entity, input) => {
+    //             times_requested++
+    //         })
+    //         await sdk.register();
+    //         const kind_name = sdk.provider.kinds[0].name;
+    //         const { data: { metadata, spec } } = await entityApi.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }`, {
+    //             spec: {
+    //                 x: 10,
+    //                 y: 11
+    //             }
+    //         })
+    //         first_provider_to_delete_entites.push(metadata)
+    //         await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+    //             spec: {
+    //                 x: 30,
+    //                 y: 11
+    //             },
+    //             metadata: {
+    //                 spec_version: 1
+    //             }
+    //         })
+    //         await timeout(18000)
+    //         expect(times_requested).toBeLessThanOrEqual(5)
+    //     } finally {
+    //         sdk.cleanup();
+    //     }
+    // })
 
-    test("Exponential backoff should be activated using the exponent value set for kind", async () => {
-        expect.assertions(1);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
-        try {
-            let times_requested = 0
-            first_provider_prefix = "location_provider_exponential_backoff_kind_exponent"
-            const location = sdk.new_kind(locationDataDescription);
-            sdk.version(provider_version);
-            sdk.prefix(first_provider_prefix);
-            location.on("x", async (ctx, entity, input) => {
-                times_requested++
-            })
-            location.diff_retry_exponent(1.5)
-            await sdk.register();
-            const kind_name = sdk.provider.kinds[0].name;
-            const { data: { metadata, spec } } = await entityApi.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }`, {
-                spec: {
-                    x: 10,
-                    y: 11
-                }
-            })
-            first_provider_to_delete_entites.push(metadata)
-            await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
-                spec: {
-                    x: 30,
-                    y: 11
-                },
-                metadata: {
-                    spec_version: 1
-                }
-            })
-            await timeout(18000)
-            expect(times_requested).toBeLessThanOrEqual(5)
-        } finally {
-            sdk.cleanup()
-        }
-    })
+    // TODO: fix this in a PR for dynamic backoff
+    // https://github.com/nutanix/papiea/issues/663
+    // test("Exponential backoff should be activated using the exponent value set for kind", async () => {
+    //     expect.assertions(1);
+    //     const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+    //     try {
+    //         let times_requested = 0
+    //         first_provider_prefix = "location_provider_exponential_backoff_kind_exponent"
+    //         const location = sdk.new_kind(locationDataDescription);
+    //         sdk.version(provider_version);
+    //         sdk.prefix(first_provider_prefix);
+    //         location.on("x", async (ctx, entity, input) => {
+    //             times_requested++
+    //         })
+    //         location.diff_retry_exponent(1.5)
+    //         await sdk.register();
+    //         const kind_name = sdk.provider.kinds[0].name;
+    //         const { data: { metadata, spec } } = await entityApi.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }`, {
+    //             spec: {
+    //                 x: 10,
+    //                 y: 11
+    //             }
+    //         })
+    //         first_provider_to_delete_entites.push(metadata)
+    //         await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+    //             spec: {
+    //                 x: 30,
+    //                 y: 11
+    //             },
+    //             metadata: {
+    //                 spec_version: 1
+    //             }
+    //         })
+    //         await timeout(18000)
+    //         expect(times_requested).toBeLessThanOrEqual(5)
+    //     } finally {
+    //         sdk.cleanup()
+    //     }
+    // })
 
     test("Background tasks should work", async () => {
         expect.hasAssertions();
@@ -375,7 +379,7 @@ describe("Intentful Workflow tests single provider", () => {
             const location = sdk.new_kind(locationDataDescription);
             sdk.version(provider_version);
             sdk.prefix(first_provider_prefix);
-            const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface) => {
+            const task = sdk.background_task("sample-task", 5000, async (ctx: IntentfulCtx_Interface) => {
                 times_invoked++
             })
             try {
@@ -412,7 +416,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             try {
-                const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface) => {
+                const task = sdk.background_task("sample-task", 5000, async (ctx: IntentfulCtx_Interface) => {
                 })
             } catch (e) {
                 console.log(e.message)
@@ -440,7 +444,7 @@ describe("Intentful Workflow tests single provider", () => {
                     }
                 }
             })
-            const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface) => {
+            const task = sdk.background_task("sample-task", 5000, async (ctx: IntentfulCtx_Interface) => {
             }, {sample: "test"})
             try {
                 await sdk.register();
@@ -464,7 +468,7 @@ describe("Intentful Workflow tests single provider", () => {
             const location = sdk.new_kind(locationDataDescription);
             sdk.version(provider_version);
             sdk.prefix(first_provider_prefix);
-            const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface, task_ctx: any | undefined) => {
+            const task = sdk.background_task("sample-task", 5000, async (ctx: IntentfulCtx_Interface, task_ctx: any | undefined) => {
                 if (task_ctx) {
                     count = task_ctx.count
                 }
@@ -805,6 +809,7 @@ describe("Intentful Workflow tests single provider", () => {
         const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
         try {
             first_provider_prefix = "location_provider_intentful_4"
+            console.log(JSON.stringify(locationDataDescriptionArraySfs))
             const location = sdk.new_kind(locationDataDescriptionArraySfs);
             sdk.version(provider_version);
             sdk.prefix(first_provider_prefix);

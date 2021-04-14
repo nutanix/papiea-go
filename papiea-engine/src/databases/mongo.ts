@@ -12,6 +12,7 @@ import { Watchlist_Db_Mongo } from "./watchlist_db_mongo";
 import { Graveyard_DB } from "./graveyard_db_interface"
 import { Graveyard_DB_Mongo } from "./graveyard_db_mongo"
 import { PapieaException } from "../errors/papiea_exception";
+import {Differ} from "papiea-core"
 const fs = require('fs'),
     url = require('url');
 
@@ -141,12 +142,12 @@ export class MongoConnection {
         return this.intentWatcherDb;
     }
 
-    async get_watchlist_db(logger: Logger): Promise<Watchlist_Db_Mongo> {
+    async get_watchlist_db(logger: Logger, differ: Differ): Promise<Watchlist_Db_Mongo> {
         if (this.watchlistDb !== undefined)
             return this.watchlistDb;
         if (this.db === undefined)
             throw new PapieaException({ message: "MongoDBError: Failed to connect to watchlist database." });
-        this.watchlistDb = new Watchlist_Db_Mongo(logger, this.db);
+        this.watchlistDb = new Watchlist_Db_Mongo(logger, this.db, differ);
         await this.watchlistDb.init();
         return this.watchlistDb;
     }

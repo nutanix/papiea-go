@@ -1,11 +1,11 @@
-import { Status, Kind, Differ, Diff, Provider_Entity_Reference } from "papiea-core";
+import { Status, Kind, Differ, Provider_Entity_Reference } from "papiea-core";
 import { Status_DB } from "../../databases/status_db_interface";
 import { UserAuthInfo } from "../../auth/authn";
 import { Spec_DB } from "../../databases/spec_db_interface";
 import { Watchlist_DB } from "../../databases/watchlist_db_interface";
-import { create_entry } from "../../intentful_engine/watchlist";
 import {RequestContext, spanOperation} from "papiea-backend-utils"
 import { PapieaException } from "../../errors/papiea_exception"
+import {WatchlistEntityNotFoundError} from "../../databases/utils/errors"
 
 export abstract class StatusUpdateStrategy {
     statusDb: Status_DB
@@ -66,24 +66,22 @@ export class DifferUpdateStrategy extends StatusUpdateStrategy {
     }
 
     async update(entity_ref: Provider_Entity_Reference, status: Status, ctx: RequestContext): Promise<void> {
-        let diffs: Diff[] = []
         const getSpecSpan = spanOperation(`get_spec_db`,
                                    ctx.tracing_ctx)
         const [metadata, spec] = await this.specDb.get_spec(entity_ref)
         getSpecSpan.finish()
-        for (let diff of this.differ.diffs(this.kind!, spec, status)) {
-            diffs.push(diff)
-        }
-        const watchlist = await this.watchlistDb.get_watchlist()
-        const ent = create_entry(metadata)
-        if (!watchlist.has(ent)) {
-            watchlist.set([ent, []])
-            await this.watchlistDb.update_watchlist(watchlist)
-        }
+        const diffs = this.differ.all_diffs(entity_ref, this.kind!, spec, status)
         const span = spanOperation(`update_status_db`,
-                                   ctx.tracing_ctx)
+            ctx.tracing_ctx)
         await super.update(entity_ref, status, ctx)
         span.finish()
+        try {
+            await this.watchlistDb.get_entity_diffs(metadata)
+        } catch (e) {
+            if (e instanceof WatchlistEntityNotFoundError) {
+                await this.watchlistDb.add_entity(metadata, diffs)
+            }
+        }
     }
 
     async replace(entity_ref: Provider_Entity_Reference, status: Status, ctx: RequestContext) {

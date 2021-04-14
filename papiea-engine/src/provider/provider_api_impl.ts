@@ -6,7 +6,16 @@ import { Validator } from "../validator";
 import { Authorizer } from "../auth/authz";
 import { UserAuthInfo } from "../auth/authn";
 import { createHash } from "../auth/crypto";
-import { Action, Entity_Reference, Provider, S2S_Key, Secret, Status, Version } from "papiea-core";
+import {
+    Action,
+    Backoff,
+    Entity_Reference,
+    Provider, Provider_Entity_Reference,
+    S2S_Key,
+    Secret,
+    Status,
+    Version
+} from "papiea-core"
 import {Logger, RequestContext, spanOperation} from "papiea-backend-utils"
 import { Watchlist_DB } from "../databases/watchlist_db_interface";
 import { SpecOnlyUpdateStrategy } from "../intentful_core/intentful_strategies/status_update_strategy";
@@ -118,6 +127,25 @@ export class Provider_API_Impl implements Provider_API {
         await this.validator.validate_status(provider, entity_ref, mergedStatus);
 
         return await strategy.update({provider_prefix: provider_prefix, provider_version: version, ...entity_ref}, partialStatus, ctx)
+    }
+
+    async update_diff_backoff(user: UserAuthInfo, provider_prefix: string, version: Version, entity_ref: Entity_Reference, diff_id: string, backoff: Backoff, ctx: RequestContext) {
+        const providerEntityRef: Provider_Entity_Reference = {
+            provider_version: version,
+            provider_prefix: provider_prefix,
+            uuid: entity_ref.uuid,
+            kind: entity_ref.kind,
+            name: entity_ref.name
+        }
+        const getProviderSpan = spanOperation(`get_provider_db`,
+            ctx.tracing_ctx)
+        const provider: Provider = await this.providerDb.get_provider(provider_prefix, version);
+        getProviderSpan.finish()
+        await this.authorizer.checkPermission(user, provider, Action.UpdateStatus, provider);
+        const updateDiffBackoffSpan = spanOperation(`update_diff_backoff_db`,
+            ctx.tracing_ctx)
+        await this.watchlistDb.update_diff_backoff(providerEntityRef, diff_id, backoff)
+        updateDiffBackoffSpan.finish()
     }
 
     async update_progress(user: UserAuthInfo, provider_prefix: string, version: Version, message: string, done_percent: number, ctx: RequestContext): Promise<void> {

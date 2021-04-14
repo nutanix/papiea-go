@@ -5,6 +5,7 @@ import { BasicDiffer } from "../../src/intentful_core/differ_impl"
 import {
     Intentful_Execution_Strategy,
 } from "papiea-core"
+import uuid = require("uuid")
 
 describe("Differ tests", () => {
 
@@ -36,6 +37,13 @@ describe("Differ tests", () => {
         }]
     const locationDifferKind = new KindBuilder(IntentfulBehaviour.Differ).withDescription(locationDataDescription).withSignatures(intentfulSignature).build()
 
+    const entity_ref = {
+        provider_prefix: "test",
+        provider_version: "0.1.0",
+        uuid: uuid(),
+        kind: "test_kind",
+    }
+
     test("Differ find single diff", () => {
         expect.assertions(1)
         const differ = new BasicDiffer()
@@ -48,7 +56,7 @@ describe("Differ tests", () => {
                 { "id": 2, "a": 1, "d": 3 }]
         }
         const diff_fields = SFSCompiler.run_sfs(SFSCompiler.try_compile_sfs("a.{id}.[a,d]", "test_kind"), spec, status, null, "test_kind")
-        for (let diff of differ.diffs(locationDifferKind, spec, status)) {
+        for (let diff of differ.diffs(entity_ref, locationDifferKind, spec, status)) {
             expect(diff.diff_fields).toEqual(diff_fields)
         }
     })
@@ -97,7 +105,7 @@ describe("Differ tests", () => {
             "y": 11
         }
         const diff_fields = SFSCompiler.run_sfs(SFSCompiler.try_compile_sfs("x", "test_kind"), spec, status, null, "test_kind")
-        for (let diff of differ.diffs(locationDifferKind, spec, status)) {
+        for (let diff of differ.diffs(entity_ref, locationDifferKind, spec, status)) {
             expect(diff.diff_fields).toEqual(diff_fields)
         }
     })
@@ -114,7 +122,7 @@ describe("Differ tests", () => {
             "y": 20
         }
         let diff_count = 0
-        for (let diff of differ.diffs(locationDifferKind, spec, status)) {
+        for (let diff of differ.diffs(entity_ref, locationDifferKind, spec, status)) {
             diff_count++
         }
         expect(diff_count).toEqual(2)
@@ -131,7 +139,7 @@ describe("Differ tests", () => {
             "x": 15,
             "y": 20
         }
-        let diffs = differ.all_diffs(locationDifferKind, spec, status)
+        let diffs = differ.all_diffs(entity_ref, locationDifferKind, spec, status)
         expect(diffs.length).toEqual(2)
     })
 
@@ -145,7 +153,7 @@ describe("Differ tests", () => {
         const status = {
             "y": 11
         }
-        let diffs = differ.all_diffs(locationDifferKind, spec, status)
+        let diffs = differ.all_diffs(entity_ref, locationDifferKind, spec, status)
         expect(diffs.length).toEqual(0)
     })
 
@@ -159,7 +167,7 @@ describe("Differ tests", () => {
         const status = {
             "y": 11
         }
-        let diffs = differ.all_diffs(locationDifferKind, spec, status)
+        let diffs = differ.all_diffs(entity_ref, locationDifferKind, spec, status)
         expect(diffs.length).toEqual(0)
     })
 })

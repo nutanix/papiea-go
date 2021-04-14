@@ -1,6 +1,5 @@
 import {EntityCreationResult, EntityCreationStrategy} from "./entity_creation_strategy_interface"
 import {IntentfulBehaviour, IntentWatcher, Metadata, Spec, Status} from "papiea-core"
-import {create_entry} from "../../intentful_engine/watchlist"
 import {Spec_DB} from "../../databases/spec_db_interface"
 import {Status_DB} from "../../databases/status_db_interface"
 import {Graveyard_DB} from "../../databases/graveyard_db_interface"
@@ -9,7 +8,6 @@ import {Validator} from "../../validator"
 import {Authorizer} from "../../auth/authz"
 import {RequestContext, spanOperation} from "papiea-backend-utils"
 import {ValidationError} from "../../errors/validation_error"
-import { PapieaException } from "../../errors/papiea_exception"
 
 export class BasicEntityCreationStrategy extends EntityCreationStrategy {
     public async create(input: {metadata: Metadata, spec: Spec}, ctx: RequestContext): Promise<EntityCreationResult> {
@@ -24,13 +22,8 @@ export class BasicEntityCreationStrategy extends EntityCreationStrategy {
                                    ctx.tracing_ctx)
         const [created_metadata, spec] = await this.create_entity(metadata, input.spec)
         span.finish()
-        if (this.kind?.intentful_behaviour === IntentfulBehaviour.Differ) {
-            const watchlist = await this.watchlistDb.get_watchlist()
-            const ent = create_entry(created_metadata)
-            if (!watchlist.has(ent)) {
-                watchlist.set([ent, []])
-                await this.watchlistDb.update_watchlist(watchlist)
-            }
+        if (this.kind?.intentful_behaviour === IntentfulBehaviour.Differ || this.kind?.intentful_behaviour === IntentfulBehaviour.Basic) {
+            await this.watchlistDb.add_entity(created_metadata, [])
         }
         return {
             intent_watcher: null,

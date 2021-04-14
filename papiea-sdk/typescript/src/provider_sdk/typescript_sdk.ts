@@ -105,6 +105,7 @@ export class ProviderSdk implements ProviderImpl {
     protected allowExtraProps: boolean;
     protected readonly _sdk_version: Version;
     protected readonly _tracer: Tracer
+    public processing_diffs: Set<string> = new Set()
 
     constructor(papiea_url: string, s2skey: Secret, server_manager?: Provider_Server_Manager, allowExtraProps?: boolean, tracer?: Tracer) {
         this._version = null;
@@ -285,8 +286,8 @@ export class ProviderSdk implements ProviderImpl {
         return this
     }
 
-    background_task(name: string, delay_sec: number, callback: BackgroundTaskCallback, metadata_extension?: any, provider_fields_schema?: any): BackgroundTaskBuilder {
-        return BackgroundTaskBuilder.create_task(this, name, delay_sec, callback, this._tracer, metadata_extension, provider_fields_schema)
+    background_task(name: string, delay_milliseconds: number, callback: BackgroundTaskCallback, metadata_extension?: any, provider_fields_schema?: any): BackgroundTaskBuilder {
+        return BackgroundTaskBuilder.create_task(this, name, delay_milliseconds, callback, this._tracer, metadata_extension, provider_fields_schema)
     }
 
     async register(): Promise<void> {
@@ -327,7 +328,9 @@ export class ProviderSdk implements ProviderImpl {
 
     static create_provider(papiea_url: string, s2skey: Secret, public_host?: string, public_port?: number, allowExtraProps: boolean = false): ProviderSdk {
         const server_manager = new Provider_Server_Manager(public_host, public_port);
-        return new ProviderSdk(papiea_url, s2skey, server_manager, allowExtraProps)
+        const sdk = new ProviderSdk(papiea_url, s2skey, server_manager, allowExtraProps)
+        server_manager.provider_sdk = sdk
+        return sdk
     }
 
     public secure_with(oauth_config: any, casbin_model: string, casbin_initial_policy: string) : ProviderSdk {
@@ -383,6 +386,7 @@ class Provider_Server_Manager {
     private app: Express;
     private raw_http_server: Server | null;
     private should_run: boolean;
+    private _provider_sdk!: ProviderSdk
 
     constructor(public_host: string = "127.0.0.1", public_port: number = 9000) {
         this.public_host = public_host;
@@ -391,6 +395,10 @@ class Provider_Server_Manager {
         this.init_express();
         this.raw_http_server = null;
         this.should_run = false;
+    }
+
+    set provider_sdk(provider_sdk: ProviderSdk) {
+        this._provider_sdk = provider_sdk
     }
 
     init_express() {
@@ -416,7 +424,7 @@ class Provider_Server_Manager {
             this.should_run = true;
         }
         this.app.get("/healthcheck", asyncHandler(async (req, res) => {
-            res.status(200).json({ status: "Available" })
+            res.status(200).json({ diff_ids: Array.from(this._provider_sdk.processing_diffs) })
         }))
     }
 
@@ -484,7 +492,7 @@ export class BackgroundTaskBuilder {
         this.metadata_extension = metadata_extension
     }
 
-    static create_task(provider: ProviderSdk, name: string, delay_sec: number, callback: BackgroundTaskCallback, tracer: Tracer, metadata_extension?: any, custom_schema?: any): BackgroundTaskBuilder {
+    static create_task(provider: ProviderSdk, name: string, delay_milliseconds: number, callback: BackgroundTaskCallback, tracer: Tracer, metadata_extension?: any, custom_schema?: any): BackgroundTaskBuilder {
         if (provider.get_metadata_extension() !== null && (metadata_extension === null || metadata_extension === undefined)) {
             throw new Error(`Attempting to create background task (${this.name}) on provider:
                             ${provider.get_prefix()}, ${provider.get_version()} without the required metadata extension.`)
@@ -505,9 +513,7 @@ export class BackgroundTaskBuilder {
         const kind = provider.new_kind({[name]: schema})
         kind.on("state", async (ctx, entity, input) => {
             await callback(ctx, entity?.status?.provider_fields ?? undefined)
-            return {
-                delay_secs: delay_sec
-            }
+            return delay_milliseconds
         })
         return new BackgroundTaskBuilder(provider, tracer, name, kind, metadata_extension)
     }
@@ -714,17 +720,7 @@ export class Kind_Builder {
                     }
                 }
             },
-            result: {
-                IntentfulOutput: {
-                    type: 'object',
-                    properties: {
-                        delay_secs: {
-                            type: "integer"
-                        }
-                    },
-                    description: "Amount of seconds to wait before this entity will be checked again by the intent engine"
-                }
-            },
+            result: {},
             execution_strategy: Intentful_Execution_Strategy.Basic,
             procedure_callback: procedure_callback_url,
             base_callback: callback_url
@@ -733,12 +729,20 @@ export class Kind_Builder {
             const ctx = new ProceduralCtx(this.provider, req.headers,
                                           `${this.kind.name}/${sfs_signature}`)
             try {
+                if (this.provider.processing_diffs.has(req.body.id)) {
+                    ctx.get_logger().warn(`Trying to assign diff ${req.body.id} which is already in progress`)
+                }
                 const span = spanSdkOperation(`${sfs_signature}_sdk_handler`, this.tracer, req, this.provider.provider)
+                this.provider.processing_diffs.add(req.body.id)
                 const result = await handler(ctx, {
                     metadata: req.body.metadata,
                     spec: req.body.spec,
                     status: req.body.status
                 }, req.body.input);
+                this.provider.processing_diffs.delete(req.body.id)
+                if (result) {
+                    await this.assign_backoff(req.body.id, req.body.metadata, result)
+                }
                 ctx.cleanup()
                 res.json(result);
                 span.finish()
@@ -747,6 +751,7 @@ export class Kind_Builder {
                 if (e instanceof InvocationError) {
                     return res.status(e.status_code).json(e.toResponse())
                 }
+                this.provider.processing_diffs.delete(req.body.id)
                 let error: InvocationError
                 if (isAxiosError(e)) {
                     error = InvocationError.fromError(500, e);
@@ -760,6 +765,19 @@ export class Kind_Builder {
         });
         this.server_manager.register_healthcheck()
         return this
+    }
+
+    private async assign_backoff(diff_id: string, metadata: Metadata, delay_milliseconds: number) {
+        await this.provider.provider_api_axios.post(`${this.provider.provider_url}/${this.provider.get_prefix()}/${this.provider.get_version()}/diff/${diff_id}`,{
+            entity_ref: metadata,
+            backoff: {
+                delay: {
+                    delay_milliseconds,
+                    delay_set_time: Date.now()
+                },
+                retries: 0
+            }
+        });
     }
 
     kind_procedure(name: string,

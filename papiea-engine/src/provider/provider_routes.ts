@@ -48,6 +48,14 @@ export default function createProviderAPIRouter(providerApi: Provider_API, trace
         res.json("OK")
     }));
 
+    providerApiRouter.post('/:prefix/:version/diff/:id', check_request({
+        allowed_query_params: [],
+        allowed_body_params: ['context', 'entity_ref', 'backoff']
+    }), trace("update_diff_backoff"), asyncHandler(async (req, res) => {
+        await providerApi.update_diff_backoff(req.user, req.params.prefix, req.params.version, req.body.entity_ref, req.params.id, req.body.backoff, res.locals.ctx);
+        res.json("OK")
+    }));
+
     providerApiRouter.post('/:prefix/:version/update_progress', check_request({
         allowed_query_params: [],
         allowed_body_params: ['context', 'message', 'done_percent']

@@ -6,9 +6,9 @@ import { IntentWatcher_DB } from "../../databases/intent_watcher_db_interface"
 import { IntentfulStatus } from "papiea-core"
 import { Watchlist_DB } from "../../databases/watchlist_db_interface";
 import uuid = require("uuid")
-import { create_entry } from "../../intentful_engine/watchlist";
 import { Graveyard_DB } from "../../databases/graveyard_db_interface"
 import {RequestContext, spanOperation} from "papiea-backend-utils"
+import {WatchlistEntityNotFoundError} from "../../databases/utils/errors"
 
 export class DifferIntentfulStrategy extends IntentfulStrategy {
     protected differ: Differ
@@ -52,7 +52,7 @@ export class DifferIntentfulStrategy extends IntentfulStrategy {
             user: this.user,
             status: IntentfulStatus.Active,
         }
-        for (let diff of this.differ.diffs(this.kind!, spec, status)) {
+        for (let diff of this.differ.diffs(metadata, this.kind!, spec, status)) {
             watcher.diffs.push(diff)
         }
         const watcherSpan = spanOperation(`create_watcher_db`,
@@ -60,12 +60,14 @@ export class DifferIntentfulStrategy extends IntentfulStrategy {
                                    {entity_uuid: metadata.uuid})
         await this.intentWatcherDb.save_watcher(watcher)
         watcherSpan.finish()
-        const watchlist = await this.watchlistDb.get_watchlist()
-        const ent = create_entry(metadata)
-        if (!watchlist.has(ent)) {
-            watchlist.set([ent, []])
-            await this.watchlistDb.update_watchlist(watchlist)
+        try {
+            await this.watchlistDb.get_entity_diffs(metadata)
+            return watcher
+        } catch (e) {
+            if (e instanceof WatchlistEntityNotFoundError) {
+                await this.watchlistDb.add_entity(metadata, watcher.diffs)
+            }
+            return watcher
         }
-        return watcher
     }
 }

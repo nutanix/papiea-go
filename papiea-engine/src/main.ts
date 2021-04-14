@@ -63,7 +63,7 @@ async function setUpApplication(): Promise<express.Express> {
     const s2skeyDb = await mongoConnection.get_s2skey_db(logger);
     const intentWatcherDB = await mongoConnection.get_intent_watcher_db(logger)
     const sessionKeyDb = await mongoConnection.get_session_key_db(logger)
-    const watchlistDb = await mongoConnection.get_watchlist_db(logger)
+    const watchlistDb = await mongoConnection.get_watchlist_db(logger, differ)
     const graveyardDb = await mongoConnection.get_graveyard_db(logger)
     const validator = ValidatorImpl.create()
     const entityApiAuthorizer: PerProviderAuthorizer = new PerProviderAuthorizer(logger, new ProviderCasbinAuthorizerFactory(logger));

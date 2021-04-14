@@ -16,7 +16,7 @@ import {
     Provider,
     S2S_Key,
     IntentfulBehaviour,
-    Diff
+    Diff, DiffContent
 } from "papiea-core"
 import { SessionKeyDb } from "../../src/databases/session_key_db_interface"
 import { Entity, Intentful_Signature, SessionKey, IntentfulStatus, IntentWatcher } from "papiea-core"
@@ -24,8 +24,8 @@ import { LoggerFactory } from 'papiea-backend-utils';
 import uuid = require("uuid")
 import { IntentWatcher_DB } from "../../src/databases/intent_watcher_db_interface"
 import { Watchlist_DB } from "../../src/databases/watchlist_db_interface";
-import { Watchlist } from "../../src/intentful_engine/watchlist";
 import { Graveyard_DB } from "../../src/databases/graveyard_db_interface"
+import {BasicDiffer} from "../../build/intentful_core/differ_impl"
 
 declare var process: {
     env: {
@@ -446,15 +446,23 @@ describe("MongoDb tests", () => {
         }
     });
 
+    const entity_ref = {
+        provider_prefix: "test",
+        provider_version: "0.1.0",
+        uuid: uuid(),
+        kind: "test_kind",
+    }
+
     test("Delete watcher", async () => {
         expect.assertions(1);
         const watcherDb: IntentWatcher_DB = await connection.get_intent_watcher_db(logger);
         const watcher: IntentWatcher = {
             uuid: uuid4(),
             diffs: [{
-                kind: "dummy",
+                entity_reference: entity_ref,
                 intentful_signature: {} as Intentful_Signature,
-                diff_fields: []
+                diff_fields: [],
+                id: "abcd"
             }],
             spec_version: 1,
             status: IntentfulStatus.Active,
@@ -475,9 +483,10 @@ describe("MongoDb tests", () => {
         const watcher: IntentWatcher = {
             uuid: uuid4(),
             diffs: [{
-                kind: "dummy",
+                entity_reference: entity_ref,
                 intentful_signature: {} as Intentful_Signature,
-                diff_fields: []
+                diff_fields: [],
+                id: "abcd"
             }],
             spec_version: 1,
             status: IntentfulStatus.Active,
@@ -497,9 +506,10 @@ describe("MongoDb tests", () => {
         const watcher: IntentWatcher = {
             uuid: uuid4(),
             diffs: [{
-                kind: "dummy",
+                entity_reference: entity_ref,
                 intentful_signature: {} as Intentful_Signature,
-                diff_fields: []
+                diff_fields: [],
+                id: "abcd"
             }],
             spec_version: 1,
             status: IntentfulStatus.Active,
@@ -514,15 +524,16 @@ describe("MongoDb tests", () => {
         await watcherDb.delete_watcher(watcher.uuid)
     });
 
-    test("List intentful_engine", async () => {
+    test("List intent watchers", async () => {
         expect.hasAssertions();
         const watcherDb: IntentWatcher_DB = await connection.get_intent_watcher_db(logger);
         const watcher: IntentWatcher = {
             uuid: uuid4(),
             diffs: [{
-                kind: "dummy",
+                entity_reference: entity_ref,
                 intentful_signature: {} as Intentful_Signature,
-                diff_fields: []
+                diff_fields: [],
+                id: "abcd"
             }],
             spec_version: 1,
             status: IntentfulStatus.Active,
@@ -540,9 +551,10 @@ describe("MongoDb tests", () => {
         const watcher: IntentWatcher = {
             uuid: uuid4(),
             diffs: [{
-                kind: "dummy",
+                entity_reference: entity_ref,
                 intentful_signature: {} as Intentful_Signature,
-                diff_fields: []
+                diff_fields: [],
+                id: "abcd"
             }],
             spec_version: 1,
             status: IntentfulStatus.Active,
@@ -555,32 +567,18 @@ describe("MongoDb tests", () => {
         await watcherDb.delete_watcher(watcher.uuid)
     });
 
-    test("Get watchlist", async () => {
-        expect.assertions(1);
-        const watchlistDb: Watchlist_DB = await connection.get_watchlist_db(logger);
-        const watchlist = new Watchlist()
-        const entry_ref = {
-            provider_reference: {
-                provider_prefix: "test",
-                provider_version: "1"
-            },
-            entity_reference: {
-                uuid: uuid4(),
-                kind: "test_kind"
-            }
-        }
-        watchlist.set([entry_ref, [[{} as Diff, {delay: {delay_seconds: 120, delay_set_time: new Date()}, retries: 0}]]])
-        await watchlistDb.update_watchlist(watchlist)
-        const watchlistUpdated = await watchlistDb.get_watchlist()
-        // ![1]![0]![1] === [EntryReference, [Diff, Backoff | null][]], which is a Backoff.
-        // It is not null because of the definition above
-        expect(watchlistUpdated.get(entry_ref)![1]![0]![1]!.delay!.delay_seconds).toBe(120)
-        await watchlistDb.update_watchlist(new Watchlist())
-    });
+    const entity_id = uuid()
+
+    const watchlist_ref = {
+        provider_prefix: "test_pref",
+        provider_version: "0.1.1",
+        kind: "test_kind",
+        uuid: entity_id,
+    }
 
     const entity: Entity = {
         metadata: {
-            uuid: uuid(),
+            uuid: entity_id,
             provider_version: "0.1.1",
             provider_prefix: "test_pref",
             kind: "test_kind",
@@ -595,6 +593,109 @@ describe("MongoDb tests", () => {
             test: "test"
         }
     }
+
+    test("Create and get watchlist item", async () => {
+        expect.hasAssertions()
+        const differ = new BasicDiffer()
+        const watcherDb = await connection.get_watchlist_db(logger, differ);
+
+        await watcherDb.add_entity(entity.metadata, [{id: "1"} as Diff])
+        const diffs = await watcherDb.get_entity_diffs(watchlist_ref)
+        expect(diffs[0].id).toEqual("1");
+        await watcherDb.remove_entity(watchlist_ref)
+    });
+
+    test("Get watchlist", async () => {
+        expect.hasAssertions()
+        const differ = new BasicDiffer()
+        const watcherDb = await connection.get_watchlist_db(logger, differ);
+
+        await watcherDb.add_entity(entity.metadata, [{
+            id: "abcdefg"
+        } as Diff]);
+        const watchlist = await watcherDb.get_watchlist()
+        // @ts-ignore
+        for (const [ref, diffs] of watchlist.entries()) {
+            if (JSON.stringify(ref) === JSON.stringify(watchlist_ref)) {
+                expect(diffs[0].id).toEqual("abcdefg")
+            }
+        }
+        await watcherDb.remove_entity(watchlist_ref)
+    });
+
+    test("Add diff, remove diff", async () => {
+        expect.hasAssertions()
+        const differ = new BasicDiffer()
+        const watcherDb = await connection.get_watchlist_db(logger, differ);
+
+        await watcherDb.add_entity(entity.metadata, [{id: "1"} as Diff])
+        await watcherDb.add_diff(watchlist_ref, {id: "2"} as Diff)
+        let diffs = await watcherDb.get_entity_diffs(watchlist_ref)
+        expect(diffs.length).toEqual(2);
+        await watcherDb.remove_diff(watchlist_ref, {id: "1"} as Diff)
+        diffs = await watcherDb.get_entity_diffs(watchlist_ref)
+        expect(diffs.length).toEqual(1);
+        await watcherDb.remove_entity(watchlist_ref)
+    });
+
+    test("Add diffs, remove diffs", async () => {
+        expect.hasAssertions()
+        const differ = new BasicDiffer()
+        const watcherDb = await connection.get_watchlist_db(logger, differ);
+
+        await watcherDb.add_entity(entity.metadata, [{id: "1"} as Diff])
+        await watcherDb.add_diffs(watchlist_ref, [{id: "2"} as Diff])
+        let diffs = await watcherDb.get_entity_diffs(watchlist_ref)
+        expect(diffs.length).toEqual(2);
+        await watcherDb.remove_diffs(watchlist_ref, [{id: "1"} as Diff])
+        diffs = await watcherDb.get_entity_diffs(watchlist_ref)
+        expect(diffs.length).toEqual(1);
+        await watcherDb.remove_entity(watchlist_ref)
+    });
+
+    test("Update diff fields rehashes the id", async () => {
+        expect.hasAssertions()
+        const differ = new BasicDiffer()
+        const watcherDb = await connection.get_watchlist_db(logger, differ);
+
+        await watcherDb.add_entity(entity.metadata, [{
+            id: "abcdefg",
+            diff_fields: [],
+            entity_reference: watchlist_ref,
+            intentful_signature: {} as Intentful_Signature
+        }]);
+
+        await watcherDb.update_diff_fields(watchlist_ref, "abcdefg", [{
+            key: "x"
+        } as DiffContent])
+        let diffs = await watcherDb.get_entity_diffs(watchlist_ref)
+        expect(diffs[0].id).not.toEqual("abcdefg")
+        await watcherDb.remove_entity(watchlist_ref)
+    });
+
+    test("Update diff fields rehashes the id", async () => {
+        expect.hasAssertions()
+        const differ = new BasicDiffer()
+        const watcherDb = await connection.get_watchlist_db(logger, differ);
+
+        await watcherDb.add_entity(entity.metadata, [{
+            id: "abcdefg",
+            diff_fields: [],
+            entity_reference: watchlist_ref,
+            intentful_signature: {} as Intentful_Signature
+        }]);
+
+        await watcherDb.update_diff_backoff(watchlist_ref, "abcdefg", {
+            delay: {
+                delay_milliseconds: 10,
+                delay_set_time: Date.now()
+            },
+            retries: 0
+        })
+        let diffs = await watcherDb.get_entity_diffs(watchlist_ref)
+        expect(diffs[0]!.backoff!.retries).toEqual(0)
+        await watcherDb.remove_entity(watchlist_ref)
+    });
 
     test("Save and get deleted entity in graveyard, delete from graveyard afterwards", async () => {
         expect.assertions(1);

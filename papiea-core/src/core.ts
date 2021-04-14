@@ -118,6 +118,12 @@ export interface Entity_Reference  {
 // entity-reference-struct ends here
 // /src/core.ts:1 ends here
 
+/**
+ * Behaviour for working with diffs
+ * SpecOnly is not involved in diff resolution
+ * Basic/Differ are involved in diff resolution and function the same
+ * (Basic left for backwards compatibility)
+ */
 export enum IntentfulBehaviour {
     Basic = "basic",
     SpecOnly = "spec-only",
@@ -140,15 +146,17 @@ export interface DiffContent {
 // current status and the desired state. 
 export interface Differ {
 
-    // Get the next diff from an entity based on the 
-    diffs(kind: Kind, spec: Spec, status: Status, logger?: any): Generator<Diff, any, undefined>;
+    // Get an iterator of diffs
+    diffs(entity_reference: Provider_Entity_Reference, kind: Kind, spec: Spec, status: Status, logger?: any): Generator<Diff, any, undefined>;
 
-    // We could also get the entire list of diffs, ordered by the
-    // original dependency tree
-    all_diffs(kind: Kind, spec: Spec, status: Status, logger?: any): Diff[];
+    // Get a list of all diffs
+    all_diffs(entity_reference: Provider_Entity_Reference, kind: Kind, spec: Spec, status: Status, logger?: any): Diff[];
 
     // Get current value by path specified in diff fields
     get_diff_path_value(diff: DiffContent, spec: Spec): any
+
+    // Create an appropriate diff structure with hashed id
+    create_diff_structure(entity_reference: Provider_Entity_Reference, signature: Intentful_Signature, diff_fields: DiffContent[]): Diff
 }
 
 export enum DiffSelectionStrategy {
@@ -194,23 +202,42 @@ export interface Kind {
     kind_procedures: { [key: string]: Procedural_Signature; };
 }
 
+export interface Delay {
+    delay_set_time: number
+    delay_milliseconds: number
+}
+
+// Backoff used to determine time in milliseconds to wait before retrying diff
+export interface Backoff {
+    delay: Delay
+    retries: number
+}
+
 // [[file:~/work/papiea-js/Papiea-design.org::#h-Intentful-Execution-821][Diff-interface]]
 // The Diff structure captures a discovered diff in an entity as well
 // as the intentful action that may resolve such diff
 export interface Diff {
-    kind: string
+    entity_reference: Provider_Entity_Reference
 
     intentful_signature: Intentful_Signature,
 
     // Field diff found by the Differ
     diff_fields: DiffContent[]
 
-    // A uri for a URL which specifically identifies the currently running process.
-    // If the URL returns 404 we know that the task was dropped (say, provider crashed).
-    // It will use the specific node's IP and not a load balancer IP.
-    // This will direct us to the exact location where the task is running.
-    // provider handler url with an id to cache the watcher it is assigned to, serves as an identifier for a type of task being executed
+
+    // An id that identifies a particular diff in the database
+    // Hashed from:
+    // {entity_reference, intentful_signature, diff_fields}
+    id: string
+
+    // A url for the SDK instance that answers with a list of diffs in progress across the provider
+    // If the URL returns 404 we know that the handler is offline and should be retried.
+    // Is formed as handler_url: `${signature.base_callback}/healthcheck`
     handler_url?: string
+
+    // A backoff is set by SDK via special endpoint
+    // after an SDK has finished executing the handler
+    backoff?: Backoff
 }
 // Diff-interface ends here
 // /src/intentful_core/differ_interface.ts:1 ends here

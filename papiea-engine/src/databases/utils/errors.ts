@@ -28,3 +28,12 @@ export class EntityNotFoundError extends PapieaException {
     }
 
 }
+
+export class WatchlistEntityNotFoundError extends PapieaException {
+
+    constructor(kind: string, uuid: uuid4, provider_prefix: string = '', provider_version: string = '') {
+        super({ message: `Entity with UUID ${uuid} of kind: ${kind} not found in the watchlist. Make sure the entity and kind is correct.`, entity_info: { provider_prefix: provider_prefix, provider_version: provider_version, kind_name: kind, additional_info: { "entity_uuid": uuid }}});
+        this.name = PapieaError.EntityNotFound
+        Object.setPrototypeOf(this, EntityNotFoundError.prototype);
+    }
+}
