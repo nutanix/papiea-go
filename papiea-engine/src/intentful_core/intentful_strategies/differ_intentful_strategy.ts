@@ -66,7 +66,7 @@ export class DifferIntentfulStrategy extends IntentfulStrategy {
             return watcher
         } catch (e) {
             if (e instanceof WatchlistEntityNotFoundError) {
-                await this.watchlistDb.add_entity({metadata, spec, status}, watcher.diffs)
+                await this.watchlistDb.add_entity(metadata, watcher.diffs)
             }
             return watcher
         }

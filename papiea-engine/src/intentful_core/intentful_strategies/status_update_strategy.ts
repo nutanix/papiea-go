@@ -80,7 +80,7 @@ export class DifferUpdateStrategy extends StatusUpdateStrategy {
             await this.watchlistDb.get_entity_diffs(metadata)
         } catch (e) {
             if (e instanceof WatchlistEntityNotFoundError) {
-                await this.watchlistDb.add_entity({metadata, spec, status}, diffs)
+                await this.watchlistDb.add_entity(metadata, diffs)
             }
         }
     }

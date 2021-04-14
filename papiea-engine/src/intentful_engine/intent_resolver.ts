@@ -173,7 +173,6 @@ export class IntentResolver {
             )
             if (watchers.length !== 0) {
                 try {
-                    // TODO: Reminder - this might be in a wrong order and cause a bug!
                     const [metadata, spec] = await this.specDb.get_spec(entity_reference)
                     const [, status] = await this.statusDb.get_status(entity_reference)
                     this.onChange({ metadata, spec, status })

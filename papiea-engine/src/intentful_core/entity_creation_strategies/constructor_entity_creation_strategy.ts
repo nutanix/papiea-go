@@ -84,7 +84,7 @@ export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
                 watcher.diffs.push(diff)
             }
             await this.intentWatcherDb.save_watcher(watcher)
-            await this.watchlistDb.add_entity({metadata: created_metadata, spec: created_spec, status: created_status ?? {}}, watcher.diffs)
+            await this.watchlistDb.add_entity(created_metadata, watcher.diffs)
         }
         return {
             intent_watcher: watcher,

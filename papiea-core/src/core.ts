@@ -118,6 +118,12 @@ export interface Entity_Reference  {
 // entity-reference-struct ends here
 // /src/core.ts:1 ends here
 
+/**
+ * Behaviour for working with diffs
+ * SpecOnly is not involved in diff resolution
+ * Basic/Differ are involved in diff resolution and function the same
+ * (Basic left for backwards compatibility)
+ */
 export enum IntentfulBehaviour {
     Basic = "basic",
     SpecOnly = "spec-only",
@@ -140,11 +146,10 @@ export interface DiffContent {
 // current status and the desired state. 
 export interface Differ {
 
-    // Get the next diff from an entity based on the 
+    // Get an iterator of diffs
     diffs(entity_reference: Provider_Entity_Reference, kind: Kind, spec: Spec, status: Status, logger?: any): Generator<Diff, any, undefined>;
 
-    // We could also get the entire list of diffs, ordered by the
-    // original dependency tree
+    // Get a list of all diffs
     all_diffs(entity_reference: Provider_Entity_Reference, kind: Kind, spec: Spec, status: Status, logger?: any): Diff[];
 
     // Get current value by path specified in diff fields
@@ -225,7 +230,7 @@ export interface Diff {
     // {entity_reference, intentful_signature, diff_fields}
     id: string
 
-    // A url for the SDK instance that answers with a list of running diffs
+    // A url for the SDK instance that answers with a list of diffs in progress across the provider
     // If the URL returns 404 we know that the handler is offline and should be retried.
     // Is formed as handler_url: `${signature.base_callback}/healthcheck`
     handler_url?: string

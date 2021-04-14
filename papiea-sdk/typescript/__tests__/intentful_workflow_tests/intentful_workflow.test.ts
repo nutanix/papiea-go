@@ -292,6 +292,7 @@ describe("Intentful Workflow tests single provider", () => {
     })
 
     // TODO: fix this in a PR for dynamic backoff
+    // https://github.com/nutanix/papiea/issues/663
     // test("Exponential backoff should be activated", async () => {
     //     expect.assertions(1);
     //     const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
@@ -330,6 +331,7 @@ describe("Intentful Workflow tests single provider", () => {
     // })
 
     // TODO: fix this in a PR for dynamic backoff
+    // https://github.com/nutanix/papiea/issues/663
     // test("Exponential backoff should be activated using the exponent value set for kind", async () => {
     //     expect.assertions(1);
     //     const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);

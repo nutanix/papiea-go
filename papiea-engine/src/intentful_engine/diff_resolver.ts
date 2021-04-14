@@ -85,7 +85,7 @@ export class DiffResolver {
                 metadata, provider, kind, spec, status,
             };
         } catch (e) {
-            this.logger.debug(`Couldn't generate diff for entity with uuid: ${entity_reference.uuid} and kind: ${entity_reference.kind} due to error: ${e}. Removing from watchlist`)
+            this.logger.debug(`Couldn't generate diff for entity with uuid: ${entity_reference.uuid} and kind: ${entity_reference.kind} due to error: ${e}. Removing from watchlist. ${e.stack}`)
             return null
         }
     }
@@ -215,7 +215,7 @@ export class DiffResolver {
 
         for (let [metadata, spec] of entities) {
             try {
-                await this.watchlistDb.add_entity({metadata, spec, status: {}}, [])
+                await this.watchlistDb.add_entity(metadata, [])
             } catch (e) {
                 if (e instanceof PapieaException) {
                     this.logger.debug(`Trying to add entity ${metadata.uuid}, which is already in the watchlist`)
