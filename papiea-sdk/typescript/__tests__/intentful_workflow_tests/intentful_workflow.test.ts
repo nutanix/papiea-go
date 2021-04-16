@@ -6,6 +6,7 @@ import {IntentfulBehaviour, IntentfulStatus, Metadata, Version} from "papiea-cor
 import { ProviderSdk } from "../../src/provider_sdk/typescript_sdk";
 import { IntentfulCtx_Interface } from "../../src/provider_sdk/typescript_sdk_interface";
 import uuid = require("uuid");
+const https = require('https')
 
 declare var process: {
     env: {
@@ -15,7 +16,7 @@ declare var process: {
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
-const papieaUrl = 'http://127.0.0.1:3000';
+const papieaUrl = 'https://127.0.0.1:3000';
 
 const server_config = {
     host: "127.0.0.1",
@@ -28,21 +29,27 @@ const server_config_2nd_provider = {
 };
 
 const entityApi = axios.create({
-    baseURL: `http://127.0.0.1:${serverPort}/services`,
+    baseURL: `https://127.0.0.1:${serverPort}/services`,
     timeout: 5000,
     headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${adminKey}`
-    }
+    },
+    httpsAgent: new https.Agent({  
+        rejectUnauthorized: false
+    })
 });
 
 const providerApiAdmin = axios.create({
-    baseURL: `http://127.0.0.1:${serverPort}/provider`,
+    baseURL: `https://127.0.0.1:${serverPort}/provider`,
     timeout: 5000,
     headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${adminKey}`
-    }
+    },
+    httpsAgent: new https.Agent({  
+        rejectUnauthorized: false
+    })
 });
 
 describe("Intentful Workflow tests single provider", () => {

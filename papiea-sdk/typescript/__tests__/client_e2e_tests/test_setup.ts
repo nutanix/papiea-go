@@ -6,7 +6,7 @@ import { kind_client } from "papiea-client"
 import { ProviderSdk } from "../../src/provider_sdk/typescript_sdk";
 import * as procedures from "./procedure_handlers"
 import * as utils from "./utils"
-
+const https = require('https')
 const config = require("./config")
 
 const provider_prefix = "e2e_test_provider"
@@ -23,12 +23,15 @@ object_yaml["object"]["properties"]["references"]["items"]["properties"]["bucket
 let test_provider: ProviderSdk
 
 const provider_api_admin = axios.create({
-    baseURL: `http://${ config.server_host }:${ config.papiea_server_port }/provider`,
+    baseURL: `https://${ config.server_host }:${ config.papiea_server_port }/provider`,
     timeout: 1000,
     headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${ config.admin_s2s_key }`
-    }
+    },
+    httpsAgent: new https.Agent({  
+        rejectUnauthorized: false
+    })
 });
 
 export function get_client(kind: string) {

@@ -35,3 +35,9 @@ logs/
 
 # DocDB certificate
 rds-combined-ca-bundle.pem
+
+# Server certificate
+papiea-engine/certs
+
+# Client certificate
+papiea-client/client_certs

@@ -62,35 +62,35 @@ class ApiInstance:
         # and sadly there are no macro in python
         if method == "get":
             async with self.session.get(
-                    self.base_url + "/" + prefix, headers=new_headers
+                    self.base_url + "/" + prefix, headers=new_headers, ssl=False
             ) as resp:
                 await check_response(resp, self.logger)
                 res = await resp.text()
             return self.check_result(res)
         elif method == "post":
             async with self.session.post(
-                    self.base_url + "/" + prefix, data=data_binary, headers=new_headers
+                    self.base_url + "/" + prefix, data=data_binary, headers=new_headers, ssl=False
             ) as resp:
                 await check_response(resp, self.logger)
                 res = await resp.text()
             return self.check_result(res)
         elif method == "put":
             async with self.session.put(
-                    self.base_url + "/" + prefix, data=data_binary, headers=new_headers
+                    self.base_url + "/" + prefix, data=data_binary, headers=new_headers, ssl=False
             ) as resp:
                 await check_response(resp, self.logger)
                 res = await resp.text()
             return self.check_result(res)
         elif method == "patch":
             async with self.session.patch(
-                    self.base_url + "/" + prefix, data=data_binary, headers=new_headers
+                    self.base_url + "/" + prefix, data=data_binary, headers=new_headers, ssl=False
             ) as resp:
                 await check_response(resp, self.logger)
                 res = await resp.text()
             return self.check_result(res)
         elif method == "delete":
             async with self.session.delete(
-                    self.base_url + "/" + prefix, headers=new_headers
+                    self.base_url + "/" + prefix, headers=new_headers, ssl=False
             ) as resp:
                 await check_response(resp, self.logger)
                 res = await resp.text()

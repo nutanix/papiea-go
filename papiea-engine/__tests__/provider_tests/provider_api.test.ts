@@ -3,7 +3,7 @@ import axios from "axios"
 import { DescriptionBuilder, DescriptionType, KindBuilder, ProviderBuilder } from "../test_data_factory"
 import { IntentfulBehaviour, Provider } from "papiea-core";
 import { AxiosResponseParser } from "papiea-backend-utils"
-import get = Reflect.get;
+const https = require('https')
 
 declare var process: {
     env: {
@@ -15,18 +15,24 @@ const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
 
 const providerApi = axios.create({
-    baseURL: `http://127.0.0.1:${serverPort}/provider/`,
+    baseURL: `https://127.0.0.1:${serverPort}/provider/`,
     timeout: 1000,
     headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${adminKey}`
-    }
+    },
+    httpsAgent: new https.Agent({  
+        rejectUnauthorized: false
+    })
 });
 
 const entityApi = axios.create({
-    baseURL: `http://127.0.0.1:${ serverPort }/services`,
+    baseURL: `https://127.0.0.1:${ serverPort }/services`,
     timeout: 1000,
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
+    httpsAgent: new https.Agent({  
+        rejectUnauthorized: false
+    })
 });
 
 describe("Provider API tests", () => {

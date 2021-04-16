@@ -4,7 +4,7 @@ import { UserAuthInfo } from "../../src/auth/authn";
 import { Authorizer } from "../../src/auth/authz";
 import { Action } from "papiea-core";
 import { LoggerFactory } from 'papiea-backend-utils';
-
+const https = require('https')
 
 declare var process: {
     env: {
@@ -25,18 +25,24 @@ class MockedAuthorizer extends Authorizer {
 }
 
 const entityApi = axios.create({
-    baseURL: `http://127.0.0.1:${serverPort}/services`,
+    baseURL: `https://127.0.0.1:${serverPort}/services`,
     timeout: 10000,
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
+    httpsAgent: new https.Agent({  
+        rejectUnauthorized: false
+    })
 });
 
 const providerApi = axios.create({
-    baseURL: `http://127.0.0.1:${serverPort}/provider/`,
+    baseURL: `https://127.0.0.1:${serverPort}/provider/`,
     timeout: 1000,
     headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${adminKey}`
-    }
+    },
+    httpsAgent: new https.Agent({  
+        rejectUnauthorized: false
+    })
 });
 
 describe("Pagination tests", () => {

@@ -76,7 +76,10 @@ const TRANSFORM_FN_MAP: { [key in keyof PapieaConfig]: (val: any) => PapieaConfi
     logging_level: toStr,
     pretty_print: toBool,
     logging_verbosity: toComplexLoggingVerbosity,
-    tracing_config: toComplexTracingConfig
+    tracing_config: toComplexTracingConfig,
+    ca_cert_path: toStr,
+    server_key_path: toStr,
+    server_cert_path: toStr
 }
 
 export interface PapieaConfig {
@@ -127,12 +130,21 @@ export interface PapieaConfig {
     // Config options for logging verbosity
     logging_verbosity: LoggingVerbosityOptions,
 
-    tracing_config: PapieaTracingConfig
+    tracing_config: PapieaTracingConfig,
+
+    // Path for the CA certificate file
+    ca_cert_path: string,
+
+    // Path for the server key file
+    server_key_path: string,
+
+    // Path for the server cert file
+    server_cert_path: string
 }
 
 const PAPIEA_DEFAULT_CFG: PapieaConfig = {
     server_port: 3000,
-    public_addr: "http://localhost:3000",
+    public_addr: "https://localhost:3000",
     mongo_url: "mongodb://mongo:27017",
     mongo_db: "papiea",
     admin_key: "",
@@ -161,7 +173,10 @@ const PAPIEA_DEFAULT_CFG: PapieaConfig = {
             param: 1
         },
         logMessages: false
-    }
+    },
+    ca_cert_path: "../certs/ca.crt",
+    server_key_path: "../certs/server.key",
+    server_cert_path: "../certs/server.crt"
 }
 
 export function getConfig(): PapieaConfig {

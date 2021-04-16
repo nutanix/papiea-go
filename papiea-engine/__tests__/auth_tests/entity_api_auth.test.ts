@@ -7,6 +7,7 @@ import { OAuth2Server, ProviderBuilder } from "../test_data_factory"
 import uuid = require("uuid");
 import { Metadata, Spec, Provider } from "papiea-core";
 import { AxiosResponseParser, LoggerFactory } from 'papiea-backend-utils';
+const https = require('https')
 
 declare var process: {
     env: {
@@ -19,34 +20,46 @@ const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
 
 const entityApiAdmin = axios.create(
     {
-        baseURL: `http://127.0.0.1:${serverPort}/services`,
+        baseURL: `https://127.0.0.1:${serverPort}/services`,
         timeout: 1000,
         headers: {
             "Content-Type": "application/json",
             'Authorization': `Bearer ${adminKey}`
         },
+        httpsAgent: new https.Agent({  
+            rejectUnauthorized: false
+        })
     }
 )
 
 const entityApi = axios.create({
-    baseURL: `http://127.0.0.1:${serverPort}/services`,
+    baseURL: `https://127.0.0.1:${serverPort}/services`,
     timeout: 1000,
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
+    httpsAgent: new https.Agent({  
+        rejectUnauthorized: false
+    })
 });
 
 const providerApiAdmin = axios.create({
-    baseURL: `http://127.0.0.1:${serverPort}/provider`,
+    baseURL: `https://127.0.0.1:${serverPort}/provider`,
     timeout: 1000,
     headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${adminKey}`
-    }
+    },
+    httpsAgent: new https.Agent({  
+        rejectUnauthorized: false
+    })
 });
 
 const providerApi = axios.create({
-    baseURL: `http://127.0.0.1:${serverPort}/provider`,
+    baseURL: `https://127.0.0.1:${serverPort}/provider`,
     timeout: 1000,
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
+    httpsAgent: new https.Agent({  
+        rejectUnauthorized: false
+    })
 });
 
 function base64UrlEncode(...parts: any[]): string {

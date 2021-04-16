@@ -11,6 +11,7 @@ import { LoggerFactory } from 'papiea-backend-utils';
 import axios from "axios"
 import { MongoConnection } from "../../src/databases/mongo"
 import { IntentWatcher_DB } from "../../src/databases/intent_watcher_db_interface"
+const https = require('https')
 
 declare var process: {
     env: {
@@ -24,21 +25,27 @@ const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
 
 const entityApi = axios.create({
-    baseURL: `http://127.0.0.1:${serverPort}/services`,
+    baseURL: `https://127.0.0.1:${serverPort}/services`,
     timeout: 1000,
     headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${adminKey}`
-    }
+    },
+    httpsAgent: new https.Agent({  
+        rejectUnauthorized: false
+    })
 });
 
 const providerApiAdmin = axios.create({
-    baseURL: `http://127.0.0.1:${serverPort}/provider`,
+    baseURL: `https://127.0.0.1:${serverPort}/provider`,
     timeout: 1000,
     headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${adminKey}`
-    }
+    },
+    httpsAgent: new https.Agent({  
+        rejectUnauthorized: false
+    })
 });
 
 describe("Intent Watcher tests", () => {

@@ -36,6 +36,7 @@ import {getTracer, LoggerFactory} from "papiea-backend-utils"
 import { InvocationError, SecurityApiError } from "./typescript_sdk_exceptions"
 import {get_papiea_version, spanSdkOperation, validate_error_codes, isAxiosError} from "./typescript_sdk_utils"
 import {Tracer} from "opentracing"
+const https = require('https')
 
 class SecurityApiImpl implements SecurityApi {
     readonly provider: ProviderSdk;
@@ -127,7 +128,10 @@ export class ProviderSdk implements ProviderImpl {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${this._s2skey}`
-            }
+            },
+            httpsAgent: new https.Agent({  
+                rejectUnauthorized: false
+            })
         });
         this._sdk_version = get_papiea_version()
     }

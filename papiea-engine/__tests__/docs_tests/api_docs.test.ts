@@ -19,7 +19,7 @@ import {
 } from "papiea-core";
 import ApiDocsGenerator from "../../src/api_docs/api_docs_generator";
 import { IntentfulKindReference } from "../../src/databases/provider_db_mongo";
-import { strict } from "assert";
+const https = require('https')
 
 declare var process: {
     env: {
@@ -28,9 +28,12 @@ declare var process: {
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 const api = axios.create({
-    baseURL: `http://127.0.0.1:${ serverPort }/`,
+    baseURL: `https://127.0.0.1:${ serverPort }/`,
     timeout: 1000,
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
+    httpsAgent: new https.Agent({  
+        rejectUnauthorized: false
+    })
 });
 
 type prefix = string

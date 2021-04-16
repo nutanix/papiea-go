@@ -12,7 +12,13 @@ import {kind_client, ProviderClient} from "papiea-client"
 import { Kind_Builder, ProceduralCtx_Interface, ProviderSdk, SecurityApi } from "../../src/provider_sdk/typescript_sdk";
 import { InvocationError } from "../../src/provider_sdk/typescript_sdk_exceptions"
 import uuid = require("uuid");
+const https = require('https')
 
+const axios_https_config = {
+    httpsAgent: new https.Agent({
+      rejectUnauthorized: false
+    })
+}
 
 declare var process: {
     env: {
@@ -22,7 +28,7 @@ declare var process: {
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
-const papieaUrl = 'http://127.0.0.1:3000';
+const papieaUrl = 'https://127.0.0.1:3000';
 
 const server_config = {
     host: "127.0.0.1",
@@ -30,24 +36,33 @@ const server_config = {
 };
 
 const providerApiAdmin = axios.create({
-    baseURL: `http://127.0.0.1:${serverPort}/provider`,
+    baseURL: `https://127.0.0.1:${serverPort}/provider`,
     timeout: 1000,
     headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${adminKey}`
-    }
+    },
+    httpsAgent: new https.Agent({  
+        rejectUnauthorized: false
+    })
 });
 
 const providerApi = axios.create({
-    baseURL: `http://127.0.0.1:${serverPort}/provider`,
+    baseURL: `https://127.0.0.1:${serverPort}/provider`,
     timeout: 1000,
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
+    httpsAgent: new https.Agent({  
+        rejectUnauthorized: false
+    })
 });
 
 const entityApi = axios.create({
-    baseURL: `http://127.0.0.1:${serverPort}/services`,
+    baseURL: `https://127.0.0.1:${serverPort}/services`,
     timeout: 1000,
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
+    httpsAgent: new https.Agent({  
+        rejectUnauthorized: false
+    })
 });
 
 describe("Provider Sdk tests", () => {
@@ -176,7 +191,7 @@ describe("Provider Sdk tests", () => {
             const res = await axios.put(ctx.url_for(entity), {
                 spec: entity.spec,
                 metadata: entity.metadata
-            });
+            }, axios_https_config);
             return res.data.spec;
         });
         try {
@@ -201,7 +216,7 @@ describe("Provider Sdk tests", () => {
                     await axios.put(ctx.url_for(entity), {
                         spec: entity.spec,
                         metadata: entity.metadata
-                    });
+                    }, axios_https_config);
                     return entity.spec;
             });
             await sdk.register();
@@ -211,10 +226,10 @@ describe("Provider Sdk tests", () => {
                     x: 10,
                     y: 11
                 }
-            });
+            }, axios_https_config);
 
-            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, { x: 5 });
-            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`);
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, { x: 5 }, axios_https_config);
+            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`, axios_https_config);
             expect(updatedEntity.data.metadata.spec_version).toEqual(2);
             expect(updatedEntity.data.spec.x).toEqual(15);
         } finally {
@@ -239,7 +254,7 @@ describe("Provider Sdk tests", () => {
                     await axios.put(ctx.url_for(entity), {
                         spec: entity.spec,
                         metadata: entity.metadata
-                    });
+                    }, axios_https_config);
                     return entity.spec;
             });
             await sdk.register();
@@ -249,9 +264,9 @@ describe("Provider Sdk tests", () => {
                     x: 10,
                     y: 11
                 }
-            });
+            }, axios_https_config);
 
-            await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, "5");
+            await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, "5", axios_https_config);
         } catch (err) {
             expect(AxiosResponseParser.getAxiosErrorMessage(err)).toContain("Procedure was expecting non-empty object, received null/empty object for kind: location_provider/0.1.0/Location.")
         } finally {
@@ -274,7 +289,7 @@ describe("Provider Sdk tests", () => {
                     await axios.put(ctx.url_for(entity), {
                         spec: entity.spec,
                         metadata: entity.metadata
-                    });
+                    }, axios_https_config);
                     return entity.spec;
             });
             await sdk.register();
@@ -284,9 +299,9 @@ describe("Provider Sdk tests", () => {
                     x: 10,
                     y: 11
                 }
-            });
+            }, axios_https_config);
 
-            await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, 5);
+            await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, 5, axios_https_config);
         } catch (err) {
             expect(err).toBeDefined()
         } finally {
@@ -316,9 +331,9 @@ describe("Provider Sdk tests", () => {
                     x: 10,
                     y: 11
                 }
-            });
+            }, axios_https_config);
             try {
-                const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, { x: 5 });
+                const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/moveX`, { x: 5 }, axios_https_config);
             } catch (e) {
                 expect(e).toBeDefined();
             }
@@ -342,7 +357,7 @@ describe("Provider Sdk tests", () => {
                 const res = await axios.put(ctx.url_for(entity), {
                     spec: entity.spec,
                     metadata: entity.metadata
-                });
+                }, axios_https_config);
                 return res.data.spec;
             });
             await sdk.register();
@@ -366,7 +381,7 @@ describe("Provider Sdk tests", () => {
             const res = await axios.put(ctx.url_for(entity), {
                 spec: entity.spec,
                 metadata: entity.metadata
-            });
+            }, axios_https_config);
             return res.data.spec;
         });
         location.kind_procedure(
@@ -414,8 +429,8 @@ describe("Provider Sdk tests", () => {
                     x: 10,
                     y: 11
                 }
-            });
-            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { x: 5 });
+            }, axios_https_config);
+            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { x: 5 }, axios_https_config);
         } catch(e) {
             expect(e).toBeDefined()
             expect(AxiosResponseParser.getAxiosResponseStatus(e)).toEqual(400)
@@ -457,8 +472,8 @@ describe("Provider Sdk tests", () => {
                     x: 10,
                     y: 11
                 }
-            });
-            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { x: 5 });
+            }, axios_https_config);
+            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { x: 5 }, axios_https_config);
             const result = await entityApi.get(`${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
             expect(result.data.status.v.e).toEqual(15)
             await entityApi.delete(`${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
@@ -497,8 +512,8 @@ describe("Provider Sdk tests", () => {
                     x: 10,
                     y: 11
                 }]
-            });
-            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { x: 5 });
+            }, axios_https_config);
+            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { x: 5 }, axios_https_config);
             const result = await entityApi.get(`${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
             expect(result.data.status[0].v.e).toEqual(15)
             await entityApi.delete(`${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
@@ -540,8 +555,8 @@ describe("Provider Sdk tests", () => {
                     x: 10,
                     y: 11
                 }
-            });
-            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { x: 5 });
+            }, axios_https_config);
+            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { x: 5 }, axios_https_config);
             const result = await entityApi.get(`${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
             expect(result.data.status["v"]).toEqual({e: 15})
         } finally {
@@ -582,8 +597,8 @@ describe("Provider Sdk tests", () => {
                     x: 10,
                     y: 11
                 }
-            });
-            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { x: 5 });
+            }, axios_https_config);
+            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }/procedure/moveX`, { x: 5 }, axios_https_config);
             const result = await entityApi.get(`${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
             expect(result.data.status["v"]).toEqual({e: 15})
         } finally {
@@ -631,7 +646,7 @@ describe("Provider Sdk tests", () => {
         await sdk.register();
         const kind_name = sdk.provider.kinds[0].name;
         try {
-            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/procedure/computeGeolocation`, { region_id: "2" });
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/procedure/computeGeolocation`, { region_id: "2" }, axios_https_config);
             expect(res.data.region_id).toBe("us.west.2");
         } finally {
             sdk.cleanup()
@@ -695,7 +710,7 @@ describe("Provider Sdk tests", () => {
             const res = await axios.put(ctx.url_for(entity), {
                 spec: entity.spec,
                 metadata: entity.metadata
-            });
+            }, axios_https_config);
             return res.data.spec;
         });
         location.kind_procedure(
@@ -711,7 +726,7 @@ describe("Provider Sdk tests", () => {
         await sdk.register();
         const kind_name = sdk.provider.kinds[0].name;
         try {
-            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/procedure/computeGeolocation`, { region_id: "2" });
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/procedure/computeGeolocation`, { region_id: "2" }, axios_https_config);
             expect(res.data.region_id).toBe("us.west.2");
         } finally {
             sdk.cleanup()
@@ -732,7 +747,7 @@ describe("Provider Sdk tests", () => {
             const res = await axios.put(ctx.url_for(entity), {
                 spec: entity.spec,
                 metadata: entity.metadata
-            });
+            }, axios_https_config);
             return res.data.spec;
         });
         sdk.provider_procedure(
@@ -765,7 +780,7 @@ describe("Provider Sdk tests", () => {
             const res = await axios.put(ctx.url_for(entity), {
                 spec: entity.spec,
                 metadata: entity.metadata
-            });
+            }, axios_https_config);
             return res.data.spec;
         });
         sdk.provider_procedure(
@@ -778,7 +793,7 @@ describe("Provider Sdk tests", () => {
         );
         await sdk.register();
         try {
-            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { "a": 5, "b": 5 });
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { "a": 5, "b": 5 }, axios_https_config);
             expect(res.data).toBe(10);
         } finally {
             sdk.cleanup()
@@ -800,7 +815,7 @@ describe("Provider Sdk tests", () => {
             const res = await axios.put(ctx.url_for(entity), {
                 spec: entity.spec,
                 metadata: entity.metadata
-            });
+            }, axios_https_config);
             return res.data.spec;
         });
         sdk.provider_procedure(
@@ -813,7 +828,7 @@ describe("Provider Sdk tests", () => {
         );
         try {
             await sdk.register();
-            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { "a": 5, "b": 5 });
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSum`, { "a": 5, "b": 5 }, axios_https_config);
         } catch (e) {
             const message = AxiosResponseParser.getAxiosErrorMessage(e)
             expect(message).toContain("Received procedure input field has type: string, schema expected type: number");
@@ -835,7 +850,7 @@ describe("Provider Sdk tests", () => {
         );
         try {
             await sdk.register();
-            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumWithNoValidation`, {});
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumWithNoValidation`, {}, axios_https_config);
         } finally {
             sdk.cleanup()
         }
@@ -855,7 +870,7 @@ describe("Provider Sdk tests", () => {
         );
         try {
             await sdk.register();
-            const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithEmptyInput`, {});
+            const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithEmptyInput`, {}, axios_https_config);
         } finally {
             sdk.cleanup()
         }
@@ -875,7 +890,7 @@ describe("Provider Sdk tests", () => {
         );
         try {
             await sdk.register();
-            const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithEmptyInput`, {});
+            const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithEmptyInput`, {}, axios_https_config);
         } finally {
             sdk.cleanup()
         }
@@ -894,7 +909,7 @@ describe("Provider Sdk tests", () => {
         );
         try {
             await sdk.register();
-            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithNoInput`);
+            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithNoInput`, undefined,  axios_https_config);
         } finally {
             sdk.cleanup();
         }
@@ -914,7 +929,7 @@ describe("Provider Sdk tests", () => {
         );
         try {
             await sdk.register();
-            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithInput`, {'key': 'value'});
+            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithInput`, {'key': 'value'}, axios_https_config);
         } catch(e) {
             expect(AxiosResponseParser.getAxiosErrorMessage(e)).toContain("Procedure was expecting type void, received non-empty object for kind: location_provider_undefined_input_schema_input/0.1.0/ProviderProcedure.")
         } finally {
@@ -935,7 +950,7 @@ describe("Provider Sdk tests", () => {
         );
         try {
             await sdk.register();
-            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithNoInput`);
+            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithNoInput`, undefined, axios_https_config);
         } finally {
             sdk.cleanup();
         }
@@ -955,7 +970,7 @@ describe("Provider Sdk tests", () => {
         );
         try {
             await sdk.register();
-            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithInput`, {'key': 'value'});
+            await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithInput`, {'key': 'value'}, axios_https_config);
         } catch(e) {
             expect(AxiosResponseParser.getAxiosErrorMessage(e)).toContain("Procedure was expecting type void, received non-empty object for kind: location_provider_null_input_schema_input/0.1.0/ProviderProcedure.")
         } finally {
@@ -978,7 +993,7 @@ describe("Provider Sdk tests", () => {
         );
         try {
             await sdk.register();
-            const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithEmptyOutput`, {});
+            const res: any = await axios.post(`${ sdk.entity_url }/${ sdk.provider.prefix }/${ sdk.provider.version }/procedure/computeSumWithEmptyOutput`, {}, axios_https_config);
         } catch(e) {
             expect(AxiosResponseParser.getAxiosErrorMessage(e)).toContain("Procedure was expecting empty object, received non-empty object for kind: location_provider_empty_input_fail/0.1.0/ProviderProcedure.")
         } finally {
@@ -1000,7 +1015,7 @@ describe("Provider Sdk tests", () => {
         );
         try {
             await sdk.register();
-            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumWithNoValidation`, { "a": 5, "b": 5 });
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumWithNoValidation`, { "a": 5, "b": 5 }, axios_https_config);
         } catch (e) {
             expect(AxiosResponseParser.getAxiosErrorMessage(e)).toContain("Procedure was expecting type void, received non-empty object for kind: location_provider_no_validation_scheme/0.1.0/ProviderProcedure.");
         } finally {
@@ -1024,7 +1039,7 @@ describe("Provider Sdk tests", () => {
         );
         try {
             await sdk.register();
-            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumThrowsError`, { "a": 5, "b": 5 });
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumThrowsError`, { "a": 5, "b": 5 }, axios_https_config);
         } catch (e) {
             expect(AxiosResponseParser.getAxiosErrorMessage(e)).toContain("My custom error");
         } finally {
@@ -1050,7 +1065,7 @@ describe("Provider Sdk tests", () => {
         );
         try {
             await sdk.register();
-            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumThrowsError`, { "a": 5, "b": 5 });
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeSumThrowsError`, { "a": 5, "b": 5 }, axios_https_config);
         } catch (e) {
             const message = AxiosResponseParser.getAxiosErrorMessage(e)
             expect(message).toContain("Cannot set property 'x' of undefined");
@@ -1112,10 +1127,10 @@ describe("Provider Sdk tests", () => {
                         b_id: '2'
                     }
                 }
-            });
+            }, axios_https_config);
 
-            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/testProcedure`, {b_id: '2'});
-            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`);
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/testProcedure`, {b_id: '2'}, axios_https_config);
+            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`, axios_https_config);
             expect(updatedEntity.data.status.provider_ref.a_id).toEqual('1')
             expect(updatedEntity.data.status.provider_ref.b_id).toEqual('2')
         } finally {
@@ -1176,10 +1191,10 @@ describe("Provider Sdk tests", () => {
                         }
                     }
                 }
-            });
+            }, axios_https_config);
 
-            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/testProcedureUpdate`);
-            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`);
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}/procedure/testProcedureUpdate`, {}, axios_https_config);
+            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`, axios_https_config);
             expect(updatedEntity.data.spec.a.b.hyp_type).toEqual('test')
             expect(updatedEntity.data.status.a.b.hyp_type).toEqual('test')
         } finally {
@@ -1271,12 +1286,13 @@ describe("Provider Sdk tests", () => {
                 headers: {
                   "Content-Type": "application/json",
                   "Authorization": `Bearer ${adminKey}`
-                }
+                },
+                httpsAgent: axios_https_config.httpsAgent
             })
 
             await timeout(15000)
 
-            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`);
+            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`, axios_https_config);
             expect(updatedEntity.data.spec.test[0].id).toEqual('test-idval')
             expect(updatedEntity.data.status.test[0].id).toEqual('test-idval')
             expect(updatedEntity.data.status.test[0].a).toEqual('test-aval')
@@ -1323,16 +1339,17 @@ describe("Provider Sdk tests", () => {
                 headers: {
                   "Content-Type": "application/json",
                   "Authorization": `Bearer ${adminKey}`,
-                }
+                },
+                httpsAgent: axios_https_config.httpsAgent
             });
 
-            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`);
+            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`, axios_https_config);
             await axios.put(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`, {
                 spec: {
                     test: null
                 },
                 metadata: metadata
-            });
+            }, axios_https_config);
             expect(updatedEntity.data.spec.test).toEqual("test-val1");
             expect(called).toBeFalsy()
         } finally {
@@ -1414,7 +1431,8 @@ describe("Provider Sdk tests", () => {
                 headers: {
                   "Content-Type": "application/json",
                   "Authorization": `Bearer ${adminKey}`
-                }
+                },
+                httpsAgent: axios_https_config.httpsAgent
             })
         } catch (e) {
             expect(AxiosResponseParser.getAxiosErrorMessage(e)).toContain("Received procedure input has additional field: 'a' not present in the schema for kind: test_status_only_field_update_spec/0.1.0/TestObject.")
@@ -1463,7 +1481,8 @@ describe("Provider Sdk tests", () => {
                 headers: {
                   "Content-Type": "application/json",
                   "Authorization": `Bearer ${adminKey}`
-                }
+                },
+                httpsAgent: axios_https_config.httpsAgent
             })
         } catch (e) {
             const entity_info = AxiosResponseParser.getAxiosErrorContext(e)
@@ -1500,10 +1519,11 @@ describe("Provider Sdk tests", () => {
                   "Content-Type": "application/json",
                   "Authorization": `Bearer ${adminKey}`,
                   "Papiea-Version": sdk.get_sdk_version()
-                }
+                },
+                httpsAgent: axios_https_config.httpsAgent
             });
 
-            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`);
+            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`, axios_https_config);
             expect(updatedEntity.data.spec.x).toEqual(10);
         } finally {
             sdk.cleanup()
@@ -1539,10 +1559,11 @@ describe("Provider Sdk tests", () => {
                   "Content-Type": "application/json",
                   "Authorization": `Bearer ${adminKey}`,
                   "Papiea-Version": sdk_version_list.join('.')
-                }
+                },
+                httpsAgent: axios_https_config.httpsAgent
             });
 
-            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`);
+            const updatedEntity: any = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`, axios_https_config);
             expect(updatedEntity.data.spec.x).toEqual(10);
         } finally {
             sdk.cleanup()
@@ -1578,7 +1599,8 @@ describe("Provider Sdk tests", () => {
                   "Content-Type": "application/json",
                   "Authorization": `Bearer ${adminKey}`,
                   "Papiea-Version": sdk_version_list.join('.')
-                }
+                },
+                httpsAgent: axios_https_config.httpsAgent
             });
         } catch (e) {
             expect(AxiosResponseParser.getAxiosErrorMessage(e)).toContain("Received incompatible papiea version")
@@ -1659,7 +1681,7 @@ describe("SDK + oauth provider tests", () => {
         try {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { "a": 5, "b": 5 },
-                { headers: { 'Authorization': `Bearer ${token}` }});
+                { headers: { 'Authorization': `Bearer ${token}` }, httpsAgent: axios_https_config.httpsAgent});
         } finally {
             sdk.cleanup()
             await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
@@ -1690,7 +1712,7 @@ describe("SDK + oauth provider tests", () => {
         try {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { "a": 5, "b": 5 },
-                { headers: { 'Authorization': `Bearer ${token}` }});
+                { headers: { 'Authorization': `Bearer ${token}` }, httpsAgent: axios_https_config.httpsAgent});
         } finally {
             sdk.cleanup()
             await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
@@ -1721,7 +1743,7 @@ describe("SDK + oauth provider tests", () => {
         try {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { "a": 5, "b": 5 },
-                { headers: { 'Authorization': `Bearer ${token}` }});
+                { headers: { 'Authorization': `Bearer ${token}` }, httpsAgent: axios_https_config.httpsAgent});
         } finally {
             sdk.cleanup()
             await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
@@ -1752,7 +1774,7 @@ describe("SDK + oauth provider tests", () => {
         try {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { "a": 5, "b": 5 },
-                { headers: { 'Authorization': `Bearer ${token}` }});
+                { headers: { 'Authorization': `Bearer ${token}` }, httpsAgent: axios_https_config.httpsAgent});
         } finally {
             sdk.cleanup()
             await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
@@ -1783,7 +1805,7 @@ describe("SDK + oauth provider tests", () => {
         try {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { "a": 5, "b": 5 },
-                { headers: { 'Authorization': `Bearer ${token}` }});
+                { headers: { 'Authorization': `Bearer ${token}` }, httpsAgent: axios_https_config.httpsAgent});
         } finally {
             sdk.cleanup()
             await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
@@ -1814,7 +1836,7 @@ describe("SDK + oauth provider tests", () => {
         try {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { "a": 5, "b": 5 },
-                { headers: { 'Authorization': `Bearer ${token}` }});
+                { headers: { 'Authorization': `Bearer ${token}` }, httpsAgent: axios_https_config.httpsAgent});
         } finally {
             sdk.cleanup()
             await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
@@ -1845,7 +1867,7 @@ describe("SDK + oauth provider tests", () => {
         try {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { "a": 5, "b": 5 },
-                { headers: { 'Authorization': `Bearer ${token}` }});
+                { headers: { 'Authorization': `Bearer ${token}` }, httpsAgent: axios_https_config.httpsAgent});
         } finally {
             sdk.cleanup()
             await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
@@ -1879,7 +1901,7 @@ describe("SDK + oauth provider tests", () => {
         try {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { "a": 5, "b": 5 },
-                { headers: { 'Authorization': `Bearer ${token}` }});
+                { headers: { 'Authorization': `Bearer ${token}` }, httpsAgent: axios_https_config.httpsAgent});
         } finally {
             sdk.cleanup()
             await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
@@ -1913,7 +1935,7 @@ describe("SDK + oauth provider tests", () => {
         try {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { "a": 5, "b": 5 },
-                { headers: { 'Authorization': `Bearer ${token}` }});
+                { headers: { 'Authorization': `Bearer ${token}` }, httpsAgent: axios_https_config.httpsAgent});
         } finally {
             sdk.cleanup()
             await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
@@ -1947,7 +1969,7 @@ describe("SDK + oauth provider tests", () => {
         try {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { "a": 5, "b": 5 },
-                { headers: { 'Authorization': `Bearer ${token}` }});
+                { headers: { 'Authorization': `Bearer ${token}` }, httpsAgent: axios_https_config.httpsAgent});
         } finally {
             sdk.cleanup()
             await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
@@ -1981,7 +2003,7 @@ describe("SDK + oauth provider tests", () => {
         try {
             await sdk.register();
             const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithPermissionCheck`, { "a": 5, "b": 5 },
-                { headers: { 'Authorization': `Bearer ${token}` }});
+                { headers: { 'Authorization': `Bearer ${token}` }, httpsAgent: axios_https_config.httpsAgent});
         } finally {
             sdk.cleanup()
             await providerApiAdmin.post(`/${ provider.prefix }/${ provider.version }/auth`, {
@@ -2017,7 +2039,7 @@ describe("SDK + oauth provider tests", () => {
         try {
             await sdk.register();
             await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/computeWithErrorMessagePropagationCheck`, { "a": 5, "b": 5 },
-                { headers: { 'Authorization': `Bearer ${token}` }});
+                { headers: { 'Authorization': `Bearer ${token}` }, httpsAgent: axios_https_config.httpsAgent});
         } catch (e) {
             expect(AxiosResponseParser.getAxiosErrorDetails(e).cause.message).toContain('provider_prefix should not be specified in the user info to create s2skey for provider')
         } finally {
@@ -2451,7 +2473,8 @@ describe("SDK callback tests", () => {
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${adminKey}`,
-                }
+                },
+                httpsAgent: axios_https_config.httpsAgent
             });
         } catch (e) {
             expect(AxiosResponseParser.getAxiosErrorMessage(e)).toContain(`Spec is missing for entity`)
@@ -2852,7 +2875,7 @@ describe("SDK client tests", () => {
         );
         try {
             await sdk.register();
-            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/compute`, { "a": 5, "b": 5 })
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/procedure/compute`, { "a": 5, "b": 5 }, axios_https_config)
         } finally {
             sdk.cleanup()
         }
@@ -2888,9 +2911,9 @@ describe("SDK client tests", () => {
         await sdk.register();
         const kind_name = sdk.provider.kinds[0].name;
         try {
-            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/procedure/computeGeolocation`, { region_id: "2" });
+            const res: any = await axios.post(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/procedure/computeGeolocation`, { region_id: "2" }, axios_https_config);
             expect(res.data.region_id).toBe("us.west.2");
-            const entity_created = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${uuid}`)
+            const entity_created = await axios.get(`${sdk.entity_url}/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${uuid}`, axios_https_config)
             expect(entity_created.data.spec.x).toEqual(100)
         } finally {
             sdk.cleanup()

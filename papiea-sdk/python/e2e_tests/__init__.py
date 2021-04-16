@@ -12,7 +12,7 @@ from papiea.tracing_utils import init_default_tracer
 
 SERVER_PORT = int(os.environ.get("SERVER_PORT", "3000"))
 PAPIEA_ADMIN_S2S_KEY = os.environ.get("PAPIEA_ADMIN_S2S_KEY", "")
-PAPIEA_URL = os.getenv("PAPIEA_URL", "http://127.0.0.1:3000")
+PAPIEA_URL = os.getenv("PAPIEA_URL", "https://127.0.0.1:3000")
 
 SERVER_CONFIG_HOST = "127.0.0.1"
 SERVER_CONFIG_PORT = 9005
