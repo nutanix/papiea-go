@@ -69,8 +69,8 @@ export class IntentResolver {
     }
 
     private async clearTerminalStateWatchers(watcherExpirySeconds: number) {
-        const watchers = await this.intentWatcherDb.list_watchers({})
-        for (let watcher of watchers) {
+        const watchers = this.intentWatcherDb.list_watchers({})
+        for await (let watcher of watchers) {
             if (IntentResolver.inTerminalState(watcher)) {
                 if (watcher.last_status_changed && (new Date().getTime() - watcher.last_status_changed.getTime()) / 1000 > watcherExpirySeconds) {
                     await this.intentWatcherDb.delete_watcher(watcher.uuid)
@@ -139,28 +139,27 @@ export class IntentResolver {
     }
 
     private async onChange(entity: Entity) {
-        const watchers = await this.intentWatcherDb.list_watchers(
-            {
-                entity_ref: {
-                    uuid: entity.metadata.uuid,
-                    kind: entity.metadata.kind,
-                    provider_prefix: entity.metadata.provider_prefix,
-                    provider_version: entity.metadata.provider_version
-                },
-                status: IntentfulStatus.Active
-            }
-        )
         try {
-            for (let watcher of watchers) {
+            const watchers = this.intentWatcherDb.list_watchers(
+                {
+                    entity_ref: {
+                        uuid: entity.metadata.uuid,
+                        kind: entity.metadata.kind,
+                        provider_prefix: entity.metadata.provider_prefix,
+                        provider_version: entity.metadata.provider_version
+                    },
+                    status: IntentfulStatus.Active
+                }
+            )
+            for await (const watcher of watchers) {
                 await this.processActiveWatcher(watcher, entity)
             }
         } catch (e) {
-            // this.logger.debug(`Couldn't process onChange for entity`, {
-            //     error: e.toString(),
-            //     stack: e.stack,
-            //     entity,
-            //     watchers,
-            // });
+            this.logger.debug(`Couldn't process onChange for entity`, {
+                error: e.toString(),
+                stack: e.stack,
+                entity,
+            });
         }
     }
 
@@ -172,7 +171,7 @@ export class IntentResolver {
                 continue
             }
             const [entry_ref, _] = entries[key]
-            const watchers = await this.intentWatcherDb.list_watchers(
+            const watchers = this.intentWatcherDb.list_watchers(
                 {
                     entity_ref: {
                         uuid: entry_ref.entity_reference.uuid,
@@ -183,10 +182,15 @@ export class IntentResolver {
                     status: IntentfulStatus.Active
                 }
             )
-            if (watchers.length !== 0) {
-                const [metadata, spec] = await this.specDb.get_spec({...entry_ref.provider_reference, ...entry_ref.entity_reference})
-                const [, status] = await this.statusDb.get_status({...entry_ref.provider_reference, ...entry_ref.entity_reference})
-                this.onChange({ metadata, spec, status })
+            const hasWatcher = ! (await watchers[Symbol.asyncIterator]().next()).done;
+            if (hasWatcher) {
+                try {
+                    const [, spec] = await this.specDb.get_spec({...entry_ref.provider_reference, ...entry_ref.entity_reference})
+                    const [metadata, status] = await this.statusDb.get_status({...entry_ref.provider_reference, ...entry_ref.entity_reference})
+                    await this.onChange({ metadata, spec, status })
+                } catch (e) {
+                    this.logger.debug(`Failed to process onChange in update active watcher status for entity with uuid: ${entry_ref.entity_reference.uuid} and kind: ${entry_ref.entity_reference.kind} for provider with prefix: ${entry_ref.provider_reference.provider_prefix} and version: ${entry_ref.provider_reference.provider_version} due to error: ${e}`)
+                }
             }
         }
     }
@@ -203,8 +207,8 @@ export class IntentResolver {
     protected async _run(delay: number, watcherExpirySeconds: number) {
         while (true) {
             await timeout(delay)
-            this.clearTerminalStateWatchers(watcherExpirySeconds)
-            this.updateActiveWatchersStatuses()
+            await this.clearTerminalStateWatchers(watcherExpirySeconds)
+            await this.updateActiveWatchersStatuses()
         }
     }
 }
