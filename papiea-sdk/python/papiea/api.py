@@ -32,7 +32,7 @@ class ApiInstance:
         self.base_url = base_url
         self.headers = headers
         self.timeout = timeout
-        self.session = ClientSession(timeout=ClientTimeout(total=timeout))
+        self.session = ClientSession(timeout=ClientTimeout(total=timeout), headers=dict(rejectUnauthorized=False))
         self.logger = logger
 
     async def __aenter__(self) -> "ApiInstance":
@@ -62,35 +62,35 @@ class ApiInstance:
         # and sadly there are no macro in python
         if method == "get":
             async with self.session.get(
-                    self.base_url + "/" + prefix, headers=new_headers, ssl=False
+                    self.base_url + "/" + prefix, headers=new_headers
             ) as resp:
                 await check_response(resp, self.logger)
                 res = await resp.text()
             return self.check_result(res)
         elif method == "post":
             async with self.session.post(
-                    self.base_url + "/" + prefix, data=data_binary, headers=new_headers, ssl=False
+                    self.base_url + "/" + prefix, data=data_binary, headers=new_headers
             ) as resp:
                 await check_response(resp, self.logger)
                 res = await resp.text()
             return self.check_result(res)
         elif method == "put":
             async with self.session.put(
-                    self.base_url + "/" + prefix, data=data_binary, headers=new_headers, ssl=False
+                    self.base_url + "/" + prefix, data=data_binary, headers=new_headers
             ) as resp:
                 await check_response(resp, self.logger)
                 res = await resp.text()
             return self.check_result(res)
         elif method == "patch":
             async with self.session.patch(
-                    self.base_url + "/" + prefix, data=data_binary, headers=new_headers, ssl=False
+                    self.base_url + "/" + prefix, data=data_binary, headers=new_headers
             ) as resp:
                 await check_response(resp, self.logger)
                 res = await resp.text()
             return self.check_result(res)
         elif method == "delete":
             async with self.session.delete(
-                    self.base_url + "/" + prefix, headers=new_headers, ssl=False
+                    self.base_url + "/" + prefix, headers=new_headers
             ) as resp:
                 await check_response(resp, self.logger)
                 res = await resp.text()
@@ -129,4 +129,4 @@ class ApiInstance:
 
     async def renew_session(self):
         await self.close()
-        self.session = ClientSession(timeout=ClientTimeout(total=self.timeout))
+        self.session = ClientSession(timeout=ClientTimeout(total=self.timeout), headers=dict(rejectUnauthorized=False))

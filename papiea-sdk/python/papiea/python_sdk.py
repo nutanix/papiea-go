@@ -69,14 +69,14 @@ class ProviderServerManager(object):
             await self._runner.cleanup()
 
     def callback_url(self) -> str:
-        return f"http://{self.public_host}:{self.public_port}"
+        return f"https://{self.public_host}:{self.public_port}"
 
     def procedure_callback_url(self, procedure_name: str, kind: Optional[str]) -> str:
         if kind is not None:
-            return f"http://{self.public_host}:{self.public_port}/{kind}/{procedure_name}"
+            return f"https://{self.public_host}:{self.public_port}/{kind}/{procedure_name}"
         else:
             return (
-                f"http://{self.public_host}:{self.public_port}/{procedure_name}"
+                f"https://{self.public_host}:{self.public_port}/{procedure_name}"
             )
 
 

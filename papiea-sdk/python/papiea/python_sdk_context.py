@@ -69,11 +69,12 @@ class ProceduralCtx(object):
     ) -> bool:
         try:
             data_binary = json.dumps(entity_action).encode("utf-8")
-            async with ClientSession() as session:
+            async with ClientSession(headers=dict(rejectUnauthorized=False)) as session:
                 async with session.post(
                     f"{ self.base_url }/{ provider_prefix }/{ provider_version }/check_permission",
                     data=data_binary,
                     headers=headers,
+                    ssl=False
                 ) as resp:
                     res = await resp.text()
             res = json.loads(res)

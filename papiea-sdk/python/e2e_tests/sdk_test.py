@@ -25,7 +25,6 @@ class TestEntityOperations:
         try:
             async with papiea_test.get_client(papiea_test.BUCKET_KIND) as bucket_entity_client:
                 bucket1_name = "test-bucket1"
-
                 bucket_ref = await bucket_entity_client.invoke_kind_procedure("ensure_bucket_exists", { "bucket_name": bucket1_name })
                 bucket1_entity = await bucket_entity_client.get(bucket_ref)
 

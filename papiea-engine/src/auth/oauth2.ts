@@ -6,6 +6,8 @@ import { Provider } from "papiea-core"
 import { SessionKeyAPI } from "./session_key"
 import uuid = require("uuid")
 import { Logger } from 'papiea-backend-utils'
+const http = require('http')
+const https = require('https')
 
 const simpleOauthModule = require("simple-oauth2"),
     queryString = require("query-string"),
@@ -31,6 +33,13 @@ function convertToSimpleOauth2(description: any) {
             tokenPath: oauth.token_uri,
             authorizePath: oauth.authorize_uri,
             revokePath: oauth.revoke_uri
+        },
+        http: {
+            agents: {
+                https: new https.Agent({ rejectUnauthorized: false }),
+                http: new http.Agent(),
+                httpsAllowUnauthorized: new https.Agent({ rejectUnauthorized: false })
+            }
         },
         options: {
             authorizationMethod: "body",

@@ -420,11 +420,11 @@ describe('Read provider security check', function () {
     let providerVersion: Version
 
     beforeAll(async () => {
-        oauth2Server.httpServer.listen(oauth2ServerPort, oauth2ServerHost);
+        oauth2Server.httpsServer.listen(oauth2ServerPort, oauth2ServerHost);
     });
 
     afterAll(async () => {
-        oauth2Server.httpServer.close();
+        oauth2Server.httpsServer.close();
     });
 
     afterEach(async () => {

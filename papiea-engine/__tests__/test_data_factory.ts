@@ -17,7 +17,7 @@ import {
 import * as http from "http"
 import { IncomingMessage, ServerResponse } from "http"
 import uuid = require("uuid");
-
+import https = require('https')
 const url = require("url");
 const queryString = require("query-string");
 
@@ -388,10 +388,13 @@ function createToken(expireIn: number) {
 export class OAuth2Server {
     static tenant_uuid = uuid();
     readonly idp_token: any
-    httpServer: http.Server
-
+    httpsServer: https.Server
+    static ca = readFileSync(resolve(__dirname, '../certs/ca.crt'), "utf-8")
+    static privateKey = readFileSync(resolve(__dirname, '../certs/server.key'), "utf-8")
+    static certificate = readFileSync(resolve(__dirname, '../certs/server.crt'), "utf-8")
+    
     constructor(ttlSeconds: number) {
-        this.httpServer = http.createServer((req, res) => {
+        this.httpsServer = https.createServer({ ca: OAuth2Server.ca, key: OAuth2Server.privateKey, cert: OAuth2Server.certificate, rejectUnauthorized: false }, (req: any, res: any) => {
             this.resolve(req, res)
         });
         this.idp_token = createToken(ttlSeconds)

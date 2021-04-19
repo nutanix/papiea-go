@@ -1,7 +1,7 @@
 oauth:
   client_id: XXX
   client_secret: YYY
-  auth_host: http://127.0.0.1:9002
+  auth_host: https://127.0.0.1:9002
   authorize_uri: /oauth2/authorize    # relative to auth_host
   revoke_uri: /oauth2/revoke          # relative to auth_host
   token_uri: /oauth2/token            # relative to auth_host

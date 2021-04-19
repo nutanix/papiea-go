@@ -15,6 +15,7 @@ import axios, { AxiosInstance } from "axios";
 import { ProviderSdk } from "./typescript_sdk";
 import { IncomingHttpHeaders } from "http";
 import { provider_client, ProviderClient } from "papiea-client";
+const https = require('https')
 
 export class ProceduralCtx implements ProceduralCtx_Interface {
     base_url: string;
@@ -57,8 +58,11 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
 
     async try_check(provider_prefix: string, provider_version: Version, entityAction: [Action, Entity_Reference][], headers: any) {
         try {
+            const httpsAgent = new https.Agent({
+                rejectUnauthorized: false
+            })
             const { data: { success } } = await axios.post(`${ this.base_url }/${ provider_prefix }/${ provider_version }/check_permission`,
-                entityAction, { headers: headers });
+                entityAction, { httpsAgent, headers });
             return success === "Ok";
         } catch (e) {
             this.get_logger().info(`Try check permission failed due to error: ${e.response?.data?.error.toString()}`)
