@@ -8,6 +8,9 @@ fi
 npm run build-clj
 if [ $HOT_RELOAD == 'true' ]
 then
+    if [ ! -d "certs" ]; then
+        bash install_certificates.sh
+    fi
     if [ $PAPIEA_DEBUG == 'true' ]; then
         npm run debug &
         npm run debug_differ
@@ -16,6 +19,7 @@ then
         npm run start_differ
     fi
 else
+    bash install_certificates.sh
     npm run start_differ &
     npm run start
 fi

@@ -135,7 +135,8 @@ clean-node-modules:
 clean:
 	yarn run clean-all; \
 	cd ./papiea-engine/__benchmarks__; \
-	rm -rf build
+	rm -rf build; \
+	rm -rf certs
 .PHONY: clean
 
 remove_dev_deps:
