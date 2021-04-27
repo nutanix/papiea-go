@@ -1,4 +1,4 @@
-import { Collection, Db } from "mongodb";
+import {Collection, Db, MongoError} from "mongodb"
 import { Logger } from "papiea-backend-utils";
 import {Watchlist, Watchlist_DB} from "./watchlist_db_interface"
 import { PapieaException } from "../errors/papiea_exception";
@@ -65,9 +65,19 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
             entry_reference: Watchlist_Db_Mongo.form_entry_reference(metadata),
             diffs
         }
-        const result = await this.collection.insertOne(entry);
-        if (result.result.n !== 1) {
-            throw new PapieaException({message: `MongoDBError: Couldn't create a watchlist entry. Amount of created entries doesn't equal to 1: ${result.result.n}`})
+        try {
+            const result = await this.collection.insertOne(entry)
+            if (result.result.n !== 1) {
+                throw new PapieaException({message: `MongoDBError: Couldn't create a watchlist entry. Amount of created entries doesn't equal to 1: ${result.result.n}`})
+            }
+        } catch (e) {
+            if (e instanceof PapieaException) {
+                throw e
+            } else if (e instanceof MongoError) {
+                throw new PapieaException({message: `Couldn't create watchlist entry due to mongo error: ${e}`})
+            } else {
+                throw e
+            }
         }
     }
 

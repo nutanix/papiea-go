@@ -77,6 +77,8 @@ export class IntentfulListenerMongoStream implements IntentfulListener {
             } catch (e) {
                 if (e instanceof WatchlistEntityNotFoundError) {
                     return
+                } else {
+                    throw e
                 }
             }
         }).on("error", async (err) => {

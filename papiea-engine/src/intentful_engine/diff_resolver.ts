@@ -218,7 +218,7 @@ export class DiffResolver {
                 await this.watchlistDb.add_entity(metadata, [])
             } catch (e) {
                 if (e instanceof PapieaException) {
-                    this.logger.debug(`Trying to add entity ${metadata.uuid}, which is already in the watchlist`)
+                    this.logger.debug(`Trying to add entity ${metadata.uuid}, which is already in the watchlist resulted in error: ${e}`)
                 } else {
                     throw e
                 }
