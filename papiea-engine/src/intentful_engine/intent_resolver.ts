@@ -3,10 +3,10 @@ import {Status_DB} from "../databases/status_db_interface"
 import {IntentWatcher_DB} from "../databases/intent_watcher_db_interface"
 import {Provider_DB} from "../databases/provider_db_interface"
 import {Handler, IntentfulListener} from "./intentful_listener_interface"
-import {Watchlist} from "./watchlist"
 import { Watchlist_DB } from "../databases/watchlist_db_interface";
 import {Diff, DiffContent, Differ, Entity, IntentfulStatus, IntentWatcher} from "papiea-core"
 import {timeout} from "../utils/utils"
+import * as Async from "../utils/async"
 import {Logger} from "papiea-backend-utils"
 import { Cursor } from "mongodb"
 
@@ -163,9 +163,15 @@ export class IntentResolver {
         } catch (e) {
             await watcher_cursor!.close()
             this.logger.debug(`Couldn't process onChange for entity`, {
+                entity: {
+                    uuid: entity.metadata.uuid,
+                    kind: entity.metadata.kind,
+                    provider: entity.metadata.provider_prefix,
+                    provider_version: entity.metadata.provider_version,
+                },
                 error: e.toString(),
                 stack: e.stack,
-                entity,
+                watchers: await Async.collect(watcher_cursor!)
             });
         }
     }

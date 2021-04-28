@@ -38,7 +38,7 @@ export class DifferIntentfulStrategy extends IntentfulStrategy {
                                    ctx.tracing_ctx,
                                    {entity_uuid: metadata.uuid})
         const [updated_metadata, updated_spec, updated_status] = await this.update_entity(metadata, spec)
-        console.debug(`[DELAY_DEBUG] Updated the entity with uuid: ${metadata.uuid}`)
+        // console.debug(`[DELAY_DEBUG] Updated the entity with uuid: ${metadata.uuid}`)
         updateSpan.finish()
         const watcher: IntentWatcher = {
             uuid: uuid(),
@@ -60,7 +60,7 @@ export class DifferIntentfulStrategy extends IntentfulStrategy {
                                    ctx.tracing_ctx,
                                    {entity_uuid: metadata.uuid})
         await this.intentWatcherDb.save_watcher(watcher)
-        console.debug(`[DELAY_DEBUG] Saved the intent watcher for update entity: ${metadata.uuid} with id: ${watcher.uuid}`)
+        // console.debug(`[DELAY_DEBUG] Saved the intent watcher for update entity: ${metadata.uuid} with id: ${watcher.uuid}`)
         watcherSpan.finish()
         const ent = await this.watchlistDb.edit_watchlist(async watchlist => {
             const ent = create_entry(metadata)
@@ -69,8 +69,8 @@ export class DifferIntentfulStrategy extends IntentfulStrategy {
             }
             return ent;
         });
-        console.debug(`[DELAY_DEBUG] Added entry in watchlist for entity: ${metadata.uuid}`)
-        console.debug(`[DELAY_DEBUG] ${JSON.stringify(ent)}`)
+        // console.debug(`[DELAY_DEBUG] Added entry in watchlist for entity: ${metadata.uuid}`)
+        // console.debug(`[DELAY_DEBUG] ${JSON.stringify(ent)}`)
         return {
             intent_watcher: watcher,
             metadata: updated_metadata,
