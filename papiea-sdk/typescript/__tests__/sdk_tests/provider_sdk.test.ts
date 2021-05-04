@@ -16,7 +16,7 @@ const https = require('https')
 
 const axios_https_config = {
     httpsAgent: new https.Agent({
-      rejectUnauthorized: false
+        ca: readFileSync(resolve(__dirname, '../../certs/ca.crt'), 'utf8')
     })
 }
 
@@ -28,41 +28,35 @@ declare var process: {
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
-const papieaUrl = 'https://127.0.0.1:3000';
+const papieaUrl = 'https://localhost:3000';
 
 const server_config = {
-    host: "127.0.0.1",
+    host: "localhost",
     port: 9000
 };
 
 const providerApiAdmin = axios.create({
-    baseURL: `https://127.0.0.1:${serverPort}/provider`,
+    baseURL: `https://localhost:${serverPort}/provider`,
     timeout: 1000,
     headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${adminKey}`
     },
-    httpsAgent: new https.Agent({  
-        rejectUnauthorized: false
-    })
+    httpsAgent: axios_https_config.httpsAgent
 });
 
 const providerApi = axios.create({
-    baseURL: `https://127.0.0.1:${serverPort}/provider`,
+    baseURL: `https://localhost:${serverPort}/provider`,
     timeout: 1000,
     headers: { 'Content-Type': 'application/json' },
-    httpsAgent: new https.Agent({  
-        rejectUnauthorized: false
-    })
+    httpsAgent: axios_https_config.httpsAgent
 });
 
 const entityApi = axios.create({
-    baseURL: `https://127.0.0.1:${serverPort}/services`,
+    baseURL: `https://localhost:${serverPort}/services`,
     timeout: 1000,
     headers: { 'Content-Type': 'application/json' },
-    httpsAgent: new https.Agent({  
-        rejectUnauthorized: false
-    })
+    httpsAgent: axios_https_config.httpsAgent
 });
 
 describe("Provider Sdk tests", () => {
@@ -93,7 +87,7 @@ describe("Provider Sdk tests", () => {
         done();
     });
     test("Wrong yaml description causes error", (done) => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         try {
             sdk.new_kind({});
         } catch (err) {
@@ -103,7 +97,7 @@ describe("Provider Sdk tests", () => {
         }
     });
     test("Provider can create a new kind", (done) => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location_manager = sdk.new_kind(location_yaml);
         expect(location_manager.kind.name).toBe("Location");
         sdk.cleanup()
@@ -111,7 +105,7 @@ describe("Provider Sdk tests", () => {
     });
     test("Provider without version should fail to register", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         try {
             sdk.new_kind(location_yaml);
             sdk.prefix("test_provider");
@@ -123,7 +117,7 @@ describe("Provider Sdk tests", () => {
     });
     test("Provider without kind should fail to register", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         try {
             sdk.prefix("test_provider");
             sdk.version(provider_version);
@@ -135,7 +129,7 @@ describe("Provider Sdk tests", () => {
     });
     test("Provider without prefix should fail to register", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         try {
             sdk.new_kind(location_yaml);
             sdk.version(provider_version);
@@ -146,7 +140,7 @@ describe("Provider Sdk tests", () => {
         sdk.cleanup()
     });
     test("Add multiple kinds shouldn't fail", (done) => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const geo_location_yaml = JSON.parse(JSON.stringify(location_yaml));
         sdk.new_kind(location_yaml);
         sdk.new_kind(geo_location_yaml);
@@ -155,7 +149,7 @@ describe("Provider Sdk tests", () => {
     });
     let location_kind_manager: Kind_Builder;
     test("Duplicate delete on kind should return false", (done) => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         location_kind_manager = sdk.new_kind(location_yaml);
         expect(sdk.remove_kind(location_kind_manager.kind)).toBeTruthy();
         expect(sdk.remove_kind(location_kind_manager.kind)).toBeFalsy();
@@ -163,14 +157,14 @@ describe("Provider Sdk tests", () => {
         done();
     });
     test("Duplicate add on kind should return false", (done) => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         expect(sdk.add_kind(location_kind_manager.kind)).not.toBeNull();
         expect(sdk.add_kind(location_kind_manager.kind)).toBeNull();
         sdk.cleanup()
         done();
     });
     test("Provider should be created on papiea", async () => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -178,7 +172,7 @@ describe("Provider Sdk tests", () => {
         sdk.cleanup()
     });
     test("Provider with procedures should be created on papiea", async () => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -202,7 +196,7 @@ describe("Provider Sdk tests", () => {
     });
     test("Entity should be allowed to be modified using procedures defined using provider SDK", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         try {
             const location = sdk.new_kind(location_yaml);
             sdk.version(provider_version);
@@ -240,7 +234,7 @@ describe("Provider Sdk tests", () => {
     test("Invalid string input to the entity procedure should throw an error", async () => {
         expect.assertions(1);
         let kind_name: string = ''
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         try {
             const location = sdk.new_kind(location_yaml);
             sdk.version(provider_version);
@@ -275,7 +269,7 @@ describe("Provider Sdk tests", () => {
     });
     test("Invalid numeric input to the entity procedure should throw an error", async () => {
         expect.assertions(1);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         try {
             const location = sdk.new_kind(location_yaml);
             sdk.version(provider_version);
@@ -310,7 +304,7 @@ describe("Provider Sdk tests", () => {
     });
     test("Malformed handler registered on sdk should fail", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -344,7 +338,7 @@ describe("Provider Sdk tests", () => {
 
     test("Registering Provider procedures without prefix already set should fail", async () => {
         expect.assertions(1);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         try {
@@ -368,7 +362,7 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Provider with kind level procedures should be created on papiea", async () => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -406,7 +400,7 @@ describe("Provider Sdk tests", () => {
         expect.hasAssertions()
         const kind_copy = JSON.parse(JSON.stringify(location_yaml))
         kind_copy["Location"]["x-papiea-entity"] = "basic"
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(kind_copy);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -443,7 +437,7 @@ describe("Provider Sdk tests", () => {
         expect.hasAssertions()
         const kind_copy = JSON.parse(JSON.stringify(location_yaml))
         kind_copy["Location"]["x-papiea-entity"] = "basic"
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(kind_copy);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -486,7 +480,7 @@ describe("Provider Sdk tests", () => {
         expect.hasAssertions()
         const kind_copy = JSON.parse(JSON.stringify(location_array_yaml))
         kind_copy["Location"]["x-papiea-entity"] = "basic"
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(kind_copy);
         sdk.version(provider_version);
         sdk.prefix("location_provider_array_replace");
@@ -526,7 +520,7 @@ describe("Provider Sdk tests", () => {
         expect.hasAssertions()
         const kind_copy = JSON.parse(JSON.stringify(location_yaml))
         kind_copy["Location"]["x-papiea-entity"] = "basic"
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(kind_copy);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -568,7 +562,7 @@ describe("Provider Sdk tests", () => {
         expect.hasAssertions()
         const kind_copy = JSON.parse(JSON.stringify(location_yaml))
         kind_copy["Location"]["x-papiea-entity"] = "basic"
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(kind_copy);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -608,7 +602,7 @@ describe("Provider Sdk tests", () => {
 
     test("Provider with kind level procedures with error description and description should be registered", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider_description");
@@ -655,7 +649,7 @@ describe("Provider Sdk tests", () => {
 
     test("Provider error description fail validation", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider_description");
@@ -697,7 +691,7 @@ describe("Provider Sdk tests", () => {
 
     test("Provider with kind level procedures should be executed", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -734,7 +728,7 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Provider with provider level procedures should be created on papiea", async () => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -767,7 +761,7 @@ describe("Provider Sdk tests", () => {
 
     test("Provider with provider level procedures should be executed", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -802,7 +796,7 @@ describe("Provider Sdk tests", () => {
 
     test("Provider with provider level procedures should fail validation if wrong type is returned", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider");
@@ -839,7 +833,7 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Provider with provider level procedures should be allowed to be created without validation scheme", async () => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider_no_validation_scheme");
@@ -857,7 +851,7 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Papiea should correctly validate if input param is an empty object", async () => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         const input_args = {type: 'object', properties: {}}
         sdk.version(provider_version);
@@ -877,7 +871,7 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Papiea should correctly validate if input param is an empty object and schema doesn't have any required fields", async () => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         const input_args = {type: 'object', properties: { ip: { type: "string" }}}
         sdk.version(provider_version);
@@ -897,7 +891,7 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Papiea should correctly validate if input schema is undefined and no input is sent", async() => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version)
         sdk.prefix("location_provider_undefined_input_schema_no_input")
@@ -917,7 +911,7 @@ describe("Provider Sdk tests", () => {
 
     test("Papiea should fail validation if input schema is undefined and input value is set", async() => {
         expect.assertions(1)
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version)
         sdk.prefix("location_provider_undefined_input_schema_input")
@@ -938,7 +932,7 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Papiea should correctly validate if input schema is null and no input is sent", async() => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version)
         sdk.prefix("location_provider_null_input_schema_no_input")
@@ -958,7 +952,7 @@ describe("Provider Sdk tests", () => {
 
     test("Papiea should fail validation if input schema is null and input value is set", async() => {
         expect.assertions(1)
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version)
         sdk.prefix("location_provider_null_input_schema_input")
@@ -979,7 +973,7 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Papiea should correclty validate if output param is an empty object", async () => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         const input_args = {type: 'object', properties: {}}
         sdk.version(provider_version);
@@ -1003,7 +997,7 @@ describe("Provider Sdk tests", () => {
 
     test("Provider with provider level procedures should return error if the return type is not void", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider_no_validation_scheme");
@@ -1025,7 +1019,7 @@ describe("Provider Sdk tests", () => {
 
     test("Provider with provider level procedures throws error inside procedure", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider_throws_error");
@@ -1049,7 +1043,7 @@ describe("Provider Sdk tests", () => {
 
     test("Provider with provider level procedures should correctly handle exceptions in the provider", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider_throws_exception");
@@ -1097,7 +1091,7 @@ describe("Provider Sdk tests", () => {
     }
     test("Entity initialization after setting it to null should succeed", async () => {
         expect.assertions(2);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         try {
             const machine = sdk.new_kind(NULL_TEST_SCHEMA);
             sdk.version(provider_version);
@@ -1159,7 +1153,7 @@ describe("Provider Sdk tests", () => {
 
     test("Update status of a nested object with value of type any should succeed", async () => {
         expect.assertions(2)
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         try {
             const nested_object = sdk.new_kind(NESTED_TEST_SCHEMA);
             sdk.version(provider_version);
@@ -1244,7 +1238,7 @@ describe("Provider Sdk tests", () => {
 
     test("Diff resolver should not run if only diff field is a status-only field", async () => {
         expect.assertions(4)
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         let called = false
         try {
             const nested_object = sdk.new_kind(STATUS_ONLY_TEST_SCHEMA);
@@ -1319,7 +1313,7 @@ describe("Provider Sdk tests", () => {
 
     test("Diff resolver should not run for field set to null in spec", async () => {
         expect.assertions(2);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         try {
             const test_kind = sdk.new_kind(NULL_FIELD_UPDATE_SCHEMA);
             sdk.version(provider_version);
@@ -1359,7 +1353,7 @@ describe("Provider Sdk tests", () => {
 
     test("Provider with required status-only field should fail in registration", async () => {
         expect.assertions(1)
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         let status_only_required_schema = JSON.parse(JSON.stringify(STATUS_ONLY_TEST_SCHEMA))
         status_only_required_schema.TestObject.properties.test.items.required = ['a']
         sdk.new_kind(status_only_required_schema);
@@ -1374,7 +1368,7 @@ describe("Provider Sdk tests", () => {
     });
 
     test("Provider with untyped object in schema should succeed with warning from papiea", async () => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         let untyped_object_schema = JSON.parse(JSON.stringify(STATUS_ONLY_TEST_SCHEMA))
         untyped_object_schema.TestObject.properties.test.items.properties.c = {
             type: "object",
@@ -1393,7 +1387,7 @@ describe("Provider Sdk tests", () => {
 
     test("Create entity spec with status-only field set should fail", async () => {
         expect.assertions(1)
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const test_object = sdk.new_kind(STATUS_ONLY_TEST_SCHEMA);
         sdk.version(provider_version);
         sdk.prefix("test_status_only_field_update_spec");
@@ -1443,7 +1437,7 @@ describe("Provider Sdk tests", () => {
 
     test("Create entity spec with status-only field set and default input schema for constructor should fail", async () => {
         expect.assertions(5)
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const test_object = sdk.new_kind(STATUS_ONLY_TEST_SCHEMA);
         sdk.version(provider_version);
         sdk.prefix("test_status_only_field_update_spec");
@@ -1498,7 +1492,7 @@ describe("Provider Sdk tests", () => {
 
     test("Papiea version equal to the supported version should pass", async () => {
         expect.assertions(1);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         try {
             const location = sdk.new_kind(location_yaml);
             sdk.version(provider_version);
@@ -1532,7 +1526,7 @@ describe("Provider Sdk tests", () => {
 
     test("Papiea version compatible with the supported version should pass", async () => {
         expect.assertions(1);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         try {
             const location = sdk.new_kind(location_yaml);
             sdk.version(provider_version);
@@ -1572,7 +1566,7 @@ describe("Provider Sdk tests", () => {
 
     test("Papiea version incompatible with the supported version should fail", async () => {
         expect.assertions(1);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         try {
             const location = sdk.new_kind(location_yaml);
             sdk.version(provider_version);
@@ -1611,7 +1605,7 @@ describe("Provider Sdk tests", () => {
 });
 
 describe("SDK + oauth provider tests", () => {
-    const oauth2ServerHost = '127.0.0.1';
+    const oauth2ServerHost = 'localhost';
     const oauth2ServerPort = 9002;
     const pathToModel: string = resolve(__dirname, "../test_data/provider_model_example.txt");
     const modelText: string = readFileSync(pathToModel).toString();
@@ -1661,7 +1655,7 @@ describe("SDK + oauth provider tests", () => {
 
     test("Procedure check permission read should fail", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("permissioned_provider_read_fail");
@@ -1692,7 +1686,7 @@ describe("SDK + oauth provider tests", () => {
 
     test("Procedure check permission read should succeed", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("permissioned_provider_read_success");
@@ -1723,7 +1717,7 @@ describe("SDK + oauth provider tests", () => {
 
     test("Procedure check permission read should succeed with specified user token", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("permissioned_provider_read_success_user_token");
@@ -1754,7 +1748,7 @@ describe("SDK + oauth provider tests", () => {
 
     test("Procedure check permission read should fail with specified invalid user token", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("permissioned_provider_read_fail_user_token");
@@ -1785,7 +1779,7 @@ describe("SDK + oauth provider tests", () => {
 
     test("Procedure check permission write should succeed", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("permissioned_provider_write_success");
@@ -1816,7 +1810,7 @@ describe("SDK + oauth provider tests", () => {
 
     test("Procedure check permission write when read permission allowed should fail", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("permissioned_provider_write_success");
@@ -1847,7 +1841,7 @@ describe("SDK + oauth provider tests", () => {
 
     test("Procedure check permission write should fail", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("permissioned_provider_write_fail");
@@ -1878,7 +1872,7 @@ describe("SDK + oauth provider tests", () => {
 
     test("Procedure check permission write with array should fail", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("permissioned_provider_write_fail");
@@ -1912,7 +1906,7 @@ describe("SDK + oauth provider tests", () => {
 
     test("Procedure check permission write with array should succeed", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("permissioned_provider_write_fail");
@@ -1946,7 +1940,7 @@ describe("SDK + oauth provider tests", () => {
 
     test("Procedure check permission write and read with array should succeed", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("permissioned_provider_write_fail");
@@ -1980,7 +1974,7 @@ describe("SDK + oauth provider tests", () => {
 
     test("Procedure check permission write and read with array should fail, read is denied", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("permissioned_provider_write_fail");
@@ -2014,7 +2008,7 @@ describe("SDK + oauth provider tests", () => {
 
     test("Provider with provider level procedures throws error inside procedure", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         sdk.version(provider_version);
         sdk.prefix("location_provider_throws_error_with_correct_description");
@@ -2065,7 +2059,7 @@ describe("SDK + oauth provider tests", () => {
     }
     test("Intent watcher check permission read should succeed", async () => {
         expect.assertions(1);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(WATCHER_TEST_SCHEMA);
         sdk.version(provider_version);
         sdk.prefix("permissioned_intent_watcher_read_succeed");
@@ -2127,7 +2121,7 @@ describe("SDK + oauth provider tests", () => {
 
     test("Intent watcher check permission read should fail if owner is incorrect", async () => {
         expect.assertions(1);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(WATCHER_TEST_SCHEMA);
         sdk.version(provider_version);
         sdk.prefix("permissioned_intent_watcher_read_fail");
@@ -2206,7 +2200,7 @@ describe("SDK callback tests", () => {
 
     test("On delete callback should be called", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         prefix = "provider_on_delete_callback"
         sdk.version(provider_version);
@@ -2248,7 +2242,7 @@ describe("SDK callback tests", () => {
 
     test("On create callback should be called", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         prefix = "provider_on_create_callback"
         sdk.version(provider_version);
@@ -2293,7 +2287,7 @@ describe("SDK callback tests", () => {
 
     test("On create should reject request when user is not defined", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         prefix = "provider_on_create_callback_auth"
         sdk.version(provider_version);
@@ -2324,7 +2318,7 @@ describe("SDK callback tests", () => {
 
     test("On create should use the kind structure if input schema is missing and succeed", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         prefix = "provider_on_create_no_input_schema_callback"
         sdk.version(provider_version);
@@ -2369,7 +2363,7 @@ describe("SDK callback tests", () => {
 
     test("On create callback with invalid constructor input should fail validation", async () => {
         expect.assertions(2);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         prefix = "provider_on_create_callback_invalid_constructor_input"
         sdk.version(provider_version);
@@ -2412,7 +2406,7 @@ describe("SDK callback tests", () => {
 
     test("On create callback with invalid constructor return entity should fail", async () => {
         expect.assertions(2);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         prefix = "provider_on_create_callback_invalid_constructor_return_entity"
         sdk.version(provider_version);
@@ -2453,7 +2447,7 @@ describe("SDK callback tests", () => {
 
     test("Engine should reject incorrect entity creation format (constructor format for example)", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         sdk.new_kind(location_yaml);
         prefix = "constructor_format_provider"
         sdk.version(provider_version);
@@ -2485,7 +2479,7 @@ describe("SDK callback tests", () => {
 
     test("Client should use appropriate request format when on create callback is present", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         prefix = "provider_on_create_callback_schema"
         sdk.version(provider_version);
@@ -2506,7 +2500,7 @@ describe("SDK callback tests", () => {
         try {
             await sdk.register()
             kind_name = sdk.provider.kinds[0].name
-            const client = await kind_client(papieaUrl, prefix, kind_name, provider_version, adminKey)
+            const client = await kind_client(papieaUrl, prefix, kind_name, provider_version, adminKey, axios_https_config.httpsAgent)
             const entity = await client.create({x: 10, y: 11})
             await entityApi.delete(`/${prefix}/${provider_version}/${kind_name}/${entity.metadata.uuid}`, {
                 headers: {
@@ -2521,7 +2515,7 @@ describe("SDK callback tests", () => {
 
     test("Client should use appropriate request format when on create callback is NOT present", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         prefix = "provider_on_create_callback_schema_1"
         sdk.version(provider_version);
@@ -2535,7 +2529,7 @@ describe("SDK callback tests", () => {
         try {
             await sdk.register()
             kind_name = sdk.provider.kinds[0].name
-            const client = await kind_client(papieaUrl, prefix, kind_name, provider_version, adminKey)
+            const client = await kind_client(papieaUrl, prefix, kind_name, provider_version, adminKey, axios_https_config.httpsAgent)
             const entity = await client.create({spec: {x: 10, y: 11}})
             await entityApi.delete(`/${prefix}/${provider_version}/${kind_name}/${entity.metadata.uuid}`, {
                 headers: {
@@ -2568,7 +2562,7 @@ describe("SDK callback tests", () => {
 
     test("Entity is deleted if on create failed", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         prefix = "provider_on_create_callback"
         sdk.version(provider_version);
@@ -2607,7 +2601,7 @@ describe("SDK callback tests", () => {
 
     test("On create callback shouldn't be called twice if entity is already created", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         prefix = "provider_on_create_callback_twice"
         sdk.version(provider_version);
@@ -2672,7 +2666,7 @@ describe("SDK callback tests", () => {
 
     test("On create 2 callbacks for different kinds should be called", async () => {
         expect.assertions(2)
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         const location_duplicate = sdk.new_kind(location_yaml_duplicate);
         prefix = "provider_on_create_2_callbacks"
@@ -2729,7 +2723,7 @@ describe("SDK callback tests", () => {
 
     test("On delete and on create callbacks should be called", async () => {
         expect.assertions(2);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         prefix = "provider_on_delete_on_create_callback"
         sdk.version(provider_version);
@@ -2774,7 +2768,7 @@ describe("SDK callback tests", () => {
 
     test("On delete callback with error should interrupt execution", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         prefix = "provider_on_delete_callback"
         sdk.version(provider_version);
@@ -2812,7 +2806,7 @@ describe("SDK callback tests", () => {
 
     test("On create callback with error should interrupt execution", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         prefix = "provider_on_create_callback"
         sdk.version(provider_version);
@@ -2859,7 +2853,7 @@ describe("SDK client tests", () => {
 
     test("Procedure should get client", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         prefix = "provider_with_client"
         sdk.version(provider_version);
@@ -2883,7 +2877,7 @@ describe("SDK client tests", () => {
 
     test("Provider gets client and uses it", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, axios_https_config.httpsAgent);
         const location = sdk.new_kind(location_yaml);
         prefix = "provider_with_client_kind"
         sdk.version(provider_version);

@@ -6,8 +6,14 @@ import { Provider } from "papiea-core"
 import { SessionKeyAPI } from "./session_key"
 import uuid = require("uuid")
 import { Logger } from 'papiea-backend-utils'
+import { readFileSync } from "fs"
+import { resolve } from "path"
 const http = require('http')
 const https = require('https')
+
+const httpsAgent = {
+    ca: readFileSync(resolve(__dirname, '../../certs/ca.crt'), 'utf8')
+}
 
 const simpleOauthModule = require("simple-oauth2"),
     queryString = require("query-string"),
@@ -36,9 +42,9 @@ function convertToSimpleOauth2(description: any) {
         },
         http: {
             agents: {
-                https: new https.Agent({ rejectUnauthorized: false }),
+                https: new https.Agent(httpsAgent),
                 http: new http.Agent(),
-                httpsAllowUnauthorized: new https.Agent({ rejectUnauthorized: false })
+                httpsAllowUnauthorized: new https.Agent(httpsAgent)
             }
         },
         options: {

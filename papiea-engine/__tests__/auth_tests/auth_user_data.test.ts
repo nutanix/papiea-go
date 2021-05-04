@@ -34,7 +34,7 @@ const id_token = base64UrlEncode(
         "sub": "alice",
         "at_hash": "DDD",
         "default_tenant": tenant_uuid,
-        "iss": "https:\/\/127.0.0.1:9002\/oauth2\/token",
+        "iss": "https:\/\/localhost:9002\/oauth2\/token",
         "given_name": "Alice",
         "iat": timestamp,
         "xi_role": base64UrlEncode([{
@@ -63,7 +63,7 @@ const access_token_identity_part = {
         "azp": "EEE",
         "sub": "alice",
         "default_tenant": tenant_uuid,
-        "iss": "https:\/\/127.0.0.1:9002\/oauth2\/token",
+        "iss": "https:\/\/localhost:9002\/oauth2\/token",
         "given_name": "Alice",
         "iat": timestamp,
         "exp": expiration,

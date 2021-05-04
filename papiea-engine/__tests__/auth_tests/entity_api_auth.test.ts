@@ -20,52 +20,46 @@ declare var process: {
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
 
-const ca = readFileSync(resolve(__dirname, '../../certs/ca.crt'), "utf-8")
 const privateKey = readFileSync(resolve(__dirname, '../../certs/server.key'), "utf-8")
 const certificate = readFileSync(resolve(__dirname, '../../certs/server.crt'), "utf-8")
+const httpsAgent = new https.Agent({
+    ca: readFileSync(resolve(__dirname, '../../certs/ca.crt'), 'utf8')
+})
 
 const entityApiAdmin = axios.create(
     {
-        baseURL: `https://127.0.0.1:${serverPort}/services`,
+        baseURL: `https://localhost:${serverPort}/services`,
         timeout: 1000,
         headers: {
             "Content-Type": "application/json",
             'Authorization': `Bearer ${adminKey}`
         },
-        httpsAgent: new https.Agent({  
-            rejectUnauthorized: false
-        })
+        httpsAgent
     }
 )
 
 const entityApi = axios.create({
-    baseURL: `https://127.0.0.1:${serverPort}/services`,
+    baseURL: `https://localhost:${serverPort}/services`,
     timeout: 1000,
     headers: { 'Content-Type': 'application/json' },
-    httpsAgent: new https.Agent({  
-        rejectUnauthorized: false
-    })
+    httpsAgent
 });
 
 const providerApiAdmin = axios.create({
-    baseURL: `https://127.0.0.1:${serverPort}/provider`,
+    baseURL: `https://localhost:${serverPort}/provider`,
     timeout: 1000,
     headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${adminKey}`
     },
-    httpsAgent: new https.Agent({  
-        rejectUnauthorized: false
-    })
+    httpsAgent
 });
 
 const providerApi = axios.create({
-    baseURL: `https://127.0.0.1:${serverPort}/provider`,
+    baseURL: `https://localhost:${serverPort}/provider`,
     timeout: 1000,
     headers: { 'Content-Type': 'application/json' },
-    httpsAgent: new https.Agent({  
-        rejectUnauthorized: false
-    })
+    httpsAgent
 });
 
 function base64UrlEncode(...parts: any[]): string {
@@ -80,9 +74,9 @@ function base64UrlEncode(...parts: any[]): string {
 }
 
 describe("Entity API auth tests", () => {
-    const oauth2ServerHost = '127.0.0.1';
+    const oauth2ServerHost = 'localhost';
     const oauth2ServerPort = 9002;
-    const procedureCallbackHostname = "127.0.0.1";
+    const procedureCallbackHostname = "localhost";
     const procedureCallbackPort = 9001;
     const provider: Provider = new ProviderBuilder()
         .withVersion("0.1.0")
@@ -100,7 +94,7 @@ describe("Entity API auth tests", () => {
     const entityApiAuthTestLogger = LoggerFactory.makeLogger({level: 'info'});
 
     const tenant_uuid = uuid();
-    const oauth2Server = https.createServer({ ca: ca, key: privateKey, cert: certificate, rejectUnauthorized: false }, (req: any, res: any) => {
+    const oauth2Server = https.createServer({ key: privateKey, cert: certificate }, (req: any, res: any) => {
         if (req.method == 'GET') {
             const params = queryString.parse(url.parse(req.url).query);
             if (!params.redirect_uri) {
@@ -147,7 +141,7 @@ describe("Entity API auth tests", () => {
                         "azp": "EEE",
                         "sub": "alice",
                         "default_tenant": tenant_uuid,
-                        "iss": "https:\/\/127.0.0.1:9002\/oauth2\/token",
+                        "iss": "https:\/\/localhost:9002\/oauth2\/token",
                         "given_name": "Alice",
                         "iat": timestamp,
                         "exp": expiration,
@@ -168,7 +162,7 @@ describe("Entity API auth tests", () => {
                             "sub": "alice",
                             "at_hash": "DDD",
                             "default_tenant": tenant_uuid,
-                            "iss": "https:\/\/127.0.0.1:9002\/oauth2\/token",
+                            "iss": "https:\/\/localhost:9002\/oauth2\/token",
                             "given_name": "Alice",
                             "iat": 1555926264,
                             "xi_role": base64UrlEncode([{
@@ -266,9 +260,9 @@ describe("Entity API auth tests", () => {
 
     test("Login from SPA", async () => {
         expect.hasAssertions();
-        const hostname = "127.0.0.1";
+        const hostname = "localhost";
         const port = 9003;
-        const server = https.createServer( { ca: ca, key: privateKey, cert: certificate, rejectUnauthorized: false }, (req: any, res: any) => {
+        const server = https.createServer( { key: privateKey, cert: certificate }, (req: any, res: any) => {
             if (req.method == 'GET') {
                 const token = queryString.parse(url.parse(req.url).query).token;
                 res.statusCode = 200;
@@ -789,9 +783,9 @@ describe("Entity API auth tests", () => {
 
 
 describe("Entity API Logout tests", () => {
-    const oauth2ServerHost = '127.0.0.1';
+    const oauth2ServerHost = 'localhost';
     const oauth2ServerPort = 9002;
-    const procedureCallbackHostname = "127.0.0.1";
+    const procedureCallbackHostname = "localhost";
     const procedureCallbackPort = 9001;
     const provider: Provider = new ProviderBuilder()
         .withVersion("0.1.0")
@@ -833,9 +827,9 @@ describe("Entity API Logout tests", () => {
 
 
 describe("Entity API Refresh token tests", () => {
-    const oauth2ServerHost = '127.0.0.1';
+    const oauth2ServerHost = 'localhost';
     const oauth2ServerPort = 9002;
-    const procedureCallbackHostname = "127.0.0.1";
+    const procedureCallbackHostname = "localhost";
     const procedureCallbackPort = 9001;
     const provider: Provider = new ProviderBuilder()
         .withVersion("0.1.0")

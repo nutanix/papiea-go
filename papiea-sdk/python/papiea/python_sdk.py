@@ -1,5 +1,6 @@
 import logging
 import json
+import ssl
 from enum import Enum
 from types import TracebackType
 from typing import Any, Callable, List, NoReturn, Optional, Type, Union
@@ -33,7 +34,7 @@ from .tracing_utils import init_default_tracer, get_special_operation_name
 BackgroundTaskCallback = Callable[[IntentfulCtx, Optional[Any]], Any]
 
 class ProviderServerManager(object):
-    def __init__(self, public_host: str = "127.0.0.1", public_port: int = 9000):
+    def __init__(self, public_host: str = "localhost", public_port: int = 9000):
         self.public_host = public_host
         self.public_port = public_port
         self.should_run = False
@@ -137,6 +138,7 @@ class ProviderSdk(object):
             self,
             papiea_url: str,
             s2skey: Secret,
+            ssl_context: ssl.SSLContext,
             server_manager: Optional[ProviderServerManager] = None,
             allow_extra_props: bool = False,
             logger: logging.Logger = None,
@@ -157,14 +159,16 @@ class ProviderSdk(object):
         self._procedures = {}
         self.meta_ext = {}
         self.allow_extra_props = allow_extra_props
+        self.ssl_context = ssl_context
         self._security_api = SecurityApi(self, s2skey)
-        self._intent_watcher_client = IntentWatcherClient(papiea_url, s2skey, logger, tracer)
+        self._intent_watcher_client = IntentWatcherClient(papiea_url, s2skey, ssl_context, logger, tracer)
         self._provider_api = ApiInstance(
             self.provider_url,
             headers={
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {self._s2skey}",
+                "Authorization": f"Bearer {self._s2skey}"
             },
+            sslContext=self.ssl_context,
             logger=self.logger
         )
         self._oauth2 = None
@@ -360,12 +364,13 @@ class ProviderSdk(object):
             s2skey: Secret,
             public_host: Optional[str],
             public_port: Optional[int],
+            ssl_context: ssl.SSLContext = ssl.create_default_context(),
             allow_extra_props: bool = False,
             logger: logging.Logger = logging.getLogger(__name__),
             tracer: Tracer = init_default_tracer()
     ) -> "ProviderSdk":
         server_manager = ProviderServerManager(public_host, public_port)
-        return ProviderSdk(papiea_url, s2skey, server_manager, allow_extra_props, logger, tracer)
+        return ProviderSdk(papiea_url, s2skey, ssl_context, server_manager, allow_extra_props, logger, tracer)
 
     def secure_with(
             self, oauth_config: Any, casbin_model: str, casbin_initial_policy: str
@@ -628,6 +633,7 @@ class BackgroundTaskBuilder:
         self.kind_builder = kind_builder
         self.name = name
         self.metadata_extension = metadata_extension
+        self.ssl_context = provider.ssl_context
 
     @staticmethod
     def create_task(provider: ProviderSdk, name: str, delay_sec: float, callback: BackgroundTaskCallback,
@@ -660,13 +666,13 @@ class BackgroundTaskBuilder:
     async def update_task_entity(self):
         if self.task_entity:
             async with EntityCRUD(self.provider.papiea_url, self.provider.get_prefix(), self.provider.get_version(),
-                                  self.name, self.provider.s2s_key) as client:
+                                  self.name, self.provider.s2s_key, self.ssl_context) as client:
                 self.task_entity = await client.get(self.task_entity.metadata)
 
     async def start_task(self):
         if self.task_entity is None:
             async with EntityCRUD(self.provider.papiea_url, self.provider.get_prefix(), self.provider.get_version(),
-                                  self.name, self.provider.s2s_key) as client:
+                                  self.name, self.provider.s2s_key, self.ssl_context) as client:
                 if not self.metadata_extension is None:
                     self.task_entity = await client.create({
                         "spec": {"state": json.dumps(self.BackgroundTaskState.RunningSpecState)},
@@ -685,7 +691,7 @@ class BackgroundTaskBuilder:
         else:
             await self.update_task_entity()
             async with EntityCRUD(self.provider.papiea_url, self.provider.get_prefix(), self.provider.get_version(),
-                                  self.name, self.provider.s2s_key) as client:
+                                  self.name, self.provider.s2s_key, self.ssl_context) as client:
                 self.task_entity = await client.update(self.task_entity.metadata,
                                                        {"spec": {"state": json.dumps(self.BackgroundTaskState.RunningSpecState)}})
             url = f"{self.provider.get_prefix()}/{self.provider.get_version()}"
@@ -702,7 +708,7 @@ class BackgroundTaskBuilder:
         else:
             await self.update_task_entity()
             async with EntityCRUD(self.provider.papiea_url, self.provider.get_prefix(), self.provider.get_version(),
-                                  self.name, self.provider.s2s_key) as client:
+                                  self.name, self.provider.s2s_key, self.ssl_context) as client:
                 self.task_entity = await client.update(self.task_entity.metadata,
                                                        {"spec": {"state": json.dumps(self.BackgroundTaskState.IdleSpecState)}})
             url = f"{self.provider.get_prefix()}/{self.provider.get_version()}"
@@ -719,7 +725,7 @@ class BackgroundTaskBuilder:
         else:
             await self.update_task_entity()
             async with EntityCRUD(self.provider.papiea_url, self.provider.get_prefix(), self.provider.get_version(),
-                                  self.name, self.provider.s2s_key) as client:
+                                  self.name, self.provider.s2s_key, self.ssl_context) as client:
                 await client.delete(self.task_entity.metadata)
 
     @staticmethod

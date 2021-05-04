@@ -77,7 +77,6 @@ const TRANSFORM_FN_MAP: { [key in keyof PapieaConfig]: (val: any) => PapieaConfi
     pretty_print: toBool,
     logging_verbosity: toComplexLoggingVerbosity,
     tracing_config: toComplexTracingConfig,
-    ca_cert_path: toStr,
     server_key_path: toStr,
     server_cert_path: toStr
 }
@@ -132,9 +131,6 @@ export interface PapieaConfig {
 
     tracing_config: PapieaTracingConfig,
 
-    // Path for the CA certificate file
-    ca_cert_path: string,
-
     // Path for the server key file
     server_key_path: string,
 
@@ -174,7 +170,6 @@ const PAPIEA_DEFAULT_CFG: PapieaConfig = {
         },
         logMessages: false
     },
-    ca_cert_path: "../certs/ca.crt",
     server_key_path: "../certs/server.key",
     server_cert_path: "../certs/server.crt"
 }

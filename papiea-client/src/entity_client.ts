@@ -12,7 +12,6 @@ import {
 import {Tracer} from "opentracing"
 import {getTracer, spanOperation} from "papiea-backend-utils"
 import https = require('https')
-import { readFileSync } from "fs";
 
 interface EntityCreationResult {
     intent_watcher: IntentWatcher | null,
@@ -210,21 +209,14 @@ export interface ProviderClient {
     close(): void
 }
 
-export function provider_client(papiea_url: string, provider: string, version: string, s2skey?: string, ca_path?: string, key_path?: string, cert_path?: string, tracer?: Tracer): ProviderClient {
+export function provider_client(papiea_url: string, provider: string, version: string, s2skey?: string, httpsAgent?: https.Agent, tracer?: Tracer): ProviderClient {
     const client_tracer = tracer ?? ClientTracer.getTracer()
     const close_func = tracer ? (tracer as any).close() : ClientTracer.close
     const the_s2skey = s2skey ?? 'anonymous'
-    let httpsAgent = new https.Agent({
-        rejectUnauthorized: false
-    })
-    if (ca_path && key_path && cert_path) {
-        httpsAgent.options.ca = readFileSync(ca_path)
-        httpsAgent.options.key = readFileSync(key_path)
-        httpsAgent.options.cert = readFileSync(cert_path)
-    }
+    const client_httpsAgent = httpsAgent ?? new https.Agent()
     return {
-        get_kind: (kind: string) => kind_client(papiea_url, provider, kind, version, the_s2skey, ca_path, key_path, cert_path),
-        invoke_procedure: (proc_name: string, input: any) => invoke_provider_procedure(provider, version, proc_name, input, papiea_url, the_s2skey, client_tracer, httpsAgent),
+        get_kind: (kind: string) => kind_client(papiea_url, provider, kind, version, the_s2skey, client_httpsAgent),
+        invoke_procedure: (proc_name: string, input: any) => invoke_provider_procedure(provider, version, proc_name, input, papiea_url, the_s2skey, client_tracer, client_httpsAgent),
         close: () => close_func()
     }
 }
@@ -252,28 +244,21 @@ export interface EntityCRUD {
     close(): void
 }
 
-export function kind_client(papiea_url: string, provider: string, kind: string, version: string, s2skey?: string, ca_path?: string, key_path?: string, cert_path?: string, tracer?: Tracer): EntityCRUD {
+export function kind_client(papiea_url: string, provider: string, kind: string, version: string, s2skey?: string, httpsAgent?: https.Agent, tracer?: Tracer): EntityCRUD {
     const client_tracer = tracer ?? ClientTracer.getTracer()
     const close_func = tracer ? (tracer as any).close() : ClientTracer.close
     const the_s2skey = s2skey ?? 'anonymous'
-    let httpsAgent = new https.Agent({
-        rejectUnauthorized: false
-    })
-    if (ca_path && key_path && cert_path) {
-        httpsAgent.options.ca = readFileSync(ca_path)
-        httpsAgent.options.key = readFileSync(key_path)
-        httpsAgent.options.cert = readFileSync(cert_path)
-    }
+    const client_httpsAgent = httpsAgent ?? new https.Agent()
     const crudder: EntityCRUD = {
-        get: (entity_reference: Entity_Reference) => get_entity(provider, kind, version, entity_reference, papiea_url, the_s2skey, client_tracer, httpsAgent),
-        create: (payload: any) => create_entity(provider, kind, version, payload, papiea_url, the_s2skey, client_tracer, httpsAgent),
-        update: (metadata: Metadata, spec: Spec) => update_entity(provider, kind, version, spec, metadata, papiea_url, the_s2skey, client_tracer, httpsAgent),
-        delete: (entity_reference: Entity_Reference) => delete_entity(provider, kind, version, entity_reference, papiea_url, the_s2skey, client_tracer, httpsAgent),
-        filter: (filter: any, query: string = '') => filter_entity(provider, kind, version, filter, query, papiea_url, the_s2skey, client_tracer, httpsAgent),
-        filter_iter: (filter: any) => filter_entity_iter(provider, kind, version, filter, papiea_url, the_s2skey, client_tracer, httpsAgent),
-        list_iter: () => filter_entity_iter(provider, kind, version, {}, papiea_url, the_s2skey, client_tracer, httpsAgent),
-        invoke_procedure: (proc_name: string, entity_reference: Entity_Reference, input: any) => invoke_entity_procedure(provider, kind, version, proc_name, input, entity_reference, papiea_url, the_s2skey, client_tracer, httpsAgent),
-        invoke_kind_procedure: (proc_name: string, input: any) => invoke_kind_procedure(provider, kind, version, proc_name, input, papiea_url, the_s2skey, client_tracer, httpsAgent),
+        get: (entity_reference: Entity_Reference) => get_entity(provider, kind, version, entity_reference, papiea_url, the_s2skey, client_tracer, client_httpsAgent),
+        create: (payload: any) => create_entity(provider, kind, version, payload, papiea_url, the_s2skey, client_tracer, client_httpsAgent),
+        update: (metadata: Metadata, spec: Spec) => update_entity(provider, kind, version, spec, metadata, papiea_url, the_s2skey, client_tracer, client_httpsAgent),
+        delete: (entity_reference: Entity_Reference) => delete_entity(provider, kind, version, entity_reference, papiea_url, the_s2skey, client_tracer, client_httpsAgent),
+        filter: (filter: any, query: string = '') => filter_entity(provider, kind, version, filter, query, papiea_url, the_s2skey, client_tracer, client_httpsAgent),
+        filter_iter: (filter: any) => filter_entity_iter(provider, kind, version, filter, papiea_url, the_s2skey, client_tracer, client_httpsAgent),
+        list_iter: () => filter_entity_iter(provider, kind, version, {}, papiea_url, the_s2skey, client_tracer, client_httpsAgent),
+        invoke_procedure: (proc_name: string, entity_reference: Entity_Reference, input: any) => invoke_entity_procedure(provider, kind, version, proc_name, input, entity_reference, papiea_url, the_s2skey, client_tracer, client_httpsAgent),
+        invoke_kind_procedure: (proc_name: string, input: any) => invoke_kind_procedure(provider, kind, version, proc_name, input, papiea_url, the_s2skey, client_tracer, client_httpsAgent),
         close: () => close_func()
     }
     return crudder
@@ -291,23 +276,16 @@ export interface IntentWatcherClient {
     close(): void
 }
 
-export function intent_watcher_client(papiea_url: string, s2skey?: string, ca_path?: string, key_path?: string, cert_path?: string, tracer?: Tracer): IntentWatcherClient {
+export function intent_watcher_client(papiea_url: string, s2skey?: string, httpsAgent?: https.Agent, tracer?: Tracer): IntentWatcherClient {
     const client_tracer = tracer ?? ClientTracer.getTracer()
     const close_func = tracer ? (tracer as any).close() : ClientTracer.close
     const the_s2skey = s2skey ?? 'anonymous'
-    let httpsAgent = new https.Agent({
-        rejectUnauthorized: false
-    })
-    if (ca_path && key_path && cert_path) {
-        httpsAgent.options.ca = readFileSync(ca_path)
-        httpsAgent.options.key = readFileSync(key_path)
-        httpsAgent.options.cert = readFileSync(cert_path)
-    }
+    const client_httpsAgent = httpsAgent ?? new https.Agent()
     const intent_watcher: IntentWatcherClient = {
-        get: (id: string) => get_intent_watcher(papiea_url, id, the_s2skey, client_tracer, httpsAgent),
-        list_iter: () => filter_intent_watcher(papiea_url, "", the_s2skey, client_tracer, httpsAgent),
-        filter_iter: (filter: any) => filter_intent_watcher(papiea_url, filter, the_s2skey, client_tracer, httpsAgent),
-        wait_for_status_change: (watcher_ref: any, watcher_status: IntentfulStatus, timeout_secs: number = 50, delay_millis: number = 500) => wait_for_watcher_status(papiea_url, the_s2skey, watcher_ref, watcher_status, timeout_secs, delay_millis, client_tracer, httpsAgent),
+        get: (id: string) => get_intent_watcher(papiea_url, id, the_s2skey, client_tracer, client_httpsAgent),
+        list_iter: () => filter_intent_watcher(papiea_url, "", the_s2skey, client_tracer, client_httpsAgent),
+        filter_iter: (filter: any) => filter_intent_watcher(papiea_url, filter, the_s2skey, client_tracer, client_httpsAgent),
+        wait_for_status_change: (watcher_ref: any, watcher_status: IntentfulStatus, timeout_secs: number = 50, delay_millis: number = 500) => wait_for_watcher_status(papiea_url, the_s2skey, watcher_ref, watcher_status, timeout_secs, delay_millis, client_tracer, client_httpsAgent),
         close: () => close_func()
     }
     return intent_watcher

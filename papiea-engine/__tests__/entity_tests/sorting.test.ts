@@ -4,6 +4,8 @@ import { UserAuthInfo } from "../../src/auth/authn";
 import { Authorizer } from "../../src/auth/authz";
 import { Action } from "papiea-core";
 import { LoggerFactory } from 'papiea-backend-utils';
+import { resolve } from "path";
+import { readFileSync } from "fs";
 const https = require('https')
 
 declare var process: {
@@ -14,6 +16,9 @@ declare var process: {
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
+const httpsAgent = new https.Agent({
+    ca: readFileSync(resolve(__dirname, '../../certs/ca.crt'), 'utf8')
+})
 
 class MockedAuthorizer extends Authorizer {
     async checkPermission(user: UserAuthInfo, object: any, action: Action): Promise<void> {
@@ -25,24 +30,20 @@ class MockedAuthorizer extends Authorizer {
 }
 
 const entityApi = axios.create({
-    baseURL: `https://127.0.0.1:${serverPort}/services`,
+    baseURL: `https://localhost:${serverPort}/services`,
     timeout: 10000,
     headers: { 'Content-Type': 'application/json' },
-    httpsAgent: new https.Agent({  
-        rejectUnauthorized: false
-    })
+    httpsAgent
 });
 
 const providerApi = axios.create({
-    baseURL: `https://127.0.0.1:${serverPort}/provider/`,
+    baseURL: `https://localhost:${serverPort}/provider/`,
     timeout: 1000,
     headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${adminKey}`
     },
-    httpsAgent: new https.Agent({  
-        rejectUnauthorized: false
-    })
+    httpsAgent
 });
 
 describe("Pagination tests", () => {

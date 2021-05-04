@@ -14,29 +14,24 @@ declare var process: {
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
+const httpsAgent = new https.Agent({
+    ca: readFileSync(resolve(__dirname, '../certs/ca.crt'), 'utf8')
+})
 
 const providerApi = axios.create({
-    baseURL: `https://127.0.0.1:${serverPort}/provider/`,
+    baseURL: `https://localhost:${serverPort}/provider/`,
     timeout: 1000,
     headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${adminKey}`
     },
-    httpsAgent: new https.Agent({  
-        cert: readFileSync(resolve(__dirname, '../client_certs/client1.crt'), 'utf8'),
-        key: readFileSync(resolve(__dirname, '../client_certs/client1.key'), 'utf8'),
-        ca: readFileSync(resolve(__dirname, '../client_certs/ca.crt'), 'utf8'),
-        rejectUnauthorized: false
-    })
+    httpsAgent
 });
 
 describe("Entity API tests", () => {
     const providerPrefix = "location_provider_iter_test";
     const providerVersion = "0.0.3";
     let kind_name: string
-    const ca_path = resolve(__dirname, '../client_certs/ca.crt')
-    const key_path = resolve(__dirname, '../client_certs/client1.key')
-    const cert_path = resolve(__dirname, '../client_certs/client1.crt')
 
     beforeAll(async () => {
         const provider = new ProviderBuilder(providerPrefix).withVersion(providerVersion).withOAuth2Description().withKinds().build();
@@ -49,7 +44,7 @@ describe("Entity API tests", () => {
     });
     test("Filtering via async iterators should work correctly", async () => {
         const uuids: string[] = []
-        const location_client = kind_client("https://localhost:3000", providerPrefix, kind_name, providerVersion, '', ca_path, key_path, cert_path)
+        const location_client = kind_client("https://localhost:3000", providerPrefix, kind_name, providerVersion, '', httpsAgent)
         let promises = []
         const specs = [1,2,3,4]
         for (let i of specs) {
@@ -75,7 +70,7 @@ describe("Entity API tests", () => {
 
     test("Filtering via async iterators with batch size should work correctly", async () => {
         const uuids: string[] = []
-        const location_client = kind_client("https://localhost:3000", providerPrefix, kind_name, providerVersion, '', ca_path, key_path, cert_path)
+        const location_client = kind_client("https://localhost:3000", providerPrefix, kind_name, providerVersion, '', httpsAgent)
         let promises = []
         const specs = [1,2,3,4]
         for (let i of specs) {
@@ -100,7 +95,7 @@ describe("Entity API tests", () => {
 
     test("List async iterators should work correctly", async () => {
         const uuids: string[] = []
-        const location_client = kind_client("https://localhost:3000", providerPrefix, kind_name, providerVersion, '', ca_path, key_path, cert_path)
+        const location_client = kind_client("https://localhost:3000", providerPrefix, kind_name, providerVersion, '', httpsAgent)
         let promises = []
         const specs = [1,2,3,4]
         for (let i of specs) {

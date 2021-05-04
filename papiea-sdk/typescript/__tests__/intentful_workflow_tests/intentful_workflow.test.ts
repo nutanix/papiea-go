@@ -6,6 +6,8 @@ import {IntentfulBehaviour, IntentfulStatus, Metadata, Version} from "papiea-cor
 import { ProviderSdk } from "../../src/provider_sdk/typescript_sdk";
 import { IntentfulCtx_Interface } from "../../src/provider_sdk/typescript_sdk_interface";
 import uuid = require("uuid");
+import { readFileSync } from "fs";
+import { resolve } from "path";
 const https = require('https')
 
 declare var process: {
@@ -16,40 +18,40 @@ declare var process: {
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
-const papieaUrl = 'https://127.0.0.1:3000';
+const papieaUrl = 'https://localhost:3000';
 
 const server_config = {
-    host: "127.0.0.1",
+    host: "localhost",
     port: 9000
 };
 
 const server_config_2nd_provider = {
-    host: "127.0.0.1",
+    host: "localhost",
     port: 9011
 };
 
+const httpsAgent = new https.Agent({
+    ca: readFileSync(resolve(__dirname, '../../certs/ca.crt'), 'utf8')
+})
+
 const entityApi = axios.create({
-    baseURL: `https://127.0.0.1:${serverPort}/services`,
+    baseURL: `https://localhost:${serverPort}/services`,
     timeout: 5000,
     headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${adminKey}`
     },
-    httpsAgent: new https.Agent({  
-        rejectUnauthorized: false
-    })
+    httpsAgent
 });
 
 const providerApiAdmin = axios.create({
-    baseURL: `https://127.0.0.1:${serverPort}/provider`,
+    baseURL: `https://localhost:${serverPort}/provider`,
     timeout: 5000,
     headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${adminKey}`
     },
-    httpsAgent: new https.Agent({  
-        rejectUnauthorized: false
-    })
+    httpsAgent
 });
 
 describe("Intentful Workflow tests single provider", () => {
@@ -76,7 +78,7 @@ describe("Intentful Workflow tests single provider", () => {
 
     test("Change single field differ resolver should pass", async () => {
         expect.assertions(2);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         try {
             first_provider_prefix = "location_provider_intentful_1"
             const location = sdk.new_kind(locationDataDescription);
@@ -136,7 +138,7 @@ describe("Intentful Workflow tests single provider", () => {
 
     test("Differ should retry if error is encountered", async () => {
         expect.assertions(1)
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         first_provider_prefix = "location_provider_intentful_error"
         try {
             const location = sdk.new_kind(locationDataDescription);
@@ -187,7 +189,7 @@ describe("Intentful Workflow tests single provider", () => {
 
     test("Differ shouldn't retry if error is encountered but entity is deleted", async () => {
         expect.assertions(1)
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         first_provider_prefix = null
         try {
             const prefix = "location_provider_intentful_error_entity_deleted"
@@ -236,7 +238,7 @@ describe("Intentful Workflow tests single provider", () => {
 
     test("Delay to intentful operations should be awaited", async () => {
         expect.assertions(3);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         try {
             let times_requested = 0
             first_provider_prefix = "location_provider_intentful_3"
@@ -300,7 +302,7 @@ describe("Intentful Workflow tests single provider", () => {
 
     test("Exponential backoff should be activated", async () => {
         expect.assertions(1);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         try {
             let times_requested = 0
             first_provider_prefix = "location_provider_exponential_backoff"
@@ -337,7 +339,7 @@ describe("Intentful Workflow tests single provider", () => {
 
     test("Exponential backoff should be activated using the exponent value set for kind", async () => {
         expect.assertions(1);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         try {
             let times_requested = 0
             first_provider_prefix = "location_provider_exponential_backoff_kind_exponent"
@@ -375,7 +377,7 @@ describe("Intentful Workflow tests single provider", () => {
 
     test("Background tasks should work", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         try {
             let times_invoked = 0
             first_provider_prefix = "location_provider_intentful_background_task"
@@ -402,7 +404,7 @@ describe("Intentful Workflow tests single provider", () => {
 
     test("Background task shouldn't register if metadata extension should be present but is not specified", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         try {
             first_provider_prefix = null
             const location = sdk.new_kind(locationDataDescription);
@@ -431,7 +433,7 @@ describe("Intentful Workflow tests single provider", () => {
     })
 
     test("Background task with metadata extension should work", async () => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         try {
             first_provider_prefix = "location_provider_intentful_background_task_meta"
             const location = sdk.new_kind(locationDataDescription);
@@ -463,7 +465,7 @@ describe("Intentful Workflow tests single provider", () => {
 
     test("Background task with custom fields should work", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         try {
             let times_invoked = 0
             let count = 0
@@ -506,7 +508,7 @@ describe("Intentful Workflow tests single provider", () => {
 
     test("Delay of null should be eligible", async () => {
         expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         try {
             first_provider_prefix = "location_provider_intentful_null_delay"
             const location = sdk.new_kind(locationDataDescription);
@@ -566,7 +568,7 @@ describe("Intentful Workflow tests single provider", () => {
     test("Differ resolver with 2 kinds and shared uuid entities should pass", async () => {
         expect.hasAssertions();
         let test_result = false
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         try {
             first_provider_prefix = "location_provider_intentful_1_kinds"
             const first_location = sdk.new_kind(locationDataDescription)
@@ -661,7 +663,7 @@ describe("Intentful Workflow tests single provider", () => {
 
     test("Change single field differ resolver should fail because of CAS fail", async () => {
         expect.assertions(1);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         try {
             first_provider_prefix = "location_provider_intentful_1"
             const location = sdk.new_kind(locationDataDescription);
@@ -706,7 +708,7 @@ describe("Intentful Workflow tests single provider", () => {
 
     test("Two concurrent updates with the same spec version should fail", async () => {
         expect.assertions(1);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         try {
             first_provider_prefix = "location_provider_intentful_2_concurrent_cas"
             const location = sdk.new_kind(locationDataDescription);
@@ -755,7 +757,7 @@ describe("Intentful Workflow tests single provider", () => {
 
     test("Two serial updates with the same spec version should fail", async () => {
         expect.assertions(1);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         try {
             first_provider_prefix = "location_provider_intentful_2_concurrent_cas_serial"
             const location = sdk.new_kind(locationDataDescription);
@@ -809,7 +811,7 @@ describe("Intentful Workflow tests single provider", () => {
 
     test("Change single array sfs field differ resolver should pass", async () => {
         expect.assertions(2);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         try {
             first_provider_prefix = "location_provider_intentful_4"
             const location = sdk.new_kind(locationDataDescriptionArraySfs);
@@ -879,7 +881,7 @@ describe("Intentful Workflow tests single provider", () => {
      */
     test("Change array fields with 2 members, making one member initially fail", async () => {
         expect.assertions(3);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         try {
             first_provider_prefix = "location_provider_intentful_5"
             const location_array = sdk.new_kind(locationDataDescriptionArraySfs);
@@ -991,7 +993,7 @@ describe("Intentful Workflow tests single provider", () => {
 
     test("Diff handling shouldn't be stuck if a handler fails", async () => {
         expect.assertions(2);
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         try {
             first_provider_prefix = "location_provider_intentful_7"
             const location = sdk.new_kind(locationDataDescription);
@@ -1037,7 +1039,7 @@ describe("Intentful Workflow tests single provider", () => {
 
     test("Diff handling should find a resolving path if handlers are dependant", async () => {
         expect.assertions(3)
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         try {
             first_provider_prefix = "location_provider_intentful_7"
             const location = sdk.new_kind(locationDataDescription);
@@ -1130,7 +1132,7 @@ describe("Intentful Workflow test sfs validation", () => {
     test("Registering provider with wrong sfs shouldn't pass", async () => {
         expect.assertions(2);
         let kind_name: string = ''
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port);
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         try {
             provider_prefix = "location_provider_intentful_fail_validation"
             const location = sdk.new_kind(locationDataDescription);
@@ -1182,9 +1184,9 @@ describe("Intentful workflow multiple providers", () => {
         expect.hasAssertions();
         let test_result = false
         const sdk1 = ProviderSdk.create_provider(
-            papieaUrl, adminKey, server_config.host, server_config.port);
+            papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         const sdk2 = ProviderSdk.create_provider(
-            papieaUrl, adminKey, server_config_2nd_provider.host, server_config_2nd_provider.port);
+            papieaUrl, adminKey, server_config_2nd_provider.host, server_config_2nd_provider.port, httpsAgent);
         try {
             first_provider_prefix = "location_provider_intentful_1"
             second_provider_prefix = "2nd_location_provider_intentful_1"
@@ -1292,9 +1294,9 @@ describe("Intentful workflow multiple providers", () => {
         expect.hasAssertions();
         let test_result = false
         const sdk1 = ProviderSdk.create_provider(
-            papieaUrl, adminKey, server_config.host, server_config.port);
+            papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
         const sdk2 = ProviderSdk.create_provider(
-            papieaUrl, adminKey, server_config_2nd_provider.host, server_config_2nd_provider.port);
+            papieaUrl, adminKey, server_config_2nd_provider.host, server_config_2nd_provider.port, httpsAgent);
         try {
             first_provider_prefix = "location_provider_intentful_1_same_kind"
             second_provider_prefix = "2nd_location_provider_intentful_1_same_kind"

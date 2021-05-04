@@ -40,4 +40,6 @@ rds-combined-ca-bundle.pem
 papiea-engine/certs
 
 # Client certificate
-papiea-client/client_certs
+papiea-client/certs
+papiea-sdk/python/e2e_tests/certs
+papiea-sdk/typescript/certs

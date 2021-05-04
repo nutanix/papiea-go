@@ -6,7 +6,6 @@ import { kind_client } from "papiea-client"
 import { ProviderSdk } from "../../src/provider_sdk/typescript_sdk";
 import * as procedures from "./procedure_handlers"
 import * as utils from "./utils"
-const https = require('https')
 const config = require("./config")
 
 const provider_prefix = "e2e_test_provider"
@@ -29,18 +28,16 @@ const provider_api_admin = axios.create({
         "Content-Type": "application/json",
         "Authorization": `Bearer ${ config.admin_s2s_key }`
     },
-    httpsAgent: new https.Agent({  
-        rejectUnauthorized: false
-    })
+    httpsAgent: config.httpsAgent
 });
 
 export function get_client(kind: string) {
-    return kind_client(config.papiea_url, provider_prefix, kind, provider_version, config.admin_s2s_key)
+    return kind_client(config.papiea_url, provider_prefix, kind, provider_version, config.admin_s2s_key, config.httpsAgent)
 }
 
 export async function setup_and_register_sdk() {
     try {
-        test_provider = ProviderSdk.create_provider(config.papiea_url, config.admin_s2s_key, config.server_host, config.server_port)
+        test_provider = ProviderSdk.create_provider(config.papiea_url, config.admin_s2s_key, config.server_host, config.server_port, config.httpsAgent)
         test_provider.prefix(provider_prefix).version(provider_version)
 
         test_provider.metadata_extension(metadata_extension)

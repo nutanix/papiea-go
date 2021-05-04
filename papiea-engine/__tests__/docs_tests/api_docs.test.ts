@@ -19,6 +19,7 @@ import {
 } from "papiea-core";
 import ApiDocsGenerator from "../../src/api_docs/api_docs_generator";
 import { IntentfulKindReference } from "../../src/databases/provider_db_mongo";
+import { resolve } from "path";
 const https = require('https')
 
 declare var process: {
@@ -27,13 +28,15 @@ declare var process: {
     }
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
+const httpsAgent = new https.Agent({
+    ca: readFileSync(resolve(__dirname, '../../certs/ca.crt'), 'utf8')
+})
+
 const api = axios.create({
-    baseURL: `https://127.0.0.1:${ serverPort }/`,
+    baseURL: `https://localhost:${ serverPort }/`,
     timeout: 1000,
     headers: { 'Content-Type': 'application/json' },
-    httpsAgent: new https.Agent({  
-        rejectUnauthorized: false
-    })
+    httpsAgent
 });
 
 type prefix = string
@@ -254,13 +257,13 @@ describe("API docs test entity", () => {
             argument: loadYamlFromTestFactoryDir("./test_data/procedure_sum_input.yml"),
             result: loadYamlFromTestFactoryDir("./test_data/procedure_sum_output.yml"),
             execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: "127.0.0.1:9011",
-            base_callback: "127.0.0.1:9011"
+            procedure_callback: "localhost:9011",
+            base_callback: "localhost:9011"
         };
         const provider: Provider = new ProviderBuilder("provider_with_validation_scheme")
             .withVersion("0.1.0")
             .withKinds()
-            .withCallback(`http://127.0.0.1:9010`)
+            .withCallback(`http://localhost:9010`)
             .withProviderProcedures({ [procedure_id]: proceduralSignatureForProvider })
             .withKindProcedures()
             .withEntityProcedures()
@@ -343,13 +346,13 @@ describe("API docs test entity", () => {
                 }
             },
             execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: "127.0.0.1:9011",
-            base_callback: "127.0.0.1:9011"
+            procedure_callback: "localhost:9011",
+            base_callback: "localhost:9011"
         };
         const provider: Provider = new ProviderBuilder("provider_with_validation_scheme")
             .withVersion("0.1.0")
             .withKinds()
-            .withCallback(`http://127.0.0.1:9010`)
+            .withCallback(`http://localhost:9010`)
             .withProviderProcedures({ [procedure_id_anon]: proceduralSignatureForProviderAnon })
             .withKindProcedures()
             .withEntityProcedures()
@@ -475,13 +478,13 @@ describe("API docs test entity", () => {
             argument: {},
             result: {},
             execution_strategy: Procedural_Execution_Strategy.Halt_Intentful,
-            procedure_callback: "127.0.0.1:9011",
-            base_callback: "127.0.0.1:9011"
+            procedure_callback: "localhost:9011",
+            base_callback: "localhost:9011"
         };
         const provider: Provider = new ProviderBuilder("provider_no_validation_scheme")
             .withVersion("0.1.0")
             .withKinds()
-            .withCallback(`http://127.0.0.1:9010`)
+            .withCallback(`http://localhost:9010`)
             .withProviderProcedures({ [procedure_id]: proceduralSignatureForProvider })
             .withKindProcedures()
             .withEntityProcedures()

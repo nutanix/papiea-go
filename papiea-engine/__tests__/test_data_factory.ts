@@ -39,7 +39,7 @@ function formatErrorMsg(current_field: string, missing_field: string) {
     return `Please specify ${ missing_field } before ${ current_field }`
 }
 
-const default_hostname = "127.0.0.1";
+const default_hostname = "localhost";
 const port = 9001;
 
 export class ProviderBuilder {
@@ -328,7 +328,7 @@ function createToken(expireIn: number) {
             "azp": "EEE",
             "sub": "alice",
             "default_tenant": OAuth2Server.tenant_uuid,
-            "iss": "https:\/\/127.0.0.1:9002\/oauth2\/token",
+            "iss": "https:\/\/localhost:9002\/oauth2\/token",
             "given_name": "Alice",
             "iat": timestamp,
             "exp": expiration,
@@ -350,7 +350,7 @@ function createToken(expireIn: number) {
             "sub": "alice",
             "at_hash": "DDD",
             "default_tenant": OAuth2Server.tenant_uuid,
-            "iss": "https:\/\/127.0.0.1:9002\/oauth2\/token",
+            "iss": "https:\/\/localhost:9002\/oauth2\/token",
             "given_name": "Alice",
             "iat": timestamp,
             "xi_role": base64UrlEncode([{
@@ -389,12 +389,11 @@ export class OAuth2Server {
     static tenant_uuid = uuid();
     readonly idp_token: any
     httpsServer: https.Server
-    static ca = readFileSync(resolve(__dirname, '../certs/ca.crt'), "utf-8")
     static privateKey = readFileSync(resolve(__dirname, '../certs/server.key'), "utf-8")
     static certificate = readFileSync(resolve(__dirname, '../certs/server.crt'), "utf-8")
     
     constructor(ttlSeconds: number) {
-        this.httpsServer = https.createServer({ ca: OAuth2Server.ca, key: OAuth2Server.privateKey, cert: OAuth2Server.certificate, rejectUnauthorized: false }, (req: any, res: any) => {
+        this.httpsServer = https.createServer({ key: OAuth2Server.privateKey, cert: OAuth2Server.certificate }, (req: any, res: any) => {
             this.resolve(req, res)
         });
         this.idp_token = createToken(ttlSeconds)

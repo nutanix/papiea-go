@@ -46,7 +46,6 @@ const papieaDebug = config.debug
 const verbosityOptions = config.logging_verbosity
 const prettyPrint = config.pretty_print
 const tracingConfig = config.tracing_config
-const ca = readFileSync(resolve(__dirname, config.ca_cert_path), "utf-8")
 const privateKey = readFileSync(resolve(__dirname, config.server_key_path), "utf-8")
 const certificate = readFileSync(resolve(__dirname, config.server_cert_path), "utf-8")
 
@@ -105,7 +104,7 @@ async function setUpApplication(): Promise<express.Express> {
 
 setUpApplication().then(app => {
     const https = require('https');
-    https.createServer({ ca: ca, key: privateKey, cert: certificate }, app).listen(serverPort, function () {
+    https.createServer({ key: privateKey, cert: certificate, request_cert: true }, app).listen(serverPort, function () {
         console.info(`Papiea app listening on https port ${serverPort}!`);
     });
 }).catch(console.error);

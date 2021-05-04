@@ -20,6 +20,7 @@ class ProceduralCtx(object):
         self.base_url = provider.entity_url
         self.provider_prefix = provider_prefix
         self.provider_version = provider_version
+        self.ssl_context = provider.ssl_context
         self.provider_api = provider.provider_api
         self.provider = provider
         self.headers = headers
@@ -35,6 +36,7 @@ class ProceduralCtx(object):
             self.provider_version,
             entity_reference.kind,
             self.get_invoking_token(),
+            self.ssl_context,
             self.provider.logger,
         )
 
@@ -69,12 +71,12 @@ class ProceduralCtx(object):
     ) -> bool:
         try:
             data_binary = json.dumps(entity_action).encode("utf-8")
-            async with ClientSession(headers=dict(rejectUnauthorized=False)) as session:
+            async with ClientSession(headers=headers) as session:
                 async with session.post(
                     f"{ self.base_url }/{ provider_prefix }/{ provider_version }/check_permission",
                     data=data_binary,
                     headers=headers,
-                    ssl=False
+                    ssl=self.ssl_context
                 ) as resp:
                     res = await resp.text()
             res = json.loads(res)

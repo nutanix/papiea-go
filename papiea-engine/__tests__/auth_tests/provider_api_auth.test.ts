@@ -9,6 +9,8 @@ import {
 import uuid = require("uuid");
 import { IntentfulBehaviour, Provider, Version } from "papiea-core";
 import { AxiosResponseParser } from "papiea-backend-utils"
+import { resolve } from "path";
+import { readFileSync } from "fs";
 const https = require('https')
 
 declare var process: {
@@ -19,35 +21,32 @@ declare var process: {
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
+const httpsAgent = new https.Agent({
+    ca: readFileSync(resolve(__dirname, '../../certs/ca.crt'), 'utf8')
+})
 
 const providerApiAdmin = axios.create({
-    baseURL: `https://127.0.0.1:${serverPort}/provider`,
+    baseURL: `https://localhost:${serverPort}/provider`,
     timeout: 1000,
     headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${adminKey}`
     },
-    httpsAgent: new https.Agent({  
-        rejectUnauthorized: false
-    })
+    httpsAgent
 });
 
 const providerApi = axios.create({
-    baseURL: `https://127.0.0.1:${serverPort}/provider`,
+    baseURL: `https://localhost:${serverPort}/provider`,
     timeout: 1000,
     headers: { 'Content-Type': 'application/json' },
-    httpsAgent: new https.Agent({  
-        rejectUnauthorized: false
-    })
+    httpsAgent
 });
 
 const entityApi = axios.create({
-    baseURL: `https://127.0.0.1:${serverPort}/services`,
+    baseURL: `https://localhost:${serverPort}/services`,
     timeout: 1000,
     headers: { 'Content-Type': 'application/json' },
-    httpsAgent: new https.Agent({  
-        rejectUnauthorized: false
-    })
+    httpsAgent
 });
 
 describe("Provider API auth tests", () => {
@@ -413,7 +412,7 @@ describe('Read provider security check', function () {
     const clusterDescription = new DescriptionBuilder(DescriptionType.Cluster).build()
     const clusterKinds = [new KindBuilder(IntentfulBehaviour.Basic).withDescription(clusterDescription).build()]
     const oauth2Server = OAuth2Server.createServer();
-    const oauth2ServerHost = '127.0.0.1';
+    const oauth2ServerHost = 'localhost';
     const oauth2ServerPort = 9002;
 
     let providerPrefix: string;
