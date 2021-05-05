@@ -1,7 +1,8 @@
-import {EntityCreationResult, EntityCreationStrategy} from "./entity_creation_strategy_interface"
+import {EntityCreationStrategy} from "./entity_creation_strategy_interface"
 import {
     Differ,
     Entity,
+    EntityCreateOrUpdateResult,
     IntentfulBehaviour,
     IntentfulStatus,
     IntentWatcher,
@@ -41,12 +42,12 @@ export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
     protected async save_entity(entity: Entity): Promise<[Metadata, Spec, Status]> {
         // Create increments spec version so we should check already incremented one
         await this.check_spec_version(entity.metadata, entity.metadata.spec_version + 1, entity.spec)
-        const [updatedMetadata, updatedSpec] = await this.specDb.update_spec(entity.metadata, entity.spec)
-        await this.statusDb.replace_status(entity.metadata, entity.status)
-        return [updatedMetadata, updatedSpec, entity.status]
+        const [_, updatedSpec] = await this.specDb.update_spec(entity.metadata, entity.spec)
+        const[updatedMetadata, updatedStatus] = await this.statusDb.replace_status(entity.metadata, entity.status)
+        return [updatedMetadata, updatedSpec, updatedStatus]
     }
 
-    public async create(input: any, ctx: RequestContext): Promise<EntityCreationResult> {
+    public async create(input: any, ctx: RequestContext): Promise<EntityCreateOrUpdateResult> {
         const entity = await this.invoke_constructor(`__${this.kind.name}_create`, input, ctx)
         entity.metadata = await this.create_metadata(entity.metadata ?? {})
         try {
@@ -85,12 +86,12 @@ export class ConstructorEntityCreationStrategy extends EntityCreationStrategy {
                 watcher.diffs.push(diff)
             }
             await this.intentWatcherDb.save_watcher(watcher)
-            const watchlist = await this.watchlistDb.get_watchlist()
-            const ent = create_entry(created_metadata)
-            if (!watchlist.has(ent)) {
-                watchlist.set([ent, []])
-                await this.watchlistDb.update_watchlist(watchlist)
-            }
+            await this.watchlistDb.edit_watchlist(async watchlist => {
+                const ent = create_entry(created_metadata)
+                if (!watchlist.has(ent)) {
+                    watchlist.set([ent, []])
+                }
+            });
         }
         return {
             intent_watcher: watcher,

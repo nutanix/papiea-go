@@ -1,9 +1,9 @@
 import { IntentfulStrategy } from "./intentful_strategy_interface"
 import { Spec_DB } from "../../databases/spec_db_interface"
 import { Status_DB } from "../../databases/status_db_interface"
-import { Differ, Metadata, Spec, IntentWatcher } from "papiea-core"
+import { Differ, Metadata, Spec, IntentWatcher, Status } from "papiea-core"
 import { IntentWatcher_DB } from "../../databases/intent_watcher_db_interface"
-import { IntentfulStatus } from "papiea-core"
+import { EntityCreateOrUpdateResult, IntentfulStatus } from "papiea-core"
 import { Watchlist_DB } from "../../databases/watchlist_db_interface";
 import uuid = require("uuid")
 import { create_entry } from "../../intentful_engine/watchlist";
@@ -22,22 +22,23 @@ export class DifferIntentfulStrategy extends IntentfulStrategy {
         this.watchlistDb = watchlistDb
     }
 
-    async update_entity(metadata: Metadata, spec: Spec): Promise<[Metadata, Spec]> {
-        const [updatedMetadata, updatedSpec] = await this.specDb.update_spec(metadata, spec);
-        return [updatedMetadata, updatedSpec]
+    async update_entity(metadata: Metadata, spec: Spec): Promise<[Metadata, Spec, Status]> {
+        const [, updatedSpec] = await this.specDb.update_spec(metadata, spec);
+        const [updatedMetadata, updatedStatus] = await this.statusDb.get_status(metadata)
+        return [updatedMetadata, updatedSpec, updatedStatus]
     }
 
-    async update(metadata: Metadata, spec: Spec, ctx: RequestContext): Promise<IntentWatcher | null> {
+    async update(metadata: Metadata, spec: Spec, ctx: RequestContext): Promise<EntityCreateOrUpdateResult> {
         const statusSpan = spanOperation(`get_status_db`,
                                    ctx.tracing_ctx,
                                    {entity_uuid: metadata.uuid})
-        const [_, status] = await this.statusDb.get_status(metadata)
         statusSpan.finish()
         let watcher_spec_version = metadata.spec_version + 1
         const updateSpan = spanOperation(`update_entity_db`,
                                    ctx.tracing_ctx,
                                    {entity_uuid: metadata.uuid})
-        await this.update_entity(metadata, spec)
+        const [updated_metadata, updated_spec, updated_status] = await this.update_entity(metadata, spec)
+        // console.debug(`[DELAY_DEBUG] Updated the entity with uuid: ${metadata.uuid}`)
         updateSpan.finish()
         const watcher: IntentWatcher = {
             uuid: uuid(),
@@ -52,20 +53,29 @@ export class DifferIntentfulStrategy extends IntentfulStrategy {
             user: this.user,
             status: IntentfulStatus.Active,
         }
-        for (let diff of this.differ.diffs(this.kind!, spec, status)) {
+        for (let diff of this.differ.diffs(this.kind!, updated_spec, updated_status)) {
             watcher.diffs.push(diff)
         }
         const watcherSpan = spanOperation(`create_watcher_db`,
                                    ctx.tracing_ctx,
                                    {entity_uuid: metadata.uuid})
         await this.intentWatcherDb.save_watcher(watcher)
+        // console.debug(`[DELAY_DEBUG] Saved the intent watcher for update entity: ${metadata.uuid} with id: ${watcher.uuid}`)
         watcherSpan.finish()
-        const watchlist = await this.watchlistDb.get_watchlist()
-        const ent = create_entry(metadata)
-        if (!watchlist.has(ent)) {
-            watchlist.set([ent, []])
-            await this.watchlistDb.update_watchlist(watchlist)
+        const ent = await this.watchlistDb.edit_watchlist(async watchlist => {
+            const ent = create_entry(metadata)
+            if (!watchlist.has(ent)) {
+                watchlist.set([ent, []])
+            }
+            return ent;
+        });
+        // console.debug(`[DELAY_DEBUG] Added entry in watchlist for entity: ${metadata.uuid}`)
+        // console.debug(`[DELAY_DEBUG] ${JSON.stringify(ent)}`)
+        return {
+            intent_watcher: watcher,
+            metadata: updated_metadata,
+            spec: updated_spec,
+            status: updated_status
         }
-        return watcher
     }
 }

@@ -19,13 +19,20 @@ export class PapieaException extends PapieaErrorImpl {
 }
 
 // Spec with this version already exists
-export class ConflictingEntityError extends PapieaErrorImpl {
+export class SpecConflictingEntityError extends PapieaErrorImpl {
     constructor(message: string, e: any) {
         super(message, e)
-        this.name = PapieaError.ConflictingEntity
+        this.name = PapieaError.SpecConflictingEntity
     }
 }
 
+// Status exists with a different hash value
+export class StatusConflictingEntityError extends PapieaErrorImpl {
+    constructor(message: string, e: any) {
+        super(message, e)
+        this.name = PapieaError.StatusConflictingEntity
+    }
+}
 // Entity not found on papiea
 export class EntityNotFoundError extends PapieaErrorImpl {
     constructor(message: string, e: any) {

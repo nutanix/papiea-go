@@ -1,8 +1,9 @@
 import { PapieaResponse } from "papiea-core";
 import {
     EntityNotFoundError,
-    ConflictingEntityError,
-    GraveyardConflictingEntityError
+    SpecConflictingEntityError,
+    GraveyardConflictingEntityError,
+    StatusConflictingEntityError
 } from "../databases/utils/errors"
 import { ValidationError } from "./validation_error";
 import { ProcedureInvocationError } from "./procedure_invocation_error";
@@ -127,9 +128,13 @@ export class PapieaErrorResponseGenerator implements PapieaResponse {
                     status_code = 409
                     message = "Deleted Entity Conflict Error"
                     break
-                case ConflictingEntityError:
+                case SpecConflictingEntityError:
                     status_code = 409
-                    message = "Conflicting Entity Error"
+                    message = "Spec Conflicting Entity Error"
+                    break
+                case StatusConflictingEntityError:
+                    status_code = 409
+                    message = "Status Conflicting Entity Error"
                     break
                 case OnActionError:
                     status_code = 500

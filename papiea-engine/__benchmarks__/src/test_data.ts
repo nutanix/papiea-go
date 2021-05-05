@@ -78,10 +78,7 @@ export async function setUpTestIntentfulProvider(papiea_url: string, public_host
     location.on("x", async (ctx, entity, input) => {
         await providerApiAdmin.patch(`/${intentful_provider_prefix}/${provider_version}/update_status`, {
             context: "some context",
-            entity_ref: {
-                uuid: entity.metadata.uuid,
-                kind: entity.metadata.kind
-            },
+            metadata: entity.metadata,
             status: { x: entity.spec.x }
         })
     })

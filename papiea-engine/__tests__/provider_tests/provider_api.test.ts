@@ -172,10 +172,7 @@ describe("Provider API tests", () => {
         const newStatus = { host: "medium", ip: "127.0.0.1", name: "test_cluster" };
         await providerApi.post(`/${provider.prefix}/${provider.version}/update_status`, {
             context: "some context",
-            entity_ref: {
-                uuid: metadata.uuid,
-                kind: kind_name
-            },
+            metadata: metadata,
             status: newStatus
         });
 
@@ -197,10 +194,7 @@ describe("Provider API tests", () => {
         const newStatus = [{ x: 15, y: 15 }];
         await providerApi.patch(`/${provider.prefix}/${provider.version}/update_status`, {
             context: "some context",
-            entity_ref: {
-                uuid: metadata.uuid,
-                kind: kind_name
-            },
+            metadata: metadata,
             status: newStatus
         });
 
@@ -223,10 +217,7 @@ describe("Provider API tests", () => {
         const newStatus = { priorities: [2, 7, 4] };
         await providerApi.patch(`/${provider.prefix}/${provider.version}/update_status`, {
             context: "some context",
-            entity_ref: {
-                uuid: metadata.uuid,
-                kind: kind_name
-            },
+            metadata: metadata,
             status: newStatus
         });
 
@@ -251,10 +242,7 @@ describe("Provider API tests", () => {
         try {
             await providerApi.post(`/${ provider.prefix }/${ provider.version }/update_status`, {
                 context: "some context",
-                entity_ref: {
-                    uuid: metadata.uuid,
-                    kind: kind_name
-                },
+                metadata: metadata,
                 status: newStatus
             });
         } catch (e) {
@@ -303,10 +291,7 @@ describe("Provider API tests", () => {
         try {
             await providerApi.post(`/${provider.prefix}/${provider.version}/update_status`, {
                 context: "some context",
-                entity_ref: {
-                    uuid: metadata.uuid,
-                    kind: kind_name
-                },
+                metadata: metadata,
                 status: { host: "small", ip: 100 }
             });
         } catch (err) {
@@ -342,10 +327,7 @@ describe("Provider API tests", () => {
         const newStatus = { host: "big", name: "test_cluster" };
         await providerApi.patch(`/${provider.prefix}/${provider.version}/update_status`, {
             context: "some context",
-            entity_ref: {
-                uuid: metadata.uuid,
-                kind: kind_name
-            },
+            metadata: metadata,
             status: newStatus
         });
 
@@ -378,10 +360,7 @@ describe("Provider API tests", () => {
         try {
             await providerApi.post(`/${provider.prefix}/${provider.version}/update_status`, {
                 context: "some context",
-                entity_ref: {
-                    uuid: metadata.uuid,
-                    kind: kind_name
-                },
+                metadata: metadata,
                 status: newStatus
             });
         } catch (e) {
@@ -410,10 +389,7 @@ describe('Status-only fields are not overridden by spec changes', function () {
 
         await providerApi.patch(`/${provider.prefix}/${provider.version}/update_status`, {
             context: "some context",
-            entity_ref: {
-                uuid: metadata.uuid,
-                kind: kind_name
-            },
+            metadata: metadata,
             status: {
                 name: "test_cluster"
             }

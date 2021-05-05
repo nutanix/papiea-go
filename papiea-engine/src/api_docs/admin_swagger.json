@@ -197,8 +197,8 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "entity_ref": {
-                                        "$ref": "#/components/schemas/EntityReference"
+                                    "metadata": {
+                                        "$ref": "#/components/schemas/EntityStatusUpdateInput"
                                     },
                                     "status": {
                                         "type": "object"
@@ -235,8 +235,8 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "entity_ref": {
-                                        "$ref": "#/components/schemas/EntityReference"
+                                    "metadata": {
+                                        "$ref": "#/components/schemas/EntityStatusUpdateInput"
                                     },
                                     "status": {
                                         "type": "object"
@@ -611,19 +611,21 @@
                     }
                 }
             },
-            "EntityReference": {
+            "EntityStatusUpdateInput": {
                 "required": [
                     "uuid",
-                    "kind"
+                    "kind",
+                    "status_hash"
                 ],
                 "properties": {
                     "uuid": {
-                        "type": "string"
+                        "type": "string",
+                        "format": "uuid"
                     },
                     "kind": {
                         "type": "string"
                     },
-                    "name": {
+                    "status_hash": {
                         "type": "string"
                     }
                 }

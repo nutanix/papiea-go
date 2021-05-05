@@ -8,6 +8,7 @@ import {UserAuthInfo} from "../auth/authn"
 import {
     Action,
     Entity,
+    EntityCreateOrUpdateResult,
     IntentWatcher,
     Metadata,
     Procedural_Signature,
@@ -27,6 +28,7 @@ import {Provider_DB} from "../databases/provider_db_interface"
 import {IntentWatcherMapper} from "../intentful_engine/intent_interface"
 import {IntentWatcher_DB} from "../databases/intent_watcher_db_interface"
 import {Graveyard_DB} from "../databases/graveyard_db_interface"
+import { Cursor } from "mongodb"
 
 export type SortParams = { [key: string]: number };
 
@@ -70,18 +72,13 @@ export class Entity_API_Impl implements Entity_API {
         return IntentWatcherMapper.toResponse(intent_watcher)
     }
 
-    async filter_intent_watcher(user: UserAuthInfo, fields: any, ctx: RequestContext, sortParams?: SortParams): Promise<Partial<IntentWatcher>[]> {
-        const intent_watchers = await this.intent_watcher_db.list_watchers(fields, sortParams)
-        const filteredRes = await this.intentWatcherAuthorizer.filter(this.logger, user, intent_watchers, Action.Read);
-        return IntentWatcherMapper.toResponses(filteredRes)
+    filter_intent_watcher(user: UserAuthInfo, fields: any, ctx: RequestContext, sortParams?: SortParams): [AsyncIterable<Partial<IntentWatcher>>, Cursor<IntentWatcher>] {
+        const watcher_cursor = this.intent_watcher_db.list_watchers(fields, sortParams)
+        const filteredRes = this.intentWatcherAuthorizer.filter(this.logger, user, watcher_cursor, Action.Read);
+        return [IntentWatcherMapper.toResponses(filteredRes), watcher_cursor]
     }
 
-    async save_entity(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, input: unknown, ctx: RequestContext): Promise<{
-        intent_watcher: IntentWatcher | null,
-        metadata: Metadata,
-        spec: Spec,
-        status: Status | null
-    }> {
+    async save_entity(user: UserAuthInfo, prefix: string, kind_name: string, version: Version, input: unknown, ctx: RequestContext): Promise<EntityCreateOrUpdateResult> {
         const provider = await this.get_provider(prefix, version, ctx);
         const kind = this.providerDb.find_kind(provider, kind_name);
         const strategy = this.intentfulCtx.getEntityCreationStrategy(provider, kind, user)
@@ -113,46 +110,43 @@ export class Entity_API_Impl implements Entity_API {
         return [metadata, status];
     }
 
-    async filter_entity_spec(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, fields: any, exact_match: boolean, ctx: RequestContext, sortParams?: SortParams): Promise<[Metadata, Spec][]> {
+    async* filter_entity_spec(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, fields: any, exact_match: boolean, ctx: RequestContext, sortParams?: SortParams): AsyncIterable<[Metadata, Spec]> {
         const provider = await this.get_provider(prefix, version, ctx);
         fields.metadata.kind = kind_name;
         const span = spanOperation(`filter_spec_db`,
                                    ctx.tracing_ctx)
         const res = await this.spec_db.list_specs(fields, exact_match, sortParams);
         span.finish()
-        const filteredRes = await this.authorizer.filter(this.logger, user, res, Action.Read, provider, x => {
+        yield* await this.authorizer.filter(this.logger, user, res, Action.Read, provider, x => {
             return {"metadata": x[0]}
         });
-        return filteredRes;
     }
 
-    async filter_entity_status(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, fields: any, exact_match: boolean, ctx: RequestContext, sortParams?: SortParams): Promise<[Metadata, Status][]> {
+    async* filter_entity_status(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, fields: any, exact_match: boolean, ctx: RequestContext, sortParams?: SortParams): AsyncIterable<[Metadata, Status]> {
         const provider = await this.get_provider(prefix, version, ctx);
         fields.metadata.kind = kind_name;
         const span = spanOperation(`filter_status_db`,
                                    ctx.tracing_ctx)
         const res = await this.status_db.list_status(fields, exact_match, sortParams);
         span.finish()
-        const filteredRes = await this.authorizer.filter(this.logger, user, res, Action.Read, provider, x => {
+        yield* this.authorizer.filter(this.logger, user, res, Action.Read, provider, x => {
             return {"metadata": x[0]}
         });
-        return filteredRes;
     }
 
-    async filter_deleted(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, fields: any, exact_match: boolean, ctx: RequestContext, sortParams?: SortParams): Promise<Entity[]> {
+    async* filter_deleted(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, fields: any, exact_match: boolean, ctx: RequestContext, sortParams?: SortParams): AsyncIterable<Entity> {
         const provider = await this.get_provider(prefix, version, ctx);
         fields.metadata.kind = kind_name;
         const span = spanOperation(`filter_deleted_db`,
                                    ctx.tracing_ctx)
         const res = await this.graveyardDb.list_entities(fields, exact_match, sortParams)
         span.finish()
-        const filteredRes = await this.authorizer.filter(this.logger, user, res, Action.Read, provider, x => {
+        yield* await this.authorizer.filter(this.logger, user, res, Action.Read, provider, x => {
             return {"metadata": x.metadata}
         });
-        return filteredRes
     }
 
-    async update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, extension: {[key: string]: any}, kind_name: string, version: Version, spec_description: Spec, ctx: RequestContext): Promise<IntentWatcher | null> {
+    async update_entity_spec(user: UserAuthInfo, uuid: uuid4, prefix: string, spec_version: number, extension: {[key: string]: any}, kind_name: string, version: Version, spec_description: Spec, ctx: RequestContext): Promise<EntityCreateOrUpdateResult> {
         const provider = await this.get_provider(prefix, version, ctx);
         const kind = this.providerDb.find_kind(provider, kind_name);
         this.validator.validate_spec(provider, spec_description, kind, provider.allowExtraProps);
@@ -163,8 +157,7 @@ export class Entity_API_Impl implements Entity_API {
         metadata.provider_prefix = prefix
         metadata.provider_version = version
         const strategy = this.intentfulCtx.getIntentfulStrategy(provider, kind, user)
-        const watcher = await strategy.update(metadata, spec_description, ctx)
-        return watcher;
+        return await strategy.update(metadata, spec_description, ctx)
     }
 
     async delete_entity(user: UserAuthInfo, prefix: string, version: Version, kind_name: string, entity_uuid: uuid4, ctx: RequestContext): Promise<void> {

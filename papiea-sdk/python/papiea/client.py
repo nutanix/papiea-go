@@ -71,7 +71,7 @@ class EntityCRUD(object):
     async def update(self, metadata: Metadata, spec: Spec) -> EntitySpec:
         with self.tracer.start_span(operation_name=f"update_entity_client") as span:
             inject_tracing_headers(self.tracer, span, self.api_instance)
-            payload = {"metadata": {"spec_version": metadata.spec_version}, "spec": spec}
+            payload = {"metadata": metadata, "spec": spec}
             return await self.api_instance.put(metadata.uuid, payload)
 
     async def delete(self, entity_reference: EntityReference) -> None:

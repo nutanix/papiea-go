@@ -3,7 +3,7 @@ import axios from "axios"
 import { timeout } from "../../../../papiea-engine/src/utils/utils"
 import { AxiosResponseParser } from "papiea-backend-utils";
 import {IntentfulBehaviour, IntentfulStatus, Metadata, Version} from "papiea-core"
-import { ProviderSdk } from "../../src/provider_sdk/typescript_sdk";
+import { ProviderSdk, BackgroundTaskBuilder } from "../../src/provider_sdk/typescript_sdk";
 import { IntentfulCtx_Interface } from "../../src/provider_sdk/typescript_sdk_interface";
 import uuid = require("uuid");
 import { readFileSync } from "fs";
@@ -87,10 +87,7 @@ describe("Intentful Workflow tests single provider", () => {
             location.on("x", async (ctx, entity, input) => {
                 await providerApiAdmin.patch(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                     context: "some context",
-                    entity_ref: {
-                        uuid: entity.metadata.uuid,
-                        kind: entity.metadata.kind
-                    },
+                    metadata: entity.metadata,
                     status: { x: entity.spec.x }
                 })
             })
@@ -103,7 +100,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             first_provider_to_delete_entites.push(metadata)
-            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+            let { data: { intent_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
                 spec: {
                     x: 20,
                     y: 11
@@ -117,9 +114,9 @@ describe("Intentful Workflow tests single provider", () => {
             let watcher_status = IntentfulStatus.Completed_Successfully
             try {
                 let watcherApi = sdk.get_intent_watcher_client()
-                await watcherApi.wait_for_status_change(watcher, watcher_status, 50 /* timeout_secs */)
+                await watcherApi.wait_for_status_change(intent_watcher, watcher_status, 50 /* timeout_secs */)
                 for (let i = 1; i <= retries; i++) {
-                    const intent_watcher = await watcherApi.get(watcher.uuid)
+                    intent_watcher = await watcherApi.get(intent_watcher.uuid)
                     if (intent_watcher.status === IntentfulStatus.Completed_Successfully) {
                         expect(intent_watcher.status).toBe(IntentfulStatus.Completed_Successfully)
                         const result = await entityApi.get(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
@@ -158,7 +155,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             first_provider_to_delete_entites.push(metadata)
-            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+            let { data: { intent_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
                 spec: {
                     x: 20,
                     y: 11
@@ -172,7 +169,7 @@ describe("Intentful Workflow tests single provider", () => {
             try {
                 let watcherApi = sdk.get_intent_watcher_client()
                 for (let i = 1; i <= retries; i++) {
-                    const intent_watcher = await watcherApi.get(watcher.uuid)
+                    intent_watcher = await watcherApi.get(intent_watcher.uuid)
                     if (intent_watcher.status !== IntentfulStatus.Active) {
                         expect(intent_watcher.status).toBe(IntentfulStatus.Active)
                     }
@@ -214,7 +211,7 @@ describe("Intentful Workflow tests single provider", () => {
                     y: 11
                 }
             })
-            const {data: {watcher}} = await entityApi.put(`/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`, {
+            await entityApi.put(`/${sdk.provider.prefix}/${sdk.provider.version}/${kind_name}/${metadata.uuid}`, {
                 spec: {
                     x: 20,
                     y: 11
@@ -250,10 +247,7 @@ describe("Intentful Workflow tests single provider", () => {
                 if (times_requested === 2) {
                     await providerApiAdmin.patch(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                         context: "some context",
-                        entity_ref: {
-                            uuid: metadata.uuid,
-                            kind: kind_name
-                        },
+                        metadata: entity.metadata,
                         status: { x: entity.spec.x }
                     })
                     return {"delay_secs": 2}
@@ -271,7 +265,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             first_provider_to_delete_entites.push(metadata)
-            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+            let { data: { intent_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
                 spec: {
                     x: 30,
                     y: 11
@@ -283,13 +277,13 @@ describe("Intentful Workflow tests single provider", () => {
             try {
                 await timeout(5000)
                 let watcherApi = sdk.get_intent_watcher_client()
-                let intent_watcher = await watcherApi.get(watcher.uuid)
+                intent_watcher = await watcherApi.get(intent_watcher.uuid)
                 expect(intent_watcher.status).toBe(IntentfulStatus.Active)
                 await timeout(3000)
-                intent_watcher = await watcherApi.get(watcher.uuid)
+                intent_watcher = await watcherApi.get(intent_watcher.uuid)
                 expect(intent_watcher.status).toBe(IntentfulStatus.Active)
                 await timeout(15000)
-                intent_watcher = await watcherApi.get(watcher.uuid)
+                intent_watcher = await watcherApi.get(intent_watcher.uuid)
                 expect(intent_watcher.status).toBe(IntentfulStatus.Completed_Successfully)
             } catch (e) {
                 console.log(`Couldn't get entity: ${e}`)
@@ -330,7 +324,7 @@ describe("Intentful Workflow tests single provider", () => {
                     spec_version: 1
                 }
             })
-            await timeout(18000)
+            await timeout(5000)
             expect(times_requested).toBeLessThanOrEqual(5)
         } finally {
             sdk.cleanup();
@@ -368,139 +362,8 @@ describe("Intentful Workflow tests single provider", () => {
                     spec_version: 1
                 }
             })
-            await timeout(18000)
+            await timeout(5000)
             expect(times_requested).toBeLessThanOrEqual(5)
-        } finally {
-            sdk.cleanup()
-        }
-    })
-
-    test("Background tasks should work", async () => {
-        expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
-        try {
-            let times_invoked = 0
-            first_provider_prefix = "location_provider_intentful_background_task"
-            const location = sdk.new_kind(locationDataDescription);
-            sdk.version(provider_version);
-            sdk.prefix(first_provider_prefix);
-            const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface) => {
-                times_invoked++
-            })
-            try {
-                await sdk.register();
-                await task.start_task()
-                await timeout(4000)
-                expect(times_invoked).toEqual(1)
-                await task.kill_task()
-            } catch (e) {
-                console.log(`Couldn't get entity: ${e}`)
-                expect(e).toBeUndefined()
-            }
-        } finally {
-            sdk.cleanup()
-        }
-    })
-
-    test("Background task shouldn't register if metadata extension should be present but is not specified", async () => {
-        expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
-        try {
-            first_provider_prefix = null
-            const location = sdk.new_kind(locationDataDescription);
-            sdk.version(provider_version);
-            sdk.prefix("metadata_extension");
-            sdk.metadata_extension({
-                SampleMetaExt: {
-                    type: "object",
-                    properties: {
-                        sample: {
-                            type: "string"
-                        }
-                    }
-                }
-            })
-            try {
-                const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface) => {
-                })
-            } catch (e) {
-                console.log(e.message)
-                expect(e.message).toContain("without the required metadata extension")
-            }
-        } finally {
-            sdk.cleanup()
-        }
-    })
-
-    test("Background task with metadata extension should work", async () => {
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
-        try {
-            first_provider_prefix = "location_provider_intentful_background_task_meta"
-            const location = sdk.new_kind(locationDataDescription);
-            sdk.version(provider_version);
-            sdk.prefix(first_provider_prefix);
-            sdk.metadata_extension({
-                SampleMetaExt: {
-                    type: "object",
-                    properties: {
-                        sample: {
-                            type: "string"
-                        }
-                    }
-                }
-            })
-            const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface) => {
-            }, {sample: "test"})
-            try {
-                await sdk.register();
-                await task.start_task()
-                await task.kill_task()
-            } catch (e) {
-                expect(e).toBeUndefined()
-            }
-        } finally {
-            sdk.cleanup()
-        }
-    })
-
-    test("Background task with custom fields should work", async () => {
-        expect.hasAssertions();
-        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
-        try {
-            let times_invoked = 0
-            let count = 0
-            first_provider_prefix = "location_provider_intentful_background_task_custom"
-            const location = sdk.new_kind(locationDataDescription);
-            sdk.version(provider_version);
-            sdk.prefix(first_provider_prefix);
-            const task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface, task_ctx: any | undefined) => {
-                if (task_ctx) {
-                    count = task_ctx.count
-                }
-                times_invoked++
-            }, null, {
-                type: "object",
-                properties: {
-                    count: {
-                        type: "number"
-                    }
-                }
-            })
-            try {
-                await sdk.register();
-                await task.start_task()
-                await timeout(4000)
-                expect(times_invoked).toEqual(1)
-                await task.update_task({
-                    count: 1
-                })
-                await timeout(5000)
-                expect(count).toEqual(1)
-                await task.kill_task()
-            } catch (e) {
-                console.log(`Couldn't get entity: ${e}`)
-                expect(e).toBeUndefined()
-            }
         } finally {
             sdk.cleanup()
         }
@@ -517,10 +380,7 @@ describe("Intentful Workflow tests single provider", () => {
             location.on("x", async (ctx, entity, input) => {
                 await providerApiAdmin.patch(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                     context: "some context",
-                    entity_ref: {
-                        uuid: metadata.uuid,
-                        kind: kind_name
-                    },
+                    metadata: entity.metadata,
                     status: { x: entity.spec.x }
                 })
                 return null
@@ -534,7 +394,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             first_provider_to_delete_entites.push(metadata)
-            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+            let { data: { intent_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
                 spec: {
                     x: 30,
                     y: 11
@@ -547,7 +407,7 @@ describe("Intentful Workflow tests single provider", () => {
             try {
                 let watcherApi = sdk.get_intent_watcher_client()
                 for (let i = 1; i <= retries; i++) {
-                    const intent_watcher = await watcherApi.get(watcher.uuid)
+                    intent_watcher = await watcherApi.get(intent_watcher.uuid)
                     if (intent_watcher.status === IntentfulStatus.Completed_Successfully) {
                         expect(intent_watcher.status).toBe(IntentfulStatus.Completed_Successfully)
                         const result = await entityApi.get(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
@@ -579,10 +439,7 @@ describe("Intentful Workflow tests single provider", () => {
                 return async (ctx: any, entity: any, input: any) => {
                     await providerApiAdmin.patch(`/${ sdk.provider.prefix }/${ sdk.provider.version }/update_status`, {
                         context: "some context",
-                        entity_ref: {
-                            uuid: entity.metadata.uuid,
-                            kind: entity.metadata.kind
-                        },
+                        metadata: entity.metadata,
                         status: { x: entity.spec.x }
                     })
                 }
@@ -633,8 +490,8 @@ describe("Intentful Workflow tests single provider", () => {
                     spec_version: 1
                 }
             })
-            const first_watcher = first_watcher_result.data.watcher
-            const second_watcher = second_watcher_result.data.watcher
+            const first_watcher = first_watcher_result.data.intent_watcher
+            const second_watcher = second_watcher_result.data.intent_watcher
             const watchers = [first_watcher, second_watcher]
             let retries = 10
             try {
@@ -672,10 +529,7 @@ describe("Intentful Workflow tests single provider", () => {
             location.on("x", async (ctx, entity, input) => {
                 await providerApiAdmin.patch(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                     context: "some context",
-                    entity_ref: {
-                        uuid: metadata.uuid,
-                        kind: kind_name
-                    },
+                    metadata: entity.metadata,
                     status: { x: entity.spec.x }
                 })
             })
@@ -717,10 +571,7 @@ describe("Intentful Workflow tests single provider", () => {
             location.on("x", async (ctx, entity, input) => {
                 await providerApiAdmin.patch(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                     context: "some context",
-                    entity_ref: {
-                        uuid: metadata.uuid,
-                        kind: kind_name
-                    },
+                    metadata: entity.metadata,
                     status: { x: entity.spec.x }
                 })
             })
@@ -766,10 +617,7 @@ describe("Intentful Workflow tests single provider", () => {
             location.on("x", async (ctx, entity, input) => {
                 await providerApiAdmin.patch(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                     context: "some context",
-                    entity_ref: {
-                        uuid: metadata.uuid,
-                        kind: kind_name
-                    },
+                    metadata: entity.metadata,
                     status: { x: entity.spec.x }
                 })
             })
@@ -820,10 +668,7 @@ describe("Intentful Workflow tests single provider", () => {
             location.on("x.+{ip}", async (ctx, entity, input) => {
                 await providerApiAdmin.post(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                     context: "some context",
-                    entity_ref: {
-                        uuid: entity.metadata.uuid,
-                        kind: entity.metadata.kind
-                    },
+                    metadata: entity.metadata,
                     status: entity.spec
                 })
             })
@@ -838,7 +683,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             first_provider_to_delete_entites.push(metadata)
-            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+            let { data: { intent_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
                 spec: {
                     x: [
                         { ip: "1" },
@@ -854,7 +699,7 @@ describe("Intentful Workflow tests single provider", () => {
             try {
                 let watcherApi = sdk.get_intent_watcher_client()
                 for (let i = 1; i <= retries; i++) {
-                    const intent_watcher = await watcherApi.get(watcher.uuid)
+                    intent_watcher = await watcherApi.get(intent_watcher.uuid)
                     if (intent_watcher.status === IntentfulStatus.Completed_Successfully) {
                         expect(intent_watcher.status).toBe(IntentfulStatus.Completed_Successfully)
                         const result = await entityApi.get(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
@@ -928,10 +773,7 @@ describe("Intentful Workflow tests single provider", () => {
                     }
                     await providerApiAdmin.post(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                         context: "some context",
-                        entity_ref: {
-                            uuid: entity.metadata.uuid,
-                            kind: entity.metadata.kind
-                        },
+                        metadata: entity.metadata,
                         status: {
                             x: status,
                             y: 11
@@ -957,7 +799,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             first_provider_to_delete_entites.push(metadata)
-            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+            let { data: { intent_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
                 spec: {
                     x: [
                         { ip: "1" },
@@ -973,7 +815,7 @@ describe("Intentful Workflow tests single provider", () => {
             try {
                 let watcherApi = sdk.get_intent_watcher_client()
                 for (let i = 1; i <= retries; i++) {
-                    const intent_watcher = await watcherApi.get(watcher.uuid)
+                    intent_watcher = await watcherApi.get(intent_watcher.uuid)
                     if (intent_watcher.status === IntentfulStatus.Completed_Successfully) {
                         expect(intent_watcher.status).toBe(IntentfulStatus.Completed_Successfully)
                         const result = await entityApi.get(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`)
@@ -1016,7 +858,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             first_provider_to_delete_entites.push(metadata)
-            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+            await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
                 spec: {
                     x: 20,
                     y: 21
@@ -1050,10 +892,7 @@ describe("Intentful Workflow tests single provider", () => {
                 if (!locked) {
                     await providerApiAdmin.post(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                         context: "some context",
-                        entity_ref: {
-                            uuid: entity.metadata.uuid,
-                            kind: entity.metadata.kind
-                        },
+                        metadata: entity.metadata,
                         status: {
                             x: 20,
                             y: 21
@@ -1064,10 +903,7 @@ describe("Intentful Workflow tests single provider", () => {
             location.on("y", async (ctx, entity, input) => {
                 await providerApiAdmin.post(`/${sdk.provider.prefix}/${sdk.provider.version}/update_status`, {
                     context: "some context",
-                    entity_ref: {
-                        uuid: entity.metadata.uuid,
-                        kind: entity.metadata.kind
-                    },
+                    metadata: entity.metadata,
                     status: {
                         x: 10,
                         y: 21
@@ -1083,7 +919,7 @@ describe("Intentful Workflow tests single provider", () => {
                 }
             })
             first_provider_to_delete_entites.push(metadata)
-            const { data: { watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+            let { data: { intent_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
                 spec: {
                     x: 20,
                     y: 11
@@ -1096,9 +932,9 @@ describe("Intentful Workflow tests single provider", () => {
             try {
                 await timeout(3000)
                 const watcherApi = sdk.get_intent_watcher_client()
-                const intent_watcher = await watcherApi.get(watcher.uuid)
+                intent_watcher = await watcherApi.get(intent_watcher.uuid)
                 expect(intent_watcher.status).toEqual(IntentfulStatus.Active)
-                const { data: { watcher: second_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
+                const { data: { intent_watcher: second_watcher } } = await entityApi.put(`/${ sdk.provider.prefix }/${ sdk.provider.version }/${ kind_name }/${ metadata.uuid }`, {
                     spec: {
                         x: 20,
                         y: 21
@@ -1110,7 +946,7 @@ describe("Intentful Workflow tests single provider", () => {
                 await timeout(4000)
                 locked = false
                 await timeout(10000)
-                const updated_intent_watcher = await watcherApi.get(watcher.uuid)
+                const updated_intent_watcher = await watcherApi.get(intent_watcher.uuid)
                 expect(updated_intent_watcher.status).toEqual(IntentfulStatus.Completed_Successfully)
                 const second_intent_watcher = await watcherApi.get(second_watcher.uuid)
                 expect(second_intent_watcher.status).toEqual(IntentfulStatus.Completed_Successfully)
@@ -1141,10 +977,7 @@ describe("Intentful Workflow test sfs validation", () => {
             location.on("wrong, wrong2", async (ctx, entity, input) => {
                 await providerApiAdmin.patch(`/${ sdk.provider.prefix }/${ sdk.provider.version }/update_status`, {
                     context: "some context",
-                    entity_ref: {
-                        uuid: entity.metadata.uuid,
-                        kind: entity.metadata.kind
-                    },
+                    metadata: entity.metadata,
                     status: { x: entity.spec.x }
                 })
             })
@@ -1200,10 +1033,7 @@ describe("Intentful workflow multiple providers", () => {
                 return async (ctx: any, entity: any, input: any) => {
                     await providerApiAdmin.patch(`/${ sdk.provider.prefix }/${ sdk.provider.version }/update_status`, {
                         context: "some context",
-                        entity_ref: {
-                            uuid: entity.metadata.uuid,
-                            kind: entity.metadata.kind
-                        },
+                        metadata: entity.metadata,
                         status: { x: entity.spec.x }
                     })
                 }
@@ -1258,8 +1088,8 @@ describe("Intentful workflow multiple providers", () => {
                         spec_version: 1
                     }
                 })
-            const first_watcher = first_watcher_result.data.watcher
-            const second_watcher = second_watcher_result.data.watcher
+            const first_watcher = first_watcher_result.data.intent_watcher
+            const second_watcher = second_watcher_result.data.intent_watcher
             const watchers = [first_watcher, second_watcher]
             let retries = 10
 
@@ -1310,10 +1140,7 @@ describe("Intentful workflow multiple providers", () => {
                 return async (ctx: any, entity: any, input: any) => {
                     await providerApiAdmin.patch(`/${ sdk.provider.prefix }/${ sdk.provider.version }/update_status`, {
                         context: "some context",
-                        entity_ref: {
-                            uuid: entity.metadata.uuid,
-                            kind: entity.metadata.kind
-                        },
+                        metadata: entity.metadata,
                         status: { x: entity.spec.x }
                     })
                 }
@@ -1368,8 +1195,8 @@ describe("Intentful workflow multiple providers", () => {
                         spec_version: 1
                     }
                 })
-            const first_watcher = first_watcher_result.data.watcher
-            const second_watcher = second_watcher_result.data.watcher
+            const first_watcher = first_watcher_result.data.intent_watcher
+            const second_watcher = second_watcher_result.data.intent_watcher
             const watchers = [first_watcher, second_watcher]
             let retries = 10
             try {
@@ -1396,6 +1223,165 @@ describe("Intentful workflow multiple providers", () => {
             sdk1.cleanup();
             sdk2.cleanup();
             expect(test_result).toBeTruthy()
+        }
+    })
+})
+
+describe("Background Tasks test", () => {
+
+    const locationDataDescription = new DescriptionBuilder().withBehaviour(IntentfulBehaviour.Differ).build()
+    let first_provider_prefix: string | null
+    let provider_version: Version = "0.1.0"
+    let first_provider_to_delete_entites: Metadata[] = []
+    let task: BackgroundTaskBuilder
+
+    beforeEach(async () => {
+        try {
+            await task.kill_task()
+        } catch (e) {
+
+        }
+    })
+
+    afterEach(async () => {
+        for (let metadata of first_provider_to_delete_entites) {
+            await entityApi.delete(`${first_provider_prefix}/${provider_version}/${metadata.kind}/${metadata.uuid}`)
+        }
+        first_provider_to_delete_entites = []
+        if (first_provider_prefix !== null) {
+            await providerApiAdmin.delete(`${first_provider_prefix}/${provider_version}`)
+        }
+        first_provider_prefix = null
+    })
+
+    test("Background tasks should work", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
+        try {
+            let times_invoked = 0
+            first_provider_prefix = "location_provider_intentful_background_task"
+            const location = sdk.new_kind(locationDataDescription);
+            sdk.version(provider_version);
+            sdk.prefix(first_provider_prefix);
+            task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface) => {
+                times_invoked++
+            })
+            try {
+                await sdk.register();
+                await task.start_task()
+                await timeout(4000)
+                expect(times_invoked).toEqual(1)
+                await task.kill_task()
+            } catch (e) {
+                console.log(`Couldn't get entity: ${e}`)
+                expect(e).toBeUndefined()
+            }
+        } finally {
+            sdk.cleanup()
+        }
+    })
+
+    test("Background task shouldn't register if metadata extension should be present but is not specified", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
+        try {
+            first_provider_prefix = null
+            const location = sdk.new_kind(locationDataDescription);
+            sdk.version(provider_version);
+            sdk.prefix("metadata_extension");
+            sdk.metadata_extension({
+                SampleMetaExt: {
+                    type: "object",
+                    properties: {
+                        sample: {
+                            type: "string"
+                        }
+                    }
+                }
+            })
+            try {
+                task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface) => {
+                })
+            } catch (e) {
+                console.log(e.message)
+                expect(e.message).toContain("without the required metadata extension")
+            }
+        } finally {
+            sdk.cleanup()
+        }
+    })
+
+    test("Background task with metadata extension should work", async () => {
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
+        try {
+            first_provider_prefix = "location_provider_intentful_background_task_meta"
+            const location = sdk.new_kind(locationDataDescription);
+            sdk.version(provider_version);
+            sdk.prefix(first_provider_prefix);
+            sdk.metadata_extension({
+                SampleMetaExt: {
+                    type: "object",
+                    properties: {
+                        sample: {
+                            type: "string"
+                        }
+                    }
+                }
+            })
+            task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface) => {
+            }, {sample: "test"})
+            try {
+                await sdk.register();
+                await task.start_task()
+                await task.kill_task()
+            } catch (e) {
+                expect(e).toBeUndefined()
+            }
+        } finally {
+            sdk.cleanup()
+        }
+    })
+
+    test("Background task with custom fields should work", async () => {
+        expect.hasAssertions();
+        const sdk = ProviderSdk.create_provider(papieaUrl, adminKey, server_config.host, server_config.port, httpsAgent);
+        try {
+            let times_invoked = 0
+            let count = 0
+            first_provider_prefix = "location_provider_intentful_background_task_custom"
+            const location = sdk.new_kind(locationDataDescription);
+            sdk.version(provider_version);
+            sdk.prefix(first_provider_prefix);
+            task = sdk.background_task("sample-task", 5, async (ctx: IntentfulCtx_Interface, task_ctx: any | undefined) => {
+                if (task_ctx) {
+                    count = task_ctx.count
+                }
+                times_invoked++
+            }, null, {
+                type: "object",
+                properties: {
+                    count: {
+                        type: "number"
+                    }
+                }
+            })
+            try {
+                await sdk.register();
+                await task.start_task()
+                await timeout(4000)
+                expect(times_invoked).toEqual(1)
+                await task.update_task({
+                    count: 1
+                })
+                await timeout(5000)
+                expect(count).toEqual(1)
+                await task.kill_task()
+            } catch (e) {
+                console.log(`Couldn't get entity: ${e}`)
+                expect(e).toBeUndefined()
+            }
+        } finally {
+            sdk.cleanup()
         }
     })
 })

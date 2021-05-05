@@ -8,47 +8,49 @@ import { SortParams } from "./entity_api_impl";
 import { CheckNoQueryParams, check_request } from "../validator/express_validator";
 import {Version} from "papiea-core"
 import {RequestContext} from "papiea-backend-utils"
+import * as Async from "../utils/async"
 
 const CheckProcedureCallParams = check_request({
     allowed_query_params: []
 });
 
-interface PaginatedResult {
-    results: any[],
+interface PaginatedResult<T> {
+    results: T[],
     entity_count: number
 }
 
 export function createEntityAPIRouter(entity_api: Entity_API, trace: Function): Router {
     const router = Router();
 
-    const paginateEntities = async function(entities: any, skip: number, size: number): Promise<PaginatedResult> {
+    const paginateEntities = function<T>(entities: T[], skip: number, size: number): PaginatedResult<T> {
         const totalEntities: number = entities.length;
         const pageEntities = entities.slice(skip, skip + size);
 
         return { results: pageEntities, entity_count: totalEntities };
     }
 
-    const filterEntities = async (user: UserAuthInfo, prefix: string, version: Version, kind_name: string, filter: any, skip: number, size: number, searchDeleted: boolean, exactMatch: boolean, ctx: RequestContext, sortParams?: SortParams): Promise<any> => {
+    const filterEntities = async (user: UserAuthInfo, prefix: string, version: Version, kind_name: string, filter: any, skip: number, size: number, searchDeleted: boolean, exactMatch: boolean, ctx: RequestContext, sortParams?: SortParams): Promise<PaginatedResult<any>> => {
         if (searchDeleted) {
-            const entities = await entity_api.filter_deleted(user, prefix, version, kind_name, filter, exactMatch, ctx, sortParams)
-            return paginateEntities(Object.values(entities), skip, size)
+            const entities = await Async.collect(
+                entity_api.filter_deleted(user, prefix, version, kind_name, filter, exactMatch, ctx, sortParams))
+            return paginateEntities(entities, skip, size)
         }
-        const resultSpecs: any[] = await entity_api.filter_entity_spec(user, prefix, version, kind_name, filter, exactMatch, ctx, sortParams);
 
-        const resultStatuses: any[] = await entity_api.filter_entity_status(user, prefix, version, kind_name, filter, exactMatch, ctx, sortParams);
+        const resultSpecs = entity_api.filter_entity_spec(
+            user, prefix, version, kind_name, filter, exactMatch, ctx, sortParams);
+        const resultStatuses = entity_api.filter_entity_status(
+            user, prefix, version, kind_name, filter, exactMatch, ctx, sortParams);
 
-        const uuidToEntity: { [key: string]: any } = {};
+        const uuidToEntity = new Map<string, any>();
+        for await (const x of resultSpecs) {
+            uuidToEntity.set(x[0].uuid, {metadata: x[0], spec: x[1]});
+        }
+        for await (const x of resultStatuses) {
+            const e = uuidToEntity.get(x[0].uuid);
+            if (e) e.status = x[1];
+        }
 
-        resultSpecs.forEach(x => {
-            uuidToEntity[x[0].uuid] = { metadata: x[0], spec: x[1] };
-        });
-
-        resultStatuses.forEach(x => {
-            if (uuidToEntity[x[0].uuid] !== undefined)
-                uuidToEntity[x[0].uuid].status = x[1];
-        });
-
-        const entities = Object.values(uuidToEntity);
+        const entities = Array.from(uuidToEntity.values());
         return paginateEntities(entities, skip, size)
     };
 
@@ -78,8 +80,10 @@ export function createEntityAPIRouter(entity_api: Entity_API, trace: Function): 
         if (req.query.status) {
             filter.status = req.query.status
         }
-        const intent_watchers = await entity_api.filter_intent_watcher(req.user, filter, res.locals.ctx, sortParams)
-        res.json(await paginateEntities(intent_watchers, skip, size))
+        const [watcher_iter, watcher_cursor] = entity_api.filter_intent_watcher(req.user, filter, res.locals.ctx, sortParams)
+        const intent_watchers = await Async.collect(watcher_iter)
+        await watcher_cursor.close()
+        res.json(paginateEntities(intent_watchers, skip, size))
     }))
 
     router.post("/intent_watcher/filter", check_request({
@@ -101,8 +105,10 @@ export function createEntityAPIRouter(entity_api: Entity_API, trace: Function): 
         if (req.body.status) {
             filter.status = req.body.status
         }
-        const intent_watchers = await entity_api.filter_intent_watcher(req.user, filter, res.locals.ctx, sortParams)
-        res.json(await paginateEntities(intent_watchers, skip, size))
+        const [watcher_iter, watcher_cursor] = entity_api.filter_intent_watcher(req.user, filter, res.locals.ctx, sortParams)
+        const intent_watchers = await Async.collect(watcher_iter)
+        await watcher_cursor.close()
+        res.json(paginateEntities(intent_watchers, skip, size))
     }))
 
     router.get("/:prefix/:version/:kind", check_request({
@@ -125,8 +131,8 @@ export function createEntityAPIRouter(entity_api: Entity_API, trace: Function): 
     }));
 
     router.get("/:prefix/:version/:kind/:uuid", CheckNoQueryParams, trace("get_entity"), asyncHandler(async (req, res) => {
-        const [metadata, spec] = await entity_api.get_entity_spec(req.user, req.params.prefix, req.params.version, req.params.kind, req.params.uuid, res.locals.ctx);
-        const [_, status] = await entity_api.get_entity_status(req.user, req.params.prefix,
+        const [, spec] = await entity_api.get_entity_spec(req.user, req.params.prefix, req.params.version, req.params.kind, req.params.uuid, res.locals.ctx);
+        const [metadata, status] = await entity_api.get_entity_status(req.user, req.params.prefix,
                                                                req.params.version, req.params.kind, req.params.uuid, res.locals.ctx);
         res.json({ "metadata": metadata, "spec": spec, "status": status });
     }));
@@ -167,8 +173,8 @@ export function createEntityAPIRouter(entity_api: Entity_API, trace: Function): 
         allowed_body_params: ['metadata', 'spec']
     }), trace("update_entity"), asyncHandler(async (req, res) => {
         const request_metadata = req.body.metadata;
-        const watcher = await entity_api.update_entity_spec(req.user, req.params.uuid, req.params.prefix, request_metadata.spec_version, request_metadata.extension, req.params.kind, req.params.version, req.body.spec, res.locals.ctx);
-        res.json({ "watcher": watcher });
+        const result = await entity_api.update_entity_spec(req.user, req.params.uuid, req.params.prefix, request_metadata.spec_version, request_metadata.extension, req.params.kind, req.params.version, req.body.spec, res.locals.ctx);
+        res.json(result);
     }));
 
     router.post("/:prefix/:version/:kind", check_request({

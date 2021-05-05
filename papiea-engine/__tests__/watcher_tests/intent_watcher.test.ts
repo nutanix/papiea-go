@@ -109,7 +109,7 @@ describe("Intent Watcher tests", () => {
             }
         });
         to_delete_metadata = metadata
-        const { data: { watcher } } = await entityApi.put(`/${ provider.prefix }/${ provider.version }/${ locationDifferKind.name }/${ metadata.uuid }`, {
+        const { data: { intent_watcher } } = await entityApi.put(`/${ provider.prefix }/${ provider.version }/${ locationDifferKind.name }/${ metadata.uuid }`, {
             spec: {
                 x: 20,
                 y: 11
@@ -118,10 +118,10 @@ describe("Intent Watcher tests", () => {
                 spec_version: 1
             }
         })
-        expect(watcher.status).toEqual(IntentfulStatus.Active)
-        expect(watcher.diffs[0].diff_fields[0]["spec"][0]).toEqual(20)
-        expect(watcher.diffs[0].diff_fields[0]["status"][0]).toEqual(10)
-        createdWatcher = watcher
+        expect(intent_watcher.status).toEqual(IntentfulStatus.Active)
+        expect(intent_watcher.diffs[0].diff_fields[0]["spec"][0]).toEqual(20)
+        expect(intent_watcher.diffs[0].diff_fields[0]["status"][0]).toEqual(10)
+        createdWatcher = intent_watcher
     })
 
     test("Intent watcher created through updating the spec with multiple diffs", async () => {
@@ -139,7 +139,7 @@ describe("Intent Watcher tests", () => {
         });
         to_delete_metadata = metadata
         await entityApi.get(`/${ provider.prefix }/${ provider.version }/${ locationDifferKind.name }/${ metadata.uuid }`)
-        const { data: { watcher } } = await entityApi.put(`/${ provider.prefix }/${ provider.version }/${ locationDifferKind.name }/${ metadata.uuid }`, {
+        const { data: { intent_watcher } } = await entityApi.put(`/${ provider.prefix }/${ provider.version }/${ locationDifferKind.name }/${ metadata.uuid }`, {
             spec: {
                 x: 20,
                 y: 110
@@ -148,12 +148,12 @@ describe("Intent Watcher tests", () => {
                 spec_version: 1
             }
         })
-        expect(watcher.status).toEqual(IntentfulStatus.Active)
-        expect(watcher.diffs[0].diff_fields[0].spec[0]).toEqual(20)
-        expect(watcher.diffs[1].diff_fields[0].spec[0]).toEqual(110)
-        expect(watcher.diffs[0].diff_fields[0].status[0]).toEqual(10)
-        expect(watcher.diffs[1].diff_fields[0].status[0]).toEqual(11)
-        createdWatcher = watcher
+        expect(intent_watcher.status).toEqual(IntentfulStatus.Active)
+        expect(intent_watcher.diffs[0].diff_fields[0].spec[0]).toEqual(20)
+        expect(intent_watcher.diffs[1].diff_fields[0].spec[0]).toEqual(110)
+        expect(intent_watcher.diffs[0].diff_fields[0].status[0]).toEqual(10)
+        expect(intent_watcher.diffs[1].diff_fields[0].status[0]).toEqual(11)
+        createdWatcher = intent_watcher
     })
 
     test("Intent watcher created through updating the spec and queried via API", async () => {
@@ -170,7 +170,7 @@ describe("Intent Watcher tests", () => {
             }
         });
         to_delete_metadata = metadata
-        const { data: { watcher } } = await entityApi.put(`/${ provider.prefix }/${ provider.version }/${ locationDifferKind.name }/${ metadata.uuid }`, {
+        const { data: { intent_watcher } } = await entityApi.put(`/${ provider.prefix }/${ provider.version }/${ locationDifferKind.name }/${ metadata.uuid }`, {
             spec: {
                 x: 20,
                 y: 11
@@ -180,10 +180,10 @@ describe("Intent Watcher tests", () => {
             }
         })
 
-        const result = await entityApi.get(`/intent_watcher/${ watcher.uuid }`)
+        const result = await entityApi.get(`/intent_watcher/${ intent_watcher.uuid }`)
         expect(result.data.status).toEqual(IntentfulStatus.Active)
         expect(result.data.diffs).toBeUndefined()
-        createdWatcher = watcher
+        createdWatcher = intent_watcher
     })
 
     test("Intent watcher created through updating the spec and queried as list via API", async () => {
@@ -200,7 +200,7 @@ describe("Intent Watcher tests", () => {
             }
         });
         to_delete_metadata = metadata
-        const { data: { watcher } } = await entityApi.put(`/${ provider.prefix }/${ provider.version }/${ locationDifferKind.name }/${ metadata.uuid }`, {
+        const { data: { intent_watcher } } = await entityApi.put(`/${ provider.prefix }/${ provider.version }/${ locationDifferKind.name }/${ metadata.uuid }`, {
             spec: {
                 x: 20,
                 y: 11
@@ -212,7 +212,7 @@ describe("Intent Watcher tests", () => {
 
         const result = await entityApi.get(`/intent_watcher`)
         expect(result.data.results.length).toBeGreaterThanOrEqual(1)
-        createdWatcher = watcher
+        createdWatcher = intent_watcher
     })
 
     test("Intent watcher created through updating the spec and queried as list via POST API", async () => {
@@ -229,7 +229,7 @@ describe("Intent Watcher tests", () => {
             }
         });
         to_delete_metadata = metadata
-        const { data: { watcher } } = await entityApi.put(`/${ provider.prefix }/${ provider.version }/${ locationDifferKind.name }/${ metadata.uuid }`, {
+        const { data: { intent_watcher } } = await entityApi.put(`/${ provider.prefix }/${ provider.version }/${ locationDifferKind.name }/${ metadata.uuid }`, {
             spec: {
                 x: 20,
                 y: 11
@@ -241,6 +241,6 @@ describe("Intent Watcher tests", () => {
 
         const result = await entityApi.post(`/intent_watcher/filter`)
         expect(result.data.results.length).toBeGreaterThanOrEqual(1)
-        createdWatcher = watcher
+        createdWatcher = intent_watcher
     })
 })

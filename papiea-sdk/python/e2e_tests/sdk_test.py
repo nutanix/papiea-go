@@ -854,10 +854,10 @@ class TestEntityOperations:
                         nonlocal callback_invoked
                         callback_invoked = True
 
-                    watcher_ref = await object_entity_client.update(b1_object1_entity.metadata, spec)
+                    b1_object1_entity = await object_entity_client.update(b1_object1_entity.metadata, spec)
 
                     watcher_status = IntentfulStatus.Completed_Successfully
-                    task = asyncio.create_task(sdk.intent_watcher.wait_for_watcher_status(watcher_ref.watcher, watcher_status, 50))
+                    task = asyncio.create_task(sdk.intent_watcher.wait_for_watcher_status(b1_object1_entity.intent_watcher, watcher_status, 50))
                     task.add_done_callback(cb_function)
 
                     await asyncio.sleep(10)

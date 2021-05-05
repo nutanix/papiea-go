@@ -1,6 +1,6 @@
 import { Spec_DB } from "./spec_db_interface";
 import { Collection, Db } from "mongodb";
-import { ConflictingEntityError, EntityNotFoundError } from "./utils/errors";
+import { SpecConflictingEntityError, EntityNotFoundError } from "./utils/errors";
 import {Entity_Reference, Metadata, Spec, Entity, Provider_Entity_Reference} from "papiea-core"
 import { SortParams } from "../entity/entity_api_impl";
 import { Logger, dotnotation } from "papiea-backend-utils";
@@ -35,6 +35,7 @@ export class Spec_DB_Mongo implements Spec_DB {
             additional_fields = dotnotation({"metadata.extension": entity_metadata.extension});
         }
         additional_fields["metadata.created_at"] = new Date();
+        additional_fields["metadata.status_hash"] = entity_metadata.status_hash
         const filter = {
             "metadata.uuid": entity_metadata.uuid,
             "metadata.kind": entity_metadata.kind,
@@ -57,7 +58,7 @@ export class Spec_DB_Mongo implements Spec_DB {
             if (result.result.n !== 1) {
                 throw new PapieaException({ message: `MongoDBError: Amount of updated spec entries should equal to 1, found ${result.result.n} entries for kind: ${entity_metadata.provider_prefix}/${entity_metadata.provider_version}/${entity_metadata.kind}.`, entity_info: { provider_prefix: entity_metadata.provider_prefix, provider_version: entity_metadata.provider_version, kind_name: entity_metadata.kind, additional_info: { "entity_uuid": entity_metadata.uuid }}})
             }
-            return this.get_spec(entity_metadata);
+            return await this.get_spec(entity_metadata);
         } catch (err) {
             if (err.code === 11000) {
                 let res:any
@@ -67,7 +68,7 @@ export class Spec_DB_Mongo implements Spec_DB {
                     throw new PapieaException({ message: `MongoDBError: Cannot create entity spec for kind: ${entity_metadata.provider_prefix}/${entity_metadata.provider_version}/${entity_metadata.kind}.`, entity_info: { provider_prefix: entity_metadata.provider_prefix, provider_version: entity_metadata.provider_version, kind_name: entity_metadata.kind, additional_info: { "entity_uuid": entity_metadata.uuid }}, cause: e})
                 }
                 const [metadata, spec] = res
-                throw new ConflictingEntityError(`MongoDBError: Spec with this version already exists for entity with UUID ${entity_metadata.uuid} of kind: ${entity_metadata.provider_prefix}/${entity_metadata.provider_version}/${entity_metadata.kind}.`, metadata);
+                throw new SpecConflictingEntityError(`MongoDBError: Spec with this version already exists for entity with UUID ${entity_metadata.uuid} of kind: ${entity_metadata.provider_prefix}/${entity_metadata.provider_version}/${entity_metadata.kind}.`, metadata);
             } else {
                 throw new PapieaException({ message: `MongoDBError: Something went wrong in update spec for entity of kind: ${entity_metadata.provider_prefix}/${entity_metadata.provider_version}/${entity_metadata.kind}.`, entity_info: { provider_prefix: entity_metadata.provider_prefix, provider_version: entity_metadata.provider_version, kind_name: entity_metadata.kind, additional_info: { "entity_uuid": entity_metadata.uuid }}, cause: err });
             }

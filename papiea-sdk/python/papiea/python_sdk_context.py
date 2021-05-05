@@ -1,11 +1,11 @@
 import json
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 from deprecated import deprecated
 from aiohttp import ClientSession
 from multidict import CIMultiDict
 
 from .client import EntityCRUD
-from .core import Action, Entity, EntityReference, Secret, Status, Version
+from .core import Action, Entity, EntityReference, Metadata, Secret, Status, Version
 
 
 class ProceduralCtx(object):
@@ -85,18 +85,18 @@ class ProceduralCtx(object):
             return False
 
     async def update_status(
-        self, entity_reference: EntityReference, status: Status
-    ):
+        self, entity_metadata: Metadata, status: Status
+    ) -> Any:
         url = f"{self.provider.get_prefix()}/{self.provider.get_version()}"
-        await self.provider_api.patch(
+        return await self.provider_api.patch(
             f"{url}/update_status",
-            {"entity_ref": entity_reference, "status": status},
+            {"metadata": entity_metadata, "status": status},
         )
 
     @deprecated(version='0.11.0', reason="This function will be removed soon. Use update_status instead.")
     async def replace_status(
-        self, entity_reference: EntityReference, status: Status
-    ):
+        self, entity_metadata: Metadata, status: Status
+    ) -> Any:
         '''
         Function which calls post on the update_status endpoint
         which internally calls the mongo update function with upsert
@@ -106,9 +106,9 @@ class ProceduralCtx(object):
         is found for the query.
         '''
         url = f"{self.provider.get_prefix()}/{self.provider.get_version()}"
-        await self.provider_api.post(
+        return await self.provider_api.post(
             f"{url}/update_status",
-            {"entity_ref": entity_reference, "status": status},
+            {"metadata": entity_metadata, "status": status},
         )
 
     def update_progress(self, message: str, done_percent: int) -> bool:
