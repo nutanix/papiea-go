@@ -104,7 +104,7 @@ async function setUpApplication(): Promise<express.Express> {
 
 setUpApplication().then(app => {
     const https = require('https');
-    https.createServer({ key: privateKey, cert: certificate, request_cert: true }, app).listen(serverPort, function () {
+    https.createServer({ key: privateKey, cert: certificate }, app).listen(serverPort, function () {
         console.info(`Papiea app listening on https port ${serverPort}!`);
     });
 }).catch(console.error);
