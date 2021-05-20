@@ -13,9 +13,9 @@ Please see [Papiea's design document](https://nutanix.github.io/papiea/Papiea-de
 
 | Component  | Version |
 | ------------- | ------------- |
-  | Engine (docker) | nutanix-docker.jfrog.io/papiea:0.9.61_2275 |
-  | Client/SDK (typescript)  | 0.9.61+2275 |
-  | Client/SDK (python)  | 0.9.61+2275 |
+  | Engine (docker) | 2284: digest: sha256:e2c33f60b3497e49cf0446436177c753e4e65f22f472f1037f93f1d75d3eeb8a size: 1578 |
+  | Client/SDK (typescript)  | 0.10.0+9999 |
+  | Client/SDK (python)  | 0.10.0+9999 |
 
 ## Build Instructions Papiea
 
