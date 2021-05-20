@@ -29,6 +29,8 @@ import { AuditLogger } from "./audit_logging"
 import { BasicDiffer } from "./intentful_core/differ_impl"
 import { getConfig } from "./utils/arg_parser"
 import {getPapieaVersion, getVersionVerifier} from "./utils/utils"
+import { readFileSync } from "fs";
+import { resolve } from "path";
 const cookieParser = require('cookie-parser');
 
 process.title = "papiea"
@@ -44,6 +46,8 @@ const papieaDebug = config.debug
 const verbosityOptions = config.logging_verbosity
 const prettyPrint = config.pretty_print
 const tracingConfig = config.tracing_config
+const privateKey = readFileSync(resolve(__dirname, config.server_key_path), "utf-8")
+const certificate = readFileSync(resolve(__dirname, config.server_cert_path), "utf-8")
 
 async function setUpApplication(): Promise<express.Express> {
     const logger = LoggerFactory.makeLogger({level: loggingLevel, verbosity_options: verbosityOptions, pretty_print: prettyPrint});
@@ -99,7 +103,8 @@ async function setUpApplication(): Promise<express.Express> {
 }
 
 setUpApplication().then(app => {
-    app.listen(serverPort, function () {
-        console.info(`Papiea app listening on port ${serverPort}!`);
+    const https = require('https');
+    https.createServer({ key: privateKey, cert: certificate }, app).listen(serverPort, function () {
+        console.info(`Papiea app listening on https port ${serverPort}!`);
     });
 }).catch(console.error);

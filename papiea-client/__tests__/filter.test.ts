@@ -2,6 +2,9 @@ import { kind_client } from "../src/entity_client"
 import { ProviderBuilder } from "../../papiea-engine/__tests__/test_data_factory"
 import axios from "axios"
 import { Spec } from "papiea-core"
+import https = require('https')
+import { resolve } from "path"
+import { readFileSync } from "fs"
 
 declare var process: {
     env: {
@@ -11,20 +14,25 @@ declare var process: {
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
+const httpsAgent = new https.Agent({
+    ca: readFileSync(resolve(__dirname, '../certs/ca.crt'), 'utf8')
+})
 
 const providerApi = axios.create({
-    baseURL: `http://127.0.0.1:${serverPort}/provider/`,
+    baseURL: `https://localhost:${serverPort}/provider/`,
     timeout: 1000,
     headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${adminKey}`
-    }
+    },
+    httpsAgent
 });
 
 describe("Entity API tests", () => {
     const providerPrefix = "location_provider_iter_test";
     const providerVersion = "0.0.3";
     let kind_name: string
+
     beforeAll(async () => {
         const provider = new ProviderBuilder(providerPrefix).withVersion(providerVersion).withOAuth2Description().withKinds().build();
         kind_name = provider.kinds[0].name;
@@ -36,7 +44,7 @@ describe("Entity API tests", () => {
     });
     test("Filtering via async iterators should work correctly", async () => {
         const uuids: string[] = []
-        const location_client = kind_client("http://localhost:3000", providerPrefix, kind_name, providerVersion, '')
+        const location_client = kind_client("https://localhost:3000", providerPrefix, kind_name, providerVersion, '', httpsAgent)
         let promises = []
         const specs = [1,2,3,4]
         for (let i of specs) {
@@ -62,7 +70,7 @@ describe("Entity API tests", () => {
 
     test("Filtering via async iterators with batch size should work correctly", async () => {
         const uuids: string[] = []
-        const location_client = kind_client("http://localhost:3000", providerPrefix, kind_name, providerVersion, '')
+        const location_client = kind_client("https://localhost:3000", providerPrefix, kind_name, providerVersion, '', httpsAgent)
         let promises = []
         const specs = [1,2,3,4]
         for (let i of specs) {
@@ -87,7 +95,7 @@ describe("Entity API tests", () => {
 
     test("List async iterators should work correctly", async () => {
         const uuids: string[] = []
-        const location_client = kind_client("http://localhost:3000", providerPrefix, kind_name, providerVersion, '')
+        const location_client = kind_client("https://localhost:3000", providerPrefix, kind_name, providerVersion, '', httpsAgent)
         let promises = []
         const specs = [1,2,3,4]
         for (let i of specs) {

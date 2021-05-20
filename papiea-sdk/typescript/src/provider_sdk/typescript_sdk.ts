@@ -36,6 +36,7 @@ import {getTracer, LoggerFactory} from "papiea-backend-utils"
 import { InvocationError, SecurityApiError } from "./typescript_sdk_exceptions"
 import {get_papiea_version, spanSdkOperation, validate_error_codes, isAxiosError} from "./typescript_sdk_utils"
 import {Tracer} from "opentracing"
+import https = require('https')
 
 class SecurityApiImpl implements SecurityApi {
     readonly provider: ProviderSdk;
@@ -96,6 +97,7 @@ export class ProviderSdk implements ProviderImpl {
     protected meta_ext: { [key: string]: string } | null = null;
     protected _provider: Provider | null;
     protected readonly _papiea_url: string;
+    protected readonly _https_agent: https.Agent;
     protected readonly _s2skey: Secret;
     protected _policy: string | null = null;
     protected _oauth2: string | null = null;
@@ -106,7 +108,7 @@ export class ProviderSdk implements ProviderImpl {
     protected readonly _sdk_version: Version;
     protected readonly _tracer: Tracer
 
-    constructor(papiea_url: string, s2skey: Secret, server_manager?: Provider_Server_Manager, allowExtraProps?: boolean, tracer?: Tracer) {
+    constructor(papiea_url: string, s2skey: Secret, server_manager?: Provider_Server_Manager, httpsAgent?: https.Agent, allowExtraProps?: boolean, tracer?: Tracer) {
         this._version = null;
         this._prefix = null;
         this._kind = [];
@@ -114,20 +116,22 @@ export class ProviderSdk implements ProviderImpl {
         this._papiea_url = papiea_url;
         this._s2skey = s2skey;
         this._server_manager = server_manager || new Provider_Server_Manager();
+        this._https_agent = httpsAgent || new https.Agent()
         this._tracer = tracer ?? getTracer("papiea-sdk")
         this._procedures = {};
         this.allowExtraProps = allowExtraProps || false;
         this.get_prefix = this.get_prefix.bind(this);
         this.get_version = this.get_version.bind(this);
         this._securityApi = new SecurityApiImpl(this, s2skey);
-        this._intentWatcherClient = intent_watcher_client(papiea_url, s2skey)
+        this._intentWatcherClient = intent_watcher_client(papiea_url, s2skey, this.https_agent)
         this.providerApiAxios = axios.create({
             baseURL: this.provider_url,
             timeout: 10000,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${this._s2skey}`
-            }
+            },
+            httpsAgent: this.https_agent
         });
         this._sdk_version = get_papiea_version()
     }
@@ -154,6 +158,10 @@ export class ProviderSdk implements ProviderImpl {
 
     get entity_url(): string {
         return `${ this._papiea_url }/services`
+    }
+
+    get https_agent(): https.Agent {
+        return this._https_agent
     }
 
     public get_prefix(): string {
@@ -325,9 +333,9 @@ export class ProviderSdk implements ProviderImpl {
         throw new Error(`Malformed provider description. Missing: ${ missing_field }`)
     }
 
-    static create_provider(papiea_url: string, s2skey: Secret, public_host?: string, public_port?: number, allowExtraProps: boolean = false): ProviderSdk {
+    static create_provider(papiea_url: string, s2skey: Secret, public_host?: string, public_port?: number, httpsAgent: https.Agent = new https.Agent(), allowExtraProps: boolean = false): ProviderSdk {
         const server_manager = new Provider_Server_Manager(public_host, public_port);
-        return new ProviderSdk(papiea_url, s2skey, server_manager, allowExtraProps)
+        return new ProviderSdk(papiea_url, s2skey, server_manager, httpsAgent, allowExtraProps)
     }
 
     public secure_with(oauth_config: any, casbin_model: string, casbin_initial_policy: string) : ProviderSdk {
@@ -384,7 +392,7 @@ class Provider_Server_Manager {
     private raw_http_server: Server | null;
     private should_run: boolean;
 
-    constructor(public_host: string = "127.0.0.1", public_port: number = 9000) {
+    constructor(public_host: string = "localhost", public_port: number = 9000) {
         this.public_host = public_host;
         this.public_port = public_port;
         this.app = express();
@@ -480,7 +488,7 @@ export class BackgroundTaskBuilder {
         this.tracer = tracer
         this.name = name
         this.kind = kind_builder
-        this.kind_client = kind_client(provider.papiea_url, provider.get_prefix(), name, provider.get_version(), provider.s2s_key)
+        this.kind_client = kind_client(provider.papiea_url, provider.get_prefix(), name, provider.get_version(), provider.s2s_key, provider.https_agent)
         this.metadata_extension = metadata_extension
     }
 

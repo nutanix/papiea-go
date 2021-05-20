@@ -6,6 +6,7 @@ if [ -d "/node_modules" ] && [ ! -d "node_modules" ]; then
 fi
 
 npm run build-clj
+bash install_certificates.sh
 if [ $HOT_RELOAD == 'true' ]
 then
     if [ $PAPIEA_DEBUG == 'true' ]; then

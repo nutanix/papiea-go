@@ -1,7 +1,10 @@
 import { kind_client } from "../src/entity_client"
 import { KindBuilder, ProviderBuilder } from "../../papiea-engine/__tests__/test_data_factory"
 import axios from "axios"
+import https = require('https')
 import { IntentfulBehaviour, IntentfulStatus } from "papiea-core"
+import { readFileSync } from "fs"
+import { resolve } from "path"
 
 declare var process: {
     env: {
@@ -11,15 +14,19 @@ declare var process: {
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
+const httpsAgent = new https.Agent({
+    ca: readFileSync(resolve(__dirname, '../certs/ca.crt'))
+})
 
 const providerApi = axios.create(
     {
-        baseURL: `http://127.0.0.1:${ serverPort }/provider/`,
+        baseURL: `https://localhost:${ serverPort }/provider/`,
         timeout: 1000,
         headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${ adminKey }`
-        }
+        },
+        httpsAgent
     }
 );
 
@@ -41,7 +48,7 @@ describe("Entity API tests", () => {
 
     test("Update should return entity watcher", async () => {
         expect.assertions(1)
-        const location_client = kind_client("http://localhost:3000", providerPrefix, kind_name, providerVersion, '')
+        const location_client = kind_client("https://localhost:3000", providerPrefix, kind_name, providerVersion, '', httpsAgent)
         const entity = await location_client.create({spec: {x: 10, y: 10}})
         const { metadata, spec, intent_watcher, status } = await location_client.update(entity.metadata, {x: 12, y: 10})
         expect(intent_watcher!.status).toEqual(IntentfulStatus.Active)

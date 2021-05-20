@@ -35,3 +35,11 @@ logs/
 
 # DocDB certificate
 rds-combined-ca-bundle.pem
+
+# Server certificate
+papiea-engine/certs
+
+# Client certificate
+papiea-client/certs
+papiea-sdk/python/e2e_tests/certs
+papiea-sdk/typescript/certs

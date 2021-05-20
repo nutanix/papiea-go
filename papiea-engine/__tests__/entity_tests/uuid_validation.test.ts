@@ -3,6 +3,9 @@ import axios from "axios"
 import uuid = require("uuid");
 import { IntentfulBehaviour } from "papiea-core";
 import { AxiosResponseParser } from "papiea-backend-utils";
+import { resolve } from "path";
+import { readFileSync } from "fs";
+const https = require('https')
 
 declare var process: {
     env: {
@@ -12,20 +15,25 @@ declare var process: {
 };
 const serverPort = parseInt(process.env.SERVER_PORT || '3000');
 const adminKey = process.env.PAPIEA_ADMIN_S2S_KEY || '';
+const httpsAgent = new https.Agent({
+    ca: readFileSync(resolve(__dirname, '../../certs/ca.crt'), 'utf8')
+})
 
 const entityApi = axios.create({
-    baseURL: `http://127.0.0.1:${serverPort}/services`,
+    baseURL: `https://localhost:${serverPort}/services`,
     timeout: 10000,
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
+    httpsAgent
 });
 
 const providerApi = axios.create({
-    baseURL: `http://127.0.0.1:${serverPort}/provider/`,
+    baseURL: `https://localhost:${serverPort}/provider/`,
     timeout: 1000,
     headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${adminKey}`
-    }
+    },
+    httpsAgent
 });
 
 describe("Uuid validation tests", () => {

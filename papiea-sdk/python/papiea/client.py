@@ -1,5 +1,6 @@
 import time
 import logging
+import ssl
 from types import TracebackType
 from typing import Any, Optional, List, Type, Callable, AsyncGenerator
 
@@ -23,6 +24,7 @@ class EntityCRUD(object):
             version: str,
             kind: str,
             s2skey: Optional[str] = None,
+            sslContext: ssl.SSLContext = ssl.create_default_context(),
             logger: logging.Logger = logging.getLogger(__name__),
             tracer: Tracer = init_default_tracer()
     ):
@@ -32,7 +34,7 @@ class EntityCRUD(object):
         if s2skey is not None:
             headers["Authorization"] = f"Bearer {s2skey}"
         self.api_instance = ApiInstance(
-            f"{papiea_url}/services/{prefix}/{version}/{kind}", headers=headers, logger=logger
+            f"{papiea_url}/services/{prefix}/{version}/{kind}", headers=headers, logger=logger, sslContext=sslContext
         )
         self.kind = kind
         self.tracer = tracer
@@ -124,6 +126,7 @@ class IntentWatcherClient(object):
             self,
             papiea_url: str,
             s2skey: Secret = None,
+            sslContext: ssl.SSLContext = ssl.create_default_context(),
             logger: logging.Logger = logging.getLogger(__name__),
             tracer: Optional[Tracer] = init_default_tracer()
     ):
@@ -136,7 +139,7 @@ class IntentWatcherClient(object):
         if s2skey is not None:
             headers["Authorization"] = f"Bearer {s2skey}"
         self.api_instance = ApiInstance(
-            f"{papiea_url}/services/intent_watcher", headers=headers, logger=logger
+            f"{papiea_url}/services/intent_watcher", headers=headers, logger=logger, sslContext=sslContext
         )
 
         self.logger = logger
@@ -194,6 +197,7 @@ class ProviderClient(object):
             provider: str,
             version: str,
             s2skey: Optional[str] = None,
+            sslContext: ssl.SSLContext = ssl.create_default_context(),
             logger: logging.Logger = logging.getLogger(__name__),
             tracer: Optional[Tracer] = init_default_tracer()
     ):
@@ -201,6 +205,7 @@ class ProviderClient(object):
         self.provider = provider
         self.version = version
         self.s2skey = s2skey
+        self.sslContext = sslContext
         self.logger = logger
         headers = {
             "Content-Type": "application/json",
@@ -208,7 +213,7 @@ class ProviderClient(object):
         if s2skey is not None:
             headers["Authorization"] = f"Bearer {s2skey}"
         self.api_instance = ApiInstance(
-            f"{papiea_url}/services/{provider}/{version}", headers=headers, logger=logger
+            f"{papiea_url}/services/{provider}/{version}", headers=headers, logger=logger, sslContext=sslContext
         )
         self.tracer = tracer
 
@@ -226,7 +231,7 @@ class ProviderClient(object):
 
     def get_kind(self, kind: str) -> EntityCRUD:
         return EntityCRUD(
-            self.papiea_url, self.provider, self.version, kind, self.s2skey, self.logger
+            self.papiea_url, self.provider, self.version, kind, self.s2skey, self.sslContext, self.logger
         )
 
     async def invoke_procedure(self, procedure_name: str, input: Any) -> Any:

@@ -16,6 +16,7 @@ import axios, { AxiosInstance } from "axios";
 import { ProviderSdk } from "./typescript_sdk";
 import { IncomingHttpHeaders } from "http";
 import { provider_client, ProviderClient } from "papiea-client";
+import https = require('https')
 
 export class ProceduralCtx implements ProceduralCtx_Interface {
     base_url: string;
@@ -23,6 +24,7 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
     provider_version: string;
     provider_url: string;
     private readonly providerApiAxios: AxiosInstance;
+    provider_https_agent: https.Agent;
     provider: ProviderSdk;
     headers: IncomingHttpHeaders;
     loggerFactory: LoggerFactory
@@ -36,6 +38,7 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
         this.provider_prefix = provider.get_prefix();
         this.provider_version = provider.get_version();
         this.providerApiAxios = provider.provider_api_axios;
+        this.provider_https_agent = provider.https_agent
         this.provider = provider;
         this.headers = headers
         this.loggerFactory = new LoggerFactory({
@@ -59,7 +62,7 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
     async try_check(provider_prefix: string, provider_version: Version, entityAction: [Action, Entity_Reference][], headers: any) {
         try {
             const { data: { success } } = await axios.post(`${ this.base_url }/${ provider_prefix }/${ provider_version }/check_permission`,
-                entityAction, { headers: headers });
+                entityAction, { httpsAgent: this.provider_https_agent, headers });
             return success === "Ok";
         } catch (e) {
             this.get_logger().info(`Try check permission failed due to error: ${e.response?.data?.error.toString()}`)
@@ -142,7 +145,7 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
                 token = 'anonymous'
             }
         }
-        return provider_client(this.provider.papiea_url, this.provider_prefix, this.provider_version, token)
+        return provider_client(this.provider.papiea_url, this.provider_prefix, this.provider_version, token, this.provider_https_agent)
     }
 
     cleanup() {

@@ -15,9 +15,9 @@ from papiea.python_sdk import ProviderSdk
 
 SERVER_PORT = int(os.environ.get("SERVER_PORT", "3000"))
 ADMIN_KEY = os.environ.get("PAPIEA_ADMIN_S2S_KEY", "")
-PAPIEA_URL = "http://127.0.0.1:3000"
+PAPIEA_URL = "http://localhost:3000"
 
-SERVER_CONFIG_HOST = "127.0.0.1"
+SERVER_CONFIG_HOST = "localhost"
 SERVER_CONFIG_PORT = 9005
 PROVIDER_VERSION = "0.1.0"
 PROVIDER_ADMIN_S2S_KEY = "Sa8xaic9"

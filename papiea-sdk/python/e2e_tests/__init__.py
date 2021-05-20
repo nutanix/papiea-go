@@ -1,5 +1,6 @@
 import logging
 import os
+import ssl
 from typing import Optional
 
 from opentracing import Tracer
@@ -12,13 +13,15 @@ from papiea.tracing_utils import init_default_tracer
 
 SERVER_PORT = int(os.environ.get("SERVER_PORT", "3000"))
 PAPIEA_ADMIN_S2S_KEY = os.environ.get("PAPIEA_ADMIN_S2S_KEY", "")
-PAPIEA_URL = os.getenv("PAPIEA_URL", "http://127.0.0.1:3000")
+PAPIEA_URL = os.getenv("PAPIEA_URL", "https://localhost:3000")
 
-SERVER_CONFIG_HOST = "127.0.0.1"
+SERVER_CONFIG_HOST = "localhost"
 SERVER_CONFIG_PORT = 9005
 PROVIDER_PREFIX = "test_provider"
 PROVIDER_VERSION = "0.1.0"
 PROVIDER_ADMIN_S2S_KEY = "Sa8xaic9"
+PROVIDER_SSL_CONTEXT = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+PROVIDER_SSL_CONTEXT.load_verify_locations(os.path.abspath("./certs/ca.crt"))
 USER_S2S_KEY = ""
 
 BUCKET_KIND = "bucket"
@@ -37,7 +40,7 @@ logging.basicConfig(
 
 def get_client(kind: str, tracer: Tracer = init_default_tracer()):
     return EntityCRUD(
-        PAPIEA_URL, PROVIDER_PREFIX, PROVIDER_VERSION, kind, USER_S2S_KEY, tracer=tracer
+        PAPIEA_URL, PROVIDER_PREFIX, PROVIDER_VERSION, kind, USER_S2S_KEY, PROVIDER_SSL_CONTEXT, tracer=tracer
     )
 
 
