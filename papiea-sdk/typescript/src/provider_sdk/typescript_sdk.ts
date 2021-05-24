@@ -271,7 +271,6 @@ export class ProviderSdk implements ProviderImpl {
             try {
                 const span = spanSdkOperation(`${name}_provider_procedure_sdk_handler`, this._tracer, req, this.provider)
                 const result = await handler(ctx, req.body.input)
-                ctx.cleanup()
                 res.json(result);
                 span.finish()
             } catch (e) {
@@ -671,7 +670,6 @@ export class Kind_Builder {
                     spec: req.body.spec,
                     status: req.body.status
                 }, req.body.input);
-                ctx.cleanup()
                 res.json(result);
                 span.finish()
             } catch (e) {
@@ -747,7 +745,6 @@ export class Kind_Builder {
                     spec: req.body.spec,
                     status: req.body.status
                 }, req.body.input);
-                ctx.cleanup()
                 res.json(result);
                 span.finish()
             } catch (e) {
@@ -793,7 +790,6 @@ export class Kind_Builder {
             try {
                 const span = spanSdkOperation(`${name}_kind_procedure_sdk_handler`, this.tracer, req, this.provider.provider, {kind: this.kind.name})
                 const result = await handler(ctx, req.body.input);
-                ctx.cleanup()
                 res.json(result);
                 span.finish()
             } catch (e) {
@@ -825,7 +821,6 @@ export class Kind_Builder {
             logger.info(`Input schema is undefined for on_create handler, using the schema for kind: ${this.kind.name}`)
             description.input_schema = this.kind.kind_structure
         }
-        handle.cleanup()
         this.kind_procedure(name, description, handler)
         return this
     }
@@ -835,7 +830,6 @@ export class Kind_Builder {
         const loggerFactory = new LoggerFactory({logPath: name})
         const [logger, handle] = loggerFactory.createLogger()
         logger.info(`You are registering on delete handler for kind: ${this.kind.name}. Note, this is a pre delete handler. The behaviour is due to change`)
-        handle.cleanup()
         this.kind_procedure(name, {}, handler)
         return this
     }

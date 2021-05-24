@@ -147,10 +147,4 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
         }
         return provider_client(this.provider.papiea_url, this.provider_prefix, this.provider_version, token, this.provider_https_agent)
     }
-
-    cleanup() {
-        for (let handle of this.loggerHandles) {
-            handle.cleanup()
-        }
-    }
 }

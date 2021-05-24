@@ -1,6 +1,4 @@
-import * as winston from 'winston'
-import {Format} from 'logform'
-
+import * as pino from 'pino'
 import {inspect} from 'util'
 
 export type LoggingFieldOptions = "headers" | "request_body" | "response_body"
@@ -31,8 +29,6 @@ export function logLevelFromString(str: string) : LogLevel | undefined {
 
 export interface Logger {
     opts(): LoggerOptions
-    log(level: LogLevel, msg: any, ...messages: any[]): void
-
     emerg(msg: any, ...messages: any[]): void
     alert(msg: any, ...messages: any[]): void
     crit(msg: any, ...messages: any[]): void
@@ -45,12 +41,7 @@ export interface Logger {
 }
 
 export class LoggerHandle {
-    constructor(private logger: winston.Logger) {
-    }
-
-    cleanup(): void {
-        this.logger.close()
-        this.logger.clear()
+    constructor(private logger: pino.Logger) {
     }
 }
 
@@ -94,22 +85,22 @@ export class LoggerFactory {
 
     createLogger(options?: Partial<LoggerOptions>): [Logger, LoggerHandle] {
         const opts = LoggerFactory.mergeOptions(this.options, options ?? {})
-        const formatArgs: Format[] = [winston.format.timestamp()]
+        let destination = pino.destination(1)
 
         if (opts.logPath) {
-            formatArgs.push(winston.format.label({label: opts.logPath}))
+            destination = pino.destination(opts.logPath)
         }
+
+        let custom_logger: ((object: object) => object) | undefined = undefined
 
         switch (opts.pretty_print) {
         case false: // json
-            formatArgs.push(winston.format.json())
             break
 
         case true:  // pretty
             const skip_fields = ['level','timestamp','label','message','stack']
 
-            formatArgs.push(winston.format.errors({stack: true}))
-            formatArgs.push(winston.format.printf(info => {
+            custom_logger = (info: any): any => {
                 let msg = `${info.level}\t`
                 if (info.timestamp) msg = `${msg} ${info.timestamp}`
                 if (info.label) msg = `${msg} [${info.label}]`
@@ -133,27 +124,18 @@ export class LoggerFactory {
                 }
 
                 return msg
-            }))
+            }
             break
         }
 
-        const format = winston.format.combine(...formatArgs)
-
-        const logger = winston.createLogger({
-            levels: LOG_LEVELS,
+        const logger = pino({
+            customLevels: LOG_LEVELS,
             level: opts.level,
-            exitOnError: false,
-            format: format,
-            transports: [
-                new winston.transports.Console({ format: format }),
-            ],
-            exceptionHandlers: [
-                new winston.transports.Console({
-                    format: format,
-                    level: "error"
-                }),
-            ]
-        })
+            formatters: {
+                log: custom_logger
+            },
+            timestamp: true
+        }, destination)
 
         return [new LoggerImpl(logger, opts), new LoggerHandle(logger)]
     }
@@ -179,17 +161,13 @@ export class LoggerFactory {
 }
 
 class LoggerImpl implements Logger {
-    private readonly _logger: winston.Logger
+    private readonly _logger: pino.Logger
     private readonly _opts: LoggerOptions
 
-    constructor(logger: winston.Logger, opts: LoggerOptions) { this._logger = logger; this._opts = opts }
+    constructor(logger: pino.Logger, opts: LoggerOptions) { this._logger = logger; this._opts = opts }
 
     opts(): LoggerOptions {
         return this._opts
-    }
-
-    log(level: LogLevel, msg: any, ...messages: any[]): void {
-        this._logger.log(level, msg, ...messages)
     }
 
     emerg(msg: any, ...messages: any[]): void {
@@ -205,7 +183,7 @@ class LoggerImpl implements Logger {
         this._logger.error(msg, ...messages)
     }
     audit(msg: any, ...messages: any[]): void {
-        this._logger.log('audit', msg, ...messages)
+        this._logger.audit(msg, ...messages)
     }
     warn(msg: any, ...messages: any[]): void {
         this._logger.warn(msg, ...messages)
