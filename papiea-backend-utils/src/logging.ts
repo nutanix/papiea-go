@@ -101,7 +101,8 @@ export class LoggerFactory {
             const skip_fields = ['level','timestamp','label','message','stack']
 
             custom_logger = (info: any): any => {
-                let msg = `${info.level}\t`
+                let msg = `${info}`
+                if (info.level) msg = `${msg} ${info.level}\t`
                 if (info.timestamp) msg = `${msg} ${info.timestamp}`
                 if (info.label) msg = `${msg} [${info.label}]`
 
@@ -123,7 +124,7 @@ export class LoggerFactory {
                     msg = `${msg} -- ${LoggerFactory.prettyPrint(extra)}`
                 }
 
-                return msg
+                return {msg: msg}
             }
             break
         }
@@ -132,7 +133,10 @@ export class LoggerFactory {
             customLevels: LOG_LEVELS,
             level: opts.level,
             formatters: {
-                log: custom_logger
+                log: custom_logger,
+                bindings: (bindings: pino.Bindings) => {
+                    return {}
+                }
             },
             timestamp: true
         }, destination)
