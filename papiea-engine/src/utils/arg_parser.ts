@@ -78,7 +78,8 @@ const TRANSFORM_FN_MAP: { [key in keyof PapieaConfig]: (val: any) => PapieaConfi
     logging_verbosity: toComplexLoggingVerbosity,
     tracing_config: toComplexTracingConfig,
     server_key_path: toStr,
-    server_cert_path: toStr
+    server_cert_path: toStr,
+    disable_https: toBool
 }
 
 export interface PapieaConfig {
@@ -135,7 +136,10 @@ export interface PapieaConfig {
     server_key_path: string,
 
     // Path for the server cert file
-    server_cert_path: string
+    server_cert_path: string,
+
+    // Flag to disable HTTPS server (use HTTP)
+    disable_https: boolean
 }
 
 const PAPIEA_DEFAULT_CFG: PapieaConfig = {
@@ -171,7 +175,8 @@ const PAPIEA_DEFAULT_CFG: PapieaConfig = {
         logMessages: false
     },
     server_key_path: "../certs/server.key",
-    server_cert_path: "../certs/server.crt"
+    server_cert_path: "../certs/server.crt",
+    disable_https: false
 }
 
 export function getConfig(): PapieaConfig {
