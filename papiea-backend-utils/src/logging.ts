@@ -1,5 +1,6 @@
 import * as pino from 'pino'
 import {inspect} from 'util'
+import {MixinFn} from "pino"
 
 export type LoggingFieldOptions = "headers" | "request_body" | "response_body"
 
@@ -9,15 +10,15 @@ export interface LoggingVerbosityOptions {
 }
 
 export const LOG_LEVELS = {
-    emerg: 0,
-    alert: 1,
-    crit: 2,
-    error: 3,
+    emerg: 8,
+    alert: 7,
+    crit: 6,
+    error: 5,
     audit: 4,
-    warn: 5,
-    notice: 6,
-    info: 7,
-    debug: 8,
+    warn: 3,
+    notice: 2,
+    info: 1,
+    debug: 0,
 }
 
 export type LogLevel = keyof typeof LOG_LEVELS // 'debug' | 'info' | ...
@@ -46,7 +47,8 @@ export class LoggerHandle {
 }
 
 export type LoggerOptions = {
-    logPath?: string,
+    log_path?: string,
+    log_name?: string,
     level: LogLevel,
     pretty_print: boolean,
     verbosity_options: LoggingVerbosityOptions
@@ -87,8 +89,15 @@ export class LoggerFactory {
         const opts = LoggerFactory.mergeOptions(this.options, options ?? {})
         let destination = pino.destination(1)
 
-        if (opts.logPath) {
-            destination = pino.destination(opts.logPath)
+        if (opts.log_path) {
+            destination = pino.destination(opts.log_path)
+        }
+
+        let mixin: MixinFn | undefined
+        if (opts.log_name) {
+            mixin = () => {
+                return {name: opts.log_name}
+            }
         }
 
         let custom_logger: ((object: object) => object) | undefined = undefined
@@ -131,14 +140,19 @@ export class LoggerFactory {
 
         const logger = pino({
             customLevels: LOG_LEVELS,
+            useOnlyCustomLevels: true,
             level: opts.level,
+            mixin: mixin,
             formatters: {
                 log: custom_logger,
                 bindings: (bindings: pino.Bindings) => {
                     return {}
+                },
+                level: (label: string, num: number) => {
+                    return {level: label}
                 }
             },
-            timestamp: true
+            timestamp: true,
         }, destination)
 
         return [new LoggerImpl(logger, opts), new LoggerHandle(logger)]
@@ -148,9 +162,9 @@ export class LoggerFactory {
                                ...opts: Partial<LoggerOptions>[]): LoggerOptions
     {
         return opts.reduce<LoggerOptions>((res, opt) => {
-            if (opt.logPath) {
-                res.logPath = res.logPath ? `${res.logPath}/${opt.logPath}`
-                                          : opt.logPath
+            if (opt.log_path) {
+                res.log_path = res.log_path ? `${res.log_path}/${opt.log_path}`
+                                          : opt.log_path
             }
             if (opt.level) res.level = opt.level
             if (opt.pretty_print) res.pretty_print = opt.pretty_print

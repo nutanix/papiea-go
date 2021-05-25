@@ -36,7 +36,7 @@ export class CasbinAuthorizer extends Authorizer {
                 throw new PermissionDeniedError({ message: `User does not have permission for the entity on provider: ${provider?.prefix}/${provider?.version}. Add policy to allow access to the user.`, entity_info: { provider_prefix: provider?.prefix, provider_version: provider?.version, additional_info: { "user": JSON.stringify(user), "action": action, "entity": JSON.stringify(object) }}});
             }
         } catch (e) {
-            this.logger.error("CasbinAuthorizer checkPermission error", e);
+            this.logger.error({err: "CasbinAuthorizer checkPermission error", cause: e});
             throw new PermissionDeniedError({ message: `Authorizer failed to execute for user on provider: ${provider?.prefix}/${provider?.version}.`, entity_info: { provider_prefix: provider?.prefix, provider_version: provider?.version, additional_info: { "user": JSON.stringify(user), "action": action, "entity": JSON.stringify(object), cause: e}}});
         }
     }

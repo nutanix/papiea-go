@@ -42,7 +42,7 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
         this.provider = provider;
         this.headers = headers
         this.loggerFactory = new LoggerFactory({
-            logPath: `${this.provider_prefix}/${this.provider_version}/${logPath}`})
+            log_name: `${this.provider_prefix}/${this.provider_version}/${logPath}`})
         this.loggerHandles = []
     }
 
@@ -129,7 +129,7 @@ export class ProceduralCtx implements ProceduralCtx_Interface {
     }
 
     get_logger(level?: LogLevel): Logger {
-        const [logger, handle] = this.loggerFactory.createLogger({level})
+        const [logger, handle] = this.loggerFactory.createLogger(level ? {level}: {})
         this.loggerHandles.push(handle)
         return logger
     }

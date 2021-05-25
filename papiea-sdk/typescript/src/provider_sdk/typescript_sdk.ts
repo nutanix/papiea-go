@@ -377,7 +377,7 @@ export class ProviderSdk implements ProviderImpl {
         try {
             // Assume a tracer has a close method
             (this._tracer as any).close()
-            (this._intentWatcherClient.close())
+            this._intentWatcherClient.close()
         } catch (e) {
             console.info("Failed to close tracer/intent watcher client during cleanup")
         }
@@ -814,7 +814,7 @@ export class Kind_Builder {
     // Return type should always contain spec and status (metadata could be empty)
     on_create(description: {input_schema?: any, error_schemas?: ErrorSchemas}, handler: (ctx: ProceduralCtx_Interface, input: any) => Promise<{spec: Spec, status: Status, metadata?: Partial<Metadata>}>): Kind_Builder {
         const name = `__${this.kind.name}_create`
-        const loggerFactory = new LoggerFactory({})
+        const loggerFactory = new LoggerFactory({log_name: name})
         const [logger, handle] = loggerFactory.createLogger()
         logger.info(`You are registering on create handler for kind: ${this.kind.name}. Note, this is a post create handler. The behaviour is due to change`)
         if (!description.input_schema) {
@@ -827,7 +827,7 @@ export class Kind_Builder {
 
     on_delete(handler: (ctx: ProceduralCtx_Interface, entity: Entity) => Promise<void>): Kind_Builder {
         const name = `__${this.kind.name}_delete`
-        const loggerFactory = new LoggerFactory({})
+        const loggerFactory = new LoggerFactory({log_name: name})
         const [logger, handle] = loggerFactory.createLogger()
         logger.info(`You are registering on delete handler for kind: ${this.kind.name}. Note, this is a pre delete handler. The behaviour is due to change`)
         this.kind_procedure(name, {}, handler)
