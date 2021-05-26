@@ -9,7 +9,6 @@ import {
     PapieaTracingConfig,
     tracingConfigSchema
 } from "./arg_parser_schemas"
-import { PapieaException } from "../errors/papiea_exception"
 
 const PAPIEA_CONFIG_PATH = process.env.PAPIEA_CONFIG_PATH ?? path.join(__dirname, "../../papiea-config.yaml")
 
@@ -79,7 +78,7 @@ const TRANSFORM_FN_MAP: { [key in keyof PapieaConfig]: (val: any) => PapieaConfi
     tracing_config: toComplexTracingConfig,
     server_key_path: toStr,
     server_cert_path: toStr,
-    disable_https: toBool
+    https: toBool
 }
 
 export interface PapieaConfig {
@@ -138,8 +137,8 @@ export interface PapieaConfig {
     // Path for the server cert file
     server_cert_path: string,
 
-    // Flag to disable HTTPS server (use HTTP)
-    disable_https: boolean
+    // Flag to enable HTTPS (otherwise use HTTP)
+    https: boolean
 }
 
 const PAPIEA_DEFAULT_CFG: PapieaConfig = {
@@ -176,7 +175,7 @@ const PAPIEA_DEFAULT_CFG: PapieaConfig = {
     },
     server_key_path: "../certs/server.key",
     server_cert_path: "../certs/server.crt",
-    disable_https: false
+    https: true
 }
 
 export function getConfig(): PapieaConfig {

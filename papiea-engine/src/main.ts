@@ -48,7 +48,7 @@ const prettyPrint = config.pretty_print
 const tracingConfig = config.tracing_config
 const privateKey = readFileSync(resolve(__dirname, config.server_key_path), "utf-8")
 const certificate = readFileSync(resolve(__dirname, config.server_cert_path), "utf-8")
-const disableHTTPS = config.disable_https
+const https = config.https
 
 async function setUpApplication(): Promise<express.Express> {
     const logger = LoggerFactory.makeLogger({level: loggingLevel, verbosity_options: verbosityOptions, pretty_print: prettyPrint});
@@ -104,7 +104,7 @@ async function setUpApplication(): Promise<express.Express> {
 }
 
 setUpApplication().then(app => {
-    if (disableHTTPS) {
+    if (!https) {
         app.listen(serverPort, function () {
             console.info(`Papiea app listening on http port ${serverPort}!`);
         });
