@@ -1,3 +1,4 @@
+- Version 0.10.0+9999: Fixed race condition in watchlist updates (#703)
 - Version 0.10.0+9999: Merge branch 'nitesh/add-https-endpoint-support'
 - Version 0.9.61+2275: Added interface methods to get and list spec/status
 - Version 0.9.60+2260: Fixed return type for update status in SDKs

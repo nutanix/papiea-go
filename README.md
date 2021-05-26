@@ -13,7 +13,7 @@ Please see [Papiea's design document](https://nutanix.github.io/papiea/Papiea-de
 
 | Component  | Version |
 | ------------- | ------------- |
-  | Engine (docker) | 2284: digest: sha256:e2c33f60b3497e49cf0446436177c753e4e65f22f472f1037f93f1d75d3eeb8a size: 1578 |
+  | Engine (docker) | 2296: digest: sha256:25234126a6dc96093321d26e2628ae2801c0b8c8c8a3b256c0e5195129f33a46 size: 1578 |
   | Client/SDK (typescript)  | 0.10.0+9999 |
   | Client/SDK (python)  | 0.10.0+9999 |
 
