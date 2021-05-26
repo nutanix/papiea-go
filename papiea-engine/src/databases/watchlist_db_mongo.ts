@@ -5,6 +5,8 @@ import { SerializedWatchlist, Watchlist } from "../intentful_engine/watchlist";
 import { PapieaException } from "../errors/papiea_exception";
 import { getObjectHash } from "../utils/utils";
 
+const WATCHLIST_CONFLICT_MESSAGE = "Watchlist Conflict Error"
+
 type WatchlistResult = {
     id: number
     watchlist: SerializedWatchlist
@@ -27,7 +29,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
     }
 
     async edit_watchlist<R>(editor: (watchlist: Watchlist) => Promise<R>): Promise<R> {
-        let res: any
+        let res: R
         while (true) {
             const watchlist = await this.get_watchlist();
             res = await editor(watchlist);
@@ -35,15 +37,13 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
                 await this.update_watchlist(watchlist);
                 return res
             } catch (e) {
-                if (e.constructor === PapieaException && e.message === 'Watchlist Conflict Error') {
+                if (e.constructor === PapieaException && e.message === WATCHLIST_CONFLICT_MESSAGE) {
                     this.logger.debug("Found conflict in watchlist db. Retrying...")
                 } else {
-                    this.logger.debug("Something went wrong in update watchlist.")
-                    break
+                    throw new PapieaException({ message: "Something went wrong in update watchlist." })
                 }
             }
         }
-        return res
     }
 
     private async update_watchlist(watchlist: Watchlist): Promise<void> {
@@ -63,7 +63,7 @@ export class Watchlist_Db_Mongo implements Watchlist_DB {
         } catch (err) {
             /* duplicate key index error */
             if (err.code === 11000) {
-                throw new PapieaException({ message: `Watchlist Conlfict Error` });
+                throw new PapieaException({ message: WATCHLIST_CONFLICT_MESSAGE });
             } else {
                 throw new PapieaException({ message: `MongoDBError: Something went wrong in update watchlist.`, cause: err}) 
             }
