@@ -1,3 +1,4 @@
+- Version 0.10.6+2346: Changed the implementation of the logger from winston to pino (#704)
 - Version 0.10.5+2313: Added flag to disable https in papiea engine (#706)
 - Version 0.10.4+2306: Fix version update bug
 - Version 0.10.0+9999: Added interface methods to get and list spec/status (#699) PR url: git@github.com:nutanix/papiea.git/pull/699
