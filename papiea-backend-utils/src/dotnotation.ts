@@ -1,7 +1,5 @@
 // Shlomi: Moved encode here from mongo-dot-notation-tool and fixed it to not venture into vectors
 
-import { add } from "winston";
-
 // Need to add tests to this
 function encode(value: any, keyChain: string[], result: any) {
     const isObject = (value: any)=> value && value.toString() === '[object Object]'
