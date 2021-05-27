@@ -23,7 +23,6 @@
     "opentracing": "^0.14.5",
     "papiea-core": "file:../papiea-core",
     "pino": "^6.11.3",
-    "pino-pretty": "^4.8.0",
-    "winston": "^3.3.3"
+    "pino-pretty": "^4.8.0"
   }
 }

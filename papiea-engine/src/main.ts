@@ -50,7 +50,6 @@ const privateKey = readFileSync(resolve(__dirname, config.server_key_path), "utf
 const certificate = readFileSync(resolve(__dirname, config.server_cert_path), "utf-8")
 
 async function setUpApplication(): Promise<express.Express> {
-    console.log(loggingLevel)
     const logger = LoggerFactory.makeLogger({level: loggingLevel, verbosity_options: verbosityOptions, pretty_print: prettyPrint});
     const tracer = getTracer("papiea-engine", logger, tracingConfig.reporter, tracingConfig.sampler, tracingConfig.logMessages)
     const trace = getTracingMiddleware(tracer)
