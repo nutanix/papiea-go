@@ -271,7 +271,6 @@ export class ProviderSdk implements ProviderImpl {
             try {
                 const span = spanSdkOperation(`${name}_provider_procedure_sdk_handler`, this._tracer, req, this.provider)
                 const result = await handler(ctx, req.body.input)
-                ctx.cleanup()
                 res.json(result);
                 span.finish()
             } catch (e) {
@@ -378,7 +377,7 @@ export class ProviderSdk implements ProviderImpl {
         try {
             // Assume a tracer has a close method
             (this._tracer as any).close()
-            (this._intentWatcherClient.close())
+            this._intentWatcherClient.close()
         } catch (e) {
             console.info("Failed to close tracer/intent watcher client during cleanup")
         }
@@ -671,7 +670,6 @@ export class Kind_Builder {
                     spec: req.body.spec,
                     status: req.body.status
                 }, req.body.input);
-                ctx.cleanup()
                 res.json(result);
                 span.finish()
             } catch (e) {
@@ -747,7 +745,6 @@ export class Kind_Builder {
                     spec: req.body.spec,
                     status: req.body.status
                 }, req.body.input);
-                ctx.cleanup()
                 res.json(result);
                 span.finish()
             } catch (e) {
@@ -793,7 +790,6 @@ export class Kind_Builder {
             try {
                 const span = spanSdkOperation(`${name}_kind_procedure_sdk_handler`, this.tracer, req, this.provider.provider, {kind: this.kind.name})
                 const result = await handler(ctx, req.body.input);
-                ctx.cleanup()
                 res.json(result);
                 span.finish()
             } catch (e) {
@@ -818,24 +814,22 @@ export class Kind_Builder {
     // Return type should always contain spec and status (metadata could be empty)
     on_create(description: {input_schema?: any, error_schemas?: ErrorSchemas}, handler: (ctx: ProceduralCtx_Interface, input: any) => Promise<{spec: Spec, status: Status, metadata?: Partial<Metadata>}>): Kind_Builder {
         const name = `__${this.kind.name}_create`
-        const loggerFactory = new LoggerFactory({logPath: name})
+        const loggerFactory = new LoggerFactory({log_name: name})
         const [logger, handle] = loggerFactory.createLogger()
         logger.info(`You are registering on create handler for kind: ${this.kind.name}. Note, this is a post create handler. The behaviour is due to change`)
         if (!description.input_schema) {
             logger.info(`Input schema is undefined for on_create handler, using the schema for kind: ${this.kind.name}`)
             description.input_schema = this.kind.kind_structure
         }
-        handle.cleanup()
         this.kind_procedure(name, description, handler)
         return this
     }
 
     on_delete(handler: (ctx: ProceduralCtx_Interface, entity: Entity) => Promise<void>): Kind_Builder {
         const name = `__${this.kind.name}_delete`
-        const loggerFactory = new LoggerFactory({logPath: name})
+        const loggerFactory = new LoggerFactory({log_name: name})
         const [logger, handle] = loggerFactory.createLogger()
         logger.info(`You are registering on delete handler for kind: ${this.kind.name}. Note, this is a pre delete handler. The behaviour is due to change`)
-        handle.cleanup()
         this.kind_procedure(name, {}, handler)
         return this
     }

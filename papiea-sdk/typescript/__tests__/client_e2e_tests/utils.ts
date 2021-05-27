@@ -1,6 +1,6 @@
 import { LoggerFactory } from "papiea-backend-utils";
 
-const logger_factory = new LoggerFactory({logPath: "e2e_tests"})
+const logger_factory = new LoggerFactory({log_name: "e2e_tests"})
 export const [logger, _] = logger_factory.createLogger({level: "debug", pretty_print: true})
 
 export function get_kind_ref_type(kind: string, description: string = "") {

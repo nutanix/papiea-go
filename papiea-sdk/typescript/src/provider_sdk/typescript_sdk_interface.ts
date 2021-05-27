@@ -86,7 +86,6 @@ export interface IntentfulCtx_Interface {
     check_permission(entityAction: [Action, Provider_Entity_Reference][], user_token?: string, provider_prefix?: string, provider_version?: Version): Promise<boolean>
     get_logger(log_level?: string, pretty_print?: boolean): Logger
     get_provider_client(key?: string): ProviderClient
-    cleanup(): void
 }
 
 export interface ProcedureDescription {
