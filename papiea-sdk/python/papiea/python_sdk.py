@@ -6,6 +6,7 @@ from typing import Any, Callable, List, NoReturn, Optional, Type, Union
 
 from aiohttp import web
 from opentracing import Tracer, Format, child_of
+from multidict import CIMultiDict
 
 from .api import ApiInstance
 from .client import IntentWatcherClient, EntityCRUD
@@ -566,8 +567,10 @@ class KindBuilder:
                 )
                 with self.tracer.start_span(operation_name=f"{sfs_signature}_handler_procedure", references=child_of(span_context)):
                     body_obj = json_loads_attrs(await req.text())
+                    headers = CIMultiDict(req.headers)
+                    headers.add("Authorization", f"Bearer {self.provider.s2s_key}")
                     result = await handler(
-                        IntentfulCtx(self.provider, prefix, version, req.headers),
+                        IntentfulCtx(self.provider, prefix, version, headers),
                         Entity(
                             metadata=body_obj.metadata,
                             spec=body_obj.get("spec", {}),
