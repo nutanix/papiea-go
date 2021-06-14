@@ -228,12 +228,12 @@ axios@^0.18.1:
     follow-redirects "1.5.10"
     is-buffer "^2.0.2"
 
-axios@^0.19.2:
-  version "0.19.2"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-0.19.2.tgz#3ea36c5d8818d0d5f8a8a97a6d36b86cdc00cb27"
-  integrity sha512-fjgm5MvRHLhx+osE2xoekY70AhARk3a6hkN+3Io1jc00jtquGvxYlKlsFUhmUET0V5te6CcZI7lcv2Ym61mjHA==
+axios@^0.21.1:
+  version "0.21.1"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-0.21.1.tgz#22563481962f4d6bde9a76d516ef0e5d3c09b2b8"
+  integrity sha512-dKQiRHxGD9PPRIUNIWvZhPTPpl1rf/OxTYKsqKUDjBwYylTvV7SjSHJb9ratfyzM6wCdLCOYLzs73qpg5c4iGA==
   dependencies:
-    follow-redirects "1.5.10"
+    follow-redirects "^1.10.0"
 
 base64-js@^1.2.0:
   version "1.3.1"
@@ -566,6 +566,11 @@ follow-redirects@1.5.10:
   dependencies:
     debug "=3.1.0"
 
+follow-redirects@^1.10.0:
+  version "1.14.1"
+  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.14.1.tgz#d9114ded0a1cfdd334e164e6662ad02bfd91ff43"
+  integrity sha512-HWqDgT7ZEkqRzBvc2s64vSZ/hfOceEol3ac/7tKwzuvEyWx3/4UegXh5oBOIotkGsObyk3xznnSRVADBgWSQVg==
+
 form-data@^2.5.1:
   version "2.5.1"
   resolved "https://registry.yarnpkg.com/form-data/-/form-data-2.5.1.tgz#f2cbec57b5e59e23716e128fe44d4e5dd23895f4"
@@ -866,7 +871,7 @@ pako@^1.0.3:
   integrity sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==
 
 "papiea-backend-utils@file:../../papiea-backend-utils":
-  version "0.10.1"
+  version "0.10.5"
   dependencies:
     "@types/express" "^4.17.9"
     "@types/jaeger-client" "^3.15.4"
@@ -875,31 +880,31 @@ pako@^1.0.3:
     jaeger-client "^3.18.1"
     logform "^2.1.2"
     opentracing "^0.14.5"
-    papiea-core "file:../../../../Library/Caches/Yarn/v6/npm-papiea-backend-utils-0.10.1-1cca4a88-158e-4b19-8eb9-bb0a2f964819-1622100899335/node_modules/papiea-core"
+    papiea-core "file:../../papiea-core"
     pino "^6.11.3"
     pino-pretty "^4.8.0"
 
 "papiea-client@file:../../papiea-client":
-  version "0.10.1"
+  version "0.10.5"
   dependencies:
     axios "^0.18.1"
     opentracing "^0.14.5"
-    papiea-backend-utils "file:../../../../Library/Caches/Yarn/v6/npm-papiea-client-0.10.1-24a552f9-db01-409d-96c4-8cee01b68e84-1622100899327/node_modules/papiea-backend-utils"
-    papiea-core "file:../../../../Library/Caches/Yarn/v6/npm-papiea-client-0.10.1-24a552f9-db01-409d-96c4-8cee01b68e84-1622100899327/node_modules/papiea-core"
+    papiea-backend-utils "file:../../papiea-backend-utils"
+    papiea-core "file:../../papiea-core"
 
 "papiea-core@file:../../papiea-core":
-  version "0.10.1"
+  version "0.10.5"
 
 "papiea-sdk@file:../../papiea-sdk/typescript":
-  version "0.10.1"
+  version "0.10.5"
   dependencies:
     axios "^0.18.1"
     express "^4.17.0"
     express-async-handler "^1.1.4"
     js-yaml "^3.12.0"
-    papiea-backend-utils "file:../../../../Library/Caches/Yarn/v6/npm-papiea-sdk-0.10.1-e0a1670b-349d-42a6-97f5-db76b2181d7e-1622100899427/papiea-backend-utils"
-    papiea-client "file:../../../../Library/Caches/Yarn/v6/npm-papiea-sdk-0.10.1-e0a1670b-349d-42a6-97f5-db76b2181d7e-1622100899427/papiea-client"
-    papiea-core "file:../../../../Library/Caches/Yarn/v6/npm-papiea-sdk-0.10.1-e0a1670b-349d-42a6-97f5-db76b2181d7e-1622100899427/papiea-core"
+    papiea-backend-utils "file:../../papiea-backend-utils"
+    papiea-client "file:../../papiea-client"
+    papiea-core "file:../../papiea-core"
     pluralize "^7.0.0"
     swagger-model-validator "^3.0.20"
     uuid "^3.3.2"
