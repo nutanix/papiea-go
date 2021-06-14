@@ -1,3 +1,4 @@
+- Version 0.10.8+2364: Fixed hash update bug in watchlist (#710)
 - Version 0.10.7+2354: Added install certificate script in CircleCI Dockerfile (#709)
 - Version 0.10.6+2346: Changed the implementation of the logger from winston to pino (#704)
 - Version 0.10.5+2313: Added flag to disable https in papiea engine (#706)
