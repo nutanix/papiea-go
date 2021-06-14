@@ -4265,7 +4265,7 @@ package-json@^4.0.0:
     semver "^5.1.0"
 
 "papiea-backend-utils@file:../papiea-backend-utils":
-  version "0.10.1"
+  version "0.10.8"
   dependencies:
     "@types/express" "^4.17.9"
     "@types/jaeger-client" "^3.15.4"
@@ -4274,12 +4274,12 @@ package-json@^4.0.0:
     jaeger-client "^3.18.1"
     logform "^2.1.2"
     opentracing "^0.14.5"
-    papiea-core "file:../../../Library/Caches/Yarn/v6/npm-papiea-backend-utils-0.10.1-d7a948e2-209a-44f4-a5a5-6756fcc83bf2-1622100849687/node_modules/papiea-core"
+    papiea-core "file:../papiea-core"
     pino "^6.11.3"
     pino-pretty "^4.8.0"
 
 "papiea-core@file:../papiea-core":
-  version "0.10.1"
+  version "0.10.8"
 
 parse-glob@^3.0.4:
   version "3.0.4"
@@ -5932,9 +5932,9 @@ write-file-atomic@^2.0.0, write-file-atomic@^2.1.0:
     signal-exit "^3.0.2"
 
 ws@^5.2.0:
-  version "5.2.2"
-  resolved "https://registry.yarnpkg.com/ws/-/ws-5.2.2.tgz#dffef14866b8e8dc9133582514d1befaf96e980f"
-  integrity sha512-jaHFD6PFv6UgoIVda6qZllptQsMlDEJkTQcybzzXDYM1XO9Y8em691FGMPmM46WGyLU4z9KMgQN+qrux/nhlHA==
+  version "5.2.3"
+  resolved "https://registry.yarnpkg.com/ws/-/ws-5.2.3.tgz#05541053414921bc29c63bee14b8b0dd50b07b3d"
+  integrity sha512-jZArVERrMsKUatIdnLzqvcfydI85dvd/Fp1u/VOpfdDWQ4c9qWXe+VIeAbQ5FrDwciAkr+lzofXLz3Kuf26AOA==
   dependencies:
     async-limiter "~1.0.0"
 
